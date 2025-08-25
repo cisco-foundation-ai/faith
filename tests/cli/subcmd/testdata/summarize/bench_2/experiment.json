@@ -1,0 +1,13 @@
+{
+  "experiment_params": {
+    "benchmark": {
+      "name": "ctibench-rcm",
+      "generation_mode": "chat_comp",
+      "prompt_format": "chat",
+      "n_shot": "1/2"
+    },
+    "model": {
+      "name": "wordy-mc-worder-27B"
+    }
+  }
+}

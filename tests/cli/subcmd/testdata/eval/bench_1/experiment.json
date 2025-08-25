@@ -1,0 +1,133 @@
+{
+  "benchmark_config": {
+    "format": {
+      "instructions": {
+        "base_inst_template": "The following are multiple choice questions{% if subject is not none %} about {{ subject }}{% endif %}.",
+        "chat_inst_template": "Given the following question\n{%- if choices is not none %} and\n{%- if choices|length == 2 %} two\n{%- elif choices|length == 3 %} three\n{%- elif choices|length == 4 %} four\n{%- elif choices|length == 5 %} five\n{%- elif choices|length == 6 %} six\n{%- elif choices|length == 7 %} seven\n{%- elif choices|length == 8 %} eight\n{%- elif choices|length == 9 %} nine\n{%- elif choices|length == 10 %} ten\n{%- endif %} candidate answers (\n{%- for ch in choices %}\n{%- if loop.last %} and {% elif not loop.first %}, {% endif %}{{ ch }}\n{%- endfor -%}\n)\n{%- endif -%}, choose the best answer. Your response should be of the following format: 'Answer: $LETTER' (without quotes) where LETTER is one of\n{%- for ch in choices %}\n{%- if loop.last %} or{% endif %} {{ ch }}\n{%- if not loop.last %},{% endif %}\n{%- endfor %}.",
+        "system_prompt": null
+      },
+      "prompt": {
+        "answer_template": "Answer: {{ answer }}",
+        "prompt_template": "{{ instruction }}\n{%- if examples %}\n{%- for example in examples %}\n\n{{ example.question }}\n{{ example.answer }}\n{%- endfor %}\n{%- endif %}\n\n{{ question }}",
+        "question_template": "{{ question }}\n\n{% for choice_letter, choice in choice_map.items() -%}\n{{ choice_letter }}. {{ choice }}\n{% endfor -%}"
+      }
+    },
+    "mcqa_config": {
+      "answer_symbols": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    "metadata": {
+      "categories": [
+        "security"
+      ],
+      "description": null,
+      "license": null,
+      "name": "mmlu-security",
+      "state": "enabled",
+      "url": null
+    },
+    "output_processing": {
+      "answer_formats": [
+        {
+          "capture_transform": {
+            "params": ["x"],
+            "expr": "x.upper()"
+          },
+          "format_type": "proper",
+          "match_disambiguation": "match_if_unique",
+          "pattern": "(?i)\\banswer\\s*:\\s*\\(?([A-D])\\b"
+        },
+        {
+          "capture_transform": {
+            "params": ["x"],
+            "expr": "x.upper()"
+          },
+          "format_type": "improper",
+          "match_disambiguation": "match_if_unique",
+          "pattern": "(?i)\\banswer\\s+is:?\\s+(?:\\(|\\*\\*)?([A-Z])\\b"
+        },
+        {
+          "capture_transform": {
+            "params": ["x"],
+            "expr": "x.upper()"
+          },
+          "format_type": "improper",
+          "match_disambiguation": "match_if_singular",
+          "pattern": "\\(([A-Z])\\)"
+        },
+        {
+          "capture_transform": {
+            "params": ["x"],
+            "expr": "x.upper()"
+          },
+          "format_type": "improper",
+          "match_disambiguation": "match_if_singular",
+          "pattern": "(?i)\\boption\\s+([A-Z])\\b"
+        },
+        {
+          "capture_transform": {
+            "params": ["x"],
+            "expr": "x.upper()"
+          },
+          "format_type": "improper",
+          "match_disambiguation": "match_if_singular",
+          "pattern": "(?i)^\\W*([A-Z])\\W*$"
+        }
+      ]
+    },
+    "source": {
+      "huggingface": {
+        "dev_split": "dev",
+        "path": "cais/mmlu",
+        "subset_name": "computer_security",
+        "test_split": "test"
+      }
+    }
+  },
+  "experiment_params": {
+    "benchmark": {
+      "name": "mmlu-security",
+      "generation_mode": "chat_comp",
+      "prompt_format": "base",
+      "n_shot": "5"
+    },
+    "model": {
+      "name": "answer-anything-8b",
+      "path": "some-ai/Answer-Anything-8b",
+      "engine": {
+        "engine_type": "vllm",
+        "num_gpus": 8,
+        "context_length": 8192
+      },
+      "generation": {
+        "temperature": 0.3,
+        "top_p": 1.0,
+        "max_completion_tokens": 64,
+        "kwargs": {
+          "stop": "\n",
+          "do_sample": true
+        }
+      }
+    },
+    "n_shot": "5",
+    "prompt_format": "base"
+  },
+  "trial_records": {
+    "trials/373363/e84f2e324500232d": {
+      "trial_log_path": "trials/373363/e84f2e324500232d/benchmark-log.json"
+    },
+    "trials/373364/fa00b2dd7d5b320f": {
+      "trial_log_path": "trials/373364/fa00b2dd7d5b320f/benchmark-log.json"
+    },
+    "trials/373365/099186c0f688a67a": {
+      "trial_log_path": "trials/373365/099186c0f688a67a/benchmark-log.json"
+    },
+    "trials/373366/0b1c3f2d4e5a8b6c": {
+      "trial_log_path": "trials/373366/0b1c3f2d4e5a8b6c/benchmark-log.json"
+    }
+  }
+}

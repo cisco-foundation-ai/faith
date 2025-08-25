@@ -1,0 +1,47 @@
+---
+name: lint
+
+on:
+  push:
+    # Run superlinter on pushes to default branch
+    branches:
+      - main
+  # Run superlinter on pull request events
+  pull_request:
+
+# Declare default permissions as read-only
+permissions: read-all
+
+jobs:
+  super-linter:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+      statuses: write
+    steps:
+      - name: 🔒 harden runner
+        uses: step-security/harden-runner@5c7944e73c4c2a096b17a9cb74d65b6c2bbafbde # v2.9.1
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+          fetch-depth: 0
+      - name: 🧹 run superlinter
+        uses: super-linter/super-linter@b92721f792f381cedc002ecdbb9847a15ece5bb8 # v7.1.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LINTER_RULES_PATH: ".github/linters"
+          MARKDOWN_CONFIG_FILE: ".markdownlint.yml"
+          YAML_CONFIG_FILE: ".yamllint.yml"
+          MULTI_STATUS: false
+          VALIDATE_ALL_CODEBASE: false
+          VALIDATE_JSCPD: false # TODO: Enable this once we configure jscpd.
+          # We use our own custom python linting.
+          VALIDATE_PYTHON_BLACK: false
+          VALIDATE_PYTHON_FLAKE8: false
+          VALIDATE_PYTHON_ISORT: false
+          VALIDATE_PYTHON_MYPY: false
+          VALIDATE_PYTHON_PYINK: false
+          VALIDATE_PYTHON_PYLINT: false
+          VALIDATE_PYTHON_RUFF: false

@@ -1,0 +1,33 @@
+# Copyright 2025 Cisco Systems, Inc. and its affiliates
+#
+# SPDX-License-Identifier: Apache-2.0
+---
+benchmark: !from
+  '$BENCHMARKS_ROOT/mcqa-template.yaml["mcqa_common_benchmark"]':
+    metadata: !from
+      '$BENCHMARKS_ROOT/base-template.yaml["metadata"]':
+        name: "mmlu-security"
+        description: |-
+          This covers the subset MMLU (Massive Multitask Language Understanding)
+          benchmark for computer security. It has 100 multiple-choice questions
+          designed to evaluate the performance of AI models in the field of
+          computer security. Each question has four answer choices.
+        urls:
+          - https://arxiv.org/abs/2009.03300
+          - https://crfm.stanford.edu/helm/mmlu/latest/
+          - https://en.wikipedia.org/wiki/MMLU
+          - https://huggingface.co/datasets/cais/mmlu
+        categories: ["security"]
+    source:
+      huggingface: !from
+        '$BENCHMARKS_ROOT/sources-template.yaml["sources"]["huggingface"]':
+          path: "cais/mmlu"
+          subset_name: "computer_security"
+          test_split: "test"
+          dev_split: "dev"
+      options:
+        dataframe_transform_expr: |
+          df.assign(
+              # Convert numerical answers to letter choices starting from 'A'.
+              answer=[chr(65 + x) for x in df["answer"].tolist()],
+          )[["question", "subject", "choices", "answer"]]

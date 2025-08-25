@@ -1,0 +1,78 @@
+[build-system]
+requires = ["setuptools >= 61.0", "setuptools_scm[toml]>=8"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+write_to = "src/faith/_version.py"
+
+[tool.setuptools.package-data]
+benchmarks = ["__benchmarks__/**/*.csv", "__benchmarks__/**/*.yaml"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+addopts = ["--import-mode=importlib"]
+
+[project]
+name = "faith"
+description = "Benchmark evaluation framework for large language models"
+dynamic = ["version"]
+requires-python = ">=3.10, <3.13"
+dependencies = [
+  "argcomplete==3.6.2",
+  "colorlog==6.9.0",
+  "cvss==3.6",
+  "dataclasses-json==0.6.7",
+  "datasets==4.0.0",
+  "GitPython==3.1.45",
+  "jinja2==3.1.6",
+  "numpy<=2.2.6", # TODO(https://github.com/RobustIntelligence/faith/issues/50): make == once we resolve ri-python-linter issue.
+  "orjson==3.11.1",
+  "pandas==2.3.1",
+  "pyyaml==6.0.2",
+  "scikit-learn==1.7.1",
+  "simpleeval==1.0.3",
+  "tqdm==4.67.1",
+  "transformers==4.55.2",
+]
+authors = [
+  {name = "Baturay Saglam"},
+  {name = "Blaine Nelson"},
+]
+maintainers = [
+  {name = "Baturay Saglam"},
+  {name = "Blaine Nelson"},
+  {name = "Paul Kassianik"}
+]
+readme = "README.md"
+keywords = ["benchmarks", "cybersecurity", "evaluations", "llm"]
+
+[project.optional-dependencies]
+openai = [
+  "openai==1.100.2",
+]
+vllm = [
+  "bitsandbytes==0.47.0",
+  "torch==2.7.1",
+  "vllm[flashinfer,fastsafetensors]==0.10.1.1",
+]
+all-engines = [
+  "faith[openai, vllm]",
+]
+metrics = [
+  "tabulate==0.9.0",
+]
+all = [
+  "faith[all-engines, metrics]",
+]
+test = [
+  "faith[all]",
+  "pytest==8.4.1",
+  "pytest-cov==6.2.1",
+  "pytest-custom_exit_code==0.3.0",
+  "types-PyYAML==6.0.12.20250809",
+  "mypy==1.17.1",
+  "ri-python-linter==1.0.1",
+]
+
+[project.scripts]
+faith = "faith.cli.cli:_cli_main"

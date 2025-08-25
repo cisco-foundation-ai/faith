@@ -1,0 +1,454 @@
+# Copyright 2025 Cisco Systems, Inc. and its affiliates
+#
+# SPDX-License-Identifier: Apache-2.0
+
+bahamut:
+  - dropping elephant
+  - windshift
+windshift:
+  - nan
+  - windy phoenix
+confucius:
+  - confucius apt
+  - patchwork
+patchwork:
+  - hangover group
+  - nan
+turla:
+  - atk13
+  - belugasturgeon
+  - blue python
+  - g0010
+  - group 88
+  - hippo team
+  - iron hunter
+  - itg12
+  - krypton
+  - makersmark
+  - pacifier apt
+  - pfinet
+  - popeye
+  - secret blizzard
+  - sig23
+  - snake
+  - summit
+  - tag 0530
+  - uac 0003
+  - uac 0024
+  - uac 0144
+  - unc4210
+  - uroburos
+  - venomous bear
+  - waterbug
+  - whitebear
+  - wraith
+muddywater:
+  - apt35
+  - atk51
+  - boggy serpens
+  - cobalt ulster
+  - earth vetala
+  - g0069
+  - mango sandstorm
+  - mercury
+  - seedworm
+  - static kitten
+  - ta450
+  - temp zagros
+sandworm:
+  - apt44
+  - blackenergy group
+  - blue echidna
+  - electrum
+  - frozenbarents
+  - g0034
+  - iridium
+  - iron viking
+  - quedagh
+  - seashell blizzard
+  - telebots
+  - temp noble
+  - uac 0082
+  - uac 0113
+  - voodoo bear
+oilrig:
+  - apt 34
+  - apt34
+  - atk40
+  - cobalt gypsy
+  - cobalt gypsym
+  - crambus
+  - crambus or siamesekitten
+  - europium
+  - evasive serpens
+  - g0049
+  - hazel sandstorm
+  - helix kitten
+  - irn2
+  - lyceum
+  - ta452
+  - twisted kitten
+lazarus:
+  - andariel
+  - appleworm
+  - apt 38
+  - apt c 26
+  - apt37
+  - apt38
+  - atk117
+  - atk3
+  - beagleboyz
+  - bluenoroff
+  - bureau 121
+  - citrine sleet
+  - copernicium
+  - covellite
+  - dark seoul
+  - dev 0139
+  - dev 1222
+  - diamond sleet
+  - g0032
+  - g0082
+  - genie spider
+  - group 77
+  - guardians of peace
+  - hastati group
+  - hidden cobra
+  - kimsuky
+  - labyrinth chollima
+  - lazarus
+  - lazarus group
+  - newromanic cyber army team
+  - nickel academy
+  - nickel gladstone
+  - operation applejeus
+  - operation darkseoul
+  - operation ghostsecret
+  - operation troy
+  - sapphire sleet
+  - stardust chollima
+  - subgroup bluenoroff
+  - ta404
+  - unit 121
+  - whois hacking team
+  - zinc
+sidecopy:
+  - nan
+  - transparent tribe
+transparent tribe:
+  - apt36
+  - nan
+mustang panda:
+  - a416
+  - basin
+  - bronze president
+  - earth preta
+  - honeymyte
+  - luminousmoth
+  - polaris
+  - red lich
+  - reddelta
+  - stately taurus
+  - ta416
+  - tantalum
+  - temp hex
+  - twill typhoon
+diamond sleet:
+  - lazarus
+  - nan
+mummy spider:
+  - emotet
+  - gold crestwood
+  - nan
+  - ta542
+apt29:
+  - atk7
+  - blue kitsune
+  - bluebravo
+  - cloaked ursa
+  - cozy bear
+  - cozyduke
+  - dark halo
+  - g0016
+  - grizzly steppe
+  - group 100
+  - iron hemlock
+  - iron ritual
+  - itg11
+  - midnight blizzard
+  - minidionis
+  - nobelium
+  - noblebaron
+  - seaduke
+  - solarstorm
+  - stellarparticle
+  - ta421
+  - the dukes
+  - turla
+  - uac 0029
+  - unc2452
+  - unc3524
+  - yttrium
+dark caracal:
+  - g0070
+  - nan
+apt33:
+  - apt 33
+  - atk35
+  - cobalt trinity
+  - elfin
+  - g0064
+  - holmium
+  - magnallium
+  - peach sandstorm
+  - refined kitten
+  - ta451
+apt19:
+  - black vine
+  - bronze firestone
+  - c0d0so0
+  - codoso
+  - codoso team
+  - deep panda
+  - g0009
+  - g0073
+  - group 13
+  - kungfu kittens
+  - pinkpanther
+  - pupa
+  - shell crew
+  - sunshop group
+  - temp avengers
+  - webmasters
+apt37:
+  - apt 37
+  - atk4
+  - g0067
+  - group 123
+  - group123
+  - inkysquid
+  - kimsuky
+  - moldy pisces
+  - nkysquid
+  - operation daybreak
+  - operation erebus
+  - reaper
+  - reaper group
+  - red eyes
+  - ricochet chollima
+  - scarcruft
+  - temp reaper
+  - venus 121
+coldriver:
+  - apt28
+  - apt29
+  - bluecharlie
+  - callisto
+  - gossamer bear
+  - reuse team
+  - seaborgium
+  - star blizzard
+  - ta446
+andariel:
+  - gop
+  - guardian of peace
+  - onyx sleet
+  - operationtroy
+  - plutonium
+  - silent chollima
+  - whois team
+dragonfly:
+  - allanite
+  - atk6
+  - berserk bear
+  - blue kraken
+  - bromine
+  - castle
+  - crouching yeti
+  - dymalloy
+  - emp isotope
+  - energetic bear
+  - g0035
+  - ghost blizzard
+  - group 24
+  - havex
+  - iron liberty
+  - itg15
+  - koala team
+  - tg 4192
+gamaredon:
+  - actinium
+  - aqua blizzard
+  - armageddon
+  - blue otso
+  - bluealpha
+  - dev 0157
+  - g0047
+  - gamaredon
+  - iron tilden
+  - primitive bear
+  - shuckworm
+  - trident ursa
+  - uac 0010
+  - unc530
+  - winterflounder
+sharp panda:
+  - apt19
+  - apt40
+  - deep panda
+bitter apt:
+  - nan
+  - t apt 17
+apt31:
+  - bronze vinewood
+  - judgment panda
+  - red keres
+  - ta412
+  - violet typhoon
+  - zirconium
+mint sandstorm:
+  - apt35
+  - charming kitten
+  - charmingcypress
+  - g0058
+  - group 83
+  - ikittens
+  - nan
+  - newsbeef
+  - newscaster
+  - parastoo
+  - phosphorus
+charmingcypress:
+  - apt35
+  - apt42
+  - charming kitten
+  - mint sandstorm
+  - ta453
+apt-c-36:
+  - blind eagle
+  - nan
+apt28:
+  - apt c 20
+  - atk5
+  - blue athena
+  - fancy bear
+  - fighting ursa
+  - forest blizzard
+  - frozenlake
+  - g0007
+  - grey cloud
+  - grizzly steppe
+  - group 4127
+  - group 74
+  - iron twilight
+  - itg05
+  - pawn storm
+  - sednit
+  - sig40
+  - snakemackerel
+  - sofacy
+  - sofacy group
+  - strontium
+  - swallowtail
+  - t apt 12
+  - ta422
+  - tg 4127
+  - threat group 4127
+  - tsar team
+  - tsarteam
+  - uac 0028
+unc2452:
+  - apt29
+  - blue kitsune
+  - cozy bear
+  - cozyduke
+  - dark halo
+  - darkhalo
+  - iron hemlock
+  - iron ritual
+  - midnight blizzard
+  - nobelium
+  - noblebaron
+  - solar phoenix
+  - solarstorm
+  - stellarparticle
+  - the dukes
+  - unc2452
+  - unc3524
+  - yttrium
+chrysene:
+  - apt33
+  - apt34
+  - cobalt gypsy
+  - europium
+  - evasive serpens
+  - greenbug
+  - hazel sandstorm
+  - helix kitten
+  - irn2
+  - muddywater
+  - oilrig
+apt41:
+  - amoeba
+  - apt15
+  - barium
+  - blackfly
+  - brass typhoon
+  - bronze atlas
+  - bronze export
+  - earth baku
+  - g0044
+  - g0096
+  - grayfly
+  - hoodoo
+  - lead
+  - mustang panda
+  - red kelpie
+  - ta415
+  - wicked panda
+  - wicked spider
+  - winnti group
+silent chollima:
+  - andariel
+  - gop
+  - guardian of peace
+  - nan
+  - onyx sleet
+  - operationtroy
+  - plutonium
+  - subgroup andariel
+  - whois team
+kimsuky:
+  - apt43
+  - black banshee
+  - emerald sleet
+  - g0086
+  - operation stolen pencil
+  - thallium
+  - velvet chollima
+apt36:
+  - apt 36
+  - apt36
+  - c major
+  - copper fieldstone
+  - earth karkaddan
+  - green havildar
+  - mythic leopard
+  - projectm
+  - sidecopy
+  - tmp lapis
+  - transparent tribe
+apt35:
+  - apt35
+  - charming kitten
+  - cobalt illusion
+  - cobalt mirage
+  - g0059
+  - itg18
+  - magic hound
+  - mint sandstorm
+  - newscaster
+  - newscaster team
+  - phosphorus
+  - ta453
+  - tunnelvision

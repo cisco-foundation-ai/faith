@@ -1,0 +1,39 @@
+# Copyright 2025 Cisco Systems, Inc. and its affiliates
+#
+# SPDX-License-Identifier: Apache-2.0
+---
+benchmark: !from
+  '$BENCHMARKS_ROOT/mcqa-template.yaml["mcqa_common_benchmark"]':
+    metadata: !from
+      '$BENCHMARKS_ROOT/base-template.yaml["metadata"]':
+        name: "cybermetric-500"
+        description: |-
+          CyberMetric-500 is a subset of 500 multiple-choice questions from the
+          CyberMetric benchmark, designed to evaluate and compare the
+          performance of AI models in cybersecurity.
+          It contains 500 questions, each with four answer choices.
+        urls:
+          - https://arxiv.org/abs/2402.07688
+          - https://github.com/CyberMetric
+        categories: ["security"]
+    source:
+      git_repo: !from
+        '$BENCHMARKS_ROOT/sources-template.yaml["sources"]["git_repo"]':
+          repo_url: "https://github.com/cybermetric/CyberMetric.git"
+          branch: "main"
+          commit: "2f5818bd2c19350cd6cfae028b75499ebe4ffd29"
+          type: "json"
+          path_glob: "CyberMetric-500-v1.json"
+          selected_columns: ["questions"]
+      options:
+        dataframe_transform_expr: |
+          df.assign(
+              question=df["question"].str.strip(),
+              answer=df["solution"].str.strip().str.upper(),
+              choices=[
+                  [str(c) for c in lst]
+                  for lst in df[
+                      sorted(col for col in df.columns if col.startswith("answers."))
+                  ].values.tolist()
+              ],
+          )[["question", "choices", "answer"]]

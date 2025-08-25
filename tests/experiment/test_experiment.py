@@ -1,0 +1,77 @@
+# Copyright 2025 Cisco Systems, Inc. and its affiliates
+#
+# SPDX-License-Identifier: Apache-2.0
+
+from pathlib import Path
+
+import pytest
+
+from faith._internal.types.flags import GenerationMode, SampleRatio
+from faith.benchmark.formatting.prompt import PromptFormatter
+from faith.benchmark.types import BenchmarkSpec
+from faith.experiment.experiment import BenchmarkExperiment
+from faith.model.params import GenParams
+
+
+def test_benchmark_experiment() -> None:
+    gen_params = GenParams(
+        temperature=0.1,
+        top_p=0.5,
+        max_completion_tokens=100,
+        kwargs={},
+    )
+
+    # Test initialization with valid parameters
+    experiment = BenchmarkExperiment(
+        name_or_path="for-unit-test-only",
+        generation_mode=GenerationMode.CHAT_COMPLETION,
+        prompt_format=PromptFormatter.CHAT,
+        n_shot=SampleRatio(5),
+        model_name="example_model",
+        gen_params=gen_params,
+        datastore_path=Path("/tmp"),
+        num_trials=3,
+        initial_seed=3,
+    )
+    assert str(experiment.experiment_dir).startswith(
+        "/tmp/for-unit-test-only/example_model/chat/chat_comp/5_shot/gen_params_"
+    )
+    assert experiment.benchmark_spec == BenchmarkSpec(
+        name="for-unit-test-only",
+        generation_mode=GenerationMode.CHAT_COMPLETION,
+        prompt_format=PromptFormatter.CHAT,
+        n_shot=SampleRatio(5),
+    )
+    assert len(experiment) == 3
+
+    with pytest.raises(
+        AssertionError,
+        match="Benchmark path '.*/does-not-exist' is not an existing directory.",
+    ):
+        # Test initialization with invalid benchmark name.
+        BenchmarkExperiment(
+            name_or_path="does-not-exist",
+            generation_mode=GenerationMode.LOGITS,
+            prompt_format=PromptFormatter.BASE,
+            n_shot=SampleRatio(0),
+            model_name="example_model",
+            gen_params=gen_params,
+            datastore_path=Path("/tmp"),
+            num_trials=3,
+            initial_seed=81,
+        )
+    with pytest.raises(
+        AssertionError, match="Number of trials must be positive, but got 0."
+    ):
+        # Test initialization with invalid number of trials.
+        BenchmarkExperiment(
+            name_or_path="for-unit-test-only",
+            generation_mode=GenerationMode.NEXT_TOKEN,
+            prompt_format=PromptFormatter.CHAT,
+            n_shot=SampleRatio(1, 4),
+            model_name="example_model",
+            gen_params=gen_params,
+            datastore_path=Path("/tmp"),
+            num_trials=0,
+            initial_seed=27,
+        )

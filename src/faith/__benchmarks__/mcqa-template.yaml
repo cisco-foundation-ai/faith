@@ -1,0 +1,86 @@
+# Copyright 2025 Cisco Systems, Inc. and its affiliates
+#
+# SPDX-License-Identifier: Apache-2.0
+---
+mcqa_config: &mcqa_config
+  # The following are the default answer symbols for the MCQA dataset.
+  # Each multiple choice question will use these symbols to represent the answer choices.
+  # They can be overridden in the dataset config.
+  answer_symbols: ["A", "B", "C", "D"]
+instructions: !from &mcqa_instructions
+  '$BENCHMARKS_ROOT/instructions-template.yaml["instructions"]':
+    # Instruction template for base models: https://arxiv.org/pdf/2009.03300
+    base_inst_template: "The following are multiple choice questions{% if subject is not none %} about {{ subject }}{% endif %}."
+    # Instruction template for chat models:
+    # https://huggingface.co/datasets/meta-llama/Llama-3.1-8B-Instruct-evals
+    chat_inst_template: |-
+      Given the following question
+      {%- if choices is not none %} and
+      {%- if choices|length == 2 %} two
+      {%- elif choices|length == 3 %} three
+      {%- elif choices|length == 4 %} four
+      {%- elif choices|length == 5 %} five
+      {%- elif choices|length == 6 %} six
+      {%- elif choices|length == 7 %} seven
+      {%- elif choices|length == 8 %} eight
+      {%- elif choices|length == 9 %} nine
+      {%- elif choices|length == 10 %} ten
+      {%- endif %} candidate answers (
+      {%- for ch in choices %}
+      {%- if loop.last %} and {% elif not loop.first %}, {% endif %}{{ ch }}
+      {%- endfor -%}
+      )
+      {%- endif -%}, choose the best answer. Your response should be of the following format: 'Answer: $LETTER' (without quotes) where LETTER is one of
+      {%- for ch in choices %}
+      {%- if loop.last %} or{% endif %} {{ ch }}
+      {%- if not loop.last %},{% endif %}
+      {%- endfor %}.
+output_processing: !from &mcqa_output_processing
+  '$BENCHMARKS_ROOT/output-processing-template.yaml["output_processing"]':
+    # These answer formats are designed to capture the answer in various common formats.
+    # They include proper and improper formats, with different patterns to match.
+    answer_formats:
+      - pattern: '(?i)\banswer\s*:\s*\(?([A-D])\b'
+        capture_transform:
+          params: ["x"]
+          expr: "x.upper()"
+        match_disambiguation: "match_if_unique"
+        format_type: "proper"
+      - pattern: '(?i)\banswer\s+is:?\s+(?:\(|\*\*)?([A-Z])\b'
+        capture_transform:
+          params: ["x"]
+          expr: "x.upper()"
+        match_disambiguation: "match_if_unique"
+        format_type: "improper"
+      - pattern: '\(([A-Z])\)'
+        capture_transform:
+          params: ["x"]
+          expr: "x.upper()"
+        match_disambiguation: "match_if_singular"
+        format_type: "improper"
+      - pattern: '(?i)\boption\s+([A-Z])\b'
+        capture_transform:
+          params: ["x"]
+          expr: "x.upper()"
+        match_disambiguation: "match_if_singular"
+        format_type: "improper"
+      - pattern: '(?i)^\W*([A-Z])\W*$' # Single letter answer
+        capture_transform:
+          params: ["x"]
+          expr: "x.upper()"
+        match_disambiguation: "match_if_singular"
+        format_type: "improper"
+mcqa_common_benchmark:
+  mcqa_config: *mcqa_config
+  format:
+    instructions: *mcqa_instructions
+    prompt:
+      question_template: |-
+        {{ question }}
+
+        {% for choice_letter, choice in choice_map.items() -%}
+        {{ choice_letter }}. {{ choice }}{% if not loop.last %}
+        {% endif %}{% endfor -%}
+      answer_template: "Answer: {{ answer }}"
+      prompt_template: !from '$BENCHMARKS_ROOT/prompting-template.yaml["prompting"]["prompt_template"]'
+  output_processing: *mcqa_output_processing

@@ -1,0 +1,40 @@
+# Copyright 2025 Cisco Systems, Inc. and its affiliates
+#
+# SPDX-License-Identifier: Apache-2.0
+---
+benchmark: !from
+  '$BENCHMARKS_ROOT/mcqa-template.yaml["mcqa_common_benchmark"]':
+    metadata: !from
+      '$BENCHMARKS_ROOT/base-template.yaml["metadata"]':
+        name: "secbench-mcqa-eng-reasoning"
+        description: |-
+          SecBench is a benchmark designed to evaluate the performance of
+          AI models in the field of computer security. The full benchmark has
+          2,730 multiple-choice questions, each with four answer choices. This
+          subset contains only the English questions that are specifically
+          designed to test reasoning skills. Each question has only one correct
+          answer.
+        urls:
+          - https://arxiv.org/abs/2412.20787
+          - https://secbench.org/
+          - https://github.com/secbench-git/SecBench
+        categories: ["security", "reasoning"]
+    source:
+      git_repo: !from
+        '$BENCHMARKS_ROOT/sources-template.yaml["sources"]["git_repo"]':
+          repo_url: "https://github.com/secbench-git/SecBench"
+          branch: "main"
+          commit: "3a148abb6383c8e6be7863dd5c65b57ee2d59436"
+          type: "jsonl"
+          path_glob: "data/MCQs_2730.jsonl"
+          selected_columns: null
+      options:
+        dataframe_transform_expr: |
+          df.iloc[
+              # This indices the subset identified as reasoning questions.
+              [167, 352, 452, 544, 568, 704, 744, 747, 753, 757, 809, 816, 839, 851, 855, 861, 869, 883, 895, 984, 1087, 1098, 1103, 1122, 1179, 1257, 1340, 1402, 1435, 1631, 1820, 1834, 1839, 1868, 1983, 2016, 2080, 2093, 2108, 2120, 2290, 2454, 2602]
+          ].assign(
+              question=df["question"].str.strip(),
+              answer=df["label"].str.strip().str.upper(),
+              choices=df["answers"],
+          )[["question", "choices", "answer"]].reset_index(drop=True)

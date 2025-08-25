@@ -1,0 +1,83 @@
+{
+  "stats": {
+    "accuracy": {
+      "max": 0.176,
+      "mean": 0.1649,
+      "median": 0.162,
+      "min": 0.148,
+      "p_25": 0.16025,
+      "p_75": 0.1735,
+      "std": 0.0087801
+    },
+    "format_breakdown_count": {
+      "mean_per_trial": {
+        "improper": {
+          "correct": 66.9,
+          "incorrect": 263.6
+        },
+        "inferred": {
+          "correct": 0.0,
+          "incorrect": 0.0
+        },
+        "invalid": {
+          "correct": 0.0,
+          "incorrect": 41.0
+        },
+        "proper": {
+          "correct": 164.9,
+          "incorrect": 463.6
+        }
+      },
+      "mean_per_query": {
+        "improper": {
+          "correct": 0.0669,
+          "incorrect": 0.2636
+        },
+        "inferred": {
+          "correct": 0.0,
+          "incorrect": 0.0
+        },
+        "invalid": {
+          "correct": 0.0,
+          "incorrect": 0.041
+        },
+        "proper": {
+          "correct": 0.16490000000000002,
+          "incorrect": 0.4636
+        }
+      },
+      "total": {
+        "improper": {
+          "correct": 669.0,
+          "incorrect": 2636.0
+        },
+        "inferred": {
+          "correct": 0.0,
+          "incorrect": 0.0
+        },
+        "invalid": {
+          "correct": 0.0,
+          "incorrect": 410.0
+        },
+        "proper": {
+          "correct": 1649.0,
+          "incorrect": 4636.0
+        }
+      }
+    },
+    "lenient_accuracy": {
+      "max": 0.243,
+      "mean": 0.2318,
+      "median": 0.23299999999999998,
+      "min": 0.213,
+      "p_25": 0.2245,
+      "p_75": 0.241,
+      "std": 0.009917661014573947
+    },
+    "num_trials": 10,
+    "queries": {
+      "mean": 1000.0,
+      "total": 10000.0
+    }
+  }
+}

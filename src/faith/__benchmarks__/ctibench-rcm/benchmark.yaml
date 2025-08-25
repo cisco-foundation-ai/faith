@@ -1,0 +1,75 @@
+# Copyright 2025 Cisco Systems, Inc. and its affiliates
+#
+# SPDX-License-Identifier: Apache-2.0
+---
+benchmark:
+  metadata: !from
+    '$BENCHMARKS_ROOT/base-template.yaml["metadata"]':
+      name: "ctibench-rcm"
+      description: |-
+        The CTI-Bench Benchmark for Root Cause Mapping (RCM). This task requires
+        the model to analyze a CVE description, identify the underlying cause,
+        and map it to the appropriate Common Weakness Enumeration (CWE) ID.
+      urls:
+        - https://arxiv.org/abs/2406.07599
+        - https://github.com/xashru/cti-bench
+        - https://huggingface.co/datasets/AI4Sec/cti-bench
+      categories: ["security"]
+  source:
+    huggingface: !from
+      '$BENCHMARKS_ROOT/sources-template.yaml["sources"]["huggingface"]':
+        path: "AI4Sec/cti-bench"
+        subset_name: "cti-rcm"
+        test_split: "test"
+    options:
+      dataframe_transform_expr: |
+        df.assign(
+            question=(
+                "CVE Description: "
+                    + df["Description"].iloc[:391]
+                    .str.strip()
+                    .str.replace(r"([^*])  (?: )*", "\\1\n\n", regex=True)
+                    .astype(str)
+            ).tolist() + (
+            # Row 391 contains unusual extra spaces separating words within sentences.
+                "CVE Description: "
+                    + df["Description"].iloc[391:392]
+                    .str.strip()
+                    .str.replace("      ", " ")
+                    .str.replace("  ", " ")
+                    .astype(str)
+            ).tolist() + (
+                "CVE Description: "
+                    + df["Description"].iloc[392:]
+                    .str.strip()
+                    .str.replace(r"([^*])  (?: )*", "\\1\n\n", regex=True)
+                    .astype(str)
+            ).tolist(),
+            answer=df["GT"].str.strip().str.upper(),
+        )[["question", "answer"]]
+  saqa_config:
+    type: "string_match"
+  format:
+    instructions: !from
+      '$BENCHMARKS_ROOT/instructions-template.yaml["instructions"]':
+        base_inst_template: "The following is a CVE description. Map it to the appropriate CWE ID."
+        chat_inst_template: "Analyze the following CVE description and map it to the appropriate CWE. Provide a brief justification for your choice. Ensure the last line of your response contains only the CWE ID."
+    prompt:
+      question_template: "{{ question }}"
+      answer_template: "{{ answer }}"
+      prompt_template: !from '$BENCHMARKS_ROOT/prompting-template.yaml["prompting"]["prompt_template"]'
+  output_processing: !from
+    '$BENCHMARKS_ROOT/output-processing-template.yaml["output_processing"]':
+      answer_formats:
+        - pattern: '(?i)\b(cwe-\d+)\b'
+          capture_transform:
+            params: ["x"]
+            expr: "x.upper()"
+          match_disambiguation: "match_if_unique"
+          format_type: "proper"
+        - pattern: '(?i)\b(?:cwe|id):\s+(\d+)\b'
+          capture_transform:
+            params: ["x"]
+            expr: 'f"CWE-{x}"'
+          match_disambiguation: "match_if_unique"
+          format_type: "improper"

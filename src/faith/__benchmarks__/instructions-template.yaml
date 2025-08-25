@@ -1,0 +1,10 @@
+# Copyright 2025 Cisco Systems, Inc. and its affiliates
+#
+# SPDX-License-Identifier: Apache-2.0
+---
+instructions:
+  system_prompt: null
+  # Instruction template for base models.
+  base_inst_template: null
+  # Instruction template for chat models.
+  chat_inst_template: null

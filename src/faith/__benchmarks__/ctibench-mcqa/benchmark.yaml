@@ -1,0 +1,36 @@
+# Copyright 2025 Cisco Systems, Inc. and its affiliates
+#
+# SPDX-License-Identifier: Apache-2.0
+---
+benchmark: !from
+  '$BENCHMARKS_ROOT/mcqa-template.yaml["mcqa_common_benchmark"]':
+    metadata: !from
+      '$BENCHMARKS_ROOT/base-template.yaml["metadata"]':
+        name: "ctibench-mcqa"
+        description: |-
+          The CTI-Bench Benchmark for Multiple Choice Questions (MCQ). This task
+          requires the model to answer multiple choice questions related to
+          Cyber Threat Intelligence (CTI).
+        urls:
+          - https://arxiv.org/abs/2406.07599
+          - https://github.com/xashru/cti-bench
+          - https://huggingface.co/datasets/AI4Sec/cti-bench
+        categories: ["security"]
+    source:
+      huggingface: !from
+        '$BENCHMARKS_ROOT/sources-template.yaml["sources"]["huggingface"]':
+          path: "AI4Sec/cti-bench"
+          subset_name: "cti-mcq"
+          test_split: "test"
+      options:
+        dataframe_transform_expr: |
+          df.assign(
+              question=df["Question"].str.strip(),
+              answer=df["GT"].str.strip().str.upper(),
+              # Some choices in this dataset are the literal value "None", which we want to
+              # keep as a choice, but as a string, not a null value.
+              choices=[
+                  [str(c) for c in lst]
+                  for lst in df[sorted(col for col in df.columns if col.startswith("Option"))].values.tolist()
+              ],
+          )[["question", "choices", "answer"]]

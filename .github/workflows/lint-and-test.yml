@@ -1,0 +1,68 @@
+name: "Lint and test projects"
+on:
+  push:
+  workflow_dispatch:
+
+# This allows a subsequently queued workflow run to interrupt previous runs
+concurrency:
+  group: ${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }} @ ${{ ((github.ref_name == 'main') && github.run_id) || ''}}
+  cancel-in-progress: ${{ !( github.ref_name == 'main') }}
+
+jobs:
+  check-for-code-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      is-main-branch: ${{ steps.is-main-branch.outputs.main-branch }}
+    steps:
+      - name: 'Check if using main branch'
+        id: is-main-branch
+        env:
+          IS_MAIN_BRANCH: "${{ (github.ref_name == 'main') }}"
+        shell: bash {0}
+        run: |
+          if [[ "$IS_MAIN_BRANCH" == "true" ]]; then
+            # we are in the main branch, return T
+            echo "main-branch=T" >> $GITHUB_OUTPUT
+          else
+            # we are not in the main branch, return F
+            echo "main-branch=F" >> $GITHUB_OUTPUT
+          fi
+
+      # Checking out using fetch-depth=0 to get all branch history
+      - name: 'Checkout'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+  lint-and-test-minerva-evals:
+    runs-on: ubuntu-22.04-x86_64-large
+
+    steps:
+      # Check out with entire commit history to ensure all commits and tags
+      # are available for correct versioning.
+      - name: 'Checkout'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 'Set up Python'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 'Set up venv'
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+          pip install -U pip
+          pip install -e '.[test]'
+
+      - name: "Run linter"
+        run: |
+          source .venv/bin/activate
+          make lint
+
+      - name: "Run tests"
+        run: |
+          source .venv/bin/activate
+          make test_all

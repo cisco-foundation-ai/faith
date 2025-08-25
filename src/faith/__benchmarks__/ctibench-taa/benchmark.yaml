@@ -1,0 +1,72 @@
+# Copyright 2025 Cisco Systems, Inc. and its affiliates
+#
+# SPDX-License-Identifier: Apache-2.0
+---
+benchmark:
+  metadata: !from
+    '$BENCHMARKS_ROOT/base-template.yaml["metadata"]':
+      name: "ctibench-taa"
+      description: |-
+        The CTI-Bench Benchmark for Threat Actor Attribution (TAA). This task
+        requires the model to analyze a threat report that describes a cyber
+        incident and attribute it to a known threat actor. As threat actor
+        groups are often referred to by multiple names, the scoring of this
+        task is based on alias matching, allowing for variations in the name.
+      urls:
+        - https://arxiv.org/abs/2406.07599
+        - https://github.com/xashru/cti-bench
+        - https://huggingface.co/datasets/AI4Sec/cti-bench
+      categories: ["security"]
+      state: experimental
+  source:
+    huggingface: !from
+      '$BENCHMARKS_ROOT/sources-template.yaml["sources"]["huggingface"]':
+        path: "AI4Sec/cti-bench"
+        subset_name: "cti-taa"
+        test_split: "test"
+    options:
+      dataframe_transform_expr: |
+        df.assign(
+            question=df["Text"].str.strip().astype(str)
+            + "\n\nWho is the threat actor indicated by [PLACEHOLDER] in this report?",
+            answer=['sidecopy', 'mustang panda', 'mustang panda', 'mummy spider', 'dark caracal', 'apt19', 'apt19', 'apt-c-36', 'apt-c-36', 'turla', 'turla', 'apt28', 'apt28', 'unc2452', 'unc2452', 'chrysene', 'chrysene', 'apt41', 'lazarus', 'kimsuky', 'kimsuky', 'apt36', 'apt35', 'muddywater', 'muddywater', 'charmingcypress', 'mint sandstorm', 'apt31', 'gamaredon', 'gamaredon', 'sharp panda', 'bitter apt', 'confucius', 'dragonfly', 'andariel', 'coldriver', 'bahamut', 'apt37', 'apt33', 'apt29', 'apt29', 'apt29', 'diamond sleet', 'lazarus', 'lazarus', 'lazarus', 'lazarus', 'oilrig', 'muddywater', 'turla'],
+        )[["question", "answer"]]
+  saqa_config:
+    type: "domain_specific"
+  format:
+    instructions: !from
+      '$BENCHMARKS_ROOT/instructions-template.yaml["instructions"]':
+        base_inst_template: |-
+          You are given a threat report that describes a cyber incident.
+          Any direct mentions of the threat actor group, specific campaign names, or malware names responsible have been replaced with [PLACEHOLDER].
+          Your task is to analyze the report and attribute the incident to a known threat actor based on the techniques, tactics, procedures (TTPs), and any other relevant information described.
+          Please provide the name of the threat actor you believe is responsible.
+
+          The final line of your answer should be written as "Threat Actor: [Your Answer]" where [Your Answer] is the name of the threat actor you attribute the incident to.
+        chat_inst_template: |-
+          You are given a threat report that describes a cyber incident.
+          Any direct mentions of the threat actor group, specific campaign names, or malware names responsible have been replaced with [PLACEHOLDER].
+          Your task is to analyze the report and attribute the incident to a known threat actor based on the techniques, tactics, procedures (TTPs), and any other relevant information described.
+          Please provide the name of the threat actor you believe is responsible.
+
+          The final line of your answer should be written as "Threat Actor: [Your Answer]" where [Your Answer] is the name of the threat actor you attribute the incident to.
+    prompt:
+      question_template: "Threat Report: {{ question }}"
+      answer_template: "Threat Actor: {{ answer }}"
+      prompt_template: !from '$BENCHMARKS_ROOT/prompting-template.yaml["prompting"]["prompt_template"]'
+  output_processing: !from
+    '$BENCHMARKS_ROOT/output-processing-template.yaml["output_processing"]':
+      answer_formats:
+        - pattern: '(?i)threat actor:\s+((?:\w+ )*\w+)\b'
+          capture_transform:
+            params: ["x"]
+            expr: "x.strip().lower()"
+          match_disambiguation: "match_if_unique"
+          format_type: "proper"
+      score_fns:
+        aliased_actors:
+          type: "alias_accuracy"
+          alias_map: !from "./threat_actor_aliases.yaml"
+        related_actors:
+          type: "alias_accuracy"
+          alias_map: !from "./threat_actor_related.yaml"

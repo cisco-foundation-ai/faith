@@ -1,0 +1,17 @@
+# Copyright 2025 Cisco Systems, Inc. and its affiliates
+#
+# SPDX-License-Identifier: Apache-2.0
+
+key1: value1
+key2: !from '../d1/b.yaml'
+key3: !from
+  '../d1/c.yaml':
+    a: !from
+      '../d1/b.yaml["d"]':
+        a: 123
+        c: 456
+        d:
+          x: 101
+    y: 'bar'
+    z: !from '../d1/c.yaml["x"]'
+key4: !from '../d1/b.yaml["lst"][0]'

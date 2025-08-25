@@ -1,0 +1,84 @@
+# Copyright 2025 Cisco Systems, Inc. and its affiliates
+#
+# SPDX-License-Identifier: Apache-2.0
+---
+benchmark:
+  metadata: !from
+    '$BENCHMARKS_ROOT/base-template.yaml["metadata"]':
+      name: "ctibench-vsp"
+      description: |-
+        The CTI-Bench Benchmark for Vulnerability Severity Prediction (VSP).
+        Given a vulnerability description, this task requires the model to
+        predict the severity of a vulnerability as
+        a Common Vulnerability Scoring System (CVSS) vector string.
+        This prediction is compared to the true CVSS vector string by using
+        the CVSS scoring system.
+      urls:
+        - https://arxiv.org/abs/2406.07599
+        - https://github.com/xashru/cti-bench
+        - https://huggingface.co/datasets/AI4Sec/cti-bench
+      categories: ["security"]
+  source:
+    huggingface: !from
+      '$BENCHMARKS_ROOT/sources-template.yaml["sources"]["huggingface"]':
+        path: "AI4Sec/cti-bench"
+        subset_name: "cti-vsp"
+        test_split: "test"
+    options:
+      dataframe_transform_expr: |
+        df.rename(columns={"Description": "question", "GT": "answer"})[
+            ["question", "answer"]
+        ]
+  saqa_config:
+    type: "domain_specific"
+  format:
+    instructions: !from
+      '$BENCHMARKS_ROOT/instructions-template.yaml["instructions"]':
+        base_inst_template: |-
+          From the following CVE description, determine the CVSS v3.1 vector string for each CVSS base metric: AV, AC, PR, UI, S, C, I, and A.
+          Valid options for each metric are as follows:
+          - **Attack Vector (AV)**: Network (N), Adjacent (A), Local (L), Physical (P)
+          - **Attack Complexity (AC)**: Low (L), High (H)
+          - **Privileges Required (PR)**: None (N), Low (L), High (H)
+          - **User Interaction (UI)**: None (N), Required (R)
+          - **Scope (S)**: Unchanged (U), Changed (C)
+          - **Confidentiality (C)**: None (N), Low (L), High (H)
+          - **Integrity (I)**: None (N), Low (L), High (H)
+          - **Availability (A)**: None (N), Low (L), High (H)
+          Provide your answer as a CVSS v3.1 vector string. Ensure your final answer contains only the CVSS v3 Vector String in the following example format:
+          CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+        chat_inst_template: |-
+          From the following CVE description, determine the CVSS v3.1 vector string for each CVSS base metric: AV, AC, PR, UI, S, C, I, and A.
+          Valid options for each metric are as follows:
+          - **Attack Vector (AV)**: Network (N), Adjacent (A), Local (L), Physical (P)
+          - **Attack Complexity (AC)**: Low (L), High (H)
+          - **Privileges Required (PR)**: None (N), Low (L), High (H)
+          - **User Interaction (UI)**: None (N), Required (R)
+          - **Scope (S)**: Unchanged (U), Changed (C)
+          - **Confidentiality (C)**: None (N), Low (L), High (H)
+          - **Integrity (I)**: None (N), Low (L), High (H)
+          - **Availability (A)**: None (N), Low (L), High (H)
+          Provide your answer as a CVSS v3.1 vector string. Ensure your final answer contains only the CVSS v3 Vector String in the following example format:
+          CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    prompt:
+      question_template: "CVE Description: {{ question }}"
+      answer_template: "{{ answer }}"
+      prompt_template: !from '$BENCHMARKS_ROOT/prompting-template.yaml["prompting"]["prompt_template"]'
+  output_processing: !from
+    '$BENCHMARKS_ROOT/output-processing-template.yaml["output_processing"]':
+      answer_formats:
+        - pattern: '(?i)(cvss:3\.\d(?:/\w+:\w+)+)\b'
+          capture_transform:
+            params: ["x"]
+            expr: "x.strip().upper()"
+          match_disambiguation: "match_if_unique"
+          format_type: "proper"
+        - pattern: '(?i)((?:/\w+:\w+){2,})\b'
+          capture_transform:
+            params: ["x"]
+            expr: '"CVSS:3.0" + x.strip().upper()'
+          match_disambiguation: "match_if_unique"
+          format_type: "improper"
+      score_fns:
+        cvss_score:
+          type: "cvss"

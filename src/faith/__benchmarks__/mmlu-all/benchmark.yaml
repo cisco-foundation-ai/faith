@@ -1,0 +1,36 @@
+# Copyright 2025 Cisco Systems, Inc. and its affiliates
+#
+# SPDX-License-Identifier: Apache-2.0
+---
+benchmark: !from
+  '$BENCHMARKS_ROOT/mcqa-template.yaml["mcqa_common_benchmark"]':
+    metadata: !from
+      '$BENCHMARKS_ROOT/base-template.yaml["metadata"]':
+        name: "mmlu-all"
+        description: |-
+          MMLU (Massive Multitask Language Understanding) is a benchmark
+          designed to evaluate the performance of language models across
+          a wide range of subjects. This dataset includes ~14,000
+          multiple-choice questions covering 57 topic areas,
+          with each question having four answer choices.
+          The benchmark is used to assess the general knowledge and capabilities
+          of AI models.
+        urls:
+          - https://arxiv.org/abs/2009.03300
+          - https://crfm.stanford.edu/helm/mmlu/latest/
+          - https://en.wikipedia.org/wiki/MMLU
+          - https://huggingface.co/datasets/cais/mmlu
+        categories: ["general"]
+    source:
+      huggingface: !from
+        '$BENCHMARKS_ROOT/sources-template.yaml["sources"]["huggingface"]':
+          path: "cais/mmlu"
+          subset_name: "all"
+          test_split: "test"
+          dev_split: "dev"
+      options:
+        dataframe_transform_expr: |
+          df.assign(
+              # Convert numerical answers to letter choices starting from 'A'.
+              answer=[chr(65 + x) for x in df["answer"].tolist()],
+          )[["question", "subject", "choices", "answer"]]
