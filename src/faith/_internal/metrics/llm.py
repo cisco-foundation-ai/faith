@@ -8,7 +8,7 @@ from typing import Any, Iterator, Sequence
 import numpy as np
 
 from faith._internal.formatting import AnswerFormat
-from faith._internal.inspect import assert_same_length
+from faith._internal.validation import assert_same_length
 from faith._internal.metrics.aggregations import cross_count
 from faith._internal.metrics.multilabel import micro_f1_score
 from faith._internal.metrics.types import MultiLabelSeq, SingleLabelSeq

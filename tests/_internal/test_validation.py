@@ -4,7 +4,7 @@
 
 import pytest
 
-from faith._internal.inspect import assert_same_length
+from faith._internal.validation import assert_same_length
 
 
 def test_assert_same_length() -> None:

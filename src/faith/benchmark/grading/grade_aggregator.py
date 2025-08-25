@@ -9,7 +9,7 @@ from typing import Any, Iterable, Sequence
 
 import numpy as np
 
-from faith._internal.inspect import assert_same_length
+from faith._internal.validation import assert_same_length
 from faith._internal.iter.transform import Reducer
 from faith._internal.metrics.domain_specific_scores import ScoreFn
 
