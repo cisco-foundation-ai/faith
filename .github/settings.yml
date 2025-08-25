@@ -60,7 +60,7 @@ repository:
   # vulnerability alerts.
   enable_vulnerability_alerts: true
 
-See https://developer.github.com/v3/teams/#add-or-update-team-repository for options
+# See https://developer.github.com/v3/teams/#add-or-update-team-repository for options
 teams:
   # The permission to grant the team. Can be one of:
   # * `pull` - can pull, but not push to or administer this repository.
