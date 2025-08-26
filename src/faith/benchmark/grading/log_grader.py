@@ -9,7 +9,7 @@ from typing import Any, Iterable
 
 from tqdm import tqdm
 
-from faith._internal.formatting import AnswerFormat, SequentialMatcher
+from faith._internal.algo.matching import AnswerFormat, SequentialMatcher
 from faith._internal.iter.transform import IsoTransform
 from faith._internal.metrics.domain_specific_scores import ScoreFn
 from faith._internal.metrics.types import Labeling

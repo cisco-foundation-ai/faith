@@ -9,7 +9,7 @@ import pytest
 from datasets import Dataset, DatasetDict, Features, Value
 
 from faith import __version__
-from faith._internal.formatting import AnswerFormat
+from faith._internal.algo.matching import AnswerFormat
 from faith._internal.types.flags import GenerationMode, SampleRatio
 from faith.benchmark.benchmark import BenchmarkSpec
 from faith.benchmark.categories.short_answer import SABenchmark

@@ -11,7 +11,7 @@ import numpy as np
 
 from faith._internal.iter.transform import Reducer
 from faith._internal.metrics.domain_specific_scores import ScoreFn
-from faith._internal.validation import assert_same_length
+from faith._internal.types.validation import assert_same_length
 
 
 class GradeAggregator(Reducer[dict[str, Any], dict[str, Any] | None]):

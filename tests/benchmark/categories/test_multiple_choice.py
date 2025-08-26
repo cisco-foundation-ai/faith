@@ -9,7 +9,7 @@ from unittest.mock import ANY
 import pytest
 from transformers import AutoTokenizer
 
-from faith._internal.formatting import AnswerFormat
+from faith._internal.algo.matching import AnswerFormat
 from faith._internal.types.flags import GenerationMode, SampleRatio
 from faith.benchmark.benchmark import BenchmarkSpec
 from faith.benchmark.categories.multiple_choice import MCBenchmark
