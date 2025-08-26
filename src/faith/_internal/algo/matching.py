@@ -7,7 +7,7 @@ import re
 from enum import Enum
 from typing import Any, cast
 
-from faith._internal.expr import evaluate_expr
+from faith._internal.parsing.expr import evaluate_expr
 
 
 class AnswerFormat(Enum):
