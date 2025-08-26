@@ -30,7 +30,7 @@ jobs:
 
       # Checking out using fetch-depth=0 to get all branch history
       - name: 'Checkout'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -41,7 +41,7 @@ jobs:
       # Check out with entire commit history to ensure all commits and tags
       # are available for correct versioning.
       - name: 'Checkout'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
