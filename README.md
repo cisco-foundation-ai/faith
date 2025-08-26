@@ -4,18 +4,46 @@ Copyright 2025 Cisco Systems, Inc. and its affiliates
 SPDX-License-Identifier: Apache-2.0
 -->
 
-# Assessing Cybersecurity Knowledge of LLMs
+# Foundation-AI's Testing Hub (FAITH)
 
-Welcome to **FAITH**; a framework for running benchmarks for LLMs.
+Welcome to **Foundation-AI's Testing Hub (FAITH)**;
+a framework for running benchmarks for language models.
 
-## Setup
+## About The Project
 
-The following details how you can set up a remote machine `REMOTE` to run
-benchmarks experiments for a model.
+FAITH provides a uniform way to run several open-source benchmarks
+for benchmarking the knowledge and capabilities of language models in the
+cybersecurity domain. FAITH currently runs benchmarks for the following
+cybersecurity benchmarks:
 
-### Step 0: Fresh Machine Setup [if you haven't set it up already]
+- [CTIBench](https://arxiv.org/abs/2406.07599)
+- [CyberMetric](https://arxiv.org/abs/2402.07688)
+- [MMLU](https://arxiv.org/abs/2009.03300)
+- [SecBench](https://arxiv.org/abs/2412.20787)
+- [SecEval](https://xuanwuai.github.io/SecEval/)
 
-Using SSH (or a similar tool), run the following commands on `REMOTE`:
+FAITH uses [vLLM](https://github.com/vllm-project/vllm) for querying
+[HuggingFace](https://huggingface.co/) models as well as providing
+API-based querying for [OpenAI models](https://platform.openai.com/docs/models).
+
+## Getting Started
+
+To benchmark models using FAITH, follow these simple steps.
+
+### Prerequisites
+
+We generally recommend running FAITH with 1 or more GPUs when using vLLM.
+vLLM can be installed to run on CPU-only machines, but we do not
+support this directly. Querying models on CPU-only machines may be very
+slow. However, for API-based querying (e.g. OpenAI), GPUs are not required.
+
+FAITH can run with Python 3.10 - 3.12, but we recommend using Python 3.12.
+We also recommend using cloud storage for storing and combining benchmarks.
+
+#### Configuring a Remote VM to Run FAITH
+
+For VMs using Ubuntu images, we recommend using the following steps
+(or equivalent) to install the tools for running FAITH:
 
 ```shell
 # Setup Python 3.12
@@ -30,8 +58,7 @@ sudo apt install -y python3.12 python3.12-venv python3.12-dev
 sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.12 1 && \
 sudo update-alternatives --set python /usr/bin/python3.12
 
-# IF YOU NEED gcloud to pull models,
-#install gcloud and follow the sign in instructuctions.
+# GCloud Installation [Optional].
 curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg \
   | sudo gpg --dearmor \
   | sudo tee /etc/apt/keyrings/cloud.google.gpg > /dev/null && \
@@ -49,7 +76,7 @@ echo 'export HF_TOKEN="hf_000000000000000000000000"' >> ~/.bashrc
 source ~/.bashrc
 ```
 
-### Step 1: Install the FAITH Package
+### Installing the FAITH Package
 
 Most commonly you should install FAITH from PyPI using pip as follows
 
