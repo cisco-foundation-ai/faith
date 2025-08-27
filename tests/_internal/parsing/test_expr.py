@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from faith._internal.expr import evaluate_expr
+from faith._internal.parsing.expr import evaluate_expr
 
 
 def test_evaluate_expr() -> None:

@@ -6,7 +6,10 @@ from functools import reduce
 
 import pytest
 
-from faith._internal.retry import MaxAttemptsExceededError, RetryFunctionWrapper
+from faith._internal.functools.retriable import (
+    MaxAttemptsExceededError,
+    RetryFunctionWrapper,
+)
 
 
 class FailingFunction:

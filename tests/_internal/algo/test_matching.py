@@ -7,7 +7,7 @@ from typing import Sequence
 
 import pytest
 
-from faith._internal.formatting import (
+from faith._internal.algo.matching import (
     AnswerFormat,
     MatchDisambiguation,
     SequentialMatcher,

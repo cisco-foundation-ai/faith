@@ -9,8 +9,8 @@ from typing import Any, Iterable, cast
 from openai import OpenAI
 from openai.types.chat import ChatCompletionMessageParam
 
+from faith._internal.functools.retriable import RetryFunctionWrapper
 from faith._internal.iter.fork_merge import ForkAndMergeTransform
-from faith._internal.retry import RetryFunctionWrapper
 from faith.benchmark.formatting.prompt import PromptFormatter
 from faith.model.base import (
     BaseModel,

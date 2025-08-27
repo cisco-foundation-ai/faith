@@ -4,7 +4,7 @@
 
 import pytest
 
-from faith._internal.formatting import AnswerFormat
+from faith._internal.algo.matching import AnswerFormat
 from faith._internal.metrics.llm import (
     llm_basic_metrics,
     llm_metadata_metrics,

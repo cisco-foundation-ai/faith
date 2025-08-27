@@ -6,7 +6,7 @@
 import re
 from typing import Any
 
-from faith._internal.formatting import AnswerFormat
+from faith._internal.algo.matching import AnswerFormat
 from faith._internal.metrics.types import Labeling
 from faith.benchmark.grading.log_grader import LogGrader
 

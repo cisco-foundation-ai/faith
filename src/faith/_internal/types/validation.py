@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Utilities for inspecting objects in Python."""
+"""Utilities for validating objects in Python."""
 from typing import Any, Sequence
 
 

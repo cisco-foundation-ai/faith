@@ -15,7 +15,7 @@ import pandas as pd
 from datasets import load_dataset
 
 from faith._internal.algo.sampling import sample_partition
-from faith._internal.expr import evaluate_expr
+from faith._internal.parsing.expr import evaluate_expr
 from faith._internal.types.flags import SampleRatio
 
 # The maximum comprehension length to allow for data transforms.

@@ -14,8 +14,8 @@ import numpy as np
 import pandas as pd
 
 from faith._internal.algo.hash import dict_sha256
+from faith._internal.algo.matching import AnswerFormat
 from faith._internal.algo.sampling import NShotSampler
-from faith._internal.formatting import AnswerFormat
 from faith._internal.metrics.llm import (
     llm_basic_metrics,
     llm_metadata_metrics,

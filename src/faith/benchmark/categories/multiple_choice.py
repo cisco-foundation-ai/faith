@@ -15,8 +15,8 @@ from sklearn.metrics import confusion_matrix, f1_score
 from transformers import PreTrainedTokenizerBase
 
 from faith._internal.algo.hash import dict_sha256
+from faith._internal.algo.matching import AnswerFormat
 from faith._internal.algo.sampling import NShotSampler
-from faith._internal.formatting import AnswerFormat
 from faith._internal.metrics.llm import llm_metadata_metrics, llm_prediction_metrics
 from faith._internal.metrics.types import SingleLabelSeq
 from faith._internal.types.flags import GenerationMode
