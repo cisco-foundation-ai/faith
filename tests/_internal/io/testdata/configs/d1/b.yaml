@@ -13,5 +13,4 @@ d:
   d:
     x: 100
     y: 200
-import:
-  !from 'c.yaml'
+import: !from "c.yaml"

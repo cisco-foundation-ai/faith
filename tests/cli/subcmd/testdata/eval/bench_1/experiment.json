@@ -13,17 +13,10 @@
       }
     },
     "mcqa_config": {
-      "answer_symbols": [
-        "A",
-        "B",
-        "C",
-        "D"
-      ]
+      "answer_symbols": ["A", "B", "C", "D"]
     },
     "metadata": {
-      "categories": [
-        "security"
-      ],
+      "categories": ["security"],
       "description": null,
       "license": null,
       "name": "mmlu-security",
