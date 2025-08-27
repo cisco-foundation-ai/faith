@@ -1,51 +1,51 @@
 {
-    "questions": [
-        {
-            "id": "1",
-            "question": "What is the capital of Germany?",
-            "options": {
-                "A": "Berlin",
-                "B": "Madrid",
-                "C": "Paris",
-                "D": "Rome"
-            },
-            "answer": "A"
-        },
-        {
-            "id": "2",
-            "question": "Which of these is the furthest planet from the sun?",
-            "options": {
-                "A": "Earth",
-                "B": "Jupiter",
-                "C": "Mars",
-                "D": "Saturn"
-            },
-            "answer": "D"
-        },
-        {
-            "id": "3",
-            "question": "Who wrote 'For Whom the Bell Tolls'?",
-            "options": {
-                "A": "Harper Lee",
-                "B": "Mark Twain",
-                "C": "Ernest Hemingway",
-                "D": "F. Scott Fitzgerald"
-            },
-            "answer": "C"
-        }
-    ],
-    "metadata": [
-        {
-            "id": "1",
-            "source": "Wikipedia"
-        },
-        {
-            "id": "2",
-            "source": "NASA"
-        },
-        {
-            "id": "3",
-            "source": "Literary Archives"
-        }
-    ]
+  "questions": [
+    {
+      "id": "1",
+      "question": "What is the capital of Germany?",
+      "options": {
+        "A": "Berlin",
+        "B": "Madrid",
+        "C": "Paris",
+        "D": "Rome"
+      },
+      "answer": "A"
+    },
+    {
+      "id": "2",
+      "question": "Which of these is the furthest planet from the sun?",
+      "options": {
+        "A": "Earth",
+        "B": "Jupiter",
+        "C": "Mars",
+        "D": "Saturn"
+      },
+      "answer": "D"
+    },
+    {
+      "id": "3",
+      "question": "Who wrote 'For Whom the Bell Tolls'?",
+      "options": {
+        "A": "Harper Lee",
+        "B": "Mark Twain",
+        "C": "Ernest Hemingway",
+        "D": "F. Scott Fitzgerald"
+      },
+      "answer": "C"
+    }
+  ],
+  "metadata": [
+    {
+      "id": "1",
+      "source": "Wikipedia"
+    },
+    {
+      "id": "2",
+      "source": "NASA"
+    },
+    {
+      "id": "3",
+      "source": "Literary Archives"
+    }
+  ]
 }

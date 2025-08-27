@@ -2,5 +2,5 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-x: 'foo'
-y: 'baz'
+x: "foo"
+y: "baz"

@@ -3,15 +3,15 @@
 # SPDX-License-Identifier: Apache-2.0
 
 key1: value1
-key2: !from '../d1/b.yaml'
+key2: !from "../d1/b.yaml"
 key3: !from
-  '../d1/c.yaml':
+  "../d1/c.yaml":
     a: !from
       '../d1/b.yaml["d"]':
         a: 123
         c: 456
         d:
           x: 101
-    y: 'bar'
+    y: "bar"
     z: !from '../d1/c.yaml["x"]'
 key4: !from '../d1/b.yaml["lst"][0]'
