@@ -20,18 +20,18 @@ from typing import Any, Callable, Generic, TypeVar
 
 logger = logging.getLogger(__name__)
 
-RESP = TypeVar("RESP")
+Response = TypeVar("Response")
 
 
 class MaxAttemptsExceededError(Exception):
     """An exception raised when the maximum number of execution retries is exceeded."""
 
 
-class RetryFunctionWrapper(Generic[RESP]):
+class RetryFunctionWrapper(Generic[Response]):
     """A wrapper for a function that retries its execution on failure."""
 
     def __init__(
-        self, func: Callable[..., RESP], max_attempts: int, retry_sleep_secs: float
+        self, func: Callable[..., Response], max_attempts: int, retry_sleep_secs: float
     ) -> None:
         """Initialize with a function to apply and retry parameters."""
         assert retry_sleep_secs >= 0, "Retry sleep seconds must be non-negative."
@@ -39,7 +39,7 @@ class RetryFunctionWrapper(Generic[RESP]):
         self._max_attempts = max_attempts
         self._retry_sleep_secs = retry_sleep_secs
 
-    def __call__(self, *args: Any, **kwargs: Any) -> RESP:
+    def __call__(self, *args: Any, **kwargs: Any) -> Response:
         """Execute the function with retries on failure."""
         attempts = 0
         last_exp = None

@@ -9,17 +9,17 @@ from typing import Callable, Generic, Iterable, TypeVar
 from faith._internal.iter.transform import Transform
 from faith._internal.types.collections import SequencedBuffer
 
-RQST = TypeVar("RQST")
-RESP = TypeVar("RESP")
+Request = TypeVar("Request")
+Response = TypeVar("Response")
 
 
-class ForkAndMergeTransform(Transform[RQST, RESP], Generic[RQST, RESP]):
+class ForkAndMergeTransform(Transform[Request, Response], Generic[Request, Response]):
     """A transformer that executes a function in separate threads and merges their results."""
 
     def __init__(
         self,
-        func: Callable[[RQST], RESP],
-        except_handler: Callable[[BaseException], RESP],
+        func: Callable[[Request], Response],
+        except_handler: Callable[[BaseException], Response],
         max_workers: int,
     ):
         """Initialize with a function to apply, exception handler, and execution parameters."""
@@ -27,9 +27,9 @@ class ForkAndMergeTransform(Transform[RQST, RESP], Generic[RQST, RESP]):
         self._except_handler = except_handler
         self._max_workers = max_workers
 
-    def __call__(self, requests: Iterable[RQST]) -> Iterable[RESP]:
+    def __call__(self, requests: Iterable[Request]) -> Iterable[Response]:
         """Execute the function in a separate thread for each request and merge their results."""
-        buffer = SequencedBuffer[RESP]()
+        buffer = SequencedBuffer[Response]()
         with ThreadPoolExecutor(max_workers=self._max_workers) as executor:
             # Submit tasks along with their index
             futures = {
