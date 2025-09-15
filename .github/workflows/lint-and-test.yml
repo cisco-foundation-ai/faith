@@ -11,6 +11,8 @@ concurrency:
 jobs:
   check-for-code-changes:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       is-main-branch: ${{ steps.is-main-branch.outputs.main-branch }}
     steps:
@@ -33,9 +35,12 @@ jobs:
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
+          persist-credentials: false
 
   lint-and-test-minerva-evals:
     runs-on: ubuntu-22.04-x86_64-large
+    permissions:
+      contents: read
 
     steps:
       # Check out with entire commit history to ensure all commits and tags
@@ -44,6 +49,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: "Set up Python"
         uses: actions/setup-python@v5
