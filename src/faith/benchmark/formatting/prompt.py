@@ -35,13 +35,17 @@ def _format_chat_input(
     return [
         msg
         for msg in [
-            {"role": "system", "content": system_prompt}
-            if system_prompt is not None
-            else None,
+            (
+                {"role": "system", "content": system_prompt}
+                if system_prompt is not None
+                else None
+            ),
             {"role": "user", "content": prompt},
-            {"role": "assistant", "content": response_leadin}
-            if response_leadin is not None
-            else None,
+            (
+                {"role": "assistant", "content": response_leadin}
+                if response_leadin is not None
+                else None
+            ),
         ]
         if msg is not None
     ]

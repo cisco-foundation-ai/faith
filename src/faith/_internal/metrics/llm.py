@@ -201,9 +201,12 @@ def llm_multilabel_metrics(
         | {
             "accuracy": np.mean(
                 [
-                    1
-                    if set(lab or []) == set(pred or []) and af == AnswerFormat.PROPER
-                    else 0
+                    (
+                        1
+                        if set(lab or []) == set(pred or [])
+                        and af == AnswerFormat.PROPER
+                        else 0
+                    )
                     for lab, pred, af in zip(label, prediction, answer_format)
                 ]
             ),

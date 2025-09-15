@@ -29,12 +29,14 @@ def _raise_inconsistent_types() -> float:
 def agg_breakdown_counts(bds: Sequence[BreakdownDict], factor: float) -> BreakdownDict:
     """Aggregate the counts for a given metric across all trials."""
     return {
-        k: agg_breakdown_counts(vals, factor)
-        if all(isinstance(val, dict) for val in vals)
-        else (
-            sum(cast(list[float], vals)) * factor
-            if all(isinstance(val, Number) or np.isscalar(val) for val in vals)
-            else _raise_inconsistent_types()
+        k: (
+            agg_breakdown_counts(vals, factor)
+            if all(isinstance(val, dict) for val in vals)
+            else (
+                sum(cast(list[float], vals)) * factor
+                if all(isinstance(val, Number) or np.isscalar(val) for val in vals)
+                else _raise_inconsistent_types()
+            )
         )
         for k in set().union(*[bd.keys() for bd in bds])
         if len(vals := [bd[k] for bd in bds if k in bd]) > 0

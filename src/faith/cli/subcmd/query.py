@@ -245,9 +245,11 @@ def run_experiment_queries(
                 num_gpus=engine_params.num_gpus,
                 seed=exp_params.initial_seed,
                 context_len=engine_params.context_length,
-                num_log_probs=MAX_LOGITS
-                if exp_params.generation_mode == GenerationMode.LOGITS
-                else None,
+                num_log_probs=(
+                    MAX_LOGITS
+                    if exp_params.generation_mode == GenerationMode.LOGITS
+                    else None
+                ),
                 **engine_params.kwargs,
             )
 

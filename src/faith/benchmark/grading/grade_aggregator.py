@@ -45,7 +45,7 @@ class GradeAggregator(Reducer[dict[str, Any], dict[str, Any] | None]):
 
     @staticmethod
     def _logits_stats(
-        log_prob_stats: Sequence[dict[str, float | None]]
+        log_prob_stats: Sequence[dict[str, float | None]],
     ) -> dict[str, Any]:
         # Aggregate log probabilities for each label.
         stats_vectors = defaultdict(list)

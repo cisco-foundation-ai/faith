@@ -155,9 +155,12 @@ def test_datastore_context() -> None:
         assert (path / "bar.txt").exists()
         assert (path / "sub" / "foo.txt").exists()
 
-    with patch(
-        "faith._internal.io.datastore.GCPDataStore._rsync_cmd_args"
-    ) as mock_rsync_cmd_args, DataStoreContext("gs://test-bucket/fake-datastore") as ds:
+    with (
+        patch(
+            "faith._internal.io.datastore.GCPDataStore._rsync_cmd_args"
+        ) as mock_rsync_cmd_args,
+        DataStoreContext("gs://test-bucket/fake-datastore") as ds,
+    ):
         # Test the DataStoreContext class with a GCP path.
         assert isinstance(ds, GCPDataStore)
 
