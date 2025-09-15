@@ -65,13 +65,14 @@ all = [
   "faith[all-engines, metrics]",
 ]
 test = [
+  "black==25.1.0",
   "faith[all]",
+  "mypy==1.17.1",
   "pytest==8.4.1",
   "pytest-cov==6.2.1",
   "pytest-custom_exit_code==0.3.0",
-  "types-PyYAML==6.0.12.20250809",
-  "mypy==1.17.1",
   "ri-python-linter==1.0.1",
+  "types-PyYAML==6.0.12.20250809",
 ]
 
 [project.scripts]
