@@ -65,7 +65,7 @@ all = [
   "faith[all-engines, metrics]",
 ]
 test = [
-  "black==25.1.0",
+  "black==23.12.1", # TODO: Update once we update ri-python-linter.
   "faith[all]",
   "mypy==1.17.1",
   "pytest==8.4.1",
