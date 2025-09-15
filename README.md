@@ -106,7 +106,7 @@ for FAITH are:
 - `test`: install the `all` dependencies
   and additional lint and pytest dependencies [large install].
 
-After installing, you can also add B  ash autocomplete for the benchmark script
+After installing, you can also add Bash autocomplete for the benchmark script
 by running the following commands:
 
 ```shell
