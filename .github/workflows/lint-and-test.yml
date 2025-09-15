@@ -3,9 +3,6 @@ on:
   push:
   workflow_dispatch:
 
-# Declare default permissions as read-only
-permissions: read-all
-
 # This allows a subsequently queued workflow run to interrupt previous runs
 concurrency:
   group: ${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }} @ ${{ ((github.ref_name == 'main') && github.run_id) || ''}}
@@ -14,6 +11,8 @@ concurrency:
 jobs:
   check-for-code-changes:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       is-main-branch: ${{ steps.is-main-branch.outputs.main-branch }}
     steps:
@@ -40,6 +39,8 @@ jobs:
 
   lint-and-test-minerva-evals:
     runs-on: ubuntu-22.04-x86_64-large
+    permissions:
+      contents: read
 
     steps:
       # Check out with entire commit history to ensure all commits and tags
