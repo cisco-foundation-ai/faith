@@ -33,6 +33,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
+          persist-credentials: false
 
   lint-and-test-minerva-evals:
     runs-on: ubuntu-22.04-x86_64-large
@@ -44,6 +45,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: "Set up Python"
         uses: actions/setup-python@v5
