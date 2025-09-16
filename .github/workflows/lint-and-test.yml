@@ -9,39 +9,10 @@ concurrency:
   cancel-in-progress: ${{ !( github.ref_name == 'main') }}
 
 jobs:
-  check-for-code-changes:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    outputs:
-      is-main-branch: ${{ steps.is-main-branch.outputs.main-branch }}
-    steps:
-      - name: "Check if using main branch"
-        id: is-main-branch
-        env:
-          IS_MAIN_BRANCH: "${{ (github.ref_name == 'main') }}"
-        shell: bash {0}
-        run: |
-          if [[ "${IS_MAIN_BRANCH}" == "true" ]]; then
-            # we are in the main branch, return T
-            echo "main-branch=T" >> "${GITHUB_OUTPUT}"
-          else
-            # we are not in the main branch, return F
-            echo "main-branch=F" >> "${GITHUB_OUTPUT}"
-          fi
-
-      # Checking out using fetch-depth=0 to get all branch history
-      - name: "Checkout"
-        uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-
-  lint-and-test-minerva-evals:
+  lint-and-test:
     runs-on: ubuntu-22.04-x86_64-large
     permissions:
       contents: read
-
     steps:
       # Check out with entire commit history to ensure all commits and tags
       # are available for correct versioning.
@@ -51,12 +22,12 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: "Set up Python"
+      - name: "Setup Python"
         uses: actions/setup-python@v6
         with:
           python-version: "3.11"
 
-      - name: "Set up venv"
+      - name: "Setup venv"
         run: |
           python -m venv .venv
           source .venv/bin/activate
