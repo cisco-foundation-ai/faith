@@ -66,9 +66,11 @@ def _load_data_files(
     if selected_columns is not None:
         raw_df = pd.concat(
             [
-                pd.json_normalize(raw_df[col])
-                if file_type == _DataFileType.JSON
-                else raw_df[col]
+                (
+                    pd.json_normalize(raw_df[col])
+                    if file_type == _DataFileType.JSON
+                    else raw_df[col]
+                )
                 for col in selected_columns
             ],
             axis=1,

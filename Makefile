@@ -11,12 +11,14 @@ test_all:
 # Lint using ruff, black, isort, and mypy
 lint:
 	( \
+	    black --check src tests && \
 	    mypy --ignore-missing-imports --disallow-untyped-defs --show-error-codes src tests && \
 	    run_ri_lint \
 	)
 
 # Format using ruff, isort, and black
 format:
+	black src tests
 	run_ri_format
 
 # Run both format and lint

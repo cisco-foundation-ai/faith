@@ -192,11 +192,13 @@ class VLLMModel(_VLLMBackend):
             ChatResponse(
                 prompt_token_ids=output.prompt_token_ids if verbose_resps else None,
                 num_prompt_tokens=len(output.prompt_token_ids or []),
-                prompt_text=self.tokenizer.decode(
-                    output.prompt_token_ids, skip_special_tokens=False
-                )
-                if verbose_resps
-                else None,
+                prompt_text=(
+                    self.tokenizer.decode(
+                        output.prompt_token_ids, skip_special_tokens=False
+                    )
+                    if verbose_resps
+                    else None
+                ),
                 output_token_ids=output.outputs[0].token_ids if verbose_resps else None,
                 num_output_tokens=len(output.outputs[0].token_ids),
                 output_text=output.outputs[0].text,
@@ -219,11 +221,13 @@ class VLLMModel(_VLLMBackend):
             ChatResponse(
                 prompt_token_ids=output.prompt_token_ids if verbose_resps else None,
                 num_prompt_tokens=len(output.prompt_token_ids or []),
-                prompt_text=self.tokenizer.decode(
-                    output.prompt_token_ids, skip_special_tokens=False
-                )
-                if verbose_resps
-                else None,
+                prompt_text=(
+                    self.tokenizer.decode(
+                        output.prompt_token_ids, skip_special_tokens=False
+                    )
+                    if verbose_resps
+                    else None
+                ),
                 output_token_ids=output.outputs[0].token_ids if verbose_resps else None,
                 num_output_tokens=len(output.outputs[0].token_ids),
                 output_text=output.outputs[0].text,

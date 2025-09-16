@@ -66,14 +66,16 @@ def _cli_query(args: argparse.Namespace, datastore_path: Path) -> Iterator[Path]
             engine_type=args.model_engine,
             num_gpus=args.num_gpus,
             context_length=args.model_context_len,
-            kwargs={
-                k: ast.literal_eval(v)
-                for k, _, v in [
-                    arg_str.partition("=") for arg_str in args.engine_kwargs
-                ]
-            }
-            if args.engine_kwargs is not None
-            else {},
+            kwargs=(
+                {
+                    k: ast.literal_eval(v)
+                    for k, _, v in [
+                        arg_str.partition("=") for arg_str in args.engine_kwargs
+                    ]
+                }
+                if args.engine_kwargs is not None
+                else {}
+            ),
         ),
         GenParams(
             temperature=args.temperature,
