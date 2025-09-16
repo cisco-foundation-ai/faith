@@ -240,11 +240,11 @@ def test_sequential_matcher() -> None:
 
 def test_sequential_matcher_assertions() -> None:
     with pytest.raises(AssertionError, match="At least one pattern must be provided."):
-        _matcher_no_patterns = SequentialMatcher()
+        SequentialMatcher()
     with pytest.raises(
         AssertionError, match="The first pattern must have a proper answer format."
     ):
-        _matcher_invalid_first = SequentialMatcher(
+        SequentialMatcher(
             {
                 "format_type": "improper",
                 "match_disambiguation": "match_if_unique",
@@ -254,7 +254,7 @@ def test_sequential_matcher_assertions() -> None:
     with pytest.raises(
         AssertionError, match="Only the first pattern can have a proper answer format."
     ):
-        _matcher_invalid_subsequent = SequentialMatcher(
+        SequentialMatcher(
             {
                 "format_type": "proper",
                 "match_disambiguation": "match_if_singular",
