@@ -13,12 +13,14 @@ lint:
 	( \
 	    black --check src tests && \
 	    mypy --ignore-missing-imports --disallow-untyped-defs --show-error-codes src tests && \
+		ruff --config=.github/linters/.ruff.toml check src tests && \
 	    run_ri_lint \
 	)
 
 # Format using ruff, isort, and black
 format:
 	black src tests
+	ruff --config=.github/linters/.ruff.toml format src tests
 	run_ri_format
 
 # Run both format and lint

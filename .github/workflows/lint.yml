@@ -39,7 +39,7 @@ jobs:
           PYTHON_RUFF_CONFIG_FILE: ".ruff.toml"
           YAML_CONFIG_FILE: ".yamllint.yml"
           MULTI_STATUS: false
-          VALIDATE_ALL_CODEBASE: true
+          VALIDATE_ALL_CODEBASE: false
           VALIDATE_JSCPD: false # TODO: Enable this once we configure jscpd.
           # We use our own custom python linting.
           VALIDATE_PYTHON_FLAKE8: false
