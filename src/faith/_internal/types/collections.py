@@ -12,10 +12,10 @@ they were started.
 from heapq import heappop, heappush
 from typing import Generic, TypeVar
 
-T = TypeVar("T")
+_T = TypeVar("_T")
 
 
-class SequencedBuffer(Generic[T]):
+class SequencedBuffer(Generic[_T]):
     """A buffer that collects items out of order and accesses them in sequence.
 
     This class allows adding items at specific indices and retrieving them in
@@ -28,10 +28,10 @@ class SequencedBuffer(Generic[T]):
 
     def __init__(self) -> None:
         """Create an empty sequenced buffer."""
-        self._queue: list[tuple[int, T]] = []
+        self._queue: list[tuple[int, _T]] = []
         self._next_index = 0
 
-    def add_at(self, index: int, item: T) -> None:
+    def add_at(self, index: int, item: _T) -> None:
         """Populate the buffer with an item for the given index."""
         assert (
             index >= self._next_index
@@ -41,7 +41,7 @@ class SequencedBuffer(Generic[T]):
         ), f"Item at index {index} already exists."
         heappush(self._queue, (index, item))
 
-    def next_in_order(self) -> T | None:
+    def next_in_order(self) -> _T | None:
         """Return the next item in order, or None if the next item is not available."""
         if not self._queue or self._queue[0][0] != self._next_index:
             return None

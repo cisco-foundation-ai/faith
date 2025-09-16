@@ -11,7 +11,7 @@ from faith._internal.io.json import write_as_json
 from faith._internal.iter.transform import IsoTransform
 
 # TypeVar constrained for LoggingWrapper, items to be logged must be dicts
-LoggingItemType = TypeVar("LoggingItemType", bound=dict[str, Any])
+_LOGGING_ITEM_TYPE = TypeVar("_LOGGING_ITEM_TYPE", bound=dict[str, Any])
 
 
 class LogCollector:
@@ -49,7 +49,7 @@ class LogCollector:
         self._logs.append(entry)
 
 
-class LoggingTransform(IsoTransform[LoggingItemType], Generic[LoggingItemType]):
+class LoggingTransform(IsoTransform[_LOGGING_ITEM_TYPE], Generic[_LOGGING_ITEM_TYPE]):
     """A transform that logs items from an iterator to a specified log file."""
 
     def __init__(self, log_file: Path, **logger_kwargs: Any) -> None:
@@ -57,7 +57,9 @@ class LoggingTransform(IsoTransform[LoggingItemType], Generic[LoggingItemType]):
         self._log_file = log_file
         self._logger_kwargs = logger_kwargs
 
-    def __call__(self, src: Iterable[LoggingItemType]) -> Iterable[LoggingItemType]:
+    def __call__(
+        self, src: Iterable[_LOGGING_ITEM_TYPE]
+    ) -> Iterable[_LOGGING_ITEM_TYPE]:
         """Log the items from the `src` iterator and yield them."""
         last_item = None
         with LogCollector(self._log_file, **self._logger_kwargs) as logger:

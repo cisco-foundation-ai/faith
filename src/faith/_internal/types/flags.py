@@ -80,18 +80,18 @@ class SampleRatio:
         return SampleRatio(numerator, denominator)
 
 
-T = TypeVar("T")
+_T = TypeVar("_T")
 
 
-class TypeWithDefault(Generic[T]):
+class TypeWithDefault(Generic[_T]):
     """A type that can be parsed from a string and has a default value."""
 
-    def __init__(self, parse_fn: Callable[[str], T], default_value: T) -> None:
+    def __init__(self, parse_fn: Callable[[str], _T], default_value: _T) -> None:
         """Initialize the TypeWithDefault with a parsing function and a default value."""
         self._parse_fn = parse_fn
         self._default_value = default_value
 
-    def __call__(self, arg: str | None) -> T:
+    def __call__(self, arg: str | None) -> _T:
         """Parse the `arg` or return the default value if `arg` is None."""
         if arg is None:
             return self._default_value

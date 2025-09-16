@@ -10,8 +10,8 @@ from typing import Any, Sequence, TypeAlias, TypeVar, cast
 import numpy as np
 
 # This TypeVar is needed to allow subclasses of Number to be captured.
-NumberType = TypeVar("NumberType", bound=Number)
-BreakdownDict: TypeAlias = dict[str, "BreakdownDict" | NumberType]
+_NUMBER_TYPE = TypeVar("_NUMBER_TYPE", bound=Number)
+BreakdownDict: TypeAlias = dict[str, "BreakdownDict" | _NUMBER_TYPE]
 
 
 def is_breakdown_dict(obj: Any) -> bool:
