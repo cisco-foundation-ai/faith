@@ -34,7 +34,7 @@ def delayed_function(x: int) -> int:
 def test_thread_execution_transformer(lst: Iterable[int], max_workers: int) -> None:
     """Test the ForkAndMergeTransform to ensure order is preserved."""
     transformer = ForkAndMergeTransform[int, int](
-        func=delayed_function,
+        transform_fn=delayed_function,
         except_handler=lambda e: -1,
         max_workers=4,
     )
@@ -62,7 +62,7 @@ def test_thread_execution_transformer_with_exceptions(
 ) -> None:
     """Test the ForkAndMergeTransform with a simple function."""
     transformer = ForkAndMergeTransform(
-        func=delay_with_exception,
+        transform_fn=delay_with_exception,
         except_handler=lambda e: "foo",
         max_workers=4,
     )
