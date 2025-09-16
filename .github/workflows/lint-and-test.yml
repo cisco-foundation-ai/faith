@@ -1,7 +1,12 @@
-name: "Lint and test projects"
+---
+name: "Lint and Test Python"
+
 on:
   push:
   workflow_dispatch:
+
+# Declare default permissions as read-only
+permissions: read-all
 
 # This allows a subsequently queued workflow run to interrupt previous runs
 concurrency:
