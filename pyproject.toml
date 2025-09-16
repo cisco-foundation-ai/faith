@@ -72,7 +72,7 @@ test = [
   "pytest-cov==6.2.1",
   "pytest-custom_exit_code==0.3.0",
   "ri-python-linter==1.0.1",
-  "ruff==0.13.0",
+  "ruff==0.0.275", # TODO: Update once we update ri-python-linter.
   "types-PyYAML==6.0.12.20250809",
 ]
 
