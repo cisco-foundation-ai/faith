@@ -19,12 +19,12 @@ class ForkAndMergeTransform(Transform[_IN, _OUT], Generic[_IN, _OUT]):
     def __init__(
         self,
         transform_fn: Callable[[_IN], _OUT],
-        except_handler: Callable[[BaseException], _OUT],
+        exception_handler: Callable[[BaseException], _OUT],
         max_workers: int,
     ):
         """Initialize with the underlying transform function and exception handler."""
         self._transform_fn = transform_fn
-        self._except_handler = except_handler
+        self._exception_handler = exception_handler
         self._max_workers = max_workers
 
     def __call__(self, inputs: Iterable[_IN]) -> Iterable[_OUT]:
@@ -41,7 +41,7 @@ class ForkAndMergeTransform(Transform[_IN, _OUT], Generic[_IN, _OUT]):
                 exception = future.exception()
                 if exception:
                     # If an exception occurred, handle it with the provided handler.
-                    buffer.add_at(futures[future], self._except_handler(exception))
+                    buffer.add_at(futures[future], self._exception_handler(exception))
                 else:
                     # Add the next completed future.
                     buffer.add_at(futures[future], future.result())

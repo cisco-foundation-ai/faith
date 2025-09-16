@@ -35,7 +35,7 @@ def test_thread_execution_transformer(lst: Iterable[int], max_workers: int) -> N
     """Test the ForkAndMergeTransform to ensure order is preserved."""
     transformer = ForkAndMergeTransform[int, int](
         transform_fn=delayed_function,
-        except_handler=lambda e: -1,
+        exception_handler=lambda e: -1,
         max_workers=4,
     )
     assert list(lst >> transformer) == list(map(simple_function, lst))
@@ -63,7 +63,7 @@ def test_thread_execution_transformer_with_exceptions(
     """Test the ForkAndMergeTransform with a simple function."""
     transformer = ForkAndMergeTransform(
         transform_fn=delay_with_exception,
-        except_handler=lambda e: "foo",
+        exception_handler=lambda e: "foo",
         max_workers=4,
     )
     assert list(lst >> transformer) == [
