@@ -254,8 +254,9 @@ _query_cmd_parser.set_defaults(func=_query_main)
 
 def _eval_main(args: argparse.Namespace) -> None:
     """Compute all metrics for all benchmarks from the models' query responses."""
-    from faith.cli.subcmd.eval import compute_experiment_metrics, RecordHandlingParams
     from tqdm import tqdm
+
+    from faith.cli.subcmd.eval import RecordHandlingParams, compute_experiment_metrics
 
     filepaths = [args.experiment_path]
     if args.experiment_path.is_dir():
@@ -360,7 +361,7 @@ _summarize_parser.set_defaults(func=_summarize_main)
 
 def _run_all_main(args: argparse.Namespace) -> None:
     """Run end-to-end benchmarking on models."""
-    from faith.cli.subcmd.eval import compute_experiment_metrics, RecordHandlingParams
+    from faith.cli.subcmd.eval import RecordHandlingParams, compute_experiment_metrics
     from faith.cli.subcmd.summarize import summarize_experiments
 
     with resolve_storage_path(args.datastore_location) as datastore_path:
