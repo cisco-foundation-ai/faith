@@ -40,7 +40,13 @@ class MuxTransform(Transform[tuple[_KIND, _IN], _OUT], Generic[_KIND, _IN, _OUT]
         # Merge the transformed items and yield them in the order of their keys.
         for key in order_indices:
             if key in transformed_items:
-                yield next(transformed_items[key])
+                try:
+                    next_item = next(transformed_items[key])
+                    yield next_item
+                except StopIteration:
+                    raise RuntimeError(
+                        f"Iterator for key '{key}' was exhausted prematurely."
+                    )
 
         for it in transformed_items.values():
             # Assert that the iterator is exhausted.
