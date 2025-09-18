@@ -19,9 +19,6 @@ def test_is_string_list() -> None:
 
 
 class FakeModel(BaseModel):
-    def __init__(self, name_or_path: str):
-        super().__init__(name_or_path)
-
     @property
     def supported_formats(self) -> set[PromptFormatter]:
         return set[PromptFormatter]()

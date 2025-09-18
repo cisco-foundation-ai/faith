@@ -14,10 +14,6 @@ from faith.benchmark.grading.log_grader import LogGrader
 class LogitsLogGrader(LogGrader):
     """A log grader for multiple choice benchmarks that log the next-token logits."""
 
-    def __init__(self, output_processing_config: dict[str, Any], recompute_stats: bool):
-        """Initialize the logits log grader."""
-        super().__init__(output_processing_config, recompute_stats)
-
     def _markup_entry_impl(self, log_entry: dict[str, Any]) -> dict[str, Any]:
         """Markup a single log entry with the computed statistics / scores."""
         label: Labeling = log_entry["data"]["label"]
@@ -117,14 +113,6 @@ class NextTokenLogGrader(LogGrader):
 
 class ChatCompletionLogGrader(LogGrader):
     """A log grader for single-answer benchmarks that log full chat completions."""
-
-    def __init__(
-        self,
-        output_processing_config: dict[str, Any],
-        recompute_stats: bool,
-    ):
-        """Initialize the chat completion log grader."""
-        super().__init__(output_processing_config, recompute_stats)
 
     def _markup_entry_impl(self, log_entry: dict[str, Any]) -> dict[str, Any]:
         """Markup a single log entry with the computed statistics / scores."""

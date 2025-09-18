@@ -116,10 +116,6 @@ class _PredictionTransform(IsoTransform[dict[str, Any]]):
 class _LogitsTransform(_PredictionTransform):
     """Transform for generating logits from a model."""
 
-    def __init__(self, model: BaseModel, gen_params: GenParams):
-        """Initialize the logits transform for the model."""
-        super().__init__(model, gen_params)
-
     def __call__(self, iter: Iterable[dict[str, Any]]) -> Iterable[dict[str, Any]]:
         """Generate the next-token logits for each input in the `iter`."""
         inputs = list(iter)
@@ -142,10 +138,6 @@ class _LogitsTransform(_PredictionTransform):
 class _NextTokenTransform(_PredictionTransform):
     """Transform for generating next token predictions from a model."""
 
-    def __init__(self, model: BaseModel, gen_params: GenParams):
-        """Initialize the next token transform for the model."""
-        super().__init__(model, gen_params)
-
     def __call__(self, iter: Iterable[dict[str, Any]]) -> Iterable[dict[str, Any]]:
         """Generate next token predictions for each input in the `iter`."""
         inputs = list(iter)
@@ -165,10 +157,6 @@ class _NextTokenTransform(_PredictionTransform):
 
 class _GenerationTransform(_PredictionTransform):
     """Transform for generating chat completions from a model."""
-
-    def __init__(self, model: BaseModel, gen_params: GenParams):
-        """Initialize the generation transform for the model."""
-        super().__init__(model, gen_params)
 
     def __call__(self, iter: Iterable[dict[str, Any]]) -> Iterable[dict[str, Any]]:
         """Generate chat completion responses for each input in the `iter`."""
