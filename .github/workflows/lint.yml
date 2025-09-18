@@ -35,6 +35,7 @@ jobs:
           LINTER_RULES_PATH: ".github/linters"
           GITHUB_ACTIONS_CONFIG_FILE: ".actionlint.yaml"
           MARKDOWN_CONFIG_FILE: ".markdownlint.yml"
+          PYTHON_FLAKE8_CONFIG_FILE: ".flake8"
           PYTHON_ISORT_CONFIG_FILE: ".isort.cfg"
           PYTHON_RUFF_CONFIG_FILE: ".ruff.toml"
           YAML_CONFIG_FILE: ".yamllint.yml"
@@ -42,5 +43,4 @@ jobs:
           VALIDATE_ALL_CODEBASE: false
           VALIDATE_JSCPD: false # TODO: Enable this once we configure jscpd.
           # We use our own custom python linting.
-          VALIDATE_PYTHON_FLAKE8: false
           VALIDATE_PYTHON_PYLINT: false

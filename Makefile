@@ -12,6 +12,7 @@ test_all:
 lint:
 	( \
 	    black --check src tests && \
+		flake8 --config=.github/linters/.flake8 src tests && \
 	    mypy --ignore-missing-imports --disallow-untyped-defs --show-error-codes src tests && \
 	    run_ri_lint \
 	)
