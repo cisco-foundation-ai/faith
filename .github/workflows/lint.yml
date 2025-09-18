@@ -37,6 +37,7 @@ jobs:
           MARKDOWN_CONFIG_FILE: ".markdownlint.yml"
           PYTHON_FLAKE8_CONFIG_FILE: ".flake8"
           PYTHON_ISORT_CONFIG_FILE: ".isort.cfg"
+          PYTHON_PYLINT_CONFIG_FILE: ".python-lint"
           PYTHON_RUFF_CONFIG_FILE: ".ruff.toml"
           YAML_CONFIG_FILE: ".yamllint.yml"
           MULTI_STATUS: false
