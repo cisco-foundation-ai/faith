@@ -10,3 +10,6 @@ updates:
           - "github/*"
     schedule:
       interval: "weekly"
+      day: "monday"
+      time: "04:00"
+      timezone: "America/Los_Angeles"
