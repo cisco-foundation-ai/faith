@@ -159,10 +159,9 @@ def test_short_answer_benchmark_build_dataset() -> None:
     ) as mock_load_dataset:
         dataset_1shot = benchmark_1shot.build_dataset()
         mock_load_dataset.assert_called_once_with("foo/bar-baz", "qux")
-        all_questions_1shot = [sample for sample in dataset_1shot.iter_data()]
 
         # Compare the questions as dictionaries.
-        assert [q.to_dict() for q in all_questions_1shot] == [
+        assert [q.to_dict() for q in dataset_1shot.iter_data()] == [
             {
                 "benchmark_sample_index": 0,
                 "benchmark_sample_hash": ANY,
@@ -228,12 +227,9 @@ def test_short_answer_benchmark_build_dataset() -> None:
     ) as mock_load_dataset:
         dataset_1shot_no_dev = benchmark_1shot_no_dev.build_dataset()
         mock_load_dataset.assert_called_once_with("foo/bar-baz", "qux")
-        all_questions_1shot_no_dev = [
-            sample for sample in dataset_1shot_no_dev.iter_data()
-        ]
 
         # Compare the questions as dictionaries.
-        assert [q.to_dict() for q in all_questions_1shot_no_dev] == [
+        assert [q.to_dict() for q in dataset_1shot_no_dev.iter_data()] == [
             {
                 "benchmark_sample_index": 0,
                 "benchmark_sample_hash": ANY,
@@ -285,10 +281,9 @@ def test_short_answer_benchmark_build_dataset() -> None:
     ) as mock_load_dataset:
         dataset_0shot = benchmark_0shot.build_dataset(sample_size=1)
         mock_load_dataset.assert_called_once_with("foo/bar-baz", None)
-        all_questions_0shot = [sample for sample in dataset_0shot.iter_data()]
 
         # Compare the questions as dictionaries.
-        assert [q.to_dict() for q in all_questions_0shot] == [
+        assert [q.to_dict() for q in dataset_0shot.iter_data()] == [
             {
                 "benchmark_sample_index": 1,
                 "benchmark_sample_hash": ANY,

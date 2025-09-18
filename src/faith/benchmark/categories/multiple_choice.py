@@ -222,10 +222,7 @@ class MCBenchmarkDataset(BenchmarkDataset):
             for choice_letter, choice in zip(self._answer_list, choices)
         ]
         permuted = [annotated[i] for i in self._answer_permutation]
-        remapped = {
-            choice_letter: choice
-            for choice_letter, choice in zip(self._answer_list, permuted)
-        }
+        remapped = dict(zip(self._answer_list, permuted))
         selected_answer = [
             choice_letter for choice_letter, choice in remapped.items() if choice[1]
         ]
@@ -236,7 +233,7 @@ class MCBenchmarkDataset(BenchmarkDataset):
         permuted_choices = {k: v[0] for k, v in remapped.items()}
         assert (
             permuted_choices[permuted_symbol]
-            == {lab: choice for lab, choice in zip(self._answer_list, choices)}[answer]
+            == dict(zip(self._answer_list, choices))[answer]
         ), "Permuted choices do not match the original choices."
         return permuted_choices, permuted_symbol
 
@@ -299,9 +296,8 @@ class MCMetricsAggregator(GradeAggregator):
                 label, prediction, answer_format, subject, frozenset(self._answer_list)
             )
             | {
-                "f1_scores": {
-                    cls: f1
-                    for cls, f1 in zip(
+                "f1_scores": dict(
+                    zip(
                         self._answer_list,
                         f1_score(
                             label,
@@ -311,7 +307,7 @@ class MCMetricsAggregator(GradeAggregator):
                             zero_division=np.nan,
                         ),
                     )
-                },
+                ),
                 "weighted_avg_f1": f1_score(
                     label,
                     stringified_preds,
@@ -320,10 +316,7 @@ class MCMetricsAggregator(GradeAggregator):
                     zero_division=np.nan,
                 ),
                 "confusion_matrix_count": {
-                    true_label: {
-                        pred_label: count
-                        for pred_label, count in zip(extended_answers, row)
-                    }
+                    true_label: dict(zip(extended_answers, row))
                     for true_label, row in zip(
                         extended_answers,
                         confusion_matrix(
