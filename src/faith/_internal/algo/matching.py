@@ -91,7 +91,8 @@ class _FormatPattern:
         if self._transform_expr is None:
             return captures[0]
         return evaluate_expr(
-            self._transform_expr, names=dict(zip(self._transform_params, captures)),
+            self._transform_expr,
+            names=dict(zip(self._transform_params, captures)),
         )
 
     def __call__(self, s: str) -> tuple[Any, AnswerFormat] | None:
