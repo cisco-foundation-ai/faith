@@ -136,7 +136,7 @@ max-line-length=88
 ignore-long-lines=(?x)
   (^\s*(import|from)\s
    |\$Id:\s\/\/depot\/.+#\d+\s\$
-   |^[a-zA-Z_][a-zA-Z0-9_]*\s*=\s*("[^"]\S+"|'[^']\S+')
+   |^\s*(\w*\s*=\s*|[^,]*,\s*)?f?("|').*("|'),?\s*$
    |^\s*\#\ LINT\.ThenChange
    |^[^#]*\#\ type:\ [a-zA-Z_][a-zA-Z0-9_.,[\] ]*$
    |pylint

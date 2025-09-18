@@ -19,7 +19,8 @@ class AnswerScoreFn(Protocol):
     def __call__(self, label: Labeling, pred: Labeling | None) -> float:
         """Compute the score for a predicted answer against a given label.
 
-        This score should be a non-negative float, where a higher score indicates a better match.
+        This score should be a non-negative float, where a higher score indicates a
+        better match.
         """
 
     def aggregate(self, scores: Sequence[float]) -> dict[str, float]:
@@ -46,7 +47,8 @@ class CVSSScore:
             label (str): The ground truth CVSS vector.
 
         Returns:
-            float: The CVSS score, normalized to [0, 1]. A score of 1.0 indicates a perfect match.
+            float: The CVSS score, normalized to [0, 1]. A score of 1.0 indicates a
+            perfect match.
         """
         if pred is None:
             return 0.0

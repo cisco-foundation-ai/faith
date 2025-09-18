@@ -4,7 +4,7 @@
 
 """This module defines the ModelEngine enum and functions to create model instances.
 
-The `ModelEngine` enum acts as a factory for creating instances of different model types.
+The `ModelEngine` enum acts as a factory for creating instances for a given model type.
 """
 from enum import Enum
 from typing import Any, Callable

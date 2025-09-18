@@ -295,8 +295,13 @@ def test_qa_formatter_render_conversation() -> None:
             ),
             None,
         )
-        == "Basic instruction template for Geography\n\nQuestion: What is the capital of Germany?\nAnswer: Berlin\n\nQuestion: What is the capital of France?\n"
-    )
+        == """Basic instruction template for Geography
+
+Question: What is the capital of Germany?
+Answer: Berlin
+
+Question: What is the capital of France?
+""")
 
     chat_formatter = QAFormatter(PromptFormatter.CHAT, format_cfg=format_cfg)
     assert chat_formatter.render_conversation(
