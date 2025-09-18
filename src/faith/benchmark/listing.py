@@ -81,5 +81,5 @@ def choices_to_benchmarks(choices: Sequence[str]) -> Sequence[str]:
         ).keys()
     )
     positive_selections = [c for c in unique_choices if not c.startswith("!")]
-    negative_selections = set([c[1:] for c in unique_choices if c.startswith("!")])
+    negative_selections = {c[1:] for c in unique_choices if c.startswith("!")}
     return [c for c in positive_selections if c not in negative_selections]

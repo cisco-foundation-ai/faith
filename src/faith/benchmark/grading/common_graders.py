@@ -41,19 +41,19 @@ class LogitsLogGrader(LogGrader):
                         "logprob", float("-inf")
                     ),
                     "max_other_symbol": max(
-                        [
+                        (
                             logit["logprob"]
                             for k, logit in symbol_to_logit.items()
                             if k != label
-                        ],
+                        ),
                         default=float("-inf"),
                     ),
                     "max_other_token": max(
-                        [
+                        (
                             logit["logprob"]
                             for k, logit in id_to_logit.items()
                             if k != answer_symbol_ids[label]
-                        ],
+                        ),
                         default=float("-inf"),
                     ),
                 }
