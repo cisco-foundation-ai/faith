@@ -9,39 +9,39 @@ from typing import Callable, Generic, Iterable, TypeVar
 from faith._internal.iter.transform import Transform
 from faith._internal.types.collections import SequencedBuffer
 
-Request = TypeVar("Request")
-Response = TypeVar("Response")
+_IN = TypeVar("_IN")
+_OUT = TypeVar("_OUT")
 
 
-class ForkAndMergeTransform(Transform[Request, Response], Generic[Request, Response]):
+class ForkAndMergeTransform(Transform[_IN, _OUT], Generic[_IN, _OUT]):
     """A transformer that executes a function in separate threads and merges their results."""
 
     def __init__(
         self,
-        func: Callable[[Request], Response],
-        except_handler: Callable[[BaseException], Response],
+        transform_fn: Callable[[_IN], _OUT],
+        exception_handler: Callable[[BaseException], _OUT],
         max_workers: int,
     ):
-        """Initialize with a function to apply, exception handler, and execution parameters."""
-        self._func = func
-        self._except_handler = except_handler
+        """Initialize with the underlying transform function and exception handler."""
+        self._transform_fn = transform_fn
+        self._exception_handler = exception_handler
         self._max_workers = max_workers
 
-    def __call__(self, requests: Iterable[Request]) -> Iterable[Response]:
+    def __call__(self, inputs: Iterable[_IN]) -> Iterable[_OUT]:
         """Execute the function in a separate thread for each request and merge their results."""
-        buffer = SequencedBuffer[Response]()
+        buffer = SequencedBuffer[_OUT]()
         with ThreadPoolExecutor(max_workers=self._max_workers) as executor:
-            # Submit tasks along with their index
+            # Submit tasks along with their index.
             futures = {
-                executor.submit(self._func, req): idx
-                for idx, req in enumerate(requests)
+                executor.submit(self._transform_fn, input_): idx
+                for idx, input_ in enumerate(inputs)
             }
 
             for future in as_completed(futures):
                 exception = future.exception()
                 if exception:
                     # If an exception occurred, handle it with the provided handler.
-                    buffer.add_at(futures[future], self._except_handler(exception))
+                    buffer.add_at(futures[future], self._exception_handler(exception))
                 else:
                     # Add the next completed future.
                     buffer.add_at(futures[future], future.result())

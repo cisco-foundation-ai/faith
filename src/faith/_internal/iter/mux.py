@@ -9,19 +9,19 @@ from typing import Generic, Iterable, TypeVar
 from faith._internal.iter.transform import Transform
 
 # Generic I/O TypeVars for the MuxTransform.
-Kind = TypeVar("Kind", bound=Enum)
-In = TypeVar("In")
-Out = TypeVar("Out")
+_KIND = TypeVar("_KIND", bound=Enum)
+_IN = TypeVar("_IN")
+_OUT = TypeVar("_OUT")
 
 
-class MuxTransform(Transform[tuple[Kind, In], Out], Generic[Kind, In, Out]):
+class MuxTransform(Transform[tuple[_KIND, _IN], _OUT], Generic[_KIND, _IN, _OUT]):
     """A transform that routes input items to different transforms based on their kind."""
 
-    def __init__(self, transform_map: dict[Kind, Transform[In, Out]]):
+    def __init__(self, transform_map: dict[_KIND, Transform[_IN, _OUT]]):
         """Initialize with a mapping of kinds to transforms."""
         self._transform_map = transform_map
 
-    def __call__(self, src: Iterable[tuple[Kind, In]]) -> Iterable[Out]:
+    def __call__(self, src: Iterable[tuple[_KIND, _IN]]) -> Iterable[_OUT]:
         # Route each item to its corresponding transform based on the key function.
         # Create a dictionary to hold iterators for each key.
         order_indices = []
