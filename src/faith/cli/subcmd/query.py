@@ -116,9 +116,9 @@ class _PredictionTransform(IsoTransform[dict[str, Any]]):
 class _LogitsTransform(_PredictionTransform):
     """Transform for generating logits from a model."""
 
-    def __call__(self, iter: Iterable[dict[str, Any]]) -> Iterable[dict[str, Any]]:
-        """Generate the next-token logits for each input in the `iter`."""
-        inputs = list(iter)
+    def __call__(self, records: Iterable[dict[str, Any]]) -> Iterable[dict[str, Any]]:
+        """Generate the next-token logits for each input in `records`."""
+        inputs = list(records)
         logit_responses = self._model.logits(
             inputs=[example["model_data"]["prompt"] for example in inputs],
             temperature=self._gen_params.temperature,
@@ -138,9 +138,9 @@ class _LogitsTransform(_PredictionTransform):
 class _NextTokenTransform(_PredictionTransform):
     """Transform for generating next token predictions from a model."""
 
-    def __call__(self, iter: Iterable[dict[str, Any]]) -> Iterable[dict[str, Any]]:
-        """Generate next token predictions for each input in the `iter`."""
-        inputs = list(iter)
+    def __call__(self, records: Iterable[dict[str, Any]]) -> Iterable[dict[str, Any]]:
+        """Generate next token predictions for each input in `records`."""
+        inputs = list(records)
         responses = self._model.next_token(
             inputs=[example["model_data"]["prompt"] for example in inputs],
             temperature=self._gen_params.temperature,
@@ -158,9 +158,9 @@ class _NextTokenTransform(_PredictionTransform):
 class _GenerationTransform(_PredictionTransform):
     """Transform for generating chat completions from a model."""
 
-    def __call__(self, iter: Iterable[dict[str, Any]]) -> Iterable[dict[str, Any]]:
-        """Generate chat completion responses for each input in the `iter`."""
-        inputs = list(iter)
+    def __call__(self, records: Iterable[dict[str, Any]]) -> Iterable[dict[str, Any]]:
+        """Generate chat completion responses for each input in `records`."""
+        inputs = list(records)
         responses = self._model.query(
             inputs=[example["model_data"]["prompt"] for example in inputs],
             temperature=self._gen_params.temperature,
