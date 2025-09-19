@@ -295,7 +295,7 @@ def run_experiment_queries(
                     experiment, desc="Trials", unit=" trial", leave=False
                 ):
                     trial_start_time = time.perf_counter()
-                    (
+                    _ = (
                         query_over_benchmark(
                             benchmark,
                             sampling_params,

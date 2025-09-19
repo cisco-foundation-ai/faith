@@ -100,7 +100,7 @@ def _cli_query(args: argparse.Namespace, datastore_path: Path) -> Iterator[Path]
 def _query_main(args: argparse.Namespace) -> None:
     """Query model(s) over the questions in one or more benchmarks."""
     with resolve_storage_path(args.datastore_location) as datastore_path:
-        _cli_query(args, datastore_path) >> DevNullReducer[Path]()
+        _ = _cli_query(args, datastore_path) >> DevNullReducer[Path]()
 
 
 def _add_experiment_args(parser: argparse.ArgumentParser) -> None:

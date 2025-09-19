@@ -141,5 +141,5 @@ def test_transform_chaining_reduction() -> None:
 def test_dev_null_reducer() -> None:
     """Test the DevNullReducer to ensure the iterator executes."""
     lst = [1, 2, 3, 4, 5]
-    (lst.pop(0) for _ in range(len(lst))) >> DevNullReducer[int]()
+    _ = (lst.pop(0) for _ in range(len(lst))) >> DevNullReducer[int]()
     assert len(lst) == 0, "List should be empty after using DevNullReducer."
