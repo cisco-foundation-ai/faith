@@ -17,7 +17,6 @@ def load_benchmark(
     """Load a benchmark from a benchmark specification `spec` and configuration `config`."""
     if config.get("mcqa_config", None) is not None:
         return MCBenchmark(spec, config, **kwargs)
-    elif config.get("saqa_config", None) is not None:
+    if config.get("saqa_config", None) is not None:
         return SABenchmark(spec, config, **kwargs)
-    else:
-        raise ValueError(f"Unsupported benchmark type for {spec.name}.")
+    raise ValueError(f"Unsupported benchmark type for {spec.name}.")

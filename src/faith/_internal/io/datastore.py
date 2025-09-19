@@ -168,8 +168,7 @@ def _datastore_from_path(path: str) -> DataStore:
     """
     if path.startswith("gs://"):
         return GCPDataStore(path)
-    else:
-        return LocalDataStore(Path(path))
+    return LocalDataStore(Path(path))
 
 
 class DataStoreContext:

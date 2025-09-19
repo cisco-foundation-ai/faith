@@ -101,12 +101,11 @@ class FBType(Enum):
         """Convert an integer to the corresponding FBType."""
         if value % 3 == 0 and value % 5 == 0:
             return FBType.FIZZBUZZ
-        elif value % 3 == 0:
+        if value % 3 == 0:
             return FBType.FIZZ
-        elif value % 5 == 0:
+        if value % 5 == 0:
             return FBType.BUZZ
-        else:
-            return FBType.NOOP
+        return FBType.NOOP
 
 
 def test_mux_fizzbuzz() -> None:

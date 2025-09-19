@@ -8,7 +8,7 @@ jobs=0
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option
 # multiple time. See also the "--disable" option for examples.
-enable=indexing-exception,old-raise-syntax
+enable=
 
 # Disable the message, report, category or checker with the given id(s). You
 # can either give multiple identifiers separated by comma (,) or put this
@@ -19,7 +19,7 @@ enable=indexing-exception,old-raise-syntax
 # --enable=similarities". If you want to run only the classes checker, but have
 # no Warning level messages displayed, use"--disable=all --enable=classes
 # --disable=W"
-disable=design,similarities,no-self-use,locally-disabled,star-args,pointless-except,bad-option-value,global-statement,fixme,suppressed-message,useless-suppression,locally-enabled,no-member,no-name-in-module,import-error,unsubscriptable-object,unbalanced-tuple-unpacking,not-context-manager,bad-whitespace,cell-var-from-loop,bad-continuation,ungrouped-imports,no-else-raise,len-as-condition,no-else-return,consider-using-enumerate,invalid-name,logging-fstring-interpolation,c-extension-no-member,redefined-outer-name,logging-format-interpolation,arguments-differ,missing-module-docstring,missing-function-docstring,protected-access
+disable=design,similarities,no-name-in-module,import-error,no-else-raise,len-as-condition,consider-using-enumerate,invalid-name,logging-fstring-interpolation,c-extension-no-member,redefined-outer-name,logging-format-interpolation,arguments-differ,missing-module-docstring,missing-function-docstring,protected-access
 
 
 [REPORTS]

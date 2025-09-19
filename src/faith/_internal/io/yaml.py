@@ -83,7 +83,7 @@ def _include_handler(loader: "_YamlIncludeLoader", node: yaml.Node) -> dict:
     if isinstance(node, yaml.ScalarNode):
         config_path = loader.construct_scalar(node)
         return _import_config(loader.base_path, config_path)
-    elif isinstance(node, yaml.MappingNode):
+    if isinstance(node, yaml.MappingNode):
         merged_map = {}
         overrides = loader.construct_mapping(node, deep=True)
         for key, value in overrides.items():

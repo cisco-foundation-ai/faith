@@ -106,16 +106,15 @@ class _VLLMBackend(BaseModel):
                 continue_final_message=continue_final_message,
                 use_tqdm=partial(tqdm, leave=False),
             )
-        elif _is_string_list(inputs):
+        if _is_string_list(inputs):
             return self._model.generate(
                 inputs,  # type: ignore[arg-type]
                 sampling_params=SamplingParams(**gen_params),
                 use_tqdm=partial(tqdm, leave=False),
             )
-        else:
-            raise ValueError(
-                f"Unsupported input format. Expected a list of strings or messages, but got {type(inputs)}."
-            )
+        raise ValueError(
+            f"Unsupported input format. Expected a list of strings or messages, but got {type(inputs)}."
+        )
 
     @property
     def tokenizer(self) -> PreTrainedTokenizerBase:
