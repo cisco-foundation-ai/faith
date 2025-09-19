@@ -17,13 +17,23 @@ from faith.model.base import BaseModel
 # This is useful for reducing the initial load time of the script particularly for
 # auto-complete purposes.
 def _create_openai_model(name_or_path: str, **kwargs: Any) -> BaseModel:
+    # We disable the import-outside-toplevel pylint rule here because
+    # the imports required each model type are only installed as package extras
+    # to allow for a smaller install footprint.
+    # pylint: disable=import-outside-toplevel
     from faith.model.openai import OpenAIModel
+    # pylint: enable=import-outside-toplevel
 
     return OpenAIModel(name_or_path, **kwargs)
 
 
 def _create_vllm_model(name_or_path: str, **kwargs: Any) -> BaseModel:
+    # We disable the import-outside-toplevel pylint rule here because
+    # the imports required each model type are only installed as package extras
+    # to allow for a smaller install footprint.
+    # pylint: disable=import-outside-toplevel
     from faith.model.vllm import VLLMModel
+    # pylint: enable=import-outside-toplevel
 
     return VLLMModel(name_or_path, **kwargs)
 
