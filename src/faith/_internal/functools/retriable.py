@@ -46,6 +46,7 @@ class RetryFunctionWrapper(Generic[_OUT]):
         while attempts < self._max_attempts or self._max_attempts < 0:
             try:
                 return self._func(*args, **kwargs)
+            # pylint: disable=broad-exception-caught
             except Exception as e:
                 logger.error(f"Exception while executing async call: {e}")
                 time.sleep(self._retry_sleep_secs)

@@ -7,7 +7,7 @@ from enum import Enum
 from typing import Any, Protocol, Sequence, Type
 
 import numpy as np
-from cvss import CVSS3
+from cvss import CVSS3, CVSSError
 
 from faith._internal.algo.graph import wcc_dict
 from faith._internal.metrics.types import Labeling
@@ -55,7 +55,7 @@ class CVSSScore:
 
         try:
             pred_score = self.get_cvss_score(pred)
-        except Exception:
+        except CVSSError:
             return 0.0
         label_score = self.get_cvss_score(label)
         assert 0 <= pred_score <= 1, "Predicted CVSS score must be between 0 and 1."
