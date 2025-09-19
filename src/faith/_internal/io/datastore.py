@@ -92,6 +92,8 @@ class RemoteDataStore(DataStore):
 
 
 class GCPDataStore(RemoteDataStore):
+    """A GCP-base data store that uses `gsutil rsync` to synchronize data."""
+
     def __init__(self, remote_path: str, local_path: Path | None = None):
         """Initialize the GCPDataStore with a given remote path/url."""
         super().__init__(local_path)
