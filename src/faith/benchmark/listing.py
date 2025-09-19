@@ -23,8 +23,8 @@ class BenchmarkState(Enum):
         """Convert a string to a BenchmarkState enum."""
         try:
             return BenchmarkState[s.upper()]
-        except KeyError:
-            raise ValueError(f"Unknown benchmark state: {s}")
+        except KeyError as e:
+            raise ValueError(f"Unknown benchmark state: {s}") from e
 
 
 def _benchmark_names(

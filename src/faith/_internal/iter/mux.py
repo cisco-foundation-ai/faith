@@ -43,10 +43,10 @@ class MuxTransform(Transform[tuple[_KIND, _IN], _OUT], Generic[_KIND, _IN, _OUT]
                 try:
                     next_item = next(transformed_items[key])
                     yield next_item
-                except StopIteration:
+                except StopIteration as e:
                     raise RuntimeError(
-                        f"Iterator for key '{key}' was exhausted prematurely."
-                    )
+                        f"Iterator for key '{key}' was exhausted prematurely"
+                    ) from e
 
         for it in transformed_items.values():
             # Assert that the iterator is exhausted.

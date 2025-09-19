@@ -142,10 +142,10 @@ class ScoreFn(Enum):
         """Get the ScoreFn instance from its string representation."""
         try:
             return ScoreFn[name.upper()]
-        except KeyError:
+        except KeyError as e:
             raise ValueError(
                 f"Invalid score function name: {name}. Available options: {[m.name for m in ScoreFn]}"
-            )
+            ) from e
 
     def get_score_fn(self, **kwargs: dict[str, Any]) -> AnswerScoreFn:
         """Get the scorer instance for this score function."""

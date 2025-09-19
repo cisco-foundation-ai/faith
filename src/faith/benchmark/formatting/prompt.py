@@ -70,8 +70,8 @@ class PromptFormatter(Enum):
         """Convert a string to the corresponding PromptFormatter enum."""
         try:
             return PromptFormatter[name.upper()]
-        except KeyError:
-            raise ValueError(f"Unknown prompt formatter: {name}")
+        except KeyError as e:
+            raise ValueError(f"Unknown prompt formatter: {name}") from e
 
     def format(
         self,

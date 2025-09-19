@@ -52,8 +52,8 @@ class ModelEngine(Enum):
         """Convert a string to the corresponding ModelEngine enum."""
         try:
             return ModelEngine[name.upper()]
-        except KeyError:
-            raise ValueError(f"Unknown model type: {name}")
+        except KeyError as e:
+            raise ValueError(f"Unknown model type: {name}") from e
 
     def create_model(self, name_or_path: str, **kwargs: Any) -> BaseModel:
         """Create a model using the factory method associated with this value.

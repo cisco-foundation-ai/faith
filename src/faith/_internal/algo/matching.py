@@ -27,8 +27,8 @@ class AnswerFormat(Enum):
         """Convert a string to an AnswerFormat enum."""
         try:
             return AnswerFormat[s.upper()]
-        except KeyError:
-            raise ValueError(f"Unknown answer format: {s}")
+        except KeyError as e:
+            raise ValueError(f"Unknown answer format: {s}") from e
 
 
 class MatchDisambiguation(Enum):
@@ -48,8 +48,8 @@ class MatchDisambiguation(Enum):
         """Convert a string to a MatchDisambiguation enum."""
         try:
             return MatchDisambiguation[s.upper()]
-        except KeyError:
-            raise ValueError(f"Unknown match disambiguation: {s}")
+        except KeyError as e:
+            raise ValueError(f"Unknown match disambiguation: {s}") from e
 
 
 class _FormatPattern:
