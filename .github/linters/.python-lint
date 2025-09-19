@@ -19,7 +19,7 @@ enable=
 # --enable=similarities". If you want to run only the classes checker, but have
 # no Warning level messages displayed, use"--disable=all --enable=classes
 # --disable=W"
-disable=design,similarities,no-name-in-module,import-error,no-else-raise,len-as-condition,consider-using-enumerate,invalid-name,logging-fstring-interpolation,c-extension-no-member,redefined-outer-name,logging-format-interpolation,arguments-differ,missing-module-docstring,missing-function-docstring,protected-access
+disable=design,similarities,no-name-in-module,import-error,invalid-name,missing-module-docstring,missing-function-docstring,protected-access
 
 
 [REPORTS]

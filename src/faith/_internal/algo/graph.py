@@ -32,11 +32,11 @@ def wcc_dict(graph: dict[str, list[str]]) -> dict[str, int]:
         for neighbor in neighbors:
             bidirectional[neighbor].append(node)
 
-    wcc_dict = {}
+    wcc_node_map = {}
     wcc_id = 0
     for node in sorted(bidirectional):
-        if node not in wcc_dict:
+        if node not in wcc_node_map:
             for connected_node in all_reachable_nodes(node, bidirectional):
-                wcc_dict[connected_node] = wcc_id
+                wcc_node_map[connected_node] = wcc_id
             wcc_id += 1
-    return wcc_dict
+    return wcc_node_map
