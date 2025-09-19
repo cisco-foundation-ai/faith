@@ -51,7 +51,7 @@ def test_mux_transform() -> None:
         }
     )
 
-    assert list([] >> powers_mux) == []
+    assert not list([] >> powers_mux)
     assert list([(Mod7Type.Other, 0)] >> powers_mux) == [0]
     assert list([(Mod7Type.ThreeFive, 3)] >> powers_mux) == [27]
     assert list([(Mod7Type.TwoFour, 4)] >> powers_mux) == [16]
