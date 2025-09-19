@@ -51,6 +51,7 @@ def _cli_query(args: argparse.Namespace, datastore_path: Path) -> Iterator[Path]
     # main CLI script makes autocompletion slow.
     # pylint: disable=import-outside-toplevel
     from faith.cli.subcmd.query import run_experiment_queries
+
     # pylint: enable=import-outside-toplevel
 
     return run_experiment_queries(
@@ -266,6 +267,7 @@ def _eval_main(args: argparse.Namespace) -> None:
     from tqdm import tqdm
 
     from faith.cli.subcmd.eval import RecordHandlingParams, compute_experiment_metrics
+
     # pylint: enable=import-outside-toplevel
 
     filepaths = [args.experiment_path]
@@ -334,6 +336,7 @@ def _summarize_main(args: argparse.Namespace) -> None:
     # main CLI script makes autocompletion slow.
     # pylint: disable=import-outside-toplevel
     from faith.cli.subcmd.summarize import summarize_experiments
+
     # pylint: enable=import-outside-toplevel
 
     summarize_experiments(args.experiment_path, args.stats, args.summary_filepath)
@@ -382,6 +385,7 @@ def _run_all_main(args: argparse.Namespace) -> None:
     # pylint: disable=import-outside-toplevel
     from faith.cli.subcmd.eval import RecordHandlingParams, compute_experiment_metrics
     from faith.cli.subcmd.summarize import summarize_experiments
+
     # pylint: enable=import-outside-toplevel
 
     with resolve_storage_path(args.datastore_location) as datastore_path:

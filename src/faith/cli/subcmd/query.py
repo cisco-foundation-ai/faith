@@ -41,7 +41,11 @@ MAX_LOGITS = 100
 def get_command_output(command: str) -> str:
     """Execute a shell command and return its output."""
     result = subprocess.run(
-        command, shell=True, capture_output=True, text=True, check=True,
+        command,
+        shell=True,
+        capture_output=True,
+        text=True,
+        check=True,
     )
     return result.stdout.strip()
 
