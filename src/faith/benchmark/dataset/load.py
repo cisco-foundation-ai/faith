@@ -48,6 +48,7 @@ def _load_data_files(
     selected_columns: Sequence[str] | None = None,
 ) -> pd.DataFrame:
     """Load all data files from a glob pattern and return a concatenated DataFrame."""
+    dfs: list[pd.DataFrame] = []
     if file_type == _DataFileType.CSV:
         dfs = [pd.read_csv(file) for file in file_glob]
     elif file_type == _DataFileType.JSON:
