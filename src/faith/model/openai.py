@@ -31,7 +31,7 @@ class OpenAIModel(BaseModel):
         api_num_threads: int = 5,
         api_max_attempts: int = 10,
         api_retry_sleep_secs: float = 1.0,
-        **kwargs: dict[str, Any],
+        **_kwargs: dict[str, Any],
     ):
         """Initialize the OpenAI API backend with the given parameters."""
         super().__init__(name_or_path)
