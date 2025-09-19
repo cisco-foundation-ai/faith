@@ -52,7 +52,7 @@ def test_sample_ratio_equality() -> None:
 
     with pytest.raises(TypeError):
         # Ratios are not comparable to floats directly.
-        _ = (SampleRatio(1, 2) != 0.5)  # noqa: B015
+        _ = SampleRatio(1, 2) != 0.5  # noqa: B015
 
 
 def test_sample_ratio_from_string() -> None:
