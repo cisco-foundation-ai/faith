@@ -23,8 +23,8 @@ class BenchmarkState(Enum):
         """Convert a string to a BenchmarkState enum."""
         try:
             return BenchmarkState[s.upper()]
-        except KeyError:
-            raise ValueError(f"Unknown benchmark state: {s}")
+        except KeyError as e:
+            raise ValueError(f"Unknown benchmark state: {s}") from e
 
 
 def _benchmark_names(
@@ -81,5 +81,5 @@ def choices_to_benchmarks(choices: Sequence[str]) -> Sequence[str]:
         ).keys()
     )
     positive_selections = [c for c in unique_choices if not c.startswith("!")]
-    negative_selections = set([c[1:] for c in unique_choices if c.startswith("!")])
+    negative_selections = {c[1:] for c in unique_choices if c.startswith("!")}
     return [c for c in positive_selections if c not in negative_selections]

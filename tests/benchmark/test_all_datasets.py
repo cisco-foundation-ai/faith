@@ -42,7 +42,7 @@ def test_ctibench_ate() -> None:
     """Test the CTIbench ATE benchmark."""
     benchmark = load_benchmark_for_test("ctibench-ate")
     dataset = benchmark.build_dataset()
-    assert len([_ for _ in dataset.iter_data()]) == 60
+    assert len(list(dataset.iter_data())) == 60
 
     # The hash acts as a watermark for the benchmark data to ensure it hasn't changed.
     assert (
@@ -56,7 +56,7 @@ def test_ctibench_mcqa() -> None:
     """Test the CTIbench MCQA benchmark."""
     benchmark = load_benchmark_for_test("ctibench-mcqa")
     dataset = benchmark.build_dataset()
-    assert len([_ for _ in dataset.iter_data()]) == 2500
+    assert len(list(dataset.iter_data())) == 2500
 
     # The hash acts as a watermark for the benchmark data to ensure it hasn't changed.
     assert (
@@ -70,7 +70,7 @@ def test_ctibench_rcm() -> None:
     """Test the CTIbench RCM benchmark."""
     benchmark = load_benchmark_for_test("ctibench-rcm")
     dataset = benchmark.build_dataset()
-    assert len([_ for _ in dataset.iter_data()]) == 1000
+    assert len(list(dataset.iter_data())) == 1000
 
     # The hash acts as a watermark for the benchmark data to ensure it hasn't changed.
     assert (
@@ -84,7 +84,7 @@ def test_ctibench_taa() -> None:
     """Test the CTIbench TAA benchmark."""
     benchmark = load_benchmark_for_test("ctibench-taa")
     dataset = benchmark.build_dataset()
-    assert len([_ for _ in dataset.iter_data()]) == 50
+    assert len(list(dataset.iter_data())) == 50
 
     # The hash acts as a watermark for the benchmark data to ensure it hasn't changed.
     assert (
@@ -98,7 +98,7 @@ def test_ctibench_vsp() -> None:
     """Test the CTIbench VSP benchmark."""
     benchmark = load_benchmark_for_test("ctibench-vsp")
     dataset = benchmark.build_dataset()
-    assert len([_ for _ in dataset.iter_data()]) == 1000
+    assert len(list(dataset.iter_data())) == 1000
 
     # The hash acts as a watermark for the benchmark data to ensure it hasn't changed.
     assert (
@@ -112,7 +112,7 @@ def test_cybermetric_80() -> None:
     """Test the Cybermetric-80 benchmark."""
     benchmark = load_benchmark_for_test("cybermetric-80")
     dataset = benchmark.build_dataset()
-    assert len([_ for _ in dataset.iter_data()]) == 80
+    assert len(list(dataset.iter_data())) == 80
 
     # The hash acts as a watermark for the benchmark data to ensure it hasn't changed.
     assert (
@@ -126,7 +126,7 @@ def test_cybermetric_500() -> None:
     """Test the Cybermetric-500 benchmark."""
     benchmark = load_benchmark_for_test("cybermetric-500")
     dataset = benchmark.build_dataset()
-    assert len([_ for _ in dataset.iter_data()]) == 500
+    assert len(list(dataset.iter_data())) == 500
 
     # The hash acts as a watermark for the benchmark data to ensure it hasn't changed.
     assert (
@@ -140,7 +140,7 @@ def test_cybermetric_2000() -> None:
     """Test the Cybermetric-2000 benchmark."""
     benchmark = load_benchmark_for_test("cybermetric-2000")
     dataset = benchmark.build_dataset()
-    assert len([_ for _ in dataset.iter_data()]) == 2000
+    assert len(list(dataset.iter_data())) == 2000
 
     # The hash acts as a watermark for the benchmark data to ensure it hasn't changed.
     assert (
@@ -154,7 +154,7 @@ def test_cybermetric_10000() -> None:
     """Test the Cybermetric-10000 benchmark."""
     benchmark = load_benchmark_for_test("cybermetric-10000")
     dataset = benchmark.build_dataset()
-    assert len([_ for _ in dataset.iter_data()]) == 10180
+    assert len(list(dataset.iter_data())) == 10180
 
     # The hash acts as a watermark for the benchmark data to ensure it hasn't changed.
     assert (
@@ -168,7 +168,7 @@ def test_mmlu_all() -> None:
     """Test the MMLU-all benchmark."""
     benchmark = load_benchmark_for_test("mmlu-all")
     dataset = benchmark.build_dataset()
-    assert len([_ for _ in dataset.iter_data()]) == 14042
+    assert len(list(dataset.iter_data())) == 14042
 
     # The hash acts as a watermark for the benchmark data to ensure it hasn't changed.
     assert (
@@ -182,7 +182,7 @@ def test_mmlu_security() -> None:
     """Test the MMLU-security benchmark."""
     benchmark = load_benchmark_for_test("mmlu-security")
     dataset = benchmark.build_dataset()
-    assert len([_ for _ in dataset.iter_data()]) == 100
+    assert len(list(dataset.iter_data())) == 100
 
     # The hash acts as a watermark for the benchmark data to ensure it hasn't changed.
     assert (
@@ -196,7 +196,7 @@ def test_secbench_mcqa_eng() -> None:
     """Test the SecBench MCQA English benchmark."""
     benchmark = load_benchmark_for_test("secbench-mcqa-eng")
     dataset = benchmark.build_dataset()
-    assert len([_ for _ in dataset.iter_data()]) == 595
+    assert len(list(dataset.iter_data())) == 595
 
     # The hash acts as a watermark for the benchmark data to ensure it hasn't changed.
     assert (
@@ -210,7 +210,7 @@ def test_secbench_mcqa_eng_reasoning() -> None:
     """Test the SecBench MCQA English Reasoning benchmark."""
     benchmark = load_benchmark_for_test("secbench-mcqa-eng-reasoning")
     dataset = benchmark.build_dataset()
-    assert len([_ for _ in dataset.iter_data()]) == 43
+    assert len(list(dataset.iter_data())) == 43
 
     # The hash acts as a watermark for the benchmark data to ensure it hasn't changed.
     assert (
@@ -224,7 +224,7 @@ def test_seceval() -> None:
     """Test the SecEval benchmark."""
     benchmark = load_benchmark_for_test("seceval")
     dataset = benchmark.build_dataset()
-    assert len([_ for _ in dataset.iter_data()]) == 1255
+    assert len(list(dataset.iter_data())) == 1255
 
     # The hash acts as a watermark for the benchmark data to ensure it hasn't changed.
     assert (

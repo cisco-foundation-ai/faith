@@ -40,7 +40,13 @@ MAX_LOGITS = 100
 
 def get_command_output(command: str) -> str:
     """Execute a shell command and return its output."""
-    result = subprocess.run(command, shell=True, capture_output=True, text=True)
+    result = subprocess.run(
+        command,
+        shell=True,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
     return result.stdout.strip()
 
 
@@ -116,13 +122,9 @@ class _PredictionTransform(IsoTransform[dict[str, Any]]):
 class _LogitsTransform(_PredictionTransform):
     """Transform for generating logits from a model."""
 
-    def __init__(self, model: BaseModel, gen_params: GenParams):
-        """Initialize the logits transform for the model."""
-        super().__init__(model, gen_params)
-
-    def __call__(self, iter: Iterable[dict[str, Any]]) -> Iterable[dict[str, Any]]:
-        """Generate the next-token logits for each input in the `iter`."""
-        inputs = list(iter)
+    def __call__(self, records: Iterable[dict[str, Any]]) -> Iterable[dict[str, Any]]:
+        """Generate the next-token logits for each input in `records`."""
+        inputs = list(records)
         logit_responses = self._model.logits(
             inputs=[example["model_data"]["prompt"] for example in inputs],
             temperature=self._gen_params.temperature,
@@ -142,13 +144,9 @@ class _LogitsTransform(_PredictionTransform):
 class _NextTokenTransform(_PredictionTransform):
     """Transform for generating next token predictions from a model."""
 
-    def __init__(self, model: BaseModel, gen_params: GenParams):
-        """Initialize the next token transform for the model."""
-        super().__init__(model, gen_params)
-
-    def __call__(self, iter: Iterable[dict[str, Any]]) -> Iterable[dict[str, Any]]:
-        """Generate next token predictions for each input in the `iter`."""
-        inputs = list(iter)
+    def __call__(self, records: Iterable[dict[str, Any]]) -> Iterable[dict[str, Any]]:
+        """Generate next token predictions for each input in `records`."""
+        inputs = list(records)
         responses = self._model.next_token(
             inputs=[example["model_data"]["prompt"] for example in inputs],
             temperature=self._gen_params.temperature,
@@ -166,13 +164,9 @@ class _NextTokenTransform(_PredictionTransform):
 class _GenerationTransform(_PredictionTransform):
     """Transform for generating chat completions from a model."""
 
-    def __init__(self, model: BaseModel, gen_params: GenParams):
-        """Initialize the generation transform for the model."""
-        super().__init__(model, gen_params)
-
-    def __call__(self, iter: Iterable[dict[str, Any]]) -> Iterable[dict[str, Any]]:
-        """Generate chat completion responses for each input in the `iter`."""
-        inputs = list(iter)
+    def __call__(self, records: Iterable[dict[str, Any]]) -> Iterable[dict[str, Any]]:
+        """Generate chat completion responses for each input in `records`."""
+        inputs = list(records)
         responses = self._model.query(
             inputs=[example["model_data"]["prompt"] for example in inputs],
             temperature=self._gen_params.temperature,
@@ -307,7 +301,7 @@ def run_experiment_queries(
                     experiment, desc="Trials", unit=" trial", leave=False
                 ):
                     trial_start_time = time.perf_counter()
-                    (
+                    _ = (
                         query_over_benchmark(
                             benchmark,
                             sampling_params,

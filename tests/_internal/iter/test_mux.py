@@ -51,7 +51,7 @@ def test_mux_transform() -> None:
         }
     )
 
-    assert list([] >> powers_mux) == []
+    assert not list([] >> powers_mux)
     assert list([(Mod7Type.Other, 0)] >> powers_mux) == [0]
     assert list([(Mod7Type.ThreeFive, 3)] >> powers_mux) == [27]
     assert list([(Mod7Type.TwoFour, 4)] >> powers_mux) == [16]
@@ -101,12 +101,11 @@ class FBType(Enum):
         """Convert an integer to the corresponding FBType."""
         if value % 3 == 0 and value % 5 == 0:
             return FBType.FIZZBUZZ
-        elif value % 3 == 0:
+        if value % 3 == 0:
             return FBType.FIZZ
-        elif value % 5 == 0:
+        if value % 5 == 0:
             return FBType.BUZZ
-        else:
-            return FBType.NOOP
+        return FBType.NOOP
 
 
 def test_mux_fizzbuzz() -> None:

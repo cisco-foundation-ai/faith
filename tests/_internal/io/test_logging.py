@@ -64,5 +64,5 @@ def test_logging_transform() -> None:
         assert read_json_file(tmpfile) == [{"foo": 1}, {"bar": 3}]
 
         tmpfile2 = Path(tmpdir) / "log2.json"
-        assert list([] >> LoggingTransform[dict[str, Any]](tmpfile2)) == []
+        assert not list([] >> LoggingTransform[dict[str, Any]](tmpfile2))
         assert not tmpfile2.exists()

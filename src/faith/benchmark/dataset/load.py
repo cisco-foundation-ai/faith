@@ -38,8 +38,8 @@ class _DataFileType(Enum):
         """Convert a string to an _DataFileType enum."""
         try:
             return _DataFileType[s.upper()]
-        except KeyError:
-            raise ValueError(f"Unknown data file type: {s}")
+        except KeyError as e:
+            raise ValueError(f"Unknown data file type: {s}") from e
 
 
 def _load_data_files(
@@ -48,6 +48,7 @@ def _load_data_files(
     selected_columns: Sequence[str] | None = None,
 ) -> pd.DataFrame:
     """Load all data files from a glob pattern and return a concatenated DataFrame."""
+    dfs: list[pd.DataFrame] = []
     if file_type == _DataFileType.CSV:
         dfs = [pd.read_csv(file) for file in file_glob]
     elif file_type == _DataFileType.JSON:

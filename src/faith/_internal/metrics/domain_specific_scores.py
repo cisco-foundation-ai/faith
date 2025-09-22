@@ -7,7 +7,7 @@ from enum import Enum
 from typing import Any, Protocol, Sequence, Type
 
 import numpy as np
-from cvss import CVSS3
+from cvss import CVSS3, CVSSError
 
 from faith._internal.algo.graph import wcc_dict
 from faith._internal.metrics.types import Labeling
@@ -19,7 +19,8 @@ class AnswerScoreFn(Protocol):
     def __call__(self, label: Labeling, pred: Labeling | None) -> float:
         """Compute the score for a predicted answer against a given label.
 
-        This score should be a non-negative float, where a higher score indicates a better match.
+        This score should be a non-negative float, where a higher score indicates a
+        better match.
         """
 
     def aggregate(self, scores: Sequence[float]) -> dict[str, float]:
@@ -46,14 +47,15 @@ class CVSSScore:
             label (str): The ground truth CVSS vector.
 
         Returns:
-            float: The CVSS score, normalized to [0, 1]. A score of 1.0 indicates a perfect match.
+            float: The CVSS score, normalized to [0, 1]. A score of 1.0 indicates a
+            perfect match.
         """
         if pred is None:
             return 0.0
 
         try:
             pred_score = self.get_cvss_score(pred)
-        except Exception:
+        except CVSSError:
             return 0.0
         label_score = self.get_cvss_score(label)
         assert 0 <= pred_score <= 1, "Predicted CVSS score must be between 0 and 1."
@@ -140,10 +142,10 @@ class ScoreFn(Enum):
         """Get the ScoreFn instance from its string representation."""
         try:
             return ScoreFn[name.upper()]
-        except KeyError:
+        except KeyError as e:
             raise ValueError(
                 f"Invalid score function name: {name}. Available options: {[m.name for m in ScoreFn]}"
-            )
+            ) from e
 
     def get_score_fn(self, **kwargs: dict[str, Any]) -> AnswerScoreFn:
         """Get the scorer instance for this score function."""

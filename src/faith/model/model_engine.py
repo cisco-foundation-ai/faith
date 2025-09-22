@@ -4,7 +4,7 @@
 
 """This module defines the ModelEngine enum and functions to create model instances.
 
-The `ModelEngine` enum acts as a factory for creating instances of different model types.
+The `ModelEngine` enum acts as a factory for creating instances for a given model type.
 """
 from enum import Enum
 from typing import Any, Callable
@@ -17,13 +17,25 @@ from faith.model.base import BaseModel
 # This is useful for reducing the initial load time of the script particularly for
 # auto-complete purposes.
 def _create_openai_model(name_or_path: str, **kwargs: Any) -> BaseModel:
+    # We disable the import-outside-toplevel pylint rule here because
+    # the imports required each model type are only installed as package extras
+    # to allow for a smaller install footprint.
+    # pylint: disable=import-outside-toplevel
     from faith.model.openai import OpenAIModel
+
+    # pylint: enable=import-outside-toplevel
 
     return OpenAIModel(name_or_path, **kwargs)
 
 
 def _create_vllm_model(name_or_path: str, **kwargs: Any) -> BaseModel:
+    # We disable the import-outside-toplevel pylint rule here because
+    # the imports required each model type are only installed as package extras
+    # to allow for a smaller install footprint.
+    # pylint: disable=import-outside-toplevel
     from faith.model.vllm import VLLMModel
+
+    # pylint: enable=import-outside-toplevel
 
     return VLLMModel(name_or_path, **kwargs)
 
@@ -52,8 +64,8 @@ class ModelEngine(Enum):
         """Convert a string to the corresponding ModelEngine enum."""
         try:
             return ModelEngine[name.upper()]
-        except KeyError:
-            raise ValueError(f"Unknown model type: {name}")
+        except KeyError as e:
+            raise ValueError(f"Unknown model type: {name}") from e
 
     def create_model(self, name_or_path: str, **kwargs: Any) -> BaseModel:
         """Create a model using the factory method associated with this value.

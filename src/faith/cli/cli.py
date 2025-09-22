@@ -46,7 +46,13 @@ _cli_subparsers = _cli_parser.add_subparsers(required=True)
 
 def _cli_query(args: argparse.Namespace, datastore_path: Path) -> Iterator[Path]:
     """Helper function to run the query sub-command over the CLI arguments."""
+    # We disable the import-outside-toplevel pylint rule here since each
+    # sub-command has different dependencies and importing them as part of the
+    # main CLI script makes autocompletion slow.
+    # pylint: disable=import-outside-toplevel
     from faith.cli.subcmd.query import run_experiment_queries
+
+    # pylint: enable=import-outside-toplevel
 
     return run_experiment_queries(
         ExperimentParams(
@@ -95,7 +101,7 @@ def _cli_query(args: argparse.Namespace, datastore_path: Path) -> Iterator[Path]
 def _query_main(args: argparse.Namespace) -> None:
     """Query model(s) over the questions in one or more benchmarks."""
     with resolve_storage_path(args.datastore_location) as datastore_path:
-        _cli_query(args, datastore_path) >> DevNullReducer[Path]()
+        _ = _cli_query(args, datastore_path) >> DevNullReducer[Path]()
 
 
 def _add_experiment_args(parser: argparse.ArgumentParser) -> None:
@@ -254,9 +260,15 @@ _query_cmd_parser.set_defaults(func=_query_main)
 
 def _eval_main(args: argparse.Namespace) -> None:
     """Compute all metrics for all benchmarks from the models' query responses."""
+    # We disable the import-outside-toplevel pylint rule here since each
+    # sub-command has different dependencies and importing them as part of the
+    # main CLI script makes autocompletion slow.
+    # pylint: disable=import-outside-toplevel
     from tqdm import tqdm
 
     from faith.cli.subcmd.eval import RecordHandlingParams, compute_experiment_metrics
+
+    # pylint: enable=import-outside-toplevel
 
     filepaths = [args.experiment_path]
     if args.experiment_path.is_dir():
@@ -319,7 +331,13 @@ _eval_parser.set_defaults(func=_eval_main)
 
 def _summarize_main(args: argparse.Namespace) -> None:
     """Summarize benchmark metrics."""
+    # We disable the import-outside-toplevel pylint rule here since each
+    # sub-command has different dependencies and importing them as part of the
+    # main CLI script makes autocompletion slow.
+    # pylint: disable=import-outside-toplevel
     from faith.cli.subcmd.summarize import summarize_experiments
+
+    # pylint: enable=import-outside-toplevel
 
     summarize_experiments(args.experiment_path, args.stats, args.summary_filepath)
 
@@ -361,8 +379,14 @@ _summarize_parser.set_defaults(func=_summarize_main)
 
 def _run_all_main(args: argparse.Namespace) -> None:
     """Run end-to-end benchmarking on models."""
+    # We disable the import-outside-toplevel pylint rule here since each
+    # sub-command has different dependencies and importing them as part of the
+    # main CLI script makes autocompletion slow.
+    # pylint: disable=import-outside-toplevel
     from faith.cli.subcmd.eval import RecordHandlingParams, compute_experiment_metrics
     from faith.cli.subcmd.summarize import summarize_experiments
+
+    # pylint: enable=import-outside-toplevel
 
     with resolve_storage_path(args.datastore_location) as datastore_path:
         for experiment_path in _cli_query(args, datastore_path):

@@ -74,6 +74,7 @@ class RemoteDataStore(DataStore):
         self._temp_dir: tempfile.TemporaryDirectory | None = None
         if local_path is None:
             # If no local path is provided, create a temporary directory.
+            # pylint: disable=consider-using-with
             self._temp_dir = tempfile.TemporaryDirectory()
             self._local_path = Path(self._temp_dir.name)
         else:
@@ -91,6 +92,8 @@ class RemoteDataStore(DataStore):
 
 
 class GCPDataStore(RemoteDataStore):
+    """A GCP-base data store that uses `gsutil rsync` to synchronize data."""
+
     def __init__(self, remote_path: str, local_path: Path | None = None):
         """Initialize the GCPDataStore with a given remote path/url."""
         super().__init__(local_path)
@@ -116,14 +119,14 @@ class GCPDataStore(RemoteDataStore):
     @staticmethod
     def _rsync(src: str, dest: str) -> None:
         """Execute the rsync command to synchronize src to dest."""
-        process = Popen(
+        with Popen(
             GCPDataStore._rsync_cmd_args(src, dest),  # noqa: SLF001
             stdout=sys.stdout,
             stderr=sys.stderr,
-        )
-        process.wait()
-        if process.returncode != 0:
-            raise ValueError(f"Failed to rsync from '{src}' to '{dest}'.")
+        ) as process:
+            process.wait()
+            if process.returncode != 0:
+                raise ValueError(f"Failed to rsync from '{src}' to '{dest}'.")
 
     def _gcp_url(self, bucket_path: Path) -> str:
         """Return the GCP store url as a string."""
@@ -165,8 +168,7 @@ def _datastore_from_path(path: str) -> DataStore:
     """
     if path.startswith("gs://"):
         return GCPDataStore(path)
-    else:
-        return LocalDataStore(Path(path))
+    return LocalDataStore(Path(path))
 
 
 class DataStoreContext:
@@ -241,22 +243,23 @@ class GCPSynchronizer:
         ), "GCP storage path must start with 'gs://'."
         self._watch_rate = watch_rate
         assert self._watch_rate > 0, "Watch rate must be a positive."
+        # pylint: disable=consider-using-with
         self._temp_dir = tempfile.TemporaryDirectory()
         self._watch_process: Popen | None = None
 
         # Execute a test run of rsync to ensure it is configured correctly.
         if test_run:
             logger.info("Running gsutil rsync test...")
-            trial_upload = Popen(
+            with Popen(
                 self._rsync_cmd_args(),
                 stdout=sys.stdout,
                 stderr=sys.stderr,
-            )
-            trial_upload.wait()
-            if trial_upload.returncode != 0:
-                raise ValueError(
-                    f"Initial upload to GCP failed with return code {trial_upload.returncode}."
-                )
+            ) as trial_upload:
+                trial_upload.wait()
+                if trial_upload.returncode != 0:
+                    raise ValueError(
+                        f"Initial upload to GCP failed with return code {trial_upload.returncode}."
+                    )
             logger.info("Test of gsutil rsync succeeded.")
 
     def __del__(self) -> None:
@@ -297,9 +300,9 @@ class GCPSynchronizer:
         if self._watch_process:
             self._watch_process.terminate()
             self._watch_process.wait()
-        final_sync = Popen(self._rsync_cmd_args(), stdout=DEVNULL, stderr=STDOUT)
-        final_sync.wait()
-        assert final_sync.returncode == 0, "Final gsutil rsync failed."
+        with Popen(self._rsync_cmd_args(), stdout=DEVNULL, stderr=STDOUT) as final_sync:
+            final_sync.wait()
+            assert final_sync.returncode == 0, "Final gsutil rsync failed."
         self._temp_dir.cleanup()
 
 

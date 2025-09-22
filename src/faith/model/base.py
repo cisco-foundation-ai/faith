@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """Base model class for the model inference engines."""
-from abc import ABC, abstractproperty
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any, Iterable, Sequence, cast
 
@@ -88,7 +88,8 @@ class BaseModel(ABC):
         """Return the tokenizer for the model."""
         return None
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def supported_formats(self) -> set[PromptFormatter]:
         """Return the supported input formats for the model."""
 

@@ -38,7 +38,7 @@ class FakeBenchmark(Benchmark):
     def answer_leadin(self, tokenizer: PreTrainedTokenizerBase) -> str:
         return "A: "
 
-    def answer_token_map(self, tokenizer: PreTrainedTokenizerBase) -> dict[str, int]:
+    def answer_token_map(self, _tokenizer: PreTrainedTokenizerBase) -> dict[str, int]:
         """Return a mapping of answer tokens to their IDs."""
         return {"A": 87, "B": 31, "C": 7, "D": 9, "E": 5}
 
@@ -86,6 +86,8 @@ class FakeDataset(BenchmarkDataset):
 
 
 class FakeModel(BaseModel):
+    """A fake model that simulates responses for testing purposes."""
+
     def __init__(self, model_name: str):
         super().__init__(model_name)
 
