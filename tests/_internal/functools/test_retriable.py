@@ -13,6 +13,8 @@ from faith._internal.functools.retriable import (
 
 
 class FailingFunction:
+    """A function that fails a specified number of times before succeeding."""
+
     def __init__(self, fail_times: int):
         self._fail_times = fail_times
         self._calls = 0
@@ -22,6 +24,11 @@ class FailingFunction:
         if self._calls <= self._fail_times:
             raise ValueError("Simulated failure")
         return reduce(lambda x, y: x + y, args[: (self._calls - 1)], "")
+
+    @property
+    def calls(self) -> int:
+        """Number of times the function has been called."""
+        return self._calls
 
 
 @pytest.mark.parametrize(
@@ -41,7 +48,7 @@ def test_retry_function_wrapper_success(fail_times: int, expected: str) -> None:
     wrapper = RetryFunctionWrapper(func, max_attempts=6, retry_sleep_secs=0.001)
     result = wrapper("a", "b", "c", "d", "e")
     assert result == expected
-    assert func._calls == fail_times + 1
+    assert func.calls == fail_times + 1
 
 
 def test_retry_function_wrapper_max_attempts_exceeded() -> None:
@@ -53,4 +60,4 @@ def test_retry_function_wrapper_max_attempts_exceeded() -> None:
         match="Maximum retries exceeded...\nFinal exception: Simulated failure",
     ):
         wrapper("a", "b", "c", "d", "e", "f")
-    assert func._calls == 5
+    assert func.calls == 5

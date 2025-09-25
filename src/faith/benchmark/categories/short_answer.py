@@ -38,7 +38,7 @@ class ShortAnswerType(Enum):
 
     # Short answer benchmarks where each answer is treated as a set of labels.
     LABEL_SET = "label_set"
-    # Short answer benchmarks where each answer is treated as a single string prediction.
+    # Short answer benchmarks where each answer is treated as a single string label.
     STRING_MATCH = "string_match"
     # Short answer benchmarks where each answer is scored by domain-specific scores.
     DOMAIN_SPECIFIC = "domain_specific"

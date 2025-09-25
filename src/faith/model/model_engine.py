@@ -23,8 +23,6 @@ def _create_openai_model(name_or_path: str, **kwargs: Any) -> BaseModel:
     # pylint: disable=import-outside-toplevel
     from faith.model.openai import OpenAIModel
 
-    # pylint: enable=import-outside-toplevel
-
     return OpenAIModel(name_or_path, **kwargs)
 
 
@@ -34,8 +32,6 @@ def _create_vllm_model(name_or_path: str, **kwargs: Any) -> BaseModel:
     # to allow for a smaller install footprint.
     # pylint: disable=import-outside-toplevel
     from faith.model.vllm import VLLMModel
-
-    # pylint: enable=import-outside-toplevel
 
     return VLLMModel(name_or_path, **kwargs)
 

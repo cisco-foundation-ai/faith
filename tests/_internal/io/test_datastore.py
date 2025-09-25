@@ -130,6 +130,7 @@ def test_gcp_datastore_pull_failure() -> None:
 
 def test_gcp_datastore_rsync_cmd_args() -> None:
     # Test the rsync command arguments.
+    # pylint: disable=protected-access
     synchronizer = GCPDataStore("gs://test-bucket/fake-datastore")
     args = synchronizer._rsync_cmd_args("gs://test-bucket/fake-datastore", "/tmp/foo")
     assert args == [
@@ -164,7 +165,7 @@ def test_datastore_context() -> None:
         # Test the DataStoreContext class with a GCP path.
         assert isinstance(ds, GCPDataStore)
 
-        # Mock the rsync command arguments to read from local files instead of GCP storage.
+        # Mock the rsync command arguments to read from local files.
         mock_rsync_cmd_args.side_effect = lambda src, dest: [
             "rsync",
             "-a",
@@ -225,6 +226,7 @@ def test_resolve_storage_path(mock_rsync_cmd_args: MagicMock) -> None:
 
 def test_rsync_cmd_args() -> None:
     # Test the rsync command arguments.
+    # pylint: disable=protected-access
     synchronizer = GCPSynchronizer("gs://test-bucket", test_run=False)
     args = synchronizer._rsync_cmd_args()
     assert args == [

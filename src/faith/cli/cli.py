@@ -52,8 +52,6 @@ def _cli_query(args: argparse.Namespace, datastore_path: Path) -> Iterator[Path]
     # pylint: disable=import-outside-toplevel
     from faith.cli.subcmd.query import run_experiment_queries
 
-    # pylint: enable=import-outside-toplevel
-
     return run_experiment_queries(
         ExperimentParams(
             benchmark_names=args.benchmarks,
@@ -268,8 +266,6 @@ def _eval_main(args: argparse.Namespace) -> None:
 
     from faith.cli.subcmd.eval import RecordHandlingParams, compute_experiment_metrics
 
-    # pylint: enable=import-outside-toplevel
-
     filepaths = [args.experiment_path]
     if args.experiment_path.is_dir():
         filepaths = list(args.experiment_path.glob("**/experiment.json"))
@@ -337,8 +333,6 @@ def _summarize_main(args: argparse.Namespace) -> None:
     # pylint: disable=import-outside-toplevel
     from faith.cli.subcmd.summarize import summarize_experiments
 
-    # pylint: enable=import-outside-toplevel
-
     summarize_experiments(args.experiment_path, args.stats, args.summary_filepath)
 
 
@@ -385,8 +379,6 @@ def _run_all_main(args: argparse.Namespace) -> None:
     # pylint: disable=import-outside-toplevel
     from faith.cli.subcmd.eval import RecordHandlingParams, compute_experiment_metrics
     from faith.cli.subcmd.summarize import summarize_experiments
-
-    # pylint: enable=import-outside-toplevel
 
     with resolve_storage_path(args.datastore_location) as datastore_path:
         for experiment_path in _cli_query(args, datastore_path):

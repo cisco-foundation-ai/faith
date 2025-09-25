@@ -212,6 +212,7 @@ def run_experiment_queries(
     datastore_path: Path,
 ) -> Iterator[Path]:
     """Query over given benchmarks for all specified models and generation parameters."""
+    # pylint: disable=too-many-locals
     assert (
         exp_params.benchmark_names or exp_params.custom_benchmark_paths
     ), "Please specify at least one benchmark to query over using '--benchmarks' or '--custom-benchmark-paths'."
@@ -253,7 +254,8 @@ def run_experiment_queries(
             ), f"Prompt format '{prompt_formatter}' is not supported by the model '{model.name_or_path}'. Supported formats: {model.supported_formats}"
 
             # Create the benchmark experiments.
-            # Note: experiments is instantiated as a list so all are validated before iterating.
+            # Note: experiments is instantiated as a list so all are validated
+            # before execution begins.
             experiments = [
                 BenchmarkExperiment(
                     benchmark,

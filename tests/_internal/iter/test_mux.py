@@ -28,33 +28,36 @@ class CubeTransform(IsoTransform[int]):
 
 
 class Mod7Type(Enum):
-    TwoFour = 0
-    ThreeFive = 1
-    Other = 2
+    """Enum to represent different integer types for routing."""
+
+    TWO_FOUR = 0
+    THREE_FIVE = 1
+    OTHER = 2
 
     @staticmethod
     def from_int(value: int) -> "Mod7Type":
+        """Convert an integer to the corresponding Mod7Type."""
         if value % 7 in [2, 4]:
-            return Mod7Type.TwoFour
+            return Mod7Type.TWO_FOUR
         if value % 7 in [3, 5]:
-            return Mod7Type.ThreeFive
-        return Mod7Type.Other
+            return Mod7Type.THREE_FIVE
+        return Mod7Type.OTHER
 
 
 def test_mux_transform() -> None:
     """Test the MuxTransform with different kinds of transforms."""
     powers_mux = MuxTransform[Mod7Type, int, int](
         {
-            Mod7Type.TwoFour: SquareTransform(),
-            Mod7Type.ThreeFive: CubeTransform(),
-            Mod7Type.Other: IdentityTransform[int](),
+            Mod7Type.TWO_FOUR: SquareTransform(),
+            Mod7Type.THREE_FIVE: CubeTransform(),
+            Mod7Type.OTHER: IdentityTransform[int](),
         }
     )
 
     assert not list([] >> powers_mux)
-    assert list([(Mod7Type.Other, 0)] >> powers_mux) == [0]
-    assert list([(Mod7Type.ThreeFive, 3)] >> powers_mux) == [27]
-    assert list([(Mod7Type.TwoFour, 4)] >> powers_mux) == [16]
+    assert list([(Mod7Type.OTHER, 0)] >> powers_mux) == [0]
+    assert list([(Mod7Type.THREE_FIVE, 3)] >> powers_mux) == [27]
+    assert list([(Mod7Type.TWO_FOUR, 4)] >> powers_mux) == [16]
     assert list(
         reversed(list((Mod7Type.from_int(i), i) for i in range(7))) >> powers_mux
     ) == [6, 125, 16, 27, 4, 1, 0]

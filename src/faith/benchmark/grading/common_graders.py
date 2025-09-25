@@ -21,7 +21,8 @@ class LogitsLogGrader(LogGrader):
         answer_format = AnswerFormat.INVALID
         log_probs_stats = {}
         if logits := log_entry["model_data"].get("logits", None):
-            # TODO: Handle mulple logits entries; currently assumes only one entry.
+            # TODO(https://github.com/cisco-foundation-ai/faith/issues/26):
+            # Handle multiple logits entries; currently assumes only one entry.
             first_token_logits = logits[0] if len(logits) > 0 else []
             id_to_logit = {log["token_id"]: log for log in first_token_logits}
             answer_symbol_ids = log_entry["model_data"]["answer_symbol_ids"]

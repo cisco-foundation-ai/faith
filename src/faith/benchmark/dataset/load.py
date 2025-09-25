@@ -80,13 +80,12 @@ def _load_data_files(
     return raw_df
 
 
-def load_data(
+def _load_data_source(
     benchmark_name: str,
     benchmark_path: Path | None,
     source_cfg: dict[str, Any],
 ) -> tuple[pd.DataFrame, pd.DataFrame | None]:
-    """Load the benchmark dataset and transform it into a standard format."""
-    dev_df = None
+    """Load the benchmark datasets from the specified source configuration."""
     if "huggingface" in source_cfg:
         hf_config = source_cfg["huggingface"]
         ds = load_dataset(hf_config["path"], hf_config.get("subset_name", None))
@@ -97,8 +96,9 @@ def load_data(
 
         # Use the dev split, if specified, for few-shot prompting.
         if hf_config.get("dev_split", None) is not None:
-            dev_df = ds[hf_config["dev_split"]].to_pandas()
-    elif "files" in source_cfg:
+            return df, ds[hf_config["dev_split"]].to_pandas()
+        return df, None
+    if "files" in source_cfg:
         assert benchmark_path is not None, "Benchmark path must be specified."
         files_cfg = source_cfg["files"]
         df = _load_data_files(
@@ -108,7 +108,8 @@ def load_data(
         )
         if "choices" in df.columns:
             df["choices"] = df["choices"].apply(ast.literal_eval)
-    elif "git_repo" in source_cfg:
+        return df, None
+    if "git_repo" in source_cfg:
         git_repo_cfg = source_cfg["git_repo"]
 
         # Clone the git repository to a temporary directory and load selected data.
@@ -129,10 +130,23 @@ def load_data(
                 _DataFileType.from_string(git_repo_cfg["type"]),
                 selected_columns=git_repo_cfg.get("selected_columns", None),
             )
-    else:
-        raise ValueError(
-            f"Unsupported source configuration for benchmark {benchmark_name}:\n{source_cfg}"
-        )
+            return df, None
+    raise ValueError(
+        f"Unsupported source configuration for benchmark {benchmark_name}:\n{source_cfg}"
+    )
+
+
+def load_data(
+    benchmark_name: str,
+    benchmark_path: Path | None,
+    source_cfg: dict[str, Any],
+) -> tuple[pd.DataFrame, pd.DataFrame | None]:
+    """Load the benchmark dataset and transform it into a standard format."""
+    df, dev_df = _load_data_source(
+        benchmark_name,
+        benchmark_path,
+        source_cfg,
+    )
 
     # The benchmark-specific transform function is either loaded from the registry
     # or specified in the source configuration options.

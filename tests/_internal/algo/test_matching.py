@@ -68,11 +68,13 @@ def test_format_pattern_init() -> None:
         "capture_transform": {"params": ["x", "y"], "expr": "int(x) + int(y)"},
     }
     pattern = _FormatPattern(pattern_def)
+    # pylint: disable=protected-access
     assert pattern._format_type == AnswerFormat.PROPER
     assert pattern._match_disambiguation == MatchDisambiguation.MATCH_IF_SINGULAR
     assert pattern._pattern.pattern == r"(\d+) (\d+)"
     assert pattern._num_captures == 2
     assert pattern._capture_transform(5, 7) == 12
+    # pylint: enable=protected-access
 
     with pytest.raises(
         AssertionError,

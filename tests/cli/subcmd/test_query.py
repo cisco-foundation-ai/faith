@@ -32,6 +32,8 @@ from faith.model.base import (
 
 
 class FakeBenchmark(Benchmark):
+    """A fake benchmark for testing purposes."""
+
     def __init__(self, spec: BenchmarkSpec, config: dict[str, Any], **kwargs: Any):
         super().__init__(spec, config, **kwargs)
 
@@ -57,6 +59,8 @@ class FakeBenchmark(Benchmark):
 
 
 class FakeDataset(BenchmarkDataset):
+    """A fake dataset for testing purposes."""
+
     def __init__(self, formatter: QAFormatter, rng: np.random.Generator):
         super().__init__(
             formatter,

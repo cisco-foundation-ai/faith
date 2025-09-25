@@ -74,7 +74,7 @@ class RemoteDataStore(DataStore):
         self._temp_dir: tempfile.TemporaryDirectory | None = None
         if local_path is None:
             # If no local path is provided, create a temporary directory.
-            # pylint: disable=consider-using-with
+            # pylint: disable-next=consider-using-with
             self._temp_dir = tempfile.TemporaryDirectory()
             self._local_path = Path(self._temp_dir.name)
         else:
@@ -243,7 +243,7 @@ class GCPSynchronizer:
         ), "GCP storage path must start with 'gs://'."
         self._watch_rate = watch_rate
         assert self._watch_rate > 0, "Watch rate must be a positive."
-        # pylint: disable=consider-using-with
+        # pylint: disable-next=consider-using-with
         self._temp_dir = tempfile.TemporaryDirectory()
         self._watch_process: Popen | None = None
 

@@ -19,6 +19,8 @@ def test_is_string_list() -> None:
 
 
 class FakeModel(BaseModel):
+    """A fake model for testing purposes."""
+
     @property
     def supported_formats(self) -> set[PromptFormatter]:
         return set[PromptFormatter]()

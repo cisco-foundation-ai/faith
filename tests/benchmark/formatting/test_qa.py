@@ -115,6 +115,7 @@ def test_qa_record_json_serialization(record: QARecord) -> None:
 
 
 def test_qa_formatter() -> None:
+    # pylint: disable=protected-access
     format_cfg = {
         "instructions": {
             "system_prompt": "System prompt",

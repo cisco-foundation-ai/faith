@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+# pylint: disable=protected-access
 import pandas as pd
 import pytest
 
