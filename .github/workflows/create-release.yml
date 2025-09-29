@@ -1,0 +1,97 @@
+---
+# This workflow does the following every time the version.txt file changes:
+#
+# 1. Parse the latest release version from the version.txt file.
+# 2. Create a new tag using the release version.
+# 3. Create a new GitHub release (the bundle and whl files will be attached).
+
+name: "Release: Tag and Release"
+
+on:
+  push:
+    branches:
+      - "main"
+      - "release-*"
+      - "howard/*"
+    paths:
+      - "version.txt"
+      - ".github/workflows/create-release.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: read
+  statuses: read
+
+jobs:
+  get_version:
+    name: Get version from version.txt
+    runs-on: ubuntu-latest
+    outputs:
+      faith_version: ${{ steps.global_var.outputs.faith_version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set global variables
+        env:
+          MY_REF_NAME: "${{ github.ref_name }}"
+        id: global_var
+        run: |
+          echo "branch=$MY_REF_NAME" >> "$GITHUB_OUTPUT"
+          read -r VERSION < version.txt
+          export MY_VERSION="$VERSION"
+          export PREFIX=""
+          if [[ "$MY_REF_NAME" != "main" ]] && \
+             [[ "$MY_REF_NAME" != "release-*" ]]; then
+            export PREFIX="$MY_REF_NAME-"
+          fi
+          env |sort
+          echo "faith_version=${PREFIX}${MY_VERSION}" >> "$GITHUB_OUTPUT"
+
+  create_tag:
+    name: Create Tag
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+      statuses: write
+    needs: [get_version]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Create Tag for FAITH
+        env:
+          GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          MYTAG: "${{ needs.get_version.outputs.faith_version }}"
+        run: |
+          echo "INFO: Tagging HEAD to [$MYTAG]"
+          git log --oneline -n 5
+          git config --global user.email "action@github.com"
+          git config --global user.name "Cisco-Foundation-AI"
+          git tag -a "${MYTAG}" \
+            -m "Foundation-AI's Testing Hub Release $MYTAG" HEAD
+          git push origin "${MYTAG}"
+
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+      statuses: write
+    needs: [get_version, create_tag]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Create a GitHub release
+        uses: softprops/action-gh-release@6cbd405e2c4e67a21c47fa9e383d020e4e28b836
+        with:
+          name: ${{ needs.get_version.outputs.faith_version }}
+          tag_name: ${{ needs.get_version.outputs.faith_version }}
+          token: ${{ secrets.GITHUB_TOKEN }}
