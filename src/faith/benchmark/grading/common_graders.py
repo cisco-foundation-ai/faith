@@ -78,11 +78,12 @@ class NextTokenLogGrader(LogGrader):
     def __init__(
         self,
         output_processing_config: dict[str, Any],
+        model_format_config: dict[str, Any],
         recompute_stats: bool,
         answer_set: frozenset[str],
     ):
         """Initialize the next token log grader."""
-        super().__init__(output_processing_config, recompute_stats)
+        super().__init__(output_processing_config, model_format_config, recompute_stats)
         assert (
             len(answer_set) > 0
         ), "A non-empty answer set must be provided for next token log grader."

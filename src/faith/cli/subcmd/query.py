@@ -18,6 +18,7 @@ from zoneinfo import ZoneInfo
 from tqdm import tqdm
 
 from faith import __version__
+from faith._internal.config.model_response import model_response_format_config
 from faith._internal.io.datastore import ReadOnlyDataContext
 from faith._internal.io.json import write_as_json
 from faith._internal.io.logging import LoggingTransform
@@ -233,6 +234,7 @@ def run_experiment_queries(
                 logger.warning(
                     "Using a tokenizer other than the model's tokenizer is not recommended and may lead to incorrect queries."
                 )
+            model_response_pattern = annotated_model_path.get_value("response_pattern")
 
             model = engine_params.engine_type.create_model(
                 name_or_path=str(model_path),
@@ -290,6 +292,9 @@ def run_experiment_queries(
                         "model": {
                             "name": model_name,
                             "path": str(model_path),
+                            "response_format": model_response_format_config(
+                                model_response_pattern
+                            ),
                             "engine": engine_params.to_dict(),
                             "generation": gen_params.to_dict(),
                         },

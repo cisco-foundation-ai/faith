@@ -79,11 +79,13 @@ class SABenchmark(BaseBenchmark):
             rng,
         )
 
-    def log_grader(self, recompute_stats: bool = False) -> LogGrader:
+    def log_grader(
+        self, model_format_config: dict[str, Any], recompute_stats: bool = False
+    ) -> LogGrader:
         """Fetch a log grader for this benchmark."""
         op_cfg = self._config["output_processing"]
         if self.generation_mode == GenerationMode.CHAT_COMPLETION:
-            return ChatCompletionLogGrader(op_cfg, recompute_stats)
+            return ChatCompletionLogGrader(op_cfg, model_format_config, recompute_stats)
         raise ValueError(
             f"Unsupported generation mode: {self.generation_mode} for multiple-choice log grading."
         )

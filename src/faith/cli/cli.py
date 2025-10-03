@@ -175,8 +175,9 @@ def _add_model_args(parser: argparse.ArgumentParser) -> None:
         "--model-paths",
         type=AnnotatedPath(
             name=lambda x: x,
-            tokenizer=TypeWithDefault[str | None](str, None),
             is_file=TypeWithDefault[bool](bool, False),
+            response_pattern=TypeWithDefault[str | None](str, None),
+            tokenizer=TypeWithDefault[str | None](str, None),
         ),
         required=True,
         nargs="+",

@@ -97,7 +97,9 @@ class Benchmark(ABC):
         """Builds the dataset for this benchmark."""
 
     @abstractmethod
-    def log_grader(self, recompute_stats: bool = False) -> LogGrader:
+    def log_grader(
+        self, model_format_config: dict[str, Any], recompute_stats: bool = False
+    ) -> LogGrader:
         """Fetch a log grader for this benchmark."""
 
     @abstractmethod
