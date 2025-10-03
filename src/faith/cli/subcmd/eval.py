@@ -10,6 +10,7 @@ from typing import Any
 
 from tqdm import tqdm
 
+from faith._internal.config.model_response import model_response_format_config
 from faith._internal.io.json import read_json_file, write_as_json
 from faith._internal.io.logging import LoggingTransform
 from faith._internal.iter.transform import IdentityTransform
@@ -74,8 +75,13 @@ def compute_experiment_metrics(
         experiment_summary["experiment_params"]["benchmark"]
     )
     benchmark = load_benchmark(benchmark_spec, experiment_summary["benchmark_config"])
+    model_format_config = experiment_summary["experiment_params"]["model"].get(
+        "response_format", model_response_format_config()
+    )
 
-    log_grader = benchmark.log_grader(recompute_stats=record_params.recompute_stats)
+    log_grader = benchmark.log_grader(
+        model_format_config, recompute_stats=record_params.recompute_stats
+    )
     grade_aggregator = benchmark.grade_aggregator()
 
     experiment_metrics: dict[str, Any] = {
