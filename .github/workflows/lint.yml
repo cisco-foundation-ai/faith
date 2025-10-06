@@ -24,12 +24,12 @@ jobs:
         uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2.13.1
         with:
           egress-policy: audit
-      - uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493 # v5.0.0
+      - uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493
         with:
           fetch-depth: 0
           persist-credentials: false
       - name: 🧹 run superlinter
-        uses: super-linter/super-linter@ffde3b2b33b745cb612d787f669ef9442b1339a6 # v8.1.0
+        uses: super-linter/super-linter@7bba2eeb89d01dc9bfd93c497477a57e72c83240 # v8.2.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           LINTER_RULES_PATH: ".github/linters"
@@ -42,4 +42,5 @@ jobs:
           YAML_CONFIG_FILE: ".yamllint.yml"
           MULTI_STATUS: false
           VALIDATE_ALL_CODEBASE: false
+          VALIDATE_BIOME_FORMAT: false
           VALIDATE_JSCPD: false # TODO: Enable this once we configure jscpd.
