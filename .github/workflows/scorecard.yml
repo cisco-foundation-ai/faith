@@ -27,3 +27,4 @@ jobs:
     with:
       # Publish results of Scorecard analysis
       publish-results: true
+      repo_token: ${{ secrets.GITHUB_TOKEN }}
