@@ -44,3 +44,4 @@ jobs:
           VALIDATE_ALL_CODEBASE: false
           VALIDATE_BIOME_FORMAT: false
           VALIDATE_JSCPD: false # TODO: Enable this once we configure jscpd.
+          VALIDATE_PRE_COMMIT: false
