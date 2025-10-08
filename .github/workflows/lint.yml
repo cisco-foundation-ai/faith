@@ -33,7 +33,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           LINTER_RULES_PATH: ".github/linters"
-          GITHUB_ACTIONS_CONFIG_FILE: ".actionlint.yaml"
+          GITHUB_ACTIONS_CONFIG_FILE: ".actionlint.yml"
           MARKDOWN_CONFIG_FILE: ".markdownlint.yml"
           PYTHON_FLAKE8_CONFIG_FILE: ".flake8"
           PYTHON_ISORT_CONFIG_FILE: ".isort.cfg"
