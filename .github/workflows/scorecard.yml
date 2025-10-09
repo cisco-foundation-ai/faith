@@ -24,7 +24,7 @@ jobs:
     permissions:
       id-token: write
       security-events: write
-    secrets: inherit
+    secrets: inherit # zizmor: ignore[secrets-inherit]
     with:
       # Publish results of Scorecard analysis
       publish-results: true
