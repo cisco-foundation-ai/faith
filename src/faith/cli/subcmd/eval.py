@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """Core functionality for computing aggregate metrics from benchmark trials."""
+
 from collections.abc import ValuesView
 from dataclasses import dataclass
 from pathlib import Path

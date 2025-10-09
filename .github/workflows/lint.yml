@@ -45,3 +45,5 @@ jobs:
           VALIDATE_BIOME_FORMAT: false
           VALIDATE_JSCPD: false # TODO: Enable this once we configure jscpd.
           VALIDATE_PRE_COMMIT: false
+          # Black and Ruff conflict in their formatting.
+          VALIDATE_PYTHON_RUFF_FORMAT: false

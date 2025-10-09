@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """Utility functions to load benchmark configurations from paths or names."""
+
 from pathlib import Path
 from typing import Any
 

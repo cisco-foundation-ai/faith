@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """Implementation of the subcommand `summarize` to summarize experiment metrics."""
+
 from pathlib import Path
 from typing import Sequence
 

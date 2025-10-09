@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """Provides common log graders for benchmarks."""
+
 import re
 from typing import Any
 

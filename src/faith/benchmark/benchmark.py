@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """The foundation for a benchmark of question-answer data and evaluation criteria."""
+
 import logging
 from abc import ABC, abstractmethod
 from pathlib import Path

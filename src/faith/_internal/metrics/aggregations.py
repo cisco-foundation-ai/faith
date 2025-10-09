@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """Set of functions for aggregating statistics over a set of trials of a benchmark."""
+
 from collections import defaultdict
 from numbers import Number
 from typing import Any, Sequence, TypeAlias, TypeVar, cast

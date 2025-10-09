@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """Functions to execute queries from benchmarks on models and collect their responses."""
+
 import itertools
 import logging
 import os

@@ -1,4 +1,4 @@
-.PHONY: superlint test test_all lint format lint_format
+.PHONY: test test_all lint format
 
 # Rule-function to check if a given command is installed.
 define CHECK_COMMAND
@@ -22,7 +22,7 @@ SUPER_LINTER_VERSION := "v8.2.0"
 # Get the absolute path to the root of the main git repository.
 GIT_MAIN := $(shell git rev-parse --path-format=absolute --git-common-dir | sed 's/\/\.git//')
 
-superlint: check_installed_docker check_installed_yq
+lint: check_installed_docker check_installed_yq
 	@[ ! -n "$$(git status --porcelain)" ] || \
 		( \
 			echo "Error: There are uncommitted changes. Please commit or stash them before running superlint."; \
@@ -39,21 +39,20 @@ superlint: check_installed_docker check_installed_yq
 		ghcr.io/super-linter/super-linter:$(SUPER_LINTER_VERSION)
 
 FORMATTERS := \
-	FIX_CLANG_FORMAT \
-	FIX_GITHUB_ACTIONS_ZIZMOR \
-	FIX_JSON_PRETTIER \
-	FIX_MARKDOWN \
-	FIX_MARKDOWN_PRETTIER \
-	FIX_NATURAL_LANGUAGE \
-	FIX_PYTHON_BLACK \
-	FIX_PYTHON_ISORT \
-	FIX_PYTHON_RUFF \
-	FIX_PYTHON_RUFF_FORMAT \
-	FIX_TYPESCRIPT_PRETTIER \
-	FIX_YAML_PRETTIER
-FORMAT_FLAGS := $(foreach arg, $(FORMATTERS), -e $(arg)=true)
+	CLANG_FORMAT \
+	GITHUB_ACTIONS_ZIZMOR \
+	JSON_PRETTIER \
+	MARKDOWN \
+	MARKDOWN_PRETTIER \
+	NATURAL_LANGUAGE \
+	PYTHON_BLACK \
+	PYTHON_ISORT \
+	PYTHON_RUFF \
+	TYPESCRIPT_PRETTIER \
+	YAML_PRETTIER
+FORMAT_FLAGS := $(foreach arg, $(FORMATTERS), -e FIX_$(arg)=true)
 
-superformat: check_installed_docker check_installed_yq
+format: check_installed_docker check_installed_yq
 	@[ ! -n "$$(git status --porcelain)" ] || \
 		( \
 			echo "Error: There are uncommitted changes. Please commit or stash them before running superlint."; \
@@ -77,21 +76,3 @@ test:
 # Run all tests including slow tests.
 test_all:
 	pytest tests --cov=src --runslow --suppress-no-test-exit-code --cov-report=term-missing --durations=50
-
-
-# Lint using ruff, black, isort, and mypy
-lint:
-	( \
-	    black --check src tests && \
-		flake8 --config=.github/linters/.flake8 src tests && \
-	    mypy --ignore-missing-imports --disallow-untyped-defs --show-error-codes src tests && \
-	    run_ri_lint \
-	)
-
-# Format using ruff, isort, and black
-format:
-	black src tests
-	run_ri_format
-
-# Run both format and lint
-lint_format: format lint

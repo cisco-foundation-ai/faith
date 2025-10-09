@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """Utility functions for file IO with pandas objects."""
+
 from pathlib import Path
 
 import pandas as pd

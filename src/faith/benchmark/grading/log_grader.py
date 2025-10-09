@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """Provides `LogGrader` for grading / scoring benchmark logs."""
+
 import logging
 from abc import abstractmethod
 from typing import Any, Iterable

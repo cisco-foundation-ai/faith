@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """Types used to configure experiments."""
+
 from dataclasses import dataclass
 from typing import Sequence
 

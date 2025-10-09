@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """Utility functions for matching and processing answer formats."""
+
 import re
 from abc import ABC, abstractmethod
 from enum import Enum
