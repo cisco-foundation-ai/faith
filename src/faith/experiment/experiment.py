@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """Defines the `BenchmarkExperiment`, which manages an experiment for a benchmark."""
+
 from pathlib import Path
 from typing import Any, Iterator
 

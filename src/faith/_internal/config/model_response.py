@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """Configurations for model response handling."""
+
 from typing import Any
 
 

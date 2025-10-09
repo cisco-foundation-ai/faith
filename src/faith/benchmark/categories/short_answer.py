@@ -7,6 +7,7 @@
 This module provides the `SABenchmark` class for short answer benchmarks, which
 extends the `Benchmark` class to handle short answer question-answering tasks.
 """
+
 from enum import Enum
 from typing import Any, Sequence
 

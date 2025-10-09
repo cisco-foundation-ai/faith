@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """A custom YAML loader that supports the !from directive for including external YAML files."""
+
 import re
 from copy import deepcopy
 from functools import cache

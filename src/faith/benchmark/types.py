@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """This module defines the common schema for the QA examples used in benchmarks."""
+
 from dataclasses import dataclass, field
 
 from dataclasses_json import DataClassJsonMixin, config

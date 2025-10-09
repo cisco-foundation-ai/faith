@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """OpenAI API model implementation of a model backend."""
+
 import os
 from typing import Any, Iterable, cast
 

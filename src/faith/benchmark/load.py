@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """Factory functions to construct benchmark objects from specifications."""
+
 from typing import Any
 
 from faith.benchmark.benchmark import Benchmark

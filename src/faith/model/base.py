@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """Base model class for the model inference engines."""
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any, Iterable, Sequence, cast

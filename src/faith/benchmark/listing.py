@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """Functions that list benchmarks with their states and categories."""
+
 from enum import Enum
 from typing import Sequence
 

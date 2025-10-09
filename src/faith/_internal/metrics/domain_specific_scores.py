@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """Domain-specific scoring functions for evaluating short-answer model predictions."""
+
 from enum import Enum
 from typing import Any, Protocol, Sequence, Type
 

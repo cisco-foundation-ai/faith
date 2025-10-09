@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """A module for executing functions in separate threads."""
+
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Callable, Generic, Iterable, TypeVar
 

@@ -10,6 +10,7 @@
 # Within each stage's sub-command, you can import the necessary dependencies.
 
 """General purpose CLI script for running benchmarks on models."""
+
 import argparse
 import ast
 import logging

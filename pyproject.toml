@@ -25,7 +25,7 @@ dependencies = [
   "datasets==4.0.0",
   "GitPython==3.1.45",
   "jinja2==3.1.6",
-  "numpy<=2.2.6", # TODO(https://github.com/RobustIntelligence/faith/issues/50): make == once we resolve ri-python-linter issue.
+  "numpy==2.2.6",
   "orjson==3.11.1",
   "pandas==2.3.1",
   "pyyaml==6.0.2",
@@ -65,15 +65,10 @@ all = [
   "faith[all-engines, metrics]",
 ]
 test = [
-  "black==23.12.1", # TODO: Update once we update ri-python-linter.
   "faith[all]",
-  "flake8==7.3.0",
-  "mypy==1.17.1",
   "pytest==8.4.1",
   "pytest-cov==6.2.1",
   "pytest-custom_exit_code==0.3.0",
-  "ri-python-linter==1.0.1",
-  "types-PyYAML==6.0.12.20250809",
 ]
 
 [project.scripts]

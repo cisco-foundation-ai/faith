@@ -7,6 +7,7 @@
 This module provides the `MCBenchmark` class for multiple choice benchmarks, which
 extends the `Benchmark` class to handle multiple choice question-answering tasks.
 """
+
 from typing import Any, Sequence
 
 import numpy as np
