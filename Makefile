@@ -38,6 +38,38 @@ superlint: check_installed_docker check_installed_yq
 		-v "$(GIT_MAIN):$(GIT_MAIN)" \
 		ghcr.io/super-linter/super-linter:$(SUPER_LINTER_VERSION)
 
+FORMATTERS := \
+	FIX_CLANG_FORMAT \
+	FIX_GITHUB_ACTIONS_ZIZMOR \
+	FIX_JSON_PRETTIER \
+	FIX_MARKDOWN \
+	FIX_MARKDOWN_PRETTIER \
+	FIX_NATURAL_LANGUAGE \
+	FIX_PYTHON_BLACK \
+	FIX_PYTHON_ISORT \
+	FIX_PYTHON_RUFF \
+	FIX_PYTHON_RUFF_FORMAT \
+	FIX_TYPESCRIPT_PRETTIER \
+	FIX_YAML_PRETTIER
+FORMAT_FLAGS := $(foreach arg, $(FORMATTERS), -e $(arg)=true)
+
+superformat: check_installed_docker check_installed_yq
+	@[ ! -n "$$(git status --porcelain)" ] || \
+		( \
+			echo "Error: There are uncommitted changes. Please commit or stash them before running superlint."; \
+			exit 1; \
+		)
+	@docker run \
+		$(SUPER_LINTER_ENV_FLAGS) \
+		$(FORMAT_FLAGS) \
+		-e DEFAULT_BRANCH=main \
+		-e LOG_LEVEL=NOTICE \
+		-e RUN_LOCAL=true \
+		-e VALIDATE_ALL_CODEBASE=false \
+		-v "$(shell pwd):/tmp/lint" \
+		-v "$(GIT_MAIN):$(GIT_MAIN)" \
+		ghcr.io/super-linter/super-linter:$(SUPER_LINTER_VERSION)
+
 # Run only unit tests (excluding slow tests).
 test:
 	pytest tests --cov=src --suppress-no-test-exit-code --cov-report=term-missing --durations=50
