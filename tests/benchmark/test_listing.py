@@ -26,6 +26,8 @@ def test_benchmark_choices() -> None:
         "all",
         "all-reasoning",
         "all-security",
+        "ctibench-ate",
+        "!ctibench-ate",
         "ctibench-mcqa",
         "!ctibench-mcqa",
         "ctibench-rcm",
@@ -58,6 +60,7 @@ def test_benchmark_choices() -> None:
 def test_choices_to_benchmarks() -> None:
     assert choices_to_benchmarks([]) == []
     assert choices_to_benchmarks(["all"]) == [
+        "ctibench-ate",
         "ctibench-mcqa",
         "ctibench-rcm",
         "ctibench-vsp",
@@ -75,6 +78,7 @@ def test_choices_to_benchmarks() -> None:
         "secbench-mcqa-eng-reasoning",
     ]
     assert choices_to_benchmarks(["all-security"]) == [
+        "ctibench-ate",
         "ctibench-mcqa",
         "ctibench-rcm",
         "ctibench-vsp",
@@ -89,6 +93,7 @@ def test_choices_to_benchmarks() -> None:
     ]
     assert choices_to_benchmarks(["mmlu-all", "all"]) == [
         "mmlu-all",
+        "ctibench-ate",
         "ctibench-mcqa",
         "ctibench-rcm",
         "ctibench-vsp",
@@ -102,6 +107,7 @@ def test_choices_to_benchmarks() -> None:
         "seceval",
     ]
     assert choices_to_benchmarks(["!mmlu-all", "all", "!seceval"]) == [
+        "ctibench-ate",
         "ctibench-mcqa",
         "ctibench-rcm",
         "ctibench-vsp",

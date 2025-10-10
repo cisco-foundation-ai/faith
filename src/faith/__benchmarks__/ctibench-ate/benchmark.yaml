@@ -15,7 +15,6 @@ benchmark:
         - https://github.com/xashru/cti-bench
         - https://huggingface.co/datasets/AI4Sec/cti-bench
       categories: ["security"]
-      state: disabled
   source:
     huggingface: !from
       '$BENCHMARKS_ROOT/sources-template.yaml["sources"]["huggingface"]':
@@ -42,7 +41,7 @@ benchmark:
     instructions: !from
       '$BENCHMARKS_ROOT/instructions-template.yaml["instructions"]':
         base_inst_template: |-
-          Extract all MITRE{% if subject is not none %} {{ subject }}{% endif %} attack patterns from the following text and map them to their corresponding MITRE technique IDs. Ensure the final line contains only the IDs for the main techniques, separated by commas, excluding any subtechnique IDs. MITRE{% if subject is not none %} {{ subject }}{% endif %} IDs are given below as reference.
+          Extract all MITRE{% if subject is not none %} {{ subject }}{% endif %} attack patterns from the following text and map them to their corresponding MITRE technique IDs. Ensure the final line begins with 'Answer: ' followed by a list of all IDs for the main techniques, separated by commas, excluding any subtechnique IDs. MITRE{% if subject is not none %} {{ subject }}{% endif %} IDs are given below as reference.
 
           {% if subject == "Enterprise" -%}
           **List of All MITRE Enterprise technique IDs**
@@ -324,8 +323,10 @@ benchmark:
           - T1633 : Virtualization/Sandbox Evasion
           - T1481 : Web Service
           {%- endif %}
+
+          **Text**
         chat_inst_template: |-
-          Extract all MITRE{% if subject is not none %} {{ subject }}{% endif %} attack patterns from the following text and map them to their corresponding MITRE technique IDs. Provide reasoning for each identification. Ensure the final line contains only the IDs for the main techniques, separated by commas, excluding any subtechnique IDs. MITRE{% if subject is not none %} {{ subject }}{% endif %} IDs are given below as reference.
+          Extract all MITRE{% if subject is not none %} {{ subject }}{% endif %} attack patterns from the following text and map them to their corresponding MITRE technique IDs. Provide a concise reasoning for each identification. Ensure the final line begins with 'Answer: ' followed by a list of all IDs for the main techniques, separated by commas, excluding any subtechnique IDs. MITRE{% if subject is not none %} {{ subject }}{% endif %} IDs are given below as reference.
 
           {% if subject == "Enterprise" -%}
           **List of All MITRE Enterprise technique IDs**
@@ -607,6 +608,8 @@ benchmark:
           - T1633 : Virtualization/Sandbox Evasion
           - T1481 : Web Service
           {%- endif %}
+
+          **Text**
   output_processing: !from
     '$BENCHMARKS_ROOT/output-processing-template.yaml["output_processing"]':
       answer_formats:
