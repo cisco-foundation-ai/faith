@@ -32,6 +32,7 @@ jobs:
         uses: super-linter/super-linter@2bdd90ed3262e023ac84bf8fe35dc480721fc1f2 # v8.2.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          IGNORE_GITIGNORED_FILES: true
           LINTER_RULES_PATH: ".github/linters"
           GITHUB_ACTIONS_CONFIG_FILE: ".actionlint.yml"
           MARKDOWN_CONFIG_FILE: ".markdownlint.yml"
@@ -39,10 +40,12 @@ jobs:
           PYTHON_ISORT_CONFIG_FILE: ".isort.cfg"
           PYTHON_PYLINT_CONFIG_FILE: ".python-lint"
           PYTHON_RUFF_CONFIG_FILE: ".ruff.toml"
+          TRIVY_CONFIG_FILE: ".trivy.yml"
           YAML_CONFIG_FILE: ".yamllint.yml"
           MULTI_STATUS: false
           VALIDATE_ALL_CODEBASE: false
           VALIDATE_BIOME_FORMAT: false
+          VALIDATE_BIOME_LINT: false
           VALIDATE_JSCPD: false # TODO: Enable this once we configure jscpd.
           VALIDATE_PRE_COMMIT: false
           # Black and Ruff conflict in their formatting.
