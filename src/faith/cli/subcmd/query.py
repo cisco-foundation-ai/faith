@@ -25,9 +25,9 @@ from faith._internal.io.json import write_as_json
 from faith._internal.io.logging import LoggingTransform
 from faith._internal.io.paths import canonical_segment
 from faith._internal.iter.transform import DevNullReducer, IsoTransform
-from faith._internal.types.flags import GenerationMode, PathWithAnnotations
+from faith._internal.types.flags import GenerationMode
 from faith.benchmark.benchmark import Benchmark
-from faith.benchmark.listing import choices_to_benchmarks
+from faith.benchmark.listing import choices_to_benchmarks, find_benchmarks
 from faith.experiment.experiment import BenchmarkExperiment
 from faith.experiment.params import DataSamplingParams, ExperimentParams
 from faith.model.base import BaseModel, ChatResponse, GenerationError
@@ -261,7 +261,7 @@ def run_experiment_queries(
             # before execution begins.
             experiments = [
                 BenchmarkExperiment(
-                    benchmark,
+                    benchmark_path,
                     exp_params.generation_mode,
                     prompt_formatter,
                     n_shot,
@@ -271,9 +271,13 @@ def run_experiment_queries(
                     exp_params.num_trials,
                     initial_seed=exp_params.initial_seed,
                 )
-                for benchmark in itertools.chain[str | PathWithAnnotations](
+                for benchmark_path in itertools.chain[Path](
                     choices_to_benchmarks(exp_params.benchmark_names or []),
-                    exp_params.custom_benchmark_paths or [],
+                    [
+                        benchmark_path
+                        for p in exp_params.custom_benchmark_paths or []
+                        for benchmark_path in find_benchmarks(p)
+                    ],
                 )
                 for n_shot in exp_params.n_shot
             ]
