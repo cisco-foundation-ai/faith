@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+from faith._internal.io.benchmarks import benchmarks_root
 from faith._internal.types.flags import GenerationMode, SampleRatio
 from faith.benchmark.formatting.prompt import PromptFormatter
 from faith.benchmark.types import BenchmarkSpec
@@ -23,7 +24,7 @@ def test_benchmark_experiment() -> None:
 
     # Test initialization with valid parameters
     experiment = BenchmarkExperiment(
-        name_or_path="for-unit-test-only",
+        benchmark_path=benchmarks_root() / "for-unit-test-only",
         generation_mode=GenerationMode.CHAT_COMPLETION,
         prompt_format=PromptFormatter.CHAT,
         n_shot=SampleRatio(5),
@@ -50,7 +51,7 @@ def test_benchmark_experiment() -> None:
     ):
         # Test initialization with invalid benchmark name.
         BenchmarkExperiment(
-            name_or_path="does-not-exist",
+            benchmark_path=benchmarks_root() / "does-not-exist",
             generation_mode=GenerationMode.LOGITS,
             prompt_format=PromptFormatter.BASE,
             n_shot=SampleRatio(0),
@@ -65,7 +66,7 @@ def test_benchmark_experiment() -> None:
     ):
         # Test initialization with invalid number of trials.
         BenchmarkExperiment(
-            name_or_path="for-unit-test-only",
+            benchmark_path=benchmarks_root() / "for-unit-test-only",
             generation_mode=GenerationMode.NEXT_TOKEN,
             prompt_format=PromptFormatter.CHAT,
             n_shot=SampleRatio(1, 4),

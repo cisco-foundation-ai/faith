@@ -119,7 +119,7 @@ def _add_experiment_args(parser: argparse.ArgumentParser) -> None:
     )
     group.add_argument(
         "--custom-benchmarks",
-        type=AnnotatedPath(name=lambda x: x),
+        type=Path,
         default=None,
         nargs="*",
         help="Paths to custom benchmarks (each with a benchmark config). These benchmarks are added to those requested with '--benchmarks'.",
