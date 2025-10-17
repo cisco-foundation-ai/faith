@@ -122,12 +122,14 @@ class ChatCompletionLogGrader(LogGrader):
         label: Labeling = log_entry["data"]["label"]
         extracted_pred: Labeling | None = None
         answer_format = AnswerFormat.INVALID
-        if (
-            output_text := log_entry["model_data"]
-            .get("chat_comp", {})
-            .get("output_text", None)
+        # TODO(https://github.com/RobustIntelligence/faith/issues/286): Remove the use
+        # of 'output_text' once we fully migrate to 'answer_text' at the next major
+        # release.
+        if (chat_comp := log_entry["model_data"].get("chat_comp", {})) and (
+            answer_text := chat_comp.get("answer_text", None)
+            or chat_comp.get("output_text", None)
         ):
-            extracted_pred, answer_format = self._answer_matcher(output_text)
+            extracted_pred, answer_format = self._answer_matcher(answer_text)
 
         log_entry["stats"] = {
             "label": label,

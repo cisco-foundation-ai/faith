@@ -29,6 +29,7 @@ class OpenAIModel(BaseModel):
         self,
         name_or_path: str,
         num_log_probs: int | None = None,
+        reasoning_tokens: tuple[str, str] | None = None,
         api_num_threads: int = 5,
         api_max_attempts: int = 10,
         api_retry_sleep_secs: float = 1.0,
@@ -37,6 +38,9 @@ class OpenAIModel(BaseModel):
         """Initialize the OpenAI API backend with the given parameters."""
         super().__init__(name_or_path)
         assert num_log_probs is None, "Logprobs are not supported for OpenAI models."
+        assert (
+            reasoning_tokens is None
+        ), "Reasoning tokens are not supported for OpenAI models."
         assert api_num_threads > 0, "Number of API threads must be greater than 0."
         assert api_max_attempts > 0, "Number of API attempts must be greater than 0."
         assert api_retry_sleep_secs > 0, "Retry sleep seconds must be greater than 0."
@@ -87,6 +91,8 @@ class OpenAIModel(BaseModel):
         response = self._client.chat.completions.create(
             model=self.name_or_path, messages=message, **gen_params
         )
+        # Note: output, response, and answer are the same for chat completions in OpenAI
+        # since there is way to distinguish them in the response.
         return ChatResponse(
             prompt_token_ids=None,  # OpenAI does not return token IDs
             num_prompt_tokens=response.usage.prompt_tokens,
@@ -94,6 +100,15 @@ class OpenAIModel(BaseModel):
             output_token_ids=None,  # OpenAI does not return token IDs
             num_output_tokens=response.usage.completion_tokens,
             output_text=response.choices[0].message.content,
+            request_token_ids=None,  # OpenAI does not return token IDs
+            num_request_tokens=response.usage.prompt_tokens,
+            request_text=None,  # OpenAI does not return prompt text
+            response_token_ids=None,  # OpenAI does not return token IDs
+            num_response_tokens=response.usage.completion_tokens,
+            response_text=response.choices[0].message.content,
+            answer_token_ids=None,  # OpenAI does not return token IDs
+            num_answer_tokens=response.usage.completion_tokens,
+            answer_text=response.choices[0].message.content,
             max_token_halt=response.choices[0].finish_reason == "length",
         )
 

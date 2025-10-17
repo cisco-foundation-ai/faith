@@ -16,7 +16,7 @@ import ast
 import logging
 import os
 from pathlib import Path
-from typing import Iterator
+from typing import Iterator, cast
 
 import argcomplete
 import colorlog
@@ -177,6 +177,9 @@ def _add_model_args(parser: argparse.ArgumentParser) -> None:
         type=AnnotatedPath(
             name=lambda x: x,
             is_file=TypeWithDefault[bool](bool, False),
+            reasoning_tokens=TypeWithDefault[tuple[str, str] | None](
+                lambda s: cast(tuple[str, str], tuple(s.partition(",")[0::2])), None
+            ),
             response_pattern=TypeWithDefault[str | None](str, None),
             tokenizer=TypeWithDefault[str | None](str, None),
         ),

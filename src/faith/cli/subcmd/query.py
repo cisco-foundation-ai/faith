@@ -235,6 +235,7 @@ def run_experiment_queries(
                 logger.warning(
                     "Using a tokenizer other than the model's tokenizer is not recommended and may lead to incorrect queries."
                 )
+            model_reasoning_tokens = annotated_model_path.get_value("reasoning_tokens")
             model_response_pattern = annotated_model_path.get_value("response_pattern")
 
             model = engine_params.engine_type.create_model(
@@ -248,6 +249,7 @@ def run_experiment_queries(
                     if exp_params.generation_mode == GenerationMode.LOGITS
                     else None
                 ),
+                reasoning_tokens=model_reasoning_tokens,
                 **engine_params.kwargs,
             )
 
