@@ -7,6 +7,7 @@
 from typing import Any
 
 from faith.benchmark.benchmark import Benchmark
+from faith.benchmark.categories.long_answer import LABenchmark
 from faith.benchmark.categories.multiple_choice import MCBenchmark
 from faith.benchmark.categories.short_answer import SABenchmark
 from faith.benchmark.types import BenchmarkSpec
@@ -20,4 +21,6 @@ def load_benchmark(
         return MCBenchmark(spec, config, **kwargs)
     if config.get("saqa_config", None) is not None:
         return SABenchmark(spec, config, **kwargs)
+    if config.get("laqa_config", None) is not None:
+        return LABenchmark(spec, config, **kwargs)
     raise ValueError(f"Unsupported benchmark type for {spec.name}.")
