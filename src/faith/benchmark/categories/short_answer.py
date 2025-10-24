@@ -127,7 +127,7 @@ class SABenchmarkDataset(BenchmarkDataset):
             raw_answer=sample["answer"],
             examples=examples,
             choice_map=None,  # Short answer benchmarks are not enumerable.
-            subject=sample["subject"] if "subject" in sample else None,
+            subject=sample.get("subject", None),
         )
 
 

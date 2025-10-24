@@ -254,7 +254,7 @@ class MCBenchmarkDataset(BenchmarkDataset):
             raw_answer=correct_symbol,
             examples=examples,
             choice_map=choice_map,
-            subject=sample["subject"] if "subject" in sample else None,
+            subject=sample.get("subject", None),
         )
 
 

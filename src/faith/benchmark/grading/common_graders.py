@@ -7,7 +7,7 @@
 import re
 from typing import Any
 
-from faith._internal.algo.matching import AnswerFormat
+from faith._internal.algo.matching import AnswerFormat, SequentialMatcher, SimpleMatcher
 from faith._internal.metrics.types import Labeling
 from faith.benchmark.grading.log_grader import LogGrader
 
@@ -116,6 +116,18 @@ class NextTokenLogGrader(LogGrader):
 
 class ChatCompletionLogGrader(LogGrader):
     """A log grader for single-answer benchmarks that log full chat completions."""
+
+    def __init__(
+        self,
+        output_processing_config: dict[str, Any],
+        model_format_config: dict[str, Any],
+        recompute_stats: bool,
+    ):
+        """Initialize the chat completion log grader."""
+        super().__init__(output_processing_config, model_format_config, recompute_stats)
+        self._answer_matcher = SimpleMatcher(model_format_config) | SequentialMatcher(
+            *(output_processing_config.get("answer_formats", None) or [])
+        )
 
     def _markup_entry_impl(self, log_entry: dict[str, Any]) -> dict[str, Any]:
         """Markup a single log entry with the computed statistics / scores."""
