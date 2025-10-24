@@ -4,9 +4,9 @@ Copyright 2025 Cisco Systems, Inc. and its affiliates
 SPDX-License-Identifier: Apache-2.0
 -->
 
-# Foundation-AI's Testing Hub (FAITH)
+# Foundation-AI's Test Hub/Harness (FAITH)
 
-Welcome to **Foundation-AI's Testing Hub (FAITH)**;
+Welcome to **Foundation-AI's Test Hub/Harness (FAITH)**;
 a framework for running benchmarks for language models.
 
 ## About The Project
