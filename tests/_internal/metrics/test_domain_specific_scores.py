@@ -9,6 +9,7 @@ from faith._internal.metrics.domain_specific_scores import (
     AliasAccuracyScore,
     CVSSScore,
     JaccardIndex,
+    LogScaledScore,
     ScoreFn,
 )
 
@@ -109,6 +110,28 @@ def test_jaccard_index_aggregate() -> None:
     }
 
 
+def test_log_scaled_score() -> None:
+    score_fn = LogScaledScore(tolerance=0.1, scaling=10.0)
+
+    assert score_fn("1.0", None) == pytest.approx(0.0)
+    assert score_fn("2.0", "I can't answer that") == pytest.approx(0.0)
+    assert score_fn("10.0", "10") == pytest.approx(1.0)
+    assert score_fn("100", "1.0e+2") == pytest.approx(1.0)
+    assert score_fn("10000", "9999") == pytest.approx(0.9995831759858649)
+    assert score_fn("100", "50") == pytest.approx(0.25277826369078593)
+    assert score_fn("10000", "-10000") == pytest.approx(0.0)
+
+
+def test_log_scaled_score_aggregate() -> None:
+    score_fn = LogScaledScore(tolerance=0.1, scaling=10.0)
+
+    scores = [0.1, 0.6, 0.2, 1.0]
+    aggregated_scores = score_fn.aggregate(scores)
+    assert aggregated_scores == {
+        "mean": pytest.approx(0.475),
+    }
+
+
 def test_alias_accuracy() -> None:
     score_fn = AliasAccuracyScore(
         {
@@ -117,6 +140,7 @@ def test_alias_accuracy() -> None:
             "actor3": ["alias1", "alias4"],
         }
     )
+    assert score_fn("actor1", None) == pytest.approx(0.0)
     assert score_fn("actor1", "alias1") == pytest.approx(1.0)
     assert score_fn("actor1", "actor3") == pytest.approx(1.0)
     assert score_fn("actor2", "actor1") == pytest.approx(0.0)
