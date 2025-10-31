@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """Common types for labels and predictions in evaluation metrics."""
+
 from typing import Sequence
 
 Labeling = str | Sequence[str]

@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """Logger provided as a context manager for collecting records over a benchmark run."""
+
 from pathlib import Path
 from types import TracebackType
 from typing import Any, Generic, Iterable, Type, TypeVar

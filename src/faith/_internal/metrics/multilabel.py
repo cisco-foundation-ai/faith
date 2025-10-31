@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """Multi-label classification metrics."""
+
 from typing import Sequence
 
 import numpy as np

@@ -9,6 +9,7 @@ out of order and returning them in sequence. It is useful for aligning outputs
 created by a set of threads or processes that may not complete in the order
 they were started.
 """
+
 from heapq import heappop, heappush
 from typing import Generic, TypeVar
 

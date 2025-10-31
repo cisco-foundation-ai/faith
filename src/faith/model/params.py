@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """Types use by the model backend engines."""
+
 from dataclasses import dataclass, field
 from typing import Any
 

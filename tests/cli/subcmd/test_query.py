@@ -51,7 +51,9 @@ class FakeBenchmark(Benchmark):
     ) -> BenchmarkDataset:
         return FakeDataset(self.formatter, np.random.default_rng())
 
-    def log_grader(self, recompute_stats: bool = False) -> LogGrader:
+    def log_grader(
+        self, model_format_config: dict[str, Any], recompute_stats: bool = False
+    ) -> LogGrader:
         raise NotImplementedError("This method should not be called.")
 
     def grade_aggregator(self) -> GradeAggregator:
@@ -145,6 +147,15 @@ class FakeModel(BaseModel):
                 output_token_ids=None,
                 num_output_tokens=17,
                 output_text=f"Fake response to: {input_str}",
+                request_token_ids=None,
+                num_request_tokens=len(input_str) - 1,
+                request_text=input_str[:-1],
+                response_token_ids=None,
+                num_response_tokens=18,
+                response_text=input_str[-1] + f"Fake response to: {input_str}",
+                answer_token_ids=None,
+                num_answer_tokens=18,
+                answer_text=input_str[-1] + f"Fake response to: {input_str}",
                 max_token_halt=False,
             )
             for input_ in inputs
@@ -165,6 +176,15 @@ class FakeModel(BaseModel):
                 output_token_ids=None,
                 num_output_tokens=17,
                 output_text=f"Token {i}",
+                request_token_ids=None,
+                num_request_tokens=len(input_str) - 1,
+                request_text=input_str[:-1],
+                response_token_ids=None,
+                num_response_tokens=18,
+                response_text=input_str[-1] + f"Token {i}",
+                answer_token_ids=None,
+                num_answer_tokens=18,
+                answer_text=input_str[-1] + f"Token {i}",
                 max_token_halt=True,
             )
             for i, input_ in enumerate(inputs)
@@ -218,6 +238,15 @@ class FakeModel(BaseModel):
                             "num_output_tokens": 17,
                             "output_text": "Fake response to: Answer the following question:\n\nQ: What is 0?\n",
                             "max_token_halt": False,
+                            "request_token_ids": None,
+                            "num_request_tokens": 45,
+                            "request_text": "Answer the following question:\n\nQ: What is 0?",
+                            "response_token_ids": None,
+                            "num_response_tokens": 18,
+                            "response_text": "\nFake response to: Answer the following question:\n\nQ: What is 0?\n",
+                            "answer_token_ids": None,
+                            "num_answer_tokens": 18,
+                            "answer_text": "\nFake response to: Answer the following question:\n\nQ: What is 0?\n",
                         },
                         "prompt": "Answer the following question:\n\nQ: What is 0?\n",
                     },
@@ -247,6 +276,15 @@ class FakeModel(BaseModel):
                             "num_output_tokens": 17,
                             "output_text": "Fake response to: Answer the following question:\n\nQ: What is 1?\n",
                             "max_token_halt": False,
+                            "request_token_ids": None,
+                            "num_request_tokens": 45,
+                            "request_text": "Answer the following question:\n\nQ: What is 1?",
+                            "response_token_ids": None,
+                            "num_response_tokens": 18,
+                            "response_text": "\nFake response to: Answer the following question:\n\nQ: What is 1?\n",
+                            "answer_token_ids": None,
+                            "num_answer_tokens": 18,
+                            "answer_text": "\nFake response to: Answer the following question:\n\nQ: What is 1?\n",
                         },
                         "prompt": "Answer the following question:\n\nQ: What is 1?\n",
                     },
@@ -279,13 +317,22 @@ class FakeModel(BaseModel):
                     "model_data": {
                         "answer_symbol_ids": {},
                         "next_token": {
+                            "answer_text": " Token 0",
+                            "answer_token_ids": None,
                             "max_token_halt": True,
+                            "num_answer_tokens": 18,
                             "num_output_tokens": 17,
                             "num_prompt_tokens": 49,
+                            "num_request_tokens": 48,
+                            "num_response_tokens": 18,
                             "output_text": "Token 0",
                             "output_token_ids": None,
                             "prompt_text": "Answer the following question:\n\nQ: What is 0?\nA: ",
                             "prompt_token_ids": None,
+                            "request_text": "Answer the following question:\n\nQ: What is 0?\nA:",
+                            "request_token_ids": None,
+                            "response_text": " Token 0",
+                            "response_token_ids": None,
                         },
                         "prompt": "Answer the following question:\n\nQ: What is 0?\nA: ",
                     },
@@ -308,13 +355,22 @@ class FakeModel(BaseModel):
                     "model_data": {
                         "answer_symbol_ids": {},
                         "next_token": {
+                            "answer_text": " Token 1",
+                            "answer_token_ids": None,
                             "max_token_halt": True,
+                            "num_answer_tokens": 18,
                             "num_output_tokens": 17,
                             "num_prompt_tokens": 49,
+                            "num_request_tokens": 48,
+                            "num_response_tokens": 18,
                             "output_text": "Token 1",
                             "output_token_ids": None,
                             "prompt_text": "Answer the following question:\n\nQ: What is 1?\nA: ",
                             "prompt_token_ids": None,
+                            "request_text": "Answer the following question:\n\nQ: What is 1?\nA:",
+                            "request_token_ids": None,
+                            "response_text": " Token 1",
+                            "response_token_ids": None,
                         },
                         "prompt": "Answer the following question:\n\nQ: What is 1?\nA: ",
                     },

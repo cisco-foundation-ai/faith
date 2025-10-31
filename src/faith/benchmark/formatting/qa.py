@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """This module defines the QA example formatter, which constructs question-answer pairs."""
+
 from dataclasses import dataclass
 from typing import Any, Sequence
 

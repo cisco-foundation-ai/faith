@@ -30,7 +30,7 @@ instructions: !from &mcqa_instructions
       {%- if loop.last %} and {% elif not loop.first %}, {% endif %}{{ ch }}
       {%- endfor -%}
       )
-      {%- endif -%}, choose the best answer. Your response should be of the following format: 'Answer: $LETTER' (without quotes) where LETTER is one of
+      {%- endif -%}, choose the best answer. Your response should be of the following format: 'Answer: $LETTER' (without quotes) where $LETTER is one of
       {%- for ch in choices %}
       {%- if loop.last %} or{% endif %} {{ ch }}
       {%- if not loop.last %},{% endif %}

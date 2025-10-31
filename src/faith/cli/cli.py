@@ -10,12 +10,13 @@
 # Within each stage's sub-command, you can import the necessary dependencies.
 
 """General purpose CLI script for running benchmarks on models."""
+
 import argparse
 import ast
 import logging
 import os
 from pathlib import Path
-from typing import Iterator
+from typing import Iterator, cast
 
 import argcomplete
 import colorlog
@@ -118,7 +119,7 @@ def _add_experiment_args(parser: argparse.ArgumentParser) -> None:
     )
     group.add_argument(
         "--custom-benchmarks",
-        type=AnnotatedPath(name=lambda x: x),
+        type=Path,
         default=None,
         nargs="*",
         help="Paths to custom benchmarks (each with a benchmark config). These benchmarks are added to those requested with '--benchmarks'.",
@@ -175,8 +176,12 @@ def _add_model_args(parser: argparse.ArgumentParser) -> None:
         "--model-paths",
         type=AnnotatedPath(
             name=lambda x: x,
-            tokenizer=TypeWithDefault[str | None](str, None),
             is_file=TypeWithDefault[bool](bool, False),
+            reasoning_tokens=TypeWithDefault[tuple[str, str] | None](
+                lambda s: cast(tuple[str, str], tuple(s.partition(",")[0::2])), None
+            ),
+            response_pattern=TypeWithDefault[str | None](str, None),
+            tokenizer=TypeWithDefault[str | None](str, None),
         ),
         required=True,
         nargs="+",

@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """Provides an abstract base class for transformations on iterators."""
+
 from abc import ABC, abstractmethod
 from typing import Generic, Iterable, TypeVar
 

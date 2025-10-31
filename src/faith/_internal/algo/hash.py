@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """Utility functions for hashing dictionaries."""
+
 import hashlib
 from typing import Any
 

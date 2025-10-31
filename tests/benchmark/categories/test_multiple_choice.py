@@ -452,7 +452,13 @@ Choices:
         ),
         config=bench_config,
     )
-    logits_log_grader = benchmark_logits.log_grader()
+    logits_log_grader = benchmark_logits.log_grader(
+        model_format_config={
+            "pattern": r"(?s)(.*)",
+            "match_disambiguation": "match_all",
+            "format_type": "proper",
+        }
+    )
 
     assert [log["stats"] for log in [] >> logits_log_grader] == []
     assert [
@@ -584,7 +590,14 @@ Choices:
         ),
         config=bench_config,
     )
-    next_token_log_grader = benchmark_next_token.log_grader(recompute_stats=True)
+    next_token_log_grader = benchmark_next_token.log_grader(
+        model_format_config={
+            "pattern": r"(?s)(.*)",
+            "match_disambiguation": "match_all",
+            "format_type": "proper",
+        },
+        recompute_stats=True,
+    )
 
     assert [log["stats"] for log in [] >> next_token_log_grader] == []
     assert [
@@ -680,7 +693,13 @@ Choices:
         ),
         config=bench_config,
     )
-    chat_log_grader = benchmark_chat.log_grader()
+    chat_log_grader = benchmark_chat.log_grader(
+        model_format_config={
+            "pattern": r"(?s)(?:\s*:think-on:.*:think-off:(?!.*:think-off:)|\s*:think-on:*)?(.*)",
+            "match_disambiguation": "match_all",
+            "format_type": "proper",
+        }
+    )
 
     assert [log["stats"] for log in [] >> chat_log_grader] == []
     assert [
@@ -758,7 +777,7 @@ Choices:
                 "data": {"label": "B"},
                 "model_data": {
                     "chat_comp": {
-                        "output_text": "I think the answer is B or A. Guessing...\n\nAnswer: A",
+                        "output_text": ":think-on:I think the answer is B or A.:think-off:Guessing...\n\nAnswer: A",
                         "num_output_tokens": 17,
                         "max_token_halt": True,
                     }

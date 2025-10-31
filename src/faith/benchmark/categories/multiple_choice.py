@@ -7,6 +7,7 @@
 This module provides the `MCBenchmark` class for multiple choice benchmarks, which
 extends the `Benchmark` class to handle multiple choice question-answering tasks.
 """
+
 from typing import Any, Sequence
 
 import numpy as np
@@ -153,15 +154,19 @@ class MCBenchmark(BaseBenchmark):
             randomize_choices,
         )
 
-    def log_grader(self, recompute_stats: bool = False) -> LogGrader:
+    def log_grader(
+        self, model_format_config: dict[str, Any], recompute_stats: bool = False
+    ) -> LogGrader:
         """Fetch a log grader for this benchmark."""
         op_cfg = self._config["output_processing"]
         if self.generation_mode == GenerationMode.LOGITS:
-            return LogitsLogGrader(op_cfg, recompute_stats)
+            return LogitsLogGrader(op_cfg, model_format_config, recompute_stats)
         if self.generation_mode == GenerationMode.NEXT_TOKEN:
-            return NextTokenLogGrader(op_cfg, recompute_stats, self.answer_set)
+            return NextTokenLogGrader(
+                op_cfg, model_format_config, recompute_stats, self.answer_set
+            )
         if self.generation_mode == GenerationMode.CHAT_COMPLETION:
-            return ChatCompletionLogGrader(op_cfg, recompute_stats)
+            return ChatCompletionLogGrader(op_cfg, model_format_config, recompute_stats)
         raise ValueError(
             f"Unsupported generation mode: {self.generation_mode} for multiple-choice log grading."
         )
@@ -249,7 +254,7 @@ class MCBenchmarkDataset(BenchmarkDataset):
             raw_answer=correct_symbol,
             examples=examples,
             choice_map=choice_map,
-            subject=sample["subject"] if "subject" in sample else None,
+            subject=sample.get("subject", None),
         )
 
 

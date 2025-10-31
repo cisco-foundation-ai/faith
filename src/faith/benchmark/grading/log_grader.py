@@ -3,13 +3,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """Provides `LogGrader` for grading / scoring benchmark logs."""
+
 import logging
 from abc import abstractmethod
 from typing import Any, Iterable
 
 from tqdm import tqdm
 
-from faith._internal.algo.matching import AnswerFormat, SequentialMatcher
+from faith._internal.algo.matching import AnswerFormat
 from faith._internal.iter.transform import IsoTransform
 from faith._internal.metrics.domain_specific_scores import ScoreFn
 from faith._internal.metrics.types import Labeling
@@ -20,15 +21,17 @@ logger = logging.getLogger(__name__)
 class LogGrader(IsoTransform[dict[str, Any]]):
     """Base class for log graders that process and grade benchmark logs."""
 
-    def __init__(self, output_processing_config: dict[str, Any], recompute_stats: bool):
+    def __init__(
+        self,
+        output_processing_config: dict[str, Any],
+        _model_format_config: dict[str, Any],
+        recompute_stats: bool,
+    ):
         """Initialize the logs grader."""
         super().__init__()
         self._recompute_stats = recompute_stats
-        self._answer_matcher = SequentialMatcher(
-            *output_processing_config.get("answer_formats", [])
-        )
         self._score_fns = ScoreFn.from_configs(
-            **output_processing_config.get("score_fns", {})
+            **(output_processing_config.get("score_fns", None) or {})
         )
 
     def __call__(self, logs: Iterable[dict[str, Any]]) -> Iterable[dict[str, Any]]:

@@ -1,11 +1,9 @@
 # Assume Python 3.10+.
 target-version = "py310"
+line-length = 88
 
 # Store the cache in a temporary location
 cache-dir = "/tmp/.ruff_cache"
-
-# Same as used in .flake8
-line-length = 120
 
 [lint]
 ignore = ["E203"]

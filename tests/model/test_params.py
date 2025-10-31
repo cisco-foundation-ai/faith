@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """Tests for the model backend types."""
+
 import tempfile
 from pathlib import Path
 

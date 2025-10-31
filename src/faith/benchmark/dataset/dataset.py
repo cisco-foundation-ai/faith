@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """Base class `BenchmarkDataset` for all benchmark datasets."""
+
 from abc import ABC, abstractmethod
 from typing import Iterator, Sequence
 

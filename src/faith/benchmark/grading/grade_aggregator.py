@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """Defines `GradeAggregator` for aggregating benchmark grades from benchmark logs."""
+
 from abc import abstractmethod
 from collections import defaultdict
 from typing import Any, Iterable, Sequence

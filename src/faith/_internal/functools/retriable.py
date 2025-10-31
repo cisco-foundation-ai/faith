@@ -14,6 +14,7 @@ transient failures, such as network issues or temporary unavailability of resour
 This is particularly useful for calling external APIs or services that may
 temporarily fail but are expected to succeed upon retrying eventually.
 """
+
 import logging
 import time
 from typing import Any, Callable, Generic, TypeVar

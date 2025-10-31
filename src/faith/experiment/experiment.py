@@ -3,11 +3,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """Defines the `BenchmarkExperiment`, which manages an experiment for a benchmark."""
+
 from pathlib import Path
 from typing import Any, Iterator
 
-from faith._internal.io.benchmarks import benchmarks_root
-from faith._internal.types.flags import GenerationMode, PathWithAnnotations, SampleRatio
+from faith._internal.types.flags import GenerationMode, SampleRatio
 from faith.benchmark.benchmark import Benchmark
 from faith.benchmark.config import load_config_from_path
 from faith.benchmark.formatting.prompt import PromptFormatter
@@ -21,14 +21,14 @@ class BenchmarkExperiment:
 
     Experiments act as an iterator of `Benchmark` instances, each representing a trial
     of the benchmark with a specific seed. The experiment is configured with parameters
-    benchmark name-or-path, generation mode, prompt format, number of shots, and any
+    benchmark path, generation mode, prompt format, number of shots, and any
     `kwargs` given. The datastore location and seed for the benchmark are changed for
     each trail, allowing for multiple runs over the same benchmark.
     """
 
     def __init__(
         self,
-        name_or_path: str | PathWithAnnotations,
+        benchmark_path: Path,
         generation_mode: GenerationMode,
         prompt_format: PromptFormatter,
         n_shot: SampleRatio,
@@ -43,31 +43,21 @@ class BenchmarkExperiment:
         assert (
             num_trials > 0
         ), f"Number of trials must be positive, but got {num_trials}."
-        benchmark_name = (
-            name_or_path
-            if isinstance(name_or_path, str)
-            else name_or_path.get_value("name")
-        )
-        assert (
-            benchmark_name is not None
-        ), f"A name must be provided as an annotation for custom benchmark '{str(name_or_path)}'."
-        self._benchmark_dir = (
-            benchmarks_root() / benchmark_name
-            if isinstance(name_or_path, str)
-            else name_or_path.path
-        )
+        self._benchmark_dir = benchmark_path
         assert (
             self._benchmark_dir.exists() and self._benchmark_dir.is_dir()
         ), f"Benchmark path '{self._benchmark_dir}' is not an existing directory."
 
         # State that specifies and configures the benchmark.
+        self._benchmark_config = load_config_from_path(self._benchmark_dir)
+        benchmark_name = self._benchmark_config.get("metadata", {}).get("name", None)
+        assert benchmark_name, "Benchmark config missing field `metadata.name`."
         self._benchmark_spec = BenchmarkSpec(
             name=benchmark_name,
             generation_mode=generation_mode,
             prompt_format=prompt_format,
             n_shot=n_shot,
         )
-        self._benchmark_config = load_config_from_path(self._benchmark_dir)
         self._benchmark_kwargs = kwargs
 
         # State that specifes the model.

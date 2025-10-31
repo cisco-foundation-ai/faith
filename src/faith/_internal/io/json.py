@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """Utility functions for reading and writing files."""
+
 from pathlib import Path
 from typing import Any
 

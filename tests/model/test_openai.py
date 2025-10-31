@@ -51,6 +51,15 @@ def test_openai_model(mock_openai_client_class: MagicMock) -> None:
             output_token_ids=None,
             num_output_tokens=5,
             output_text="Bin dabei!",
+            request_token_ids=None,
+            num_request_tokens=2,
+            request_text=None,
+            response_token_ids=None,
+            num_response_tokens=5,
+            response_text="Bin dabei!",
+            answer_token_ids=None,
+            num_answer_tokens=5,
+            answer_text="Bin dabei!",
             max_token_halt=False,
         )
     ]
@@ -95,6 +104,15 @@ def test_openai_model_retry(mock_openai_client_class: MagicMock) -> None:
             output_token_ids=None,
             num_output_tokens=5,
             output_text="Bin dabei!",
+            request_token_ids=None,
+            num_request_tokens=2,
+            request_text=None,
+            response_token_ids=None,
+            num_response_tokens=5,
+            response_text="Bin dabei!",
+            answer_token_ids=None,
+            num_answer_tokens=5,
+            answer_text="Bin dabei!",
             max_token_halt=False,
         )
     ]

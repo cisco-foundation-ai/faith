@@ -3,9 +3,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """Utility functions for matching and processing answer formats."""
+
 import re
+from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, cast
+from typing import Any, Generic, TypeVar, cast
 
 from faith._internal.parsing.expr import evaluate_expr
 
@@ -38,6 +40,7 @@ class MatchDisambiguation(Enum):
     MATCH_IF_UNIQUE = "match_if_unique"
     MATCH_FIRST = "match_first"
     MATCH_LAST = "match_last"
+    MATCH_ALL = "match_all"
 
     def __str__(self) -> str:
         """Return the string representation of the enum."""
@@ -95,9 +98,16 @@ class _FormatPattern:
             names=dict(zip(self._transform_params, captures)),
         )
 
+    def _match(self, s: str) -> list[str] | list[tuple[str, ...]]:
+        """Match the string `s` with the regex pattern."""
+        if self._match_disambiguation == MatchDisambiguation.MATCH_ALL:
+            m = self._pattern.fullmatch(s)
+            return [m.groups() if len(m.groups()) > 0 else (m.group(0),)] if m else []
+        return self._pattern.findall(s)
+
     def __call__(self, s: str) -> tuple[Any, AnswerFormat] | None:
         """Match the string `s` with the regex pattern."""
-        matches: list[str] | list[tuple[str, ...]] = self._pattern.findall(s)
+        matches: list[str] | list[tuple[str, ...]] = self._match(s)
         if not matches:
             return None
 
@@ -133,7 +143,57 @@ class _FormatPattern:
         return None
 
 
-class SequentialMatcher:
+_MATCH_TYPE = TypeVar("_MATCH_TYPE")
+_OTHER_TYPE = TypeVar("_OTHER_TYPE")
+
+
+class Matcher(ABC, Generic[_MATCH_TYPE]):
+    """Base class for a matcher that matches a string."""
+
+    @abstractmethod
+    def __call__(self, s: str) -> _MATCH_TYPE:
+        """Match the string `s`.
+
+        Args:
+            s: The string to match.
+
+        Returns:
+            A tuple of the matched value and its answer format. If no match is found,
+            returns (None, AnswerFormat.INVALID).
+        """
+
+
+class _MatcherCompose(Matcher, Generic[_MATCH_TYPE]):
+    """A matcher that composes two matchers into a new matcher."""
+
+    def __init__(self, first: Matcher[str], second: Matcher[_MATCH_TYPE]):
+        """Initialize with two matchers."""
+        self.first = first
+        self.second = second
+
+    def __call__(self, s: str) -> _MATCH_TYPE:
+        """Apply the matchers in sequence."""
+        return self.second(self.first(s))
+
+
+class SimpleMatcher(Matcher[str]):
+    """Reduce a string to a subselection using a regex pattern."""
+
+    def __init__(self, pattern_def: dict[str, Any]):
+        """Initialize with a single pattern definition."""
+        self._pattern = _FormatPattern(pattern_def)
+
+    def __or__(self, other: "Matcher[_OTHER_TYPE]") -> "Matcher[_OTHER_TYPE]":
+        """Allow composition of matchers with the | operator."""
+        return _MatcherCompose(self, other)
+
+    def __call__(self, s: str) -> str:
+        """Match the string `s` with the regex pattern."""
+        match = self._pattern(s)
+        return cast(str, match[0]) if match is not None else ""
+
+
+class SequentialMatcher(Matcher[tuple[Any, AnswerFormat]]):
     """Match a string against multiple patterns in sequence, returning the first match."""
 
     def __init__(self, *pattern_defs: dict[str, Any]):

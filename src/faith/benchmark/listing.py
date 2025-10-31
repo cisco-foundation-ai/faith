@@ -3,11 +3,13 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """Functions that list benchmarks with their states and categories."""
+
 from enum import Enum
+from pathlib import Path
 from typing import Sequence
 
 from faith._internal.io.benchmarks import benchmarks_root
-from faith.benchmark.config import load_config_from_name
+from faith.benchmark.config import load_config_from_path
 
 
 class BenchmarkState(Enum):
@@ -27,16 +29,17 @@ class BenchmarkState(Enum):
             raise ValueError(f"Unknown benchmark state: {s}") from e
 
 
-def _benchmark_names(
-    allowed_states: set[BenchmarkState], allowed_categories: set[str] | None = None
+def _get_benchmark_paths(
+    root_dir: Path,
+    allowed_states: set[BenchmarkState],
+    allowed_categories: set[str] | None = None,
 ) -> Sequence[str]:
-    """Get a list of all benchmark names that are in the allowed states."""
+    """Get a list of all sub-paths of `root_dir` that are valid benchmark paths."""
     return sorted(
         [
-            name
-            for f in benchmarks_root().glob("*/benchmark.yaml")
-            if (name := f.parent.name)
-            and (metadata := load_config_from_name(name)["metadata"])
+            str(f.parent.relative_to(root_dir))
+            for f in root_dir.glob("**/benchmark.yaml")
+            if (metadata := load_config_from_path(f.parent)["metadata"])
             and BenchmarkState.from_string(metadata.get("state", "enabled"))
             in allowed_states
             and (
@@ -51,24 +54,27 @@ def benchmark_choices() -> Sequence[str]:
     """Get a list of available benchmarks."""
     return ["all", "all-reasoning", "all-security"] + [
         opt
-        for n in _benchmark_names(
-            allowed_states={BenchmarkState.ENABLED, BenchmarkState.EXPERIMENTAL},
+        for p in _get_benchmark_paths(
+            benchmarks_root(),
+            {BenchmarkState.ENABLED, BenchmarkState.EXPERIMENTAL},
         )
-        for opt in [n, f"!{n}"]
+        for opt in [p, f"!{p}"]
     ]
 
 
-def choices_to_benchmarks(choices: Sequence[str]) -> Sequence[str]:
+def choices_to_benchmarks(choices: Sequence[str]) -> Sequence[Path]:
     """Convert a list of benchmark choices to benchmark names."""
     if not choices:
         return []
     group_name_mapping = {
-        "all": _benchmark_names(allowed_states={BenchmarkState.ENABLED}),
-        "all-reasoning": _benchmark_names(
-            allowed_states={BenchmarkState.ENABLED}, allowed_categories={"reasoning"}
+        "all": _get_benchmark_paths(benchmarks_root(), {BenchmarkState.ENABLED}),
+        "all-reasoning": _get_benchmark_paths(
+            benchmarks_root(),
+            {BenchmarkState.ENABLED},
+            allowed_categories={"reasoning"},
         ),
-        "all-security": _benchmark_names(
-            allowed_states={BenchmarkState.ENABLED}, allowed_categories={"security"}
+        "all-security": _get_benchmark_paths(
+            benchmarks_root(), {BenchmarkState.ENABLED}, allowed_categories={"security"}
         ),
     }
     unique_choices = list(
@@ -82,4 +88,16 @@ def choices_to_benchmarks(choices: Sequence[str]) -> Sequence[str]:
     )
     positive_selections = [c for c in unique_choices if not c.startswith("!")]
     negative_selections = {c[1:] for c in unique_choices if c.startswith("!")}
-    return [c for c in positive_selections if c not in negative_selections]
+    return [
+        benchmarks_root() / c
+        for c in positive_selections
+        if c not in negative_selections
+    ]
+
+
+def find_benchmarks(root_dir: Path) -> Sequence[Path]:
+    """Find all valid benchmarks in the `root_dir` directory."""
+    return [
+        root_dir / sub_path
+        for sub_path in _get_benchmark_paths(root_dir, {BenchmarkState.ENABLED})
+    ]

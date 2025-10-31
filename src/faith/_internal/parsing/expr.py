@@ -8,6 +8,7 @@ The wrapper `evaluate_expr` allows for the evaluation of expressions with a
 limited set of builtin allowed functions and types, and has an adjustable maximum
 comprehension length to allow for evaluations on large datasets.
 """
+
 from typing import Any
 
 import simpleeval

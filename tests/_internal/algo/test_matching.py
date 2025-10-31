@@ -11,6 +11,7 @@ from faith._internal.algo.matching import (
     AnswerFormat,
     MatchDisambiguation,
     SequentialMatcher,
+    SimpleMatcher,
     _FormatPattern,
 )
 
@@ -205,6 +206,34 @@ def test_format_pattern_answer_format() -> None:
                 ("abc", None),
             ],
         ),
+        (
+            {
+                "format_type": "improper",
+                "match_disambiguation": "match_all",
+                "pattern": r"(\d+)F",
+            },
+            [
+                ("448F", ("448", AnswerFormat.IMPROPER)),
+                ("57F abc", None),
+                ("abc", None),
+                ("55F 7F", None),
+                ("abc", None),
+            ],
+        ),
+        (
+            {
+                "format_type": "proper",
+                "match_disambiguation": "match_all",
+                "pattern": r"(?s)\d+kg\s+.*",
+            },
+            [
+                ("945kg\n\nabc", ("945kg\n\nabc", AnswerFormat.PROPER)),
+                ("weight: 57kg abc", None),
+                ("abc", None),
+                ("55kg,7kg", None),
+                ("abc", None),
+            ],
+        ),
     ],
 )
 def test_format_pattern_call(
@@ -215,6 +244,23 @@ def test_format_pattern_call(
     pattern = _FormatPattern(spec)
     for input_str, expected_output in input_output_pairs:
         assert pattern(input_str) == expected_output
+
+
+def test_simple_matcher() -> None:
+    """Test the SimpleMatcher class."""
+    matcher = SimpleMatcher(
+        {
+            "format_type": "proper",
+            "match_disambiguation": "match_if_singular",
+            "pattern": r"(\d+)\s*\+\s*(?:\d+)",
+        }
+    )
+
+    assert matcher("5 + 7") == "5"
+    assert matcher("5 + 7 or 5+7") == ""
+    assert matcher("abc") == ""
+    assert matcher("57 abc") == ""
+    assert matcher("5 or 5 and 5") == ""
 
 
 def test_sequential_matcher() -> None:
@@ -268,3 +314,28 @@ def test_sequential_matcher_assertions() -> None:
                 "pattern": r"(\w+)",
             },
         )
+
+
+def test_matcher_composition() -> None:
+    """Test that matchers can be composed."""
+    matcher1 = SimpleMatcher(
+        {
+            "format_type": "proper",
+            "match_disambiguation": "match_all",
+            "pattern": r"(\d+)\s*\+\s*(?:\d+)",
+        }
+    )
+    matcher2 = SimpleMatcher(
+        {
+            "format_type": "proper",
+            "match_disambiguation": "match_all",
+            "pattern": r"(\d)(?:\d*)",
+        }
+    )
+    matcher = matcher1 | matcher2
+
+    assert matcher("85 + 7") == "8"
+    assert matcher("57 abc") == ""
+    assert matcher("abc") == ""
+    assert matcher("5 or 5 and 5") == ""
+    assert matcher("5 + 7 or 5+7") == ""

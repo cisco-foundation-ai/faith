@@ -342,7 +342,13 @@ def test_short_answer_benchmark_process_logs_chat() -> None:
         ),
         config=bench_config,
     )
-    log_grader = benchmark_chat.log_grader()
+    log_grader = benchmark_chat.log_grader(
+        model_format_config={
+            "pattern": r"(?s)(?:\s*<t>.*</t>(?!.*</t>)|\s*<t>.*)?(.*)",
+            "match_disambiguation": "match_all",
+            "format_type": "proper",
+        }
+    )
 
     assert [log["stats"] for log in [] >> log_grader] == []
     assert [
@@ -354,9 +360,19 @@ def test_short_answer_benchmark_process_logs_chat() -> None:
                     "data": {"label": "foo", "subject": "bar"},
                     "model_data": {
                         "chat_comp": {
-                            "output_text": "Answer: foo",
+                            "output_text": "<t>Maybe </t>Answer: bar</t>Answer: foo",
                             "num_output_tokens": 3,
                             "max_token_halt": False,
+                        }
+                    },
+                },
+                {
+                    "data": {"label": "foo", "subject": "bar"},
+                    "model_data": {
+                        "chat_comp": {
+                            "output_text": "<t>Maybe Answer: foo",
+                            "num_output_tokens": 3,
+                            "max_token_halt": True,
                         }
                     },
                 },
@@ -402,6 +418,14 @@ def test_short_answer_benchmark_process_logs_chat() -> None:
             "max_token_halt": False,
             "num_output_tokens": 3,
             "prediction": "foo",
+            "subject": "bar",
+        },
+        {
+            "answer_format": AnswerFormat.INVALID,
+            "label": "foo",
+            "max_token_halt": True,
+            "num_output_tokens": 3,
+            "prediction": None,
             "subject": "bar",
         },
         {

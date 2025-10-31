@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """Provides `benchmarks_root` function to get the path to packaged benchmarks."""
+
 from importlib import resources
 from pathlib import Path
 

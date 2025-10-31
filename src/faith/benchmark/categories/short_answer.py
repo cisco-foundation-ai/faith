@@ -7,6 +7,7 @@
 This module provides the `SABenchmark` class for short answer benchmarks, which
 extends the `Benchmark` class to handle short answer question-answering tasks.
 """
+
 from enum import Enum
 from typing import Any, Sequence
 
@@ -79,11 +80,13 @@ class SABenchmark(BaseBenchmark):
             rng,
         )
 
-    def log_grader(self, recompute_stats: bool = False) -> LogGrader:
+    def log_grader(
+        self, model_format_config: dict[str, Any], recompute_stats: bool = False
+    ) -> LogGrader:
         """Fetch a log grader for this benchmark."""
         op_cfg = self._config["output_processing"]
         if self.generation_mode == GenerationMode.CHAT_COMPLETION:
-            return ChatCompletionLogGrader(op_cfg, recompute_stats)
+            return ChatCompletionLogGrader(op_cfg, model_format_config, recompute_stats)
         raise ValueError(
             f"Unsupported generation mode: {self.generation_mode} for multiple-choice log grading."
         )
@@ -124,7 +127,7 @@ class SABenchmarkDataset(BenchmarkDataset):
             raw_answer=sample["answer"],
             examples=examples,
             choice_map=None,  # Short answer benchmarks are not enumerable.
-            subject=sample["subject"] if "subject" in sample else None,
+            subject=sample.get("subject", None),
         )
 
 

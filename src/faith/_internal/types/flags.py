@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """Provides types for parsing command line flags."""
+
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
