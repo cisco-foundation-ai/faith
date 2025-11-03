@@ -35,8 +35,8 @@ def test_long_answer_benchmark_logits() -> None:
                 "format": {
                     "instructions": {
                         "system_prompt": "You are a helpful assistant.",
-                        "base_inst_template": "Please answer the following question.",
-                        "chat_inst_template": "Please answer the following question in a chat format.",
+                        "base_inst_template": "Please respond to the following question.",
+                        "chat_inst_template": "Please respond to the following question in a chat format.",
                     },
                     "prompt": {
                         "question_template": "Question: {{ question }}",
@@ -65,8 +65,8 @@ def test_long_answer_benchmark_next_token() -> None:
                 "format": {
                     "instructions": {
                         "system_prompt": "You are a helpful assistant.",
-                        "base_inst_template": "Please answer the following question.",
-                        "chat_inst_template": "Please answer the following question in a chat format.",
+                        "base_inst_template": "Please respond to the following question.",
+                        "chat_inst_template": "Please respond to the following question in a chat format.",
                     },
                     "prompt": {
                         "question_template": "Question: {{ question }}",
@@ -90,8 +90,8 @@ def test_long_answer_benchmark_chat() -> None:
             "laqa_config": {"type": "free_form"},
             "format": {
                 "instructions": {
-                    "base_inst_template": "Please answer the following question.",
-                    "chat_inst_template": "Please answer the following question in a chat format.",
+                    "base_inst_template": "Please respond to the following question.",
+                    "chat_inst_template": "Please respond to the following question in a chat format.",
                 },
                 "prompt": {
                     "question_template": "Question: {{ question }}",
@@ -110,8 +110,8 @@ def test_long_answer_benchmark_chat() -> None:
 def test_long_answer_benchmark_build_dataset() -> None:
     fake_test_dataset = Dataset.from_dict(
         {
-            "question": ["What is the capital of Austria?", "What is 1+2?"],
-            "answer": ["Vienna", "3"],
+            "question": ["What is the capital of Nepal?", "What is 4+5?"],
+            "answer": ["Kathmandu", "9"],
         },
         features=Features({"question": Value("string"), "answer": Value("string")}),
     )
@@ -135,8 +135,8 @@ def test_long_answer_benchmark_build_dataset() -> None:
             "format": {
                 "instructions": {
                     "system_prompt": "You are a helpful assistant.",
-                    "base_inst_template": "Please answer the following question.",
-                    "chat_inst_template": "Please answer the following question in a chat format.",
+                    "base_inst_template": "Please respond to the following question.",
+                    "chat_inst_template": "Please respond to the following question in a chat format.",
                 },
                 "prompt": {
                     "question_template": "Question: {{ question }}",
@@ -146,7 +146,7 @@ def test_long_answer_benchmark_build_dataset() -> None:
             },
             "source": {
                 "huggingface": {
-                    "path": "foo/bar-baz",
+                    "path": "foo/baz-bar",
                     "subset_name": "qux",
                     "test_split": "test",
                     "dev_split": "dev",
@@ -160,7 +160,7 @@ def test_long_answer_benchmark_build_dataset() -> None:
         return_value=fake_dataset_dict,
     ) as mock_load_dataset:
         dataset_1shot = benchmark_1shot.build_dataset()
-        mock_load_dataset.assert_called_once_with("foo/bar-baz", "qux")
+        mock_load_dataset.assert_called_once_with("foo/baz-bar", "qux")
 
         # Compare the questions as dictionaries.
         assert [q.to_dict() for q in dataset_1shot.iter_data()] == [
@@ -169,13 +169,13 @@ def test_long_answer_benchmark_build_dataset() -> None:
                 "benchmark_sample_hash": ANY,
                 "subject": None,
                 "system_prompt": "You are a helpful assistant.",
-                "instruction": "Please answer the following question.",
-                "question": "What is the capital of Austria?",
+                "instruction": "Please respond to the following question.",
+                "question": "What is the capital of Nepal?",
                 "choices": None,
-                "label": "Vienna",
-                "formatted_question": "Question: What is the capital of Austria?",
-                "formatted_answer": "Answer: Vienna",
-                "question_prompt": "Please answer the following question.\n\nQuestion: What is the capital of Austria?",
+                "label": "Kathmandu",
+                "formatted_question": "Question: What is the capital of Nepal?",
+                "formatted_answer": "Answer: Kathmandu",
+                "question_prompt": "Please respond to the following question.\n\nQuestion: What is the capital of Nepal?",
                 "judge_prompt_template": None,
                 "max_points": None,
             },
@@ -184,13 +184,13 @@ def test_long_answer_benchmark_build_dataset() -> None:
                 "benchmark_sample_hash": ANY,
                 "subject": None,
                 "system_prompt": "You are a helpful assistant.",
-                "instruction": "Please answer the following question.",
-                "question": "What is 1+2?",
+                "instruction": "Please respond to the following question.",
+                "question": "What is 4+5?",
                 "choices": None,
-                "label": "3",
-                "formatted_question": "Question: What is 1+2?",
-                "formatted_answer": "Answer: 3",
-                "question_prompt": "Please answer the following question.\n\nQuestion: What is 1+2?",
+                "label": "9",
+                "formatted_question": "Question: What is 4+5?",
+                "formatted_answer": "Answer: 9",
+                "question_prompt": "Please respond to the following question.\n\nQuestion: What is 4+5?",
                 "judge_prompt_template": None,
                 "max_points": None,
             },
@@ -208,8 +208,8 @@ def test_long_answer_benchmark_build_dataset() -> None:
             "format": {
                 "instructions": {
                     "system_prompt": "You are a helpful assistant.",
-                    "base_inst_template": "Please answer the following question.",
-                    "chat_inst_template": "Please answer the following question in a chat format.",
+                    "base_inst_template": "Please respond to the following question.",
+                    "chat_inst_template": "Please respond to the following question in a chat format.",
                 },
                 "prompt": {
                     "question_template": "Question: {{ question }}",
@@ -219,7 +219,7 @@ def test_long_answer_benchmark_build_dataset() -> None:
             },
             "source": {
                 "huggingface": {
-                    "path": "foo/bar-baz",
+                    "path": "foo/baz-bar",
                     "subset_name": "qux",
                     "test_split": "test",
                 },
@@ -232,7 +232,7 @@ def test_long_answer_benchmark_build_dataset() -> None:
         return_value=fake_dataset_dict,
     ) as mock_load_dataset:
         dataset_1shot_no_dev = benchmark_1shot_no_dev.build_dataset()
-        mock_load_dataset.assert_called_once_with("foo/bar-baz", "qux")
+        mock_load_dataset.assert_called_once_with("foo/baz-bar", "qux")
 
         # Compare the questions as dictionaries.
         assert [q.to_dict() for q in dataset_1shot_no_dev.iter_data()] == [
@@ -241,13 +241,13 @@ def test_long_answer_benchmark_build_dataset() -> None:
                 "benchmark_sample_hash": ANY,
                 "subject": None,
                 "system_prompt": "You are a helpful assistant.",
-                "instruction": "Please answer the following question.",
-                "question": "What is the capital of Austria?",
+                "instruction": "Please respond to the following question.",
+                "question": "What is the capital of Nepal?",
                 "choices": None,
-                "label": "Vienna",
-                "formatted_question": "Question: What is the capital of Austria?",
-                "formatted_answer": "Answer: Vienna",
-                "question_prompt": "Please answer the following question.\n\nQuestion: What is the capital of Austria?",
+                "label": "Kathmandu",
+                "formatted_question": "Question: What is the capital of Nepal?",
+                "formatted_answer": "Answer: Kathmandu",
+                "question_prompt": "Please respond to the following question.\n\nQuestion: What is the capital of Nepal?",
                 "judge_prompt_template": None,
                 "max_points": None,
             },
@@ -255,8 +255,8 @@ def test_long_answer_benchmark_build_dataset() -> None:
 
     judged_test_dataset = Dataset.from_dict(
         {
-            "question": ["What is the capital of Austria?", "What is 1+2?"],
-            "answer": ["Vienna", "3"],
+            "question": ["What is the capital of Nepal?", "What is 4+5?"],
+            "answer": ["Kathmandu", "9"],
             "judge_prompt_template": [
                 "Score '{{ generated_answer }}' compared to correct answer '{{ correct_answer }}' on a scale of 0-1?",
                 "Score '{{ generated_answer }}' compared to correct answer '{{ correct_answer }}' on a scale of 0-1?",
@@ -291,8 +291,8 @@ def test_long_answer_benchmark_build_dataset() -> None:
             "format": {
                 "instructions": {
                     "system_prompt": "You are a helpful assistant.",
-                    "base_inst_template": "Please answer the following question.",
-                    "chat_inst_template": "Please answer the following question in a chat format.",
+                    "base_inst_template": "Please respond to the following question.",
+                    "chat_inst_template": "Please respond to the following question in a chat format.",
                 },
                 "prompt": {
                     "question_template": "Question: {{ question }}",
@@ -302,7 +302,7 @@ def test_long_answer_benchmark_build_dataset() -> None:
             },
             "source": {
                 "huggingface": {
-                    "path": "foo/bar-baz",
+                    "path": "foo/baz-bar",
                     "test_split": "test",
                 },
             },
@@ -314,7 +314,7 @@ def test_long_answer_benchmark_build_dataset() -> None:
         return_value=judged_dataset_dict,
     ) as mock_load_dataset:
         dataset_0shot = benchmark_0shot.build_dataset(sample_size=1)
-        mock_load_dataset.assert_called_once_with("foo/bar-baz", None)
+        mock_load_dataset.assert_called_once_with("foo/baz-bar", None)
 
         # Compare the questions as dictionaries.
         assert [q.to_dict() for q in dataset_0shot.iter_data()] == [
@@ -323,13 +323,13 @@ def test_long_answer_benchmark_build_dataset() -> None:
                 "benchmark_sample_hash": ANY,
                 "subject": None,
                 "system_prompt": "You are a helpful assistant.",
-                "instruction": "Please answer the following question.",
-                "question": "What is 1+2?",
+                "instruction": "Please respond to the following question.",
+                "question": "What is 4+5?",
                 "choices": None,
-                "label": "3",
-                "formatted_question": "Question: What is 1+2?",
-                "formatted_answer": "Answer: 3",
-                "question_prompt": "Please answer the following question.\n\nQuestion: What is 1+2?",
+                "label": "9",
+                "formatted_question": "Question: What is 4+5?",
+                "formatted_answer": "Answer: 9",
+                "question_prompt": "Please respond to the following question.\n\nQuestion: What is 4+5?",
                 "judge_prompt_template": "Score '{{ generated_answer }}' compared to correct answer '{{ correct_answer }}' on a scale of 0-1?",
                 "max_points": 1.0,
             },
@@ -340,18 +340,21 @@ class _FakeJudgeModel(BaseModel):
     """A fake model that simulates judge responses for testing purposes."""
 
     def __init__(self, model_name: str):
+        """Initializes the fake judge model."""
         super().__init__(model_name)
         assert model_name == "gpt-4o"
 
     @property
     def supported_formats(self) -> set[PromptFormatter]:
+        """The fake model supports all prompt formats."""
         return set(list(PromptFormatter))
 
     def query(
         self,
         inputs: PromptList,
-        **kwargs: Any,
+        **_kwargs: Any,
     ) -> Iterable[ChatResponse | GenerationError]:
+        """Simulates a judge model response for each input prompt."""
         assert len(inputs) == 1, "Expected each query call to have a single input"
         yield ChatResponse(
             prompt_token_ids=None,
@@ -379,8 +382,8 @@ def test_long_answer_benchmark_process_logs_chat() -> None:
         "format": {
             "instructions": {
                 "system_prompt": "You are a helpful assistant.",
-                "base_inst_template": "Please answer the following question.",
-                "chat_inst_template": "Please answer the following question in a chat format.",
+                "base_inst_template": "Please respond to the following question.",
+                "chat_inst_template": "Please respond to the following question in a chat format.",
             },
             "prompt": {
                 "question_template": "Question: {{ question }}",
@@ -540,8 +543,8 @@ def test_long_answer_benchmark_grade_aggregator() -> None:
         "format": {
             "instructions": {
                 "system_prompt": "You are a helpful assistant.",
-                "base_inst_template": "Please answer the following question.",
-                "chat_inst_template": "Please answer the following question in a chat format.",
+                "base_inst_template": "Please respond to the following question.",
+                "chat_inst_template": "Please respond to the following question in a chat format.",
             },
             "prompt": {
                 "question_template": "Question: {{ question }}",
@@ -596,9 +599,9 @@ SUMMARY: [your summary text]""",
         ),
         config=bench_config,
     )
-    metric_aggregator = benchmark_chat.grade_aggregator()
+    aggregator = benchmark_chat.grade_aggregator()
 
-    assert [] >> metric_aggregator == {
+    assert [] >> aggregator == {
         "format_count": {
             "improper": 0,
             "inferred": 0,
@@ -657,7 +660,7 @@ SUMMARY: [your summary text]""",
                 "answer_format": AnswerFormat.PROPER,
             }
         },
-    ] >> metric_aggregator == {
+    ] >> aggregator == {
         "format_count": {
             "improper": 0,
             "inferred": 0,
