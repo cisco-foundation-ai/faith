@@ -123,11 +123,13 @@ class _VLLMBackend(BaseModel):
         return cast(PreTrainedTokenizerBase, self._tokenizer)
 
 
-def remove_prefix(lst: list[int], prefix: list[int]) -> list[int]:
-    """Remove the given prefix from the list if it exists."""
-    if lst[: min(len(prefix), len(lst))] == prefix:
-        return lst[len(prefix) :]
-    raise ValueError("The provided prefix does not match the start of the list.")
+def _remove_longest_common_prefix(lst: list[int], prefix: list[int]) -> list[int]:
+    """Remove the longest common prefix of `lst` and `prefix` from `lst`."""
+    max_cut = min(len(lst), len(prefix))
+    for cut in range(max_cut):
+        if lst[cut] != prefix[cut]:
+            return lst[cut:]
+    return lst[max_cut:]
 
 
 class VLLMModel(_VLLMBackend):
@@ -274,7 +276,11 @@ class VLLMModel(_VLLMBackend):
             if (tokenized_prompt := output.prompt_token_ids or []) is not None
             and (all_tokens := tokenized_prompt + output.outputs[0].token_ids)
             is not None
-            and (tokenized_response := remove_prefix(all_tokens, tokenized_request))
+            and (
+                tokenized_response := _remove_longest_common_prefix(
+                    all_tokens, tokenized_request
+                )
+            )
             is not None
             and (tokenized_answer := self._extract_answer_tokens(tokenized_response))
             is not None
