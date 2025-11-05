@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """Functions for common graph algorithms and operations."""
+
 from collections import defaultdict, deque
 
 

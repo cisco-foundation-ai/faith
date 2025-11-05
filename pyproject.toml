@@ -13,8 +13,15 @@ pythonpath = ["src"]
 addopts = ["--import-mode=importlib"]
 
 [project]
-name = "faith"
-description = "Benchmark evaluation framework for large language models"
+name = "cisco-foundation-ai-test-harness"
+description = """The Cisco Foundation AI Test Harness (FAITH) is
+a benchmarking framework for evaluating the performance of
+large language models (LLMs) on cybersecurity tasks. The framework provides
+a suite of benchmarks that cover a range of cybersecurity domains, as well
+as a model testing harness to evaluate a variety of LLMs on these benchmarks.
+Finally it provides a flexible set of general benchmark types and metrics to
+allow users to easily create their own benchmarks and evaluate models on them.
+"""
 dynamic = ["version"]
 requires-python = ">=3.10, <3.13"
 dependencies = [
@@ -25,7 +32,7 @@ dependencies = [
   "datasets==4.0.0",
   "GitPython==3.1.45",
   "jinja2==3.1.6",
-  "numpy<=2.2.6", # TODO(https://github.com/RobustIntelligence/faith/issues/50): make == once we resolve ri-python-linter issue.
+  "numpy==2.2.6",
   "orjson==3.11.1",
   "pandas==2.3.1",
   "pyyaml==6.0.2",
@@ -56,24 +63,19 @@ vllm = [
   "vllm[flashinfer,fastsafetensors]==0.10.1.1",
 ]
 all-engines = [
-  "faith[openai, vllm]",
+  "cisco-foundation-ai-test-harness[openai, vllm]",
 ]
 metrics = [
   "tabulate==0.9.0",
 ]
 all = [
-  "faith[all-engines, metrics]",
+  "cisco-foundation-ai-test-harness[all-engines, metrics]",
 ]
 test = [
-  "black==23.12.1", # TODO: Update once we update ri-python-linter.
-  "faith[all]",
-  "flake8==7.3.0",
-  "mypy==1.17.1",
+  "cisco-foundation-ai-test-harness[all]",
   "pytest==8.4.1",
   "pytest-cov==6.2.1",
   "pytest-custom_exit_code==0.3.0",
-  "ri-python-linter==1.0.1",
-  "types-PyYAML==6.0.12.20250809",
 ]
 
 [project.scripts]

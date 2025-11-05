@@ -3,7 +3,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """Types used to configure experiments."""
+
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Sequence
 
 from dataclasses_json import DataClassJsonMixin
@@ -24,7 +26,7 @@ class ExperimentParams:
     """Parameters that define a set of benchmark experiments to run."""
 
     benchmark_names: Sequence[str] | None
-    custom_benchmark_paths: Sequence[PathWithAnnotations] | None
+    custom_benchmark_paths: Sequence[Path] | None
     generation_mode: GenerationMode
     prompt_format: PromptFormatter
     n_shot: Sequence[SampleRatio]

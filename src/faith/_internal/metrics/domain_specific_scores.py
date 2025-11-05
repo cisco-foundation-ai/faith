@@ -3,6 +3,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """Domain-specific scoring functions for evaluating short-answer model predictions."""
+
+import math
 from enum import Enum
 from typing import Any, Protocol, Sequence, Type
 
@@ -94,6 +96,36 @@ class JaccardIndex:
         }
 
 
+class LogScaledScore:
+    """A score for evaluating numeric answers with a logarithmically scaled score."""
+
+    def __init__(self, tolerance: float, scaling: float = 10.0) -> None:
+        """Initialize the LogScaledScore with a given tolerance."""
+        assert 0 < tolerance < 1, "Tolerance must be in (0, 1)."
+        assert scaling > 0, "Scaling must be positive."
+        self._tolerance = tolerance
+        self._scaling = scaling
+
+    def __call__(self, label: str, pred: str | None) -> float:
+        """Compute the numeric answer score between a label and a prediction."""
+        if pred is None:
+            return 0.0
+
+        try:
+            label_value = float(label)
+            pred_value = float(pred)
+        except ValueError:
+            return 0.0
+
+        tol = self._tolerance * (abs(label_value) if label_value != 0 else 1)
+        tol_error = abs(label_value - pred_value) / tol
+        return max(0, 1 - math.log(1 + tol_error) / math.log(1 + self._scaling))
+
+    def aggregate(self, scores: Sequence[float]) -> dict[str, float]:
+        """Aggregate a list of alias accuracy scores into statistics for the benchmark."""
+        return {"mean": float(np.mean(scores))}
+
+
 class AliasAccuracyScore:
     """A score for evaluating accuracy in predicting a group of aliases."""
 
@@ -127,6 +159,7 @@ class ScoreFn(Enum):
     JACCARD = (
         JaccardIndex,
     )  # Score from Jaccard index between sets of labels; in [0, 1].
+    LOG_SCALED_SCORE = (LogScaledScore,)  # Score for numeric answers.
     ALIAS_ACCURACY = (AliasAccuracyScore,)  # Accuracy score for alias matching.
 
     def __init__(self, scoring_cls: Type[AnswerScoreFn]) -> None:

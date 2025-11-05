@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """Functions to execute queries from benchmarks on models and collect their responses."""
+
 import itertools
 import logging
 import os
@@ -18,14 +19,15 @@ from zoneinfo import ZoneInfo
 from tqdm import tqdm
 
 from faith import __version__
+from faith._internal.config.model_response import model_response_format_config
 from faith._internal.io.datastore import ReadOnlyDataContext
 from faith._internal.io.json import write_as_json
 from faith._internal.io.logging import LoggingTransform
 from faith._internal.io.paths import canonical_segment
 from faith._internal.iter.transform import DevNullReducer, IsoTransform
-from faith._internal.types.flags import GenerationMode, PathWithAnnotations
+from faith._internal.types.flags import GenerationMode
 from faith.benchmark.benchmark import Benchmark
-from faith.benchmark.listing import choices_to_benchmarks
+from faith.benchmark.listing import choices_to_benchmarks, find_benchmarks
 from faith.experiment.experiment import BenchmarkExperiment
 from faith.experiment.params import DataSamplingParams, ExperimentParams
 from faith.model.base import BaseModel, ChatResponse, GenerationError
@@ -233,6 +235,8 @@ def run_experiment_queries(
                 logger.warning(
                     "Using a tokenizer other than the model's tokenizer is not recommended and may lead to incorrect queries."
                 )
+            model_reasoning_tokens = annotated_model_path.get_value("reasoning_tokens")
+            model_response_pattern = annotated_model_path.get_value("response_pattern")
 
             model = engine_params.engine_type.create_model(
                 name_or_path=str(model_path),
@@ -245,6 +249,7 @@ def run_experiment_queries(
                     if exp_params.generation_mode == GenerationMode.LOGITS
                     else None
                 ),
+                reasoning_tokens=model_reasoning_tokens,
                 **engine_params.kwargs,
             )
 
@@ -258,7 +263,7 @@ def run_experiment_queries(
             # before execution begins.
             experiments = [
                 BenchmarkExperiment(
-                    benchmark,
+                    benchmark_path,
                     exp_params.generation_mode,
                     prompt_formatter,
                     n_shot,
@@ -268,9 +273,13 @@ def run_experiment_queries(
                     exp_params.num_trials,
                     initial_seed=exp_params.initial_seed,
                 )
-                for benchmark in itertools.chain[str | PathWithAnnotations](
+                for benchmark_path in itertools.chain[Path](
                     choices_to_benchmarks(exp_params.benchmark_names or []),
-                    exp_params.custom_benchmark_paths or [],
+                    [
+                        benchmark_path
+                        for p in exp_params.custom_benchmark_paths or []
+                        for benchmark_path in find_benchmarks(p)
+                    ],
                 )
                 for n_shot in exp_params.n_shot
             ]
@@ -290,6 +299,9 @@ def run_experiment_queries(
                         "model": {
                             "name": model_name,
                             "path": str(model_path),
+                            "response_format": model_response_format_config(
+                                model_response_pattern
+                            ),
                             "engine": engine_params.to_dict(),
                             "generation": gen_params.to_dict(),
                         },

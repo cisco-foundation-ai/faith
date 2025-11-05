@@ -83,7 +83,13 @@ def test_transform_chaining() -> None:
     ]
     assert list(
         range(5) >> SquareTransform() >> IncrementTransform() >> ToStringTransform()
-    ) == ["1", "2", "5", "10", "17"]
+    ) == [
+        "1",
+        "2",
+        "5",
+        "10",
+        "17",
+    ]
 
 
 def test_transform_chain_assignment() -> None:

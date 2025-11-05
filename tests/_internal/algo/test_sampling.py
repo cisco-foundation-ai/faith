@@ -40,7 +40,7 @@ def test_sample_partition_stability(df_rows: int) -> None:
     n_cols = 5
     df = pd.DataFrame(
         np.random.randint(0, 1_000_000, size=(df_rows, n_cols)),
-        columns=[f"Col_{i+1}" for i in range(n_cols)],
+        columns=[f"Col_{i + 1}" for i in range(n_cols)],
     )
 
     prev_sample: pd.DataFrame | None = None

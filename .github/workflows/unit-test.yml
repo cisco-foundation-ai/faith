@@ -1,5 +1,5 @@
 ---
-name: "Lint and Test Python"
+name: "Unit Test Python"
 
 on:
   push:
@@ -14,7 +14,7 @@ concurrency:
   cancel-in-progress: ${{ !( github.ref_name == 'main') }}
 
 jobs:
-  lint-and-test:
+  unit-tests:
     runs-on: ubuntu-22.04-x86_64-large
     permissions:
       contents: read
@@ -38,11 +38,6 @@ jobs:
           source .venv/bin/activate
           pip install -U pip
           pip install -e '.[test]'
-
-      - name: "Run linter"
-        run: |
-          source .venv/bin/activate
-          make lint
 
       - name: "Run tests"
         run: |

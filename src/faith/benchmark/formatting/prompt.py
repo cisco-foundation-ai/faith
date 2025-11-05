@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """Provides `PromptFormatter` for formatting prompts for different model types."""
+
 from enum import Enum
 from typing import Callable
 

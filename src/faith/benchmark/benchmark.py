@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """The foundation for a benchmark of question-answer data and evaluation criteria."""
+
 import logging
 from abc import ABC, abstractmethod
 from pathlib import Path
@@ -97,7 +98,9 @@ class Benchmark(ABC):
         """Builds the dataset for this benchmark."""
 
     @abstractmethod
-    def log_grader(self, recompute_stats: bool = False) -> LogGrader:
+    def log_grader(
+        self, model_format_config: dict[str, Any], recompute_stats: bool = False
+    ) -> LogGrader:
         """Fetch a log grader for this benchmark."""
 
     @abstractmethod

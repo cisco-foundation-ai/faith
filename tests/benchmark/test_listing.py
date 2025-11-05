@@ -2,12 +2,16 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+from pathlib import Path
+
 import pytest
 
+from faith._internal.io.benchmarks import benchmarks_root
 from faith.benchmark.listing import (
     BenchmarkState,
     benchmark_choices,
     choices_to_benchmarks,
+    find_benchmarks,
 )
 
 
@@ -26,6 +30,8 @@ def test_benchmark_choices() -> None:
         "all",
         "all-reasoning",
         "all-security",
+        "ctibench-ate",
+        "!ctibench-ate",
         "ctibench-mcqa",
         "!ctibench-mcqa",
         "ctibench-rcm",
@@ -55,62 +61,114 @@ def test_benchmark_choices() -> None:
     ]
 
 
+def benchmark_subpath(sub_paths: list[str]) -> list[Path]:
+    """Helper to convert sub-path strings to full benchmark paths."""
+    return [benchmarks_root() / p for p in sub_paths]
+
+
 def test_choices_to_benchmarks() -> None:
     assert choices_to_benchmarks([]) == []
-    assert choices_to_benchmarks(["all"]) == [
-        "ctibench-mcqa",
-        "ctibench-rcm",
-        "ctibench-vsp",
-        "cybermetric-10000",
-        "cybermetric-2000",
-        "cybermetric-500",
-        "cybermetric-80",
-        "mmlu-all",
-        "mmlu-security",
-        "secbench-mcqa-eng",
-        "secbench-mcqa-eng-reasoning",
-        "seceval",
-    ]
-    assert choices_to_benchmarks(["all-reasoning"]) == [
-        "secbench-mcqa-eng-reasoning",
-    ]
-    assert choices_to_benchmarks(["all-security"]) == [
-        "ctibench-mcqa",
-        "ctibench-rcm",
-        "ctibench-vsp",
-        "cybermetric-10000",
-        "cybermetric-2000",
-        "cybermetric-500",
-        "cybermetric-80",
-        "mmlu-security",
-        "secbench-mcqa-eng",
-        "secbench-mcqa-eng-reasoning",
-        "seceval",
-    ]
-    assert choices_to_benchmarks(["mmlu-all", "all"]) == [
-        "mmlu-all",
-        "ctibench-mcqa",
-        "ctibench-rcm",
-        "ctibench-vsp",
-        "cybermetric-10000",
-        "cybermetric-2000",
-        "cybermetric-500",
-        "cybermetric-80",
-        "mmlu-security",
-        "secbench-mcqa-eng",
-        "secbench-mcqa-eng-reasoning",
-        "seceval",
-    ]
-    assert choices_to_benchmarks(["!mmlu-all", "all", "!seceval"]) == [
-        "ctibench-mcqa",
-        "ctibench-rcm",
-        "ctibench-vsp",
-        "cybermetric-10000",
-        "cybermetric-2000",
-        "cybermetric-500",
-        "cybermetric-80",
-        "mmlu-security",
-        "secbench-mcqa-eng",
-        "secbench-mcqa-eng-reasoning",
-    ]
-    assert choices_to_benchmarks(["mmlu-security"]) == ["mmlu-security"]
+    assert choices_to_benchmarks(["all"]) == benchmark_subpath(
+        [
+            "ctibench-ate",
+            "ctibench-mcqa",
+            "ctibench-rcm",
+            "ctibench-vsp",
+            "cybermetric-10000",
+            "cybermetric-2000",
+            "cybermetric-500",
+            "cybermetric-80",
+            "mmlu-all",
+            "mmlu-security",
+            "secbench-mcqa-eng",
+            "secbench-mcqa-eng-reasoning",
+            "seceval",
+        ]
+    )
+    assert choices_to_benchmarks(["all-reasoning"]) == benchmark_subpath(
+        [
+            "secbench-mcqa-eng-reasoning",
+        ]
+    )
+    assert choices_to_benchmarks(["all-security"]) == benchmark_subpath(
+        [
+            "ctibench-ate",
+            "ctibench-mcqa",
+            "ctibench-rcm",
+            "ctibench-vsp",
+            "cybermetric-10000",
+            "cybermetric-2000",
+            "cybermetric-500",
+            "cybermetric-80",
+            "mmlu-security",
+            "secbench-mcqa-eng",
+            "secbench-mcqa-eng-reasoning",
+            "seceval",
+        ]
+    )
+    assert choices_to_benchmarks(["mmlu-all", "all"]) == benchmark_subpath(
+        [
+            "mmlu-all",
+            "ctibench-ate",
+            "ctibench-mcqa",
+            "ctibench-rcm",
+            "ctibench-vsp",
+            "cybermetric-10000",
+            "cybermetric-2000",
+            "cybermetric-500",
+            "cybermetric-80",
+            "mmlu-security",
+            "secbench-mcqa-eng",
+            "secbench-mcqa-eng-reasoning",
+            "seceval",
+        ]
+    )
+    assert choices_to_benchmarks(["!mmlu-all", "all", "!seceval"]) == benchmark_subpath(
+        [
+            "ctibench-ate",
+            "ctibench-mcqa",
+            "ctibench-rcm",
+            "ctibench-vsp",
+            "cybermetric-10000",
+            "cybermetric-2000",
+            "cybermetric-500",
+            "cybermetric-80",
+            "mmlu-security",
+            "secbench-mcqa-eng",
+            "secbench-mcqa-eng-reasoning",
+        ]
+    )
+    assert choices_to_benchmarks(["mmlu-security"]) == benchmark_subpath(
+        ["mmlu-security"]
+    )
+
+
+def test_find_benchmarks() -> None:
+    core_benchmarks = find_benchmarks(benchmarks_root())
+    assert set(core_benchmarks) == set(
+        benchmark_subpath(
+            [
+                "ctibench-ate",
+                "ctibench-mcqa",
+                "ctibench-rcm",
+                "ctibench-vsp",
+                "cybermetric-10000",
+                "cybermetric-2000",
+                "cybermetric-500",
+                "cybermetric-80",
+                "mmlu-all",
+                "mmlu-security",
+                "secbench-mcqa-eng",
+                "secbench-mcqa-eng-reasoning",
+                "seceval",
+            ]
+        )
+    )
+
+    external_benchmarks = find_benchmarks(Path(__file__).parent / "testdata")
+    assert set(external_benchmarks) == set(
+        [
+            Path(__file__).parent / "testdata" / "bench-a",
+            Path(__file__).parent / "testdata" / "sub" / "bench-c",
+        ]
+    )

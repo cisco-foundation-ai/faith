@@ -1,0 +1,11 @@
+# Copyright 2025 Cisco Systems, Inc. and its affiliates
+#
+# SPDX-License-Identifier: Apache-2.0
+# Simple benchmark config for unit testing benchmarks.
+---
+benchmark:
+  metadata: !from
+    '$BENCHMARKS_ROOT/base-template.yaml["metadata"]':
+      name: "bench-c"
+      description: "A fake external benchmark."
+      state: enabled

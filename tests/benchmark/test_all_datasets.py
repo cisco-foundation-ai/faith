@@ -10,7 +10,7 @@ from faith._internal.algo.hash import dict_sha256
 from faith._internal.io.benchmarks import benchmarks_root
 from faith._internal.types.flags import GenerationMode, SampleRatio
 from faith.benchmark.benchmark import Benchmark
-from faith.benchmark.config import load_config_from_name
+from faith.benchmark.config import load_config_from_path
 from faith.benchmark.formatting.prompt import PromptFormatter
 from faith.benchmark.load import load_benchmark
 from faith.benchmark.types import BenchmarkSpec
@@ -24,11 +24,12 @@ def load_benchmark_for_test(name: str) -> Benchmark:
         prompt_format=PromptFormatter.CHAT,
         n_shot=SampleRatio(0),
     )
-    benchmark_config = load_config_from_name(name)
+    benchmark_path = benchmarks_root() / name
+    benchmark_config = load_config_from_path(benchmark_path)
     return load_benchmark(
         benchmark_spec,
         benchmark_config,
-        path=benchmarks_root() / name,
+        path=benchmark_path,
         seed=12345678910987654321,
     )
 
