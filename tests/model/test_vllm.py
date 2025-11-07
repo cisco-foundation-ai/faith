@@ -6,7 +6,30 @@ import pytest
 
 from faith.benchmark.formatting.prompt import PromptFormatter
 from faith.model.base import ChatResponse
-from faith.model.vllm import VLLMModel
+from faith.model.vllm import VLLMModel, _remove_longest_common_prefix
+
+
+@pytest.mark.parametrize(
+    "base_list",
+    [
+        [],
+        [7],
+        [81, 92],
+        [5, 10, 15],
+        [1, 2, 3, 4, 5],
+        [42, 43, 44, 45, 46, 47, 48],
+    ],
+)
+def test_remove_longest_common_prefix(base_list: list[int]) -> None:
+    """Test the _remove_longest_common_prefix function with various cases."""
+    for i in range(len(base_list) + 1):
+        lst = list(base_list)
+        prefix = list(base_list[:i]) + [-7, -8, -9]
+        expected = base_list[i:]
+        actual = _remove_longest_common_prefix(lst, prefix)
+        assert (
+            actual == expected
+        ), f"Failed for i={i}, lst={lst}, prefix={prefix}: expected {expected}; got {actual}"
 
 
 @pytest.mark.skip(reason="VLLM requires special setup for CPU testing in C/I.")

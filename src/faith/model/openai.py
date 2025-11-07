@@ -9,6 +9,7 @@ from typing import Any, Iterable, cast
 
 from openai import OpenAI
 from openai.types.chat import ChatCompletionMessageParam
+from tqdm import tqdm
 
 from faith._internal.functools.retriable import RetryFunctionWrapper
 from faith._internal.iter.fork_merge import ForkAndMergeTransform
@@ -70,18 +71,23 @@ class OpenAIModel(BaseModel):
             # See: https://platform.openai.com/docs/api-reference/chat/create#chat-create-max_completion_tokens
             gen_params["max_completion_tokens"] = max_completion_tokens
 
-        return cast(
-            Iterable[ChatCompletionMessageParam], inputs
-        ) >> ForkAndMergeTransform[
-            ChatCompletionMessageParam, ChatResponse | GenerationError
-        ](
-            RetryFunctionWrapper[ChatResponse](
-                lambda msg: self._query_api(msg, **gen_params),
-                max_attempts=self._api_max_attempts,
-                retry_sleep_secs=self._api_retry_sleep_secs,
+        yield from tqdm(
+            cast(Iterable[ChatCompletionMessageParam], inputs)
+            >> ForkAndMergeTransform[
+                ChatCompletionMessageParam, ChatResponse | GenerationError
+            ](
+                RetryFunctionWrapper[ChatResponse](
+                    lambda msg: self._query_api(msg, **gen_params),
+                    max_attempts=self._api_max_attempts,
+                    retry_sleep_secs=self._api_retry_sleep_secs,
+                ),
+                OpenAIModel._handle_query_error,
+                max_workers=self._api_num_threads,
             ),
-            OpenAIModel._handle_query_error,
-            max_workers=self._api_num_threads,
+            total=len(inputs),
+            leave=False,
+            desc="OpenAI Queries",
+            unit=" prompts",
         )
 
     def _query_api(

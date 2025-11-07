@@ -423,6 +423,9 @@ def _cli_main() -> None:
     logging.getLogger("vllm").setLevel(logging.ERROR)
     os.environ["VLLM_CONFIGURE_LOGGING"] = "1"  # Set to 0 to disable vLLM logging.
 
+    # Configuring log level for model API calls.
+    logging.getLogger("httpx").setLevel(logging.ERROR)
+
     # Create the logger for the CLI with its formatting and level.
     handler = colorlog.StreamHandler()
     handler.setFormatter(
