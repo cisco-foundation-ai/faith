@@ -1,12 +1,13 @@
 # Copyright 2025 Cisco Systems, Inc. and its affiliates
 #
 # SPDX-License-Identifier: Apache-2.0
+
+---
 # TODO(https://github.com/RobustIntelligence/faith/issues/197): this benchmark
 #   contains questions with multiple correct answers.
 #   This is not supported by the MCQA benchmark format.
 #
 # current correct answer set: 'B' 'D' 'A' 'C' 'ABCD' 'ABD' 'AC' 'BC' 'CD' 'ACD'
----
 benchmark: !from
   '$BENCHMARKS_ROOT/mcqa-template.yaml["mcqa_common_benchmark"]':
     metadata: !from
