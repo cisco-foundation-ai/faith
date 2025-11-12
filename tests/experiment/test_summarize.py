@@ -25,6 +25,7 @@ def test_build_summary() -> None:
                 "prompt_format": ["chat", "chat"],
                 "gen_mode": ["chat_comp", "chat_comp"],
                 "n_shot": ["0", "0"],
+                "temp": [0.7, 0.7],
                 "accuracy_max": [0.176, 0.569],
                 "accuracy_mean": [0.1649, 0.5581],
                 "accuracy_median": [0.162, 0.558],

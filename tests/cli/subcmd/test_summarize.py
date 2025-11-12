@@ -29,6 +29,7 @@ def test_summarize_experiments() -> None:
                     "prompt_format": ["chat", "chat"],
                     "gen_mode": ["chat_comp", "chat_comp"],
                     "n_shot": ["0", "1/2"],
+                    "temp": [0.7, 0.7],
                     "accuracy_max": [0.176, 0.569],
                     "accuracy_mean": [0.1649, 0.5581],
                     "accuracy_median": [0.162, 0.558],
@@ -45,10 +46,10 @@ def test_summarize_experiments() -> None:
         summarize_experiments(experiment_path, selected_stats, None)
         assert (
             buf.getvalue()
-            == """| benchmark    | model                     | prompt_format   | gen_mode   | n_shot   |   accuracy_max |   accuracy_mean |   accuracy_median |   accuracy_min |   accuracy_p_25 |   accuracy_p_75 |   accuracy_std |
-|:-------------|:--------------------------|:----------------|:-----------|:---------|---------------:|----------------:|------------------:|---------------:|----------------:|----------------:|---------------:|
-| ctibench-rcm | syntax-and-sensibility-3B | chat            | chat_comp  | 0        |          0.176 |          0.1649 |             0.162 |          0.148 |         0.16025 |          0.1735 |      0.0087801 |
-| ctibench-rcm | wordy-mc-worder-27B       | chat            | chat_comp  | 1/2      |          0.569 |          0.5581 |             0.558 |          0.544 |         0.55625 |          0.564  |      0.0072863 |
+            == """| benchmark    | model                     | prompt_format   | gen_mode   | n_shot   |   temp |   accuracy_max |   accuracy_mean |   accuracy_median |   accuracy_min |   accuracy_p_25 |   accuracy_p_75 |   accuracy_std |
+|:-------------|:--------------------------|:----------------|:-----------|:---------|-------:|---------------:|----------------:|------------------:|---------------:|----------------:|----------------:|---------------:|
+| ctibench-rcm | syntax-and-sensibility-3B | chat            | chat_comp  | 0        |    0.7 |          0.176 |          0.1649 |             0.162 |          0.148 |         0.16025 |          0.1735 |      0.0087801 |
+| ctibench-rcm | wordy-mc-worder-27B       | chat            | chat_comp  | 1/2      |    0.7 |          0.569 |          0.5581 |             0.558 |          0.544 |         0.55625 |          0.564  |      0.0072863 |
 """
         )
 
