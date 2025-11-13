@@ -4,9 +4,10 @@
 
 ---
 # Simple benchmark config for unit testing benchmarks.
-benchmark:
-  metadata: !from
-    '$BENCHMARKS_ROOT/base-template.yaml["metadata"]':
-      name: "for-unit-test-only"
-      description: "A simple benchmark config for unit testing benchmarks."
-      state: test_only
+benchmark: !from
+  '$BENCHMARKS_ROOT/mcqa-template.yaml["mcqa_common_benchmark"]':
+    metadata: !from
+      '$BENCHMARKS_ROOT/base-template.yaml["metadata"]':
+        name: "for-unit-test-only"
+        description: "A simple benchmark config for unit testing benchmarks."
+        state: test_only
