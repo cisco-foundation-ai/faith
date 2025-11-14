@@ -25,21 +25,21 @@ allow users to easily create their own benchmarks and evaluate models on them.
 dynamic = ["version"]
 requires-python = ">=3.10, <3.13"
 dependencies = [
-  "argcomplete==3.6.2",
-  "colorlog==6.9.0",
+  "argcomplete==3.6.3",
+  "colorlog==6.10.1",
   "cvss==3.6",
   "dataclasses-json==0.6.7",
-  "datasets==4.0.0",
+  "datasets==4.4.1",
   "GitPython==3.1.45",
   "jinja2==3.1.6",
   "numpy==2.2.6",
-  "orjson==3.11.1",
-  "pandas==2.3.1",
-  "pyyaml==6.0.2",
-  "scikit-learn==1.7.1",
+  "orjson==3.11.4",
+  "pandas==2.3.3",
+  "pyyaml==6.0.3",
+  "scikit-learn==1.7.2",
   "simpleeval==1.0.3",
   "tqdm==4.67.1",
-  "transformers==4.55.2",
+  "transformers==4.57.1",
 ]
 authors = [
   {name = "Baturay Saglam"},
@@ -55,12 +55,12 @@ keywords = ["benchmarks", "cybersecurity", "evaluations", "llm"]
 
 [project.optional-dependencies]
 openai = [
-  "openai==1.100.2",
+  "openai==2.8.0",
 ]
 vllm = [
-  "bitsandbytes==0.47.0",
-  "torch==2.7.1",
-  "vllm[flashinfer,fastsafetensors]==0.10.1.1",
+  "bitsandbytes==0.48.2",
+  "torch==2.8.0",
+  "vllm[flashinfer,fastsafetensors]==0.11.0",
 ]
 all-engines = [
   "cisco-foundation-ai-test-harness[openai, vllm]",
