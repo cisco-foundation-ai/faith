@@ -62,10 +62,13 @@ benchmark:
   output_processing: !from
     '$BENCHMARKS_ROOT/output-processing-template.yaml["output_processing"]':
       answer_formats:
-        - pattern: '(?i)\b(cwe-\d+)\b'
+        # Note: We accept two different '-' characters because GPT-OSS is so
+        # prone to using a unicode `\u2011` hyphen instead of the ASCII `-`.
+        # We normalize both to the ASCII `-` in the transform.
+        - pattern: '(?i)\b(cwe[‑-]\d+)\b'
           capture_transform:
             params: ["x"]
-            expr: "x.upper()"
+            expr: "x.upper().replace('‑', '-')"
           match_disambiguation: "match_if_unique"
           format_type: "proper"
         - pattern: '(?i)\b(?:cwe|id):\s+(\d+)\b'
