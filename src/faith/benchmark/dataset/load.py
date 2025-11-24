@@ -109,7 +109,26 @@ def _load_data_source(
         )
         if "choices" in df.columns:
             df["choices"] = df["choices"].apply(ast.literal_eval)
-        return df, None
+
+        holdout_df = None
+        if (hdps := files_cfg.get("holdout_data_paths", None)) is not None and len(
+            hdps
+        ) > 0:
+            holdout_df = pd.concat(
+                [
+                    _load_data_files(
+                        benchmark_path.glob(hdp),
+                        _DataFileType.from_string(files_cfg["type"]),
+                        selected_columns=files_cfg.get("selected_columns", None),
+                    )
+                    for hdp in hdps
+                ],
+                ignore_index=True,
+            )
+            if "choices" in holdout_df.columns:
+                holdout_df["choices"] = holdout_df["choices"].apply(ast.literal_eval)
+
+        return df, holdout_df
     if "git_repo" in source_cfg:
         git_repo_cfg = source_cfg["git_repo"]
 

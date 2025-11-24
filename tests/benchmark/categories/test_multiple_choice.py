@@ -212,6 +212,7 @@ Choices:
                 "files": {
                     "type": "csv",
                     "path_glob": "data/fake_mc_dataset.csv",
+                    "holdout_data_paths": ["data/fake_mc_holdout_dataset.csv"],
                 },
             },
         },
@@ -222,6 +223,19 @@ Choices:
 
     # Compare the questions as dictionaries.
     assert [q.to_dict() for q in dataset_1shot.iter_data()] == [
+        {
+            "benchmark_sample_index": 0,
+            "benchmark_sample_hash": ANY,
+            "subject": None,
+            "system_prompt": "You are a compassionate comptroller.",
+            "instruction": "Please analyze and answer the following question in a chat format.",
+            "question": "What is the capital of France?",
+            "choices": {"A": "Berlin", "B": "Paris", "C": "Prague"},
+            "label": "B",
+            "formatted_question": "Question: What is the capital of France?\n\nChoices:\n#A# Berlin\n#B# Paris\n#C# Prague",
+            "formatted_answer": "Antwort--> B",
+            "question_prompt": "Please analyze and answer the following question in a chat format.\n\nQuestion: What is the capital of France?\n\nChoices:\n#A# Berlin\n#B# Paris\n#C# Prague",
+        },
         {
             "benchmark_sample_index": 1,
             "benchmark_sample_hash": ANY,
@@ -234,7 +248,7 @@ Choices:
             "formatted_question": "Question: What is the formula for water?\n\nChoices:\n#A# H2O2\n#B# OH+\n#C# H2O",
             "formatted_answer": "Antwort--> C",
             "question_prompt": "Please analyze and answer the following question in a chat format.\n\nQuestion: What is the formula for water?\n\nChoices:\n#A# H2O2\n#B# OH+\n#C# H2O",
-        }
+        },
     ]
 
     # Run a test on 0-shot benchmark.
