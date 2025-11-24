@@ -31,7 +31,7 @@ jobs:
       faith_version: ${{ steps.global_var.outputs.faith_version }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           persist-credentials: false
       - name: Set global variables
@@ -60,7 +60,7 @@ jobs:
     needs: [get_version]
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           persist-credentials: true
       - name: Create Tag for FAITH
@@ -86,7 +86,7 @@ jobs:
     needs: [get_version, create_tag]
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           persist-credentials: false
       - name: Create a GitHub release
