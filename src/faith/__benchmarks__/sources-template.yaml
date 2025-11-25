@@ -12,6 +12,7 @@ sources:
   files: &files
     type: null
     path_glob: null
+    holdout_data_paths: null
     selected_columns: null
   csv_files:
     !!merge <<: *files
