@@ -45,7 +45,7 @@ class _DataFileType(Enum):
 def _load_data_files(
     file_glob: Iterable[Path],
     file_type: _DataFileType,
-    selected_columns: Sequence[str] | None = None,
+    selected_columns: Sequence[str] | None,
 ) -> pd.DataFrame:
     """Load all data files from a glob pattern and return a concatenated DataFrame."""
     dfs: list[pd.DataFrame] = []
@@ -80,6 +80,46 @@ def _load_data_files(
     return raw_df
 
 
+def _load_local_data_source(
+    base_path: Path, files_cfg: dict[str, Any]
+) -> tuple[pd.DataFrame, pd.DataFrame | None]:
+    """Load the benchmark datasets from local files."""
+    file_type = _DataFileType.from_string(files_cfg["type"])
+    columns = files_cfg.get("selected_columns", None)
+    df = _load_data_files(base_path.glob(files_cfg["path_glob"]), file_type, columns)
+
+    holdout_df = None
+    if (hdps := files_cfg.get("holdout_data_paths", None)) is not None and len(
+        hdps
+    ) > 0:
+        holdout_df = pd.concat(
+            [_load_data_files(base_path.glob(hdp), file_type, columns) for hdp in hdps],
+            ignore_index=True,
+        )
+
+    return df, holdout_df
+
+
+def _load_git_data_source(
+    git_repo_cfg: dict[str, Any],
+) -> tuple[pd.DataFrame, pd.DataFrame | None]:
+    """Load the benchmark datasets from a git repository."""
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        tmp_path = Path(tmpdirname)
+        # Clone the git repository to a temporary directory and load selected data.
+        repo = git.Repo.clone_from(
+            git_repo_cfg["repo_url"],
+            tmp_path,
+            branch=git_repo_cfg.get("branch", None) or "main",
+        )
+        if git_repo_cfg.get("commit", None) is not None:
+            repo.git.checkout(git_repo_cfg["commit"])
+        assert (
+            len(repo.heads) == 1
+        ), f"Expected a single branch, but found {len(repo.heads)} branches."
+        return _load_local_data_source(tmp_path, git_repo_cfg)
+
+
 def _load_data_source(
     benchmark_name: str,
     benchmark_path: Path | None,
@@ -100,52 +140,9 @@ def _load_data_source(
         return df, None
     if "files" in source_cfg:
         assert benchmark_path is not None, "Benchmark path must be specified."
-        files_cfg = source_cfg["files"]
-        df = _load_data_files(
-            benchmark_path.glob(files_cfg["path_glob"]),
-            _DataFileType.from_string(files_cfg["type"]),
-            selected_columns=files_cfg.get("selected_columns", None),
-        )
-
-        holdout_df = None
-        if (hdps := files_cfg.get("holdout_data_paths", None)) is not None and len(
-            hdps
-        ) > 0:
-            holdout_df = pd.concat(
-                [
-                    _load_data_files(
-                        benchmark_path.glob(hdp),
-                        _DataFileType.from_string(files_cfg["type"]),
-                        selected_columns=files_cfg.get("selected_columns", None),
-                    )
-                    for hdp in hdps
-                ],
-                ignore_index=True,
-            )
-
-        return df, holdout_df
+        return _load_local_data_source(benchmark_path, source_cfg["files"])
     if "git_repo" in source_cfg:
-        git_repo_cfg = source_cfg["git_repo"]
-
-        # Clone the git repository to a temporary directory and load selected data.
-        with tempfile.TemporaryDirectory() as tmpdirname:
-            tmp_path = Path(tmpdirname)
-            repo = git.Repo.clone_from(
-                git_repo_cfg["repo_url"],
-                tmp_path,
-                branch=git_repo_cfg.get("branch", "main"),
-            )
-            if git_repo_cfg.get("commit", None) is not None:
-                repo.git.checkout(git_repo_cfg["commit"])
-            assert (
-                len(repo.heads) == 1
-            ), f"Expected a single branch, but found {len(repo.heads)} branches."
-            df = _load_data_files(
-                tmp_path.glob(git_repo_cfg["path_glob"]),
-                _DataFileType.from_string(git_repo_cfg["type"]),
-                selected_columns=git_repo_cfg.get("selected_columns", None),
-            )
-            return df, None
+        return _load_git_data_source(source_cfg["git_repo"])
     raise ValueError(
         f"Unsupported source configuration for benchmark {benchmark_name}:\n{source_cfg}"
     )
