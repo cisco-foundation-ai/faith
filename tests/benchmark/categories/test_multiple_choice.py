@@ -214,6 +214,16 @@ Choices:
                     "path_glob": "data/fake_mc_dataset.csv",
                     "holdout_data_paths": ["data/fake_mc_holdout_dataset.csv"],
                 },
+                "options": {
+                    "dataframe_transform_expr": """df.assign(
+    question=df["question"].str.strip(),
+    answer=df["answer"].str.strip().str.upper(),
+    choices=[
+        [str(c) for c in lst]
+        for lst in df[sorted(col for col in df.columns if col.startswith("option_"))].values.tolist()
+    ],
+)[["question", "choices", "answer"]]""",
+                },
             },
         },
         path=TEST_ROOT_DIR,

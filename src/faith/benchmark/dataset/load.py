@@ -4,7 +4,6 @@
 
 """Load benchmark datasets from various sources and transform them into a standard schema."""
 
-import ast
 import tempfile
 from enum import Enum
 from pathlib import Path
@@ -107,8 +106,6 @@ def _load_data_source(
             _DataFileType.from_string(files_cfg["type"]),
             selected_columns=files_cfg.get("selected_columns", None),
         )
-        if "choices" in df.columns:
-            df["choices"] = df["choices"].apply(ast.literal_eval)
 
         holdout_df = None
         if (hdps := files_cfg.get("holdout_data_paths", None)) is not None and len(
@@ -125,8 +122,6 @@ def _load_data_source(
                 ],
                 ignore_index=True,
             )
-            if "choices" in holdout_df.columns:
-                holdout_df["choices"] = holdout_df["choices"].apply(ast.literal_eval)
 
         return df, holdout_df
     if "git_repo" in source_cfg:
