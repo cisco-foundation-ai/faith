@@ -27,7 +27,8 @@ benchmark: !from
           branch: "main"
           commit: "3a148abb6383c8e6be7863dd5c65b57ee2d59436"
           type: "jsonl"
-          path_glob: "data/MCQs_2730.jsonl"
+          benchmark_data_paths:
+            - "data/MCQs_2730.jsonl"
           selected_columns: null
       options:
         dataframe_transform_expr: |

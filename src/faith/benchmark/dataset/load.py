@@ -80,24 +80,48 @@ def _load_data_files(
     return raw_df
 
 
+def _load_data_from_local_paths(
+    base_path: Path,
+    rel_globs: list[str],
+    file_type: _DataFileType,
+    selected_columns: Sequence[str] | None,
+) -> pd.DataFrame | None:
+    """Load data files from local paths specified by the relative glob patterns."""
+    if len(rel_globs) > 0:
+        return pd.concat(
+            [
+                _load_data_files(base_path.glob(rg), file_type, selected_columns)
+                for rg in rel_globs
+            ],
+            ignore_index=True,
+        )
+    return None
+
+
 def _load_local_data_source(
     base_path: Path, files_cfg: dict[str, Any]
 ) -> tuple[pd.DataFrame, pd.DataFrame | None]:
     """Load the benchmark datasets from local files."""
     file_type = _DataFileType.from_string(files_cfg["type"])
-    columns = files_cfg.get("selected_columns", None)
-    df = _load_data_files(base_path.glob(files_cfg["path_glob"]), file_type, columns)
+    selected_columns = files_cfg.get("selected_columns", None)
 
-    holdout_df = None
-    if (hdps := files_cfg.get("holdout_data_paths", None)) is not None and len(
-        hdps
-    ) > 0:
-        holdout_df = pd.concat(
-            [_load_data_files(base_path.glob(hdp), file_type, columns) for hdp in hdps],
-            ignore_index=True,
-        )
+    benchmark_df = _load_data_from_local_paths(
+        base_path,
+        files_cfg.get("benchmark_data_paths", None)
+        or [glob for glob in [files_cfg.get("path_glob", None)] if glob is not None],
+        file_type,
+        selected_columns,
+    )
+    assert benchmark_df is not None, "No files for benchmark data were specified/found."
 
-    return df, holdout_df
+    holdout_df = _load_data_from_local_paths(
+        base_path,
+        files_cfg.get("holdout_data_paths", None) or [],
+        file_type,
+        selected_columns,
+    )
+
+    return benchmark_df, holdout_df
 
 
 def _load_git_data_source(

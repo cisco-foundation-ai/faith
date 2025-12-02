@@ -24,7 +24,8 @@ benchmark: !from
           branch: "main"
           commit: "2f5818bd2c19350cd6cfae028b75499ebe4ffd29"
           type: "json"
-          path_glob: "CyberMetric-80-v1.json"
+          benchmark_data_paths:
+            - "CyberMetric-80-v1.json"
           selected_columns: ["questions"]
       options:
         dataframe_transform_expr: |

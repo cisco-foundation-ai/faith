@@ -211,7 +211,7 @@ Choices:
             "source": {
                 "files": {
                     "type": "csv",
-                    "path_glob": "data/fake_mc_dataset.csv",
+                    "benchmark_data_paths": ["data/fake_mc_dataset.csv"],
                     "holdout_data_paths": ["data/fake_mc_holdout_dataset.csv"],
                 },
                 "options": {
@@ -292,7 +292,7 @@ Choices:
             "source": {
                 "files": {
                     "type": "json",
-                    "path_glob": "data/*.json",
+                    "benchmark_data_paths": ["data/*.json"],
                     "selected_columns": ["questions", "metadata"],
                 },
                 "options": {
@@ -369,7 +369,7 @@ Choices:
                     "branch": "main",
                     "commit": "2f5818bd2c19350cd6cfae028b75499ebe4ffd29",
                     "type": "json",
-                    "path_glob": "CyberMetric-80-v1.json",
+                    "benchmark_data_paths": ["CyberMetric-80-v1.json"],
                     "selected_columns": ["questions"],
                 },
                 "options": {

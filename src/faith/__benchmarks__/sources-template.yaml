@@ -11,10 +11,11 @@ sources:
     dev_split: null
   files: &files
     type: null
-    path_glob: null
+    benchmark_data_paths: null
+    path_glob: null # Deprecated: use benchmark_data_paths instead.
     holdout_data_paths: null
     selected_columns: null
-  csv_files:
+  csv_files: # Deprecated: use 'files' config instead.
     !!merge <<: *files
     type: csv
     path_glob: "*.csv"
