@@ -19,7 +19,7 @@ from faith._internal.parsing.expr import evaluate_expr
 class AnswerScoreFn(Protocol):
     """A function that computes a score for a given predicted answer from its label."""
 
-    def __call__(self, label: Labeling, pred: Labeling | None) -> float:
+    def __call__(self, label: Labeling, pred: Labeling | None, **kwargs) -> float:
         """Compute the score for a predicted answer against a given label.
 
         This score should be a non-negative float, where a higher score indicates a
@@ -38,7 +38,7 @@ class CVSSScore:
         c = CVSS3(cvss_vector)
         return c.scores()[0] / 10.0
 
-    def __call__(self, label: str, pred: str | None) -> float:
+    def __call__(self, label: str, pred: str | None, **kwargs) -> float:
         """Compute the CVSS score for a predicted CVSS vector against a label.
 
         This score computes the absolute deviation between the predicted CVSS score
@@ -46,8 +46,9 @@ class CVSSScore:
         indicates a perfect match. A score of 0 is returned for invalid predictions.
 
         Args:
-            pred (str): The predicted CVSS vector.
             label (str): The ground truth CVSS vector.
+            pred (str): The predicted CVSS vector.
+            kwargs: Additional keyword arguments (not used).
 
         Returns:
             float: The CVSS score, normalized to [0, 1]. A score of 1.0 indicates a
@@ -77,7 +78,10 @@ class JaccardIndex:
     """A score for evaluating the correctness between two sets of labels."""
 
     def __call__(
-        self, label: tuple[str, ...] | None, pred: tuple[str, ...] | None
+        self,
+        label: tuple[str, ...] | None,
+        pred: tuple[str, ...] | None,
+        **kwargs,
     ) -> float:
         """Compute the Jaccard score between two sets of labels."""
         label_set = set(label or [])
@@ -107,7 +111,7 @@ class LogScaledScore:
         self._tolerance = tolerance
         self._scaling = scaling
 
-    def __call__(self, label: str, pred: str | None) -> float:
+    def __call__(self, label: str, pred: str | None, **kwargs) -> float:
         """Compute the numeric answer score between a label and a prediction."""
         if pred is None:
             return 0.0
@@ -134,7 +138,7 @@ class AliasAccuracyScore:
         """Initialize the AliasAccuracyScore with a dictionary of aliases."""
         self._alias_wcc = wcc_dict(alias_map)
 
-    def __call__(self, label: str, pred: str | None) -> float:
+    def __call__(self, label: str, pred: str | None, **kwargs) -> float:
         """Evaluate the connection between two threat actors."""
         if pred is None:
             return 0.0
@@ -161,10 +165,10 @@ class CompositeScore:
         self._reduce_expr = reduce_expr
         self._score_fns = ScoreFn.from_configs(**score_fn_configs)
 
-    def __call__(self, label: Any, pred: Any) -> dict[str, float]:
+    def __call__(self, label: Any, pred: Any, **kwargs) -> dict[str, float]:
         """Compute the composite score for a set of labels and predictions."""
         scores = {
-            score_name: score_fn(label, pred)
+            score_name: score_fn(label, pred, **kwargs)
             for score_name, score_fn in self._score_fns.items()
         }
         return evaluate_expr(
