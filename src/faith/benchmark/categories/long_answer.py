@@ -147,19 +147,11 @@ class LABenchmarkDataset(BenchmarkDataset):
         )
 
 
-class JudgeBasedLogGrader(LogGrader):
-    """A log grader for long-answer chat completions that are judged by an LLM."""
+class _Judge:
+    """An LLM-based judge for grading long-answer responses."""
 
-    def __init__(
-        self,
-        output_processing_config: dict[str, Any],
-        model_format_config: dict[str, Any],
-        recompute_stats: bool,
-    ):
+    def __init__(self, judge_config: dict[str, Any]):
         """Initialize the judge-based log grader."""
-        super().__init__(output_processing_config, model_format_config, recompute_stats)
-        self._answer_extractor = SimpleMatcher(model_format_config)
-        judge_config = output_processing_config.get("answer_judge", {})
         self._default_judge_prompt_template = judge_config.get(
             "default_prompt_template", ""
         )
@@ -195,14 +187,22 @@ class JudgeBasedLogGrader(LogGrader):
             )
         return response.answer_text or ""
 
-    def _judge_grade(
+    @property
+    def default_max_score(self) -> float:
+        """Get the default maximum score for this judge."""
+        return self._default_max_score
+
+    def grade(
         self,
         question: str,
         correct_answer: str,
         gen_answer: str,
-        judge_prompt_template: Template,
+        judge_prompt_override: str | None = None,
     ) -> tuple[float, str]:
         """Compute the score for the predicted answer based on the judge's evaluation."""
+        judge_prompt_template = Template(
+            judge_prompt_override or self._default_judge_prompt_template
+        )
         judge_prompt = judge_prompt_template.render(
             question=question,
             correct_answer=correct_answer,
@@ -215,6 +215,22 @@ class JudgeBasedLogGrader(LogGrader):
         ), f"Could not parse judge verdict:\n\n{verdict}"
         awarded_points, ruling_details = cast(tuple[float, str], verdict_parts)
         return awarded_points, ruling_details
+
+
+class JudgeBasedLogGrader(LogGrader):
+    """A log grader for long-answer chat completions that are judged by an LLM."""
+
+    def __init__(
+        self,
+        output_processing_config: dict[str, Any],
+        model_format_config: dict[str, Any],
+        recompute_stats: bool,
+    ):
+        """Initialize the judge-based log grader."""
+        super().__init__(output_processing_config, model_format_config, recompute_stats)
+        self._answer_extractor = SimpleMatcher(model_format_config)
+        judge_config = output_processing_config.get("answer_judge", {})
+        self._judge = _Judge(judge_config)
 
     def _markup_entry_impl(self, log_entry: dict[str, Any]) -> dict[str, Any]:
         """Markup a single log entry with the computed statistics / scores."""
@@ -235,13 +251,12 @@ class JudgeBasedLogGrader(LogGrader):
                 self._answer_extractor(answer_text),
                 AnswerFormat.PROPER,
             )
-            awarded_points, judges_comments = self._judge_grade(
+            awarded_points, judges_comments = self._judge.grade(
                 prompt,
                 correct_answer,
                 gen_answer,
-                Template(
-                    log_entry["data"].get("judge_prompt_template", None)
-                    or self._default_judge_prompt_template
+                judge_prompt_override=log_entry["data"].get(
+                    "judge_prompt_template", None
                 ),
             )
 
@@ -252,7 +267,7 @@ class JudgeBasedLogGrader(LogGrader):
             "awarded_points": awarded_points,
             "comments": judges_comments,
             "max_points": log_entry["data"].get("max_points", None)
-            or self._default_max_score,
+            or self._judge.default_max_score,
             "subject": log_entry["data"].get("subject", None),
             "num_output_tokens": log_entry["model_data"]
             .get("chat_comp", {})
