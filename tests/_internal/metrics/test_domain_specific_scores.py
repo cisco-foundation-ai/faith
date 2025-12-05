@@ -7,6 +7,7 @@ from cvss.exceptions import CVSS3MalformedError
 
 from faith._internal.metrics.domain_specific_scores import (
     AliasAccuracyScore,
+    CompositeScore,
     CVSSScore,
     JaccardIndex,
     LogScaledScore,
@@ -158,3 +159,52 @@ def test_alias_accuracy_aggregate() -> None:
     scores = [1.0, 0.0, 1.0]
     aggregated_scores = score_fn.aggregate(scores)
     assert aggregated_scores == {"accuracy": pytest.approx(0.66666666667)}
+
+
+def test_composite_score_fn_from_configs() -> None:
+    scores = ScoreFn.from_configs(
+        weighted_score={
+            "type": "composite",
+            "reduce_expr": "0.7 * scores.cvss_score + 0.3 * scores.jaccard_index",
+            "cvss_score": {"type": "cvss"},
+            "jaccard_index": {"type": "jaccard"},
+        }
+    )
+    assert set(scores.keys()) == {"weighted_score"}
+    assert isinstance(scores["weighted_score"], CompositeScore)
+
+
+def test_composite_score() -> None:
+    score_fn = CompositeScore(
+        reduce_expr="0.7 * scores.log_1 + 0.3 * scores.log_2",
+        log_1={"type": "log_scaled_score", "tolerance": 0.1, "scaling": 10.0},
+        log_2={"type": "log_scaled_score", "tolerance": 0.5, "scaling": 2.0},
+    )
+    assert score_fn("100", None) == pytest.approx(0.0)
+    assert score_fn("10", "10") == pytest.approx(1.0)
+    assert score_fn("1000", "900") == pytest.approx(
+        0.7 * 0.7109351736821121 + 0.3 * 0.8340437671464698
+    )
+
+    simple_avg_score_fn = CompositeScore(
+        reduce_expr="sum(scores.values()) / len(scores)",
+        log_1={"type": "log_scaled_score", "tolerance": 0.1, "scaling": 10.0},
+        log_2={"type": "log_scaled_score", "tolerance": 0.5, "scaling": 2.0},
+    )
+    assert simple_avg_score_fn("100", None) == pytest.approx(0.0)
+    assert simple_avg_score_fn("10", "10") == pytest.approx(1.0)
+    assert simple_avg_score_fn("1000", "900") == pytest.approx(
+        (0.7109351736821121 + 0.8340437671464698) / 2
+    )
+
+
+def test_composite_score_aggregate() -> None:
+    score_fn = CompositeScore(
+        reduce_expr="0.7 * scores.log_1 + 0.3 * scores.log_2",
+        log_1={"type": "log_scaled_score", "tolerance": 0.1, "scaling": 10.0},
+        log_2={"type": "log_scaled_score", "tolerance": 0.5, "scaling": 2.0},
+    )
+
+    scores = [0.2, 0.6, 0.8]
+    aggregated_scores = score_fn.aggregate(scores)
+    assert aggregated_scores == {"mean": pytest.approx(8 / 15)}

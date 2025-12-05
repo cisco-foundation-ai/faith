@@ -13,6 +13,7 @@ from cvss import CVSS3, CVSSError
 
 from faith._internal.algo.graph import wcc_dict
 from faith._internal.metrics.types import Labeling
+from faith._internal.parsing.expr import evaluate_expr
 
 
 class AnswerScoreFn(Protocol):
@@ -152,6 +153,30 @@ class AliasAccuracyScore:
         return {"accuracy": float(np.mean(scores))}
 
 
+class CompositeScore:
+    """A composite score function that combines multiple scoring functions."""
+
+    def __init__(self, reduce_expr: str, **score_fn_configs: dict[str, Any]) -> None:
+        """Initialize the CompositeScore with a dictionary of scoring functions."""
+        self._reduce_expr = reduce_expr
+        self._score_fns = ScoreFn.from_configs(**score_fn_configs)
+
+    def __call__(self, label: Any, pred: Any) -> dict[str, float]:
+        """Compute the composite score for a set of labels and predictions."""
+        scores = {
+            score_name: score_fn(label, pred)
+            for score_name, score_fn in self._score_fns.items()
+        }
+        return evaluate_expr(
+            self._reduce_expr,
+            names={"scores": scores},
+        )
+
+    def aggregate(self, scores: Sequence[float]) -> dict[str, float]:
+        """Aggregate a list of composite scores into statistics for the benchmark."""
+        return {"mean": float(np.mean(scores))}
+
+
 class ScoreFn(Enum):
     """Enum for score functions used in domain-specific benchmarks."""
 
@@ -161,6 +186,7 @@ class ScoreFn(Enum):
     )  # Score from Jaccard index between sets of labels; in [0, 1].
     LOG_SCALED_SCORE = (LogScaledScore,)  # Score for numeric answers.
     ALIAS_ACCURACY = (AliasAccuracyScore,)  # Accuracy score for alias matching.
+    COMPOSITE = (CompositeScore,)  # Composite score from multiple sub-scores.
 
     def __init__(self, scoring_cls: Type[AnswerScoreFn]) -> None:
         """Initialize the ScoreFn with the enum value's scoring class."""
