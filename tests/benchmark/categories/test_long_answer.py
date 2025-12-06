@@ -178,6 +178,7 @@ def test_long_answer_benchmark_build_dataset() -> None:
                 "question_prompt": "Please respond to the following question.\n\nQuestion: What is the capital of Nepal?",
                 "judge_prompt_template": None,
                 "max_points": None,
+                "ancillary_data": None,
             },
             {
                 "benchmark_sample_index": 1,
@@ -193,6 +194,7 @@ def test_long_answer_benchmark_build_dataset() -> None:
                 "question_prompt": "Please respond to the following question.\n\nQuestion: What is 4+5?",
                 "judge_prompt_template": None,
                 "max_points": None,
+                "ancillary_data": None,
             },
         ]
 
@@ -250,6 +252,7 @@ def test_long_answer_benchmark_build_dataset() -> None:
                 "question_prompt": "Please respond to the following question.\n\nQuestion: What is the capital of Nepal?",
                 "judge_prompt_template": None,
                 "max_points": None,
+                "ancillary_data": None,
             },
         ]
 
@@ -332,6 +335,7 @@ def test_long_answer_benchmark_build_dataset() -> None:
                 "question_prompt": "Please respond to the following question.\n\nQuestion: What is 4+5?",
                 "judge_prompt_template": "Score '{{ generated_answer }}' compared to correct answer '{{ correct_answer }}' on a scale of 0-1?",
                 "max_points": 1.0,
+                "ancillary_data": None,
             },
         ]
 

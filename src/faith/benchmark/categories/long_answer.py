@@ -78,6 +78,7 @@ class LABenchmark(BaseBenchmark):
         nshot_sampler: NShotSampler,
         rng: np.random.Generator,
         randomize_choices: bool = False,  # noqa: ARG002
+        ancillary_columns: frozenset[str] = frozenset(),
     ) -> BenchmarkDataset:
         """Builds the dataset for this benchmark."""
         return LABenchmarkDataset(
@@ -85,6 +86,7 @@ class LABenchmark(BaseBenchmark):
             benchmark_data=benchmark_data,
             nshot_samlper=nshot_sampler,
             rng=rng,
+            ancillary_columns=ancillary_columns,
         )
 
     def log_grader(
@@ -115,6 +117,7 @@ class LABenchmarkDataset(BenchmarkDataset):
         benchmark_data: pd.DataFrame,
         nshot_samlper: NShotSampler,
         rng: np.random.Generator,
+        ancillary_columns: frozenset[str] = frozenset(),
     ):
         """Initializes the LABenchmarkDataset with the given benchmark and parameters."""
         super().__init__(
@@ -123,6 +126,7 @@ class LABenchmarkDataset(BenchmarkDataset):
             nshot_samlper,
             rng,
             required_columns=frozenset({"question", "answer"}),
+            ancillary_columns=ancillary_columns,
             optional_columns=frozenset(
                 {"subject", "judge_prompt_template", "max_points"}
             ),
@@ -141,6 +145,7 @@ class LABenchmarkDataset(BenchmarkDataset):
                 examples=examples,
                 choice_map=None,  # Short answer benchmarks are not enumerable.
                 subject=sample.get("subject", None),
+                ancillary_data=self._extract_ancillary_data(sample),
             ),
             judge_prompt_template=sample.get("judge_prompt_template", None),
             max_points=sample.get("max_points", None),
@@ -275,7 +280,11 @@ class JudgeBasedLogGrader(LogGrader):
             "max_token_halt": log_entry["model_data"]
             .get("chat_comp", {})
             .get("max_token_halt", False),
-        } | self._custom_scores(correct_answer, gen_answer)
+        } | self._custom_scores(
+            correct_answer,
+            gen_answer,
+            ancillary_data=log_entry["data"].get("ancillary_data", None),
+        )
         return log_entry
 
 

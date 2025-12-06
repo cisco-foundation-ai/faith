@@ -49,6 +49,10 @@ class QARecord(DataClassJsonMixin):
     # The full question that is passed to the model.
     question_prompt: str
 
+    # Any additional data associated with this example that is stored alongside it
+    # for context or as part of subsequent metric computations.
+    ancillary_data: dict[str, Any] | None
+
     def sha256(self) -> str:
         """Compute the SHA-256 hash of this example."""
         return dict_sha256(self.to_dict())
@@ -109,6 +113,7 @@ class QAFormatter:
         examples: Sequence[QARecord] | None = None,
         choice_map: dict[str, str] | None = None,
         subject: str | None = None,
+        ancillary_data: dict[str, Any] | None = None,
     ) -> QARecord:
         """Renders an example question-answer pair."""
         formatted_question = self._render_question(raw_question, choice_map)
@@ -132,6 +137,7 @@ class QAFormatter:
             formatted_question=formatted_question,
             formatted_answer=formatted_answer,
             question_prompt=question_prompt,
+            ancillary_data=ancillary_data,
         )
 
     def render_conversation(

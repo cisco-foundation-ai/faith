@@ -5,7 +5,7 @@
 """Base class `BenchmarkDataset` for all benchmark datasets."""
 
 from abc import ABC, abstractmethod
-from typing import Iterator, Sequence
+from typing import Any, Iterator, Sequence
 
 import numpy as np
 import pandas as pd
@@ -24,20 +24,30 @@ class BenchmarkDataset(ABC):
         nshot_sampler: NShotSampler,
         rng: np.random.Generator,
         required_columns: frozenset[str] = frozenset(),
+        ancillary_columns: frozenset[str] = frozenset(),
         optional_columns: frozenset[str] = frozenset(),
     ):
         """Initialize the base `BenchmarkDataset` class."""
-        all_allowed_columns = required_columns | optional_columns
-        assert required_columns <= set(
-            benchmark_data.columns
-        ), f"Benchmark data must contain the required columns: {required_columns}."
+        benchmark_cols = set(benchmark_data.columns)
+        all_req_cols = required_columns | ancillary_columns
+        all_allowed_cols = required_columns | ancillary_columns | optional_columns
         assert (
-            set(benchmark_data.columns) <= all_allowed_columns
-        ), f"Benchmark data contains unexpected columns: {set(benchmark_data.columns) - all_allowed_columns}."
+            all_req_cols <= benchmark_cols
+        ), f"Benchmark data must contain the required columns: {all_req_cols}."
+        assert (
+            benchmark_cols <= all_allowed_cols
+        ), f"Benchmark data contains unexpected columns: {benchmark_cols - all_allowed_cols}."
         self._formatter = formatter
         self._benchmark_data = benchmark_data
         self._nshot_sampler = nshot_sampler
         self._rng = rng
+        self._ancilliary_columns = ancillary_columns
+
+    def _extract_ancillary_data(self, sample: pd.Series) -> dict[str, Any] | None:
+        """Get the ancillary columns for the benchmark dataset."""
+        if not self._ancilliary_columns:
+            return None
+        return {col: sample.get(col, None) for col in self._ancilliary_columns}
 
     def _get_nshot_examples(self) -> Sequence[QARecord]:
         """Get the n-shot examples for the prompt."""

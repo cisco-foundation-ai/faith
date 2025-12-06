@@ -143,6 +143,7 @@ class MCBenchmark(BaseBenchmark):
         nshot_sampler: NShotSampler,
         rng: np.random.Generator,
         randomize_choices: bool = False,
+        ancillary_columns: frozenset[str] = frozenset(),
     ) -> BenchmarkDataset:
         """Builds the dataset for this benchmark."""
         return MCBenchmarkDataset(
@@ -152,6 +153,7 @@ class MCBenchmark(BaseBenchmark):
             nshot_sampler,
             rng,
             randomize_choices,
+            ancillary_columns=ancillary_columns,
         )
 
     def log_grader(
@@ -195,6 +197,7 @@ class MCBenchmarkDataset(BenchmarkDataset):
         nshot_sampler: NShotSampler,
         rng: np.random.Generator,
         randomize_choices: bool = False,
+        ancillary_columns: frozenset[str] = frozenset(),
     ):
         """Initializes the multiple choice benchmark dataset."""
         super().__init__(
@@ -203,6 +206,7 @@ class MCBenchmarkDataset(BenchmarkDataset):
             nshot_sampler,
             rng,
             required_columns=frozenset({"question", "choices", "answer"}),
+            ancillary_columns=ancillary_columns,
             optional_columns=frozenset({"subject"}),
         )
         self._answer_list = sorted(list(answer_set))
@@ -255,6 +259,7 @@ class MCBenchmarkDataset(BenchmarkDataset):
             examples=examples,
             choice_map=choice_map,
             subject=sample.get("subject", None),
+            ancillary_data=self._extract_ancillary_data(sample),
         )
 
 

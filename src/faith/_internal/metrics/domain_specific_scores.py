@@ -19,7 +19,7 @@ from faith._internal.parsing.expr import evaluate_expr
 class AnswerScoreFn(Protocol):
     """A function that computes a score for a given predicted answer from its label."""
 
-    def __call__(self, label: Labeling, pred: Labeling | None, **kwargs) -> float:
+    def __call__(self, label: Labeling, pred: Labeling | None, **kwargs: Any) -> float:
         """Compute the score for a predicted answer against a given label.
 
         This score should be a non-negative float, where a higher score indicates a
@@ -38,7 +38,7 @@ class CVSSScore:
         c = CVSS3(cvss_vector)
         return c.scores()[0] / 10.0
 
-    def __call__(self, label: str, pred: str | None, **kwargs) -> float:
+    def __call__(self, label: str, pred: str | None, **kwargs: Any) -> float:
         """Compute the CVSS score for a predicted CVSS vector against a label.
 
         This score computes the absolute deviation between the predicted CVSS score
@@ -81,7 +81,7 @@ class JaccardIndex:
         self,
         label: tuple[str, ...] | None,
         pred: tuple[str, ...] | None,
-        **kwargs,
+        **kwargs: Any,
     ) -> float:
         """Compute the Jaccard score between two sets of labels."""
         label_set = set(label or [])
@@ -111,7 +111,7 @@ class LogScaledScore:
         self._tolerance = tolerance
         self._scaling = scaling
 
-    def __call__(self, label: str, pred: str | None, **kwargs) -> float:
+    def __call__(self, label: str, pred: str | None, **kwargs: Any) -> float:
         """Compute the numeric answer score between a label and a prediction."""
         if pred is None:
             return 0.0
@@ -138,7 +138,7 @@ class AliasAccuracyScore:
         """Initialize the AliasAccuracyScore with a dictionary of aliases."""
         self._alias_wcc = wcc_dict(alias_map)
 
-    def __call__(self, label: str, pred: str | None, **kwargs) -> float:
+    def __call__(self, label: str, pred: str | None, **kwargs: Any) -> float:
         """Evaluate the connection between two threat actors."""
         if pred is None:
             return 0.0
@@ -165,7 +165,7 @@ class CompositeScore:
         self._reduce_expr = reduce_expr
         self._score_fns = ScoreFn.from_configs(**score_fn_configs)
 
-    def __call__(self, label: Any, pred: Any, **kwargs) -> dict[str, float]:
+    def __call__(self, label: Any, pred: Any, **kwargs: Any) -> dict[str, float]:
         """Compute the composite score for a set of labels and predictions."""
         scores = {
             score_name: score_fn(label, pred, **kwargs)

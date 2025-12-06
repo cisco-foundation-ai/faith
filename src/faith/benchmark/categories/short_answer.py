@@ -71,6 +71,7 @@ class SABenchmark(BaseBenchmark):
         nshot_sampler: NShotSampler,
         rng: np.random.Generator,
         randomize_choices: bool = False,  # noqa: ARG002
+        ancillary_columns: frozenset[str] = frozenset(),
     ) -> BenchmarkDataset:
         """Builds the dataset for this benchmark."""
         return SABenchmarkDataset(
@@ -78,6 +79,7 @@ class SABenchmark(BaseBenchmark):
             benchmark_data,
             nshot_sampler,
             rng,
+            ancillary_columns=ancillary_columns,
         )
 
     def log_grader(
@@ -105,6 +107,7 @@ class SABenchmarkDataset(BenchmarkDataset):
         benchmark_data: pd.DataFrame,
         nshot_samlper: NShotSampler,
         rng: np.random.Generator,
+        ancillary_columns: frozenset[str] = frozenset(),
     ):
         """Initializes the SABenchmarkDataset with the given benchmark and parameters."""
         super().__init__(
@@ -113,6 +116,7 @@ class SABenchmarkDataset(BenchmarkDataset):
             nshot_samlper,
             rng,
             required_columns=frozenset({"question", "answer"}),
+            ancillary_columns=ancillary_columns,
             optional_columns=frozenset({"subject"}),
         )
 
@@ -128,6 +132,7 @@ class SABenchmarkDataset(BenchmarkDataset):
             examples=examples,
             choice_map=None,  # Short answer benchmarks are not enumerable.
             subject=sample.get("subject", None),
+            ancillary_data=self._extract_ancillary_data(sample),
         )
 
 
