@@ -6,14 +6,19 @@
 
 import math
 from enum import Enum
-from typing import Any, Protocol, Sequence, Type
+from typing import Any, Protocol, Sequence, Type, cast
 
 import numpy as np
 from cvss import CVSS3, CVSSError
+from jinja2 import Template
 
 from faith._internal.algo.graph import wcc_dict
+from faith._internal.algo.matching import AnswerFormat, SequentialMatcher
 from faith._internal.metrics.types import Labeling
 from faith._internal.parsing.expr import evaluate_expr
+from faith.benchmark.formatting.prompt import PromptFormatter
+from faith.model.base import GenerationError
+from faith.model.model_engine import ModelEngine
 
 
 class AnswerScoreFn(Protocol):
@@ -155,6 +160,79 @@ class AliasAccuracyScore:
     def aggregate(self, scores: Sequence[float]) -> dict[str, float]:
         """Aggregate a list of alias accuracy scores into statistics for the benchmark."""
         return {"accuracy": float(np.mean(scores))}
+
+
+class LLMJudgeScore:
+    """An LLM-based judge for scoring long-answer responses."""
+
+    def __init__(self, judge_config: dict[str, Any]):
+        """Initialize the LLM-based judge."""
+        self._default_judge_prompt_template = judge_config.get(
+            "default_prompt_template", ""
+        )
+        self._default_max_score = judge_config.get("default_max_score", 1.0)
+        model_config = judge_config.get("judge_model", {})
+        model_engine = ModelEngine.from_string(model_config["model_engine"])
+        self._judge_model = model_engine.create_model(
+            model_config["model_path"], **model_config.get("engine_kwargs", {})
+        )
+        self._judge_model_formatter = PromptFormatter.CHAT
+        self._judge_generation_kwargs = model_config.get("generation_kwargs", {})
+        self._verdict_matcher = SequentialMatcher(
+            *judge_config.get("verdict_formats", [])
+        )
+
+    def _query_judge_model(self, prompt: str) -> str:
+        """Prompt the judge model with an evaluation prompt and return the response."""
+        response = next(
+            iter(
+                self._judge_model.query(
+                    [
+                        self._judge_model_formatter.format(
+                            system_prompt=None, prompt=prompt, response_leadin=None
+                        )
+                    ],
+                    **self._judge_generation_kwargs,
+                )
+            )
+        )
+        if isinstance(response, GenerationError):
+            raise RuntimeError(
+                f"Judge model generation error: {response.error_message}"
+            )
+        return response.answer_text or ""
+
+    @property
+    def default_max_score(self) -> float:
+        """Get the default maximum score for this judge."""
+        return self._default_max_score
+
+    def __call__(
+        self,
+        label: str,
+        pred: str | None,
+        judge_prompt_override: str | None = None,
+        **kwargs: Any,
+    ) -> tuple[float, str]:
+        """Compute the score for the predicted answer based on the judge's evaluation."""
+        judge_prompt_template = Template(
+            judge_prompt_override or self._default_judge_prompt_template
+        )
+        judge_prompt = judge_prompt_template.render(
+            correct_answer=label,
+            generated_answer=pred,
+        )
+        verdict = self._query_judge_model(judge_prompt)
+        verdict_parts, match_format = self._verdict_matcher(verdict)
+        assert (
+            match_format != AnswerFormat.INVALID
+        ), f"Could not parse judge verdict:\n\n{verdict}"
+        awarded_points, ruling_details = cast(tuple[float, str], verdict_parts)
+        return awarded_points, ruling_details
+
+    def aggregate(self, scores: Sequence[float]) -> dict[str, float]:
+        """Aggregate a list of grades into the statistics for the benchmark."""
+        return {"mean": float(np.mean(scores))}
 
 
 class CompositeScore:

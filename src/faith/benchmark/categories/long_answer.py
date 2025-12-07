@@ -8,22 +8,19 @@ from typing import Any, Sequence, cast
 
 import numpy as np
 import pandas as pd
-from jinja2 import Template
 
 from faith._internal.algo.hash import dict_sha256
-from faith._internal.algo.matching import AnswerFormat, SequentialMatcher, SimpleMatcher
+from faith._internal.algo.matching import AnswerFormat, SimpleMatcher
 from faith._internal.algo.sampling import NShotSampler
+from faith._internal.metrics.domain_specific_scores import LLMJudgeScore
 from faith._internal.metrics.llm import llm_judge_grades, llm_metadata_metrics
 from faith._internal.types.flags import GenerationMode
 from faith.benchmark.benchmark import BaseBenchmark
 from faith.benchmark.dataset.dataset import BenchmarkDataset
-from faith.benchmark.formatting.prompt import PromptFormatter
 from faith.benchmark.formatting.qa import QAFormatter, QARecord
 from faith.benchmark.grading.grade_aggregator import GradeAggregator
 from faith.benchmark.grading.log_grader import LogGrader
 from faith.benchmark.types import BenchmarkSpec
-from faith.model.base import GenerationError
-from faith.model.model_engine import ModelEngine
 
 
 class LongAnswerType(Enum):
@@ -152,76 +149,6 @@ class LABenchmarkDataset(BenchmarkDataset):
         )
 
 
-class _Judge:
-    """An LLM-based judge for grading long-answer responses."""
-
-    def __init__(self, judge_config: dict[str, Any]):
-        """Initialize the judge-based log grader."""
-        self._default_judge_prompt_template = judge_config.get(
-            "default_prompt_template", ""
-        )
-        self._default_max_score = judge_config.get("default_max_score", 1.0)
-        model_config = judge_config.get("judge_model", {})
-        model_engine = ModelEngine.from_string(model_config["model_engine"])
-        self._judge_model = model_engine.create_model(
-            model_config["model_path"], **model_config.get("engine_kwargs", {})
-        )
-        self._judge_model_formatter = PromptFormatter.CHAT
-        self._judge_generation_kwargs = model_config.get("generation_kwargs", {})
-        self._verdict_matcher = SequentialMatcher(
-            *judge_config.get("verdict_formats", [])
-        )
-
-    def _query_judge_model(self, prompt: str) -> str:
-        """Prompt the judge model with an evaluation prompt and return the response."""
-        response = next(
-            iter(
-                self._judge_model.query(
-                    [
-                        self._judge_model_formatter.format(
-                            system_prompt=None, prompt=prompt, response_leadin=None
-                        )
-                    ],
-                    **self._judge_generation_kwargs,
-                )
-            )
-        )
-        if isinstance(response, GenerationError):
-            raise RuntimeError(
-                f"Judge model generation error: {response.error_message}"
-            )
-        return response.answer_text or ""
-
-    @property
-    def default_max_score(self) -> float:
-        """Get the default maximum score for this judge."""
-        return self._default_max_score
-
-    def grade(
-        self,
-        question: str,
-        correct_answer: str,
-        gen_answer: str,
-        judge_prompt_override: str | None = None,
-    ) -> tuple[float, str]:
-        """Compute the score for the predicted answer based on the judge's evaluation."""
-        judge_prompt_template = Template(
-            judge_prompt_override or self._default_judge_prompt_template
-        )
-        judge_prompt = judge_prompt_template.render(
-            question=question,
-            correct_answer=correct_answer,
-            generated_answer=gen_answer,
-        )
-        verdict = self._query_judge_model(judge_prompt)
-        verdict_parts, match_format = self._verdict_matcher(verdict)
-        assert (
-            match_format != AnswerFormat.INVALID
-        ), f"Could not parse judge verdict:\n\n{verdict}"
-        awarded_points, ruling_details = cast(tuple[float, str], verdict_parts)
-        return awarded_points, ruling_details
-
-
 class JudgeBasedLogGrader(LogGrader):
     """A log grader for long-answer chat completions that are judged by an LLM."""
 
@@ -235,11 +162,10 @@ class JudgeBasedLogGrader(LogGrader):
         super().__init__(output_processing_config, model_format_config, recompute_stats)
         self._answer_extractor = SimpleMatcher(model_format_config)
         judge_config = output_processing_config.get("answer_judge", {})
-        self._judge = _Judge(judge_config)
+        self._judge_score = LLMJudgeScore(judge_config)
 
     def _markup_entry_impl(self, log_entry: dict[str, Any]) -> dict[str, Any]:
         """Markup a single log entry with the computed statistics / scores."""
-        prompt = log_entry["data"]["question_prompt"]
         correct_answer = cast(str, log_entry["data"]["label"])
         gen_answer: str | None = None
         answer_format = AnswerFormat.INVALID
@@ -256,8 +182,7 @@ class JudgeBasedLogGrader(LogGrader):
                 self._answer_extractor(answer_text),
                 AnswerFormat.PROPER,
             )
-            awarded_points, judges_comments = self._judge.grade(
-                prompt,
+            awarded_points, judges_comments = self._judge_score(
                 correct_answer,
                 gen_answer,
                 judge_prompt_override=log_entry["data"].get(
@@ -272,7 +197,7 @@ class JudgeBasedLogGrader(LogGrader):
             "awarded_points": awarded_points,
             "comments": judges_comments,
             "max_points": log_entry["data"].get("max_points", None)
-            or self._judge.default_max_score,
+            or self._judge_score.default_max_score,
             "subject": log_entry["data"].get("subject", None),
             "num_output_tokens": log_entry["model_data"]
             .get("chat_comp", {})
