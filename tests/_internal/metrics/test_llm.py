@@ -149,11 +149,13 @@ def test_llm_judge_grades() -> None:
         AnswerFormat.IMPROPER,
         AnswerFormat.INVALID,
     ]
-    awarded_points = [3.0, 2.0, 1.0, 2.0]
-    max_points = [3.0, 4.0, 2.0, 3.0]
-    assert llm_judge_grades(
-        label, prediction, answer_format, awarded_points, max_points
-    ) == {
+    judgements = [
+        {"awarded_points": 3.0, "min_points": 0.0, "max_points": 3.0},
+        {"awarded_points": 2.0, "min_points": 0.0, "max_points": 4.0},
+        {"awarded_points": 1.0, "min_points": 0.0, "max_points": 2.0},
+        {"awarded_points": 2.0, "min_points": 0.0, "max_points": 3.0},
+    ]
+    assert llm_judge_grades(label, prediction, answer_format, judgements) == {
         "query_count": 4,
         "format_count": {
             "proper": 2,
@@ -167,12 +169,9 @@ def test_llm_judge_grades() -> None:
             "invalid": pytest.approx(1 / 4),
             "inferred": 0.0,
         },
-        "per_question_grade_stats": {
-            "mean": pytest.approx(2 / 3),
-            "median": pytest.approx(7 / 12),
-            "std": pytest.approx(1 / 2 / math.sqrt(6)),
-        },
-        "weighted_grade": pytest.approx(2 / 3),
+        "mean_grade": pytest.approx(2 / 3),
+        "median_grade": pytest.approx(7 / 12),
+        "stddev_grade": pytest.approx(1 / 2 / math.sqrt(6)),
     }
 
 

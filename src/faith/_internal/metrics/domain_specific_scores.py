@@ -167,10 +167,14 @@ class LLMJudgeScore:
 
     def __init__(self, judge_config: dict[str, Any]):
         """Initialize the LLM-based judge."""
-        self._default_judge_prompt_template = judge_config.get(
-            "default_prompt_template", ""
+        self._judge_prompt_template = Template(
+            judge_config.get("judge_prompt_template", "")
         )
-        self._default_max_score = judge_config.get("default_max_score", 1.0)
+        self._min_score = judge_config.get("score_range", {}).get("min", 0.0)
+        self._max_score = judge_config.get("score_range", {}).get("max", 1.0)
+        assert (
+            self._min_score < self._max_score
+        ), "Invalid score range for judge: min {self._min_score} >= max {self._max_score}."
         model_config = judge_config.get("judge_model", {})
         model_engine = ModelEngine.from_string(model_config["model_engine"])
         self._judge_model = model_engine.create_model(
@@ -202,23 +206,14 @@ class LLMJudgeScore:
             )
         return response.answer_text or ""
 
-    @property
-    def default_max_score(self) -> float:
-        """Get the default maximum score for this judge."""
-        return self._default_max_score
-
     def __call__(
         self,
         label: str,
         pred: str | None,
-        judge_prompt_override: str | None = None,
         **kwargs: Any,
-    ) -> tuple[float, str]:
+    ) -> dict[str, Any]:
         """Compute the score for the predicted answer based on the judge's evaluation."""
-        judge_prompt_template = Template(
-            judge_prompt_override or self._default_judge_prompt_template
-        )
-        judge_prompt = judge_prompt_template.render(
+        judge_prompt = self._judge_prompt_template.render(
             correct_answer=label,
             generated_answer=pred,
         )
@@ -228,7 +223,12 @@ class LLMJudgeScore:
             match_format != AnswerFormat.INVALID
         ), f"Could not parse judge verdict:\n\n{verdict}"
         awarded_points, ruling_details = cast(tuple[float, str], verdict_parts)
-        return awarded_points, ruling_details
+        return {
+            "awarded_points": awarded_points,
+            "min_points": self._min_score,
+            "max_points": self._max_score,
+            "details": ruling_details,
+        }
 
     def aggregate(self, scores: Sequence[float]) -> dict[str, float]:
         """Aggregate a list of grades into the statistics for the benchmark."""

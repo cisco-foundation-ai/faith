@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Sequence, cast
 
@@ -29,28 +28,6 @@ class LongAnswerType(Enum):
     # Long answer benchmarks where each answer is free-form text
     # to be evaluated by an LLM.
     FREE_FORM = "free_form"
-
-
-@dataclass(frozen=True)
-class LARecord(QARecord):
-    """Long answer question-answer record with additional fields for judging answers."""
-
-    judge_prompt_template: str | None
-    max_points: float | None
-
-    @staticmethod
-    def from_qa_record(
-        qa_record: QARecord,
-        judge_prompt_template: str | None,
-        max_points: float | None,
-    ) -> "LARecord":
-        """Create a LARecord from a QARecord with additional long answer fields."""
-        qa_dict = qa_record.to_dict()
-        return LARecord(
-            **qa_dict,
-            judge_prompt_template=judge_prompt_template,
-            max_points=max_points,
-        )
 
 
 class LABenchmark(BaseBenchmark):
@@ -124,28 +101,22 @@ class LABenchmarkDataset(BenchmarkDataset):
             rng,
             required_columns=frozenset({"question", "answer"}),
             ancillary_columns=ancillary_columns,
-            optional_columns=frozenset(
-                {"subject", "judge_prompt_template", "max_points"}
-            ),
+            optional_columns=frozenset({"subject"}),
         )
 
     def _format_qa(
         self, index: int, sample: pd.Series, examples: Sequence[QARecord] | None = None
     ) -> QARecord:
         """Format a sample into a question-answer record."""
-        return LARecord.from_qa_record(
-            self._formatter.render_qa_record(
-                index=index,
-                sample_hash=dict_sha256(sample.to_dict()),
-                raw_question=sample["question"],
-                raw_answer=sample["answer"],
-                examples=examples,
-                choice_map=None,  # Short answer benchmarks are not enumerable.
-                subject=sample.get("subject", None),
-                ancillary_data=self._extract_ancillary_data(sample),
-            ),
-            judge_prompt_template=sample.get("judge_prompt_template", None),
-            max_points=sample.get("max_points", None),
+        return self._formatter.render_qa_record(
+            index=index,
+            sample_hash=dict_sha256(sample.to_dict()),
+            raw_question=sample["question"],
+            raw_answer=sample["answer"],
+            examples=examples,
+            choice_map=None,  # Short answer benchmarks are not enumerable.
+            subject=sample.get("subject", None),
+            ancillary_data=self._extract_ancillary_data(sample),
         )
 
 
@@ -169,8 +140,7 @@ class JudgeBasedLogGrader(LogGrader):
         correct_answer = cast(str, log_entry["data"]["label"])
         gen_answer: str | None = None
         answer_format = AnswerFormat.INVALID
-        awarded_points = 0.0
-        judges_comments = ""
+        judgement: dict[str, Any] = {}
         # TODO(https://github.com/RobustIntelligence/faith/issues/286): Remove the use
         # of 'output_text' once we fully migrate to 'answer_text' at the next major
         # release.
@@ -182,22 +152,13 @@ class JudgeBasedLogGrader(LogGrader):
                 self._answer_extractor(answer_text),
                 AnswerFormat.PROPER,
             )
-            awarded_points, judges_comments = self._judge_score(
-                correct_answer,
-                gen_answer,
-                judge_prompt_override=log_entry["data"].get(
-                    "judge_prompt_template", None
-                ),
-            )
+            judgement = self._judge_score(correct_answer, gen_answer)
 
         log_entry["stats"] = {
             "label": correct_answer,
             "prediction": gen_answer,
             "answer_format": answer_format,
-            "awarded_points": awarded_points,
-            "comments": judges_comments,
-            "max_points": log_entry["data"].get("max_points", None)
-            or self._judge_score.default_max_score,
+            "judgement": judgement,
             "subject": log_entry["data"].get("subject", None),
             "num_output_tokens": log_entry["model_data"]
             .get("chat_comp", {})
@@ -222,7 +183,7 @@ class LAMetricsAggregator(GradeAggregator):
         Args:
             **kwargs: Keyword arguments containing metrics data.
                 Expected keys: 'label', 'prediction', 'answer_format',
-                    'scores', 'awarded_points', 'max_points'.
+                    'scores', 'judgement'.
 
         Returns:
             Dictionary containing computed metrics.
@@ -230,8 +191,7 @@ class LAMetricsAggregator(GradeAggregator):
         label: Sequence[Any] = kwargs.get("label", [])
         prediction: Sequence[Any] = kwargs.get("prediction", [])
         answer_format: Sequence[AnswerFormat] = kwargs.get("answer_format", [])
-        awarded_points: Sequence[float] = kwargs.get("awarded_points", [])
-        max_points: Sequence[float] = kwargs.get("max_points", [])
+        judgements: Sequence[dict[str, Any]] = kwargs.get("judgement", [])
         scores: Sequence[dict[str, float]] = kwargs.get("scores", [])
         num_output_tokens: Sequence[int] | None = kwargs.get("num_output_tokens", None)
         max_token_halt: Sequence[bool] | None = kwargs.get("max_token_halt", None)
@@ -243,7 +203,5 @@ class LAMetricsAggregator(GradeAggregator):
                 if num_output_tokens is not None and max_token_halt is not None
                 else {}
             )
-            | llm_judge_grades(
-                label, prediction, answer_format, awarded_points, max_points
-            )
+            | llm_judge_grades(label, prediction, answer_format, judgements)
         )
