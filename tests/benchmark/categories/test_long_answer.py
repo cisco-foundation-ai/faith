@@ -44,6 +44,35 @@ def test_long_answer_benchmark_logits() -> None:
                         "prompt_template": "{{ instruction }}\n\n{{ question }}",
                     },
                 },
+                "output_processing": {
+                    "score_fns": {
+                        "llm_grade": {
+                            "type": "llm_judge",
+                            "judge_prompt_template": "Compare `{{ correct_answer }}` to `{{ generated_answer }}` on a scale from 1-10.",
+                            "judge_model": {
+                                "model_engine": "openai",
+                                "model_path": "gpt-4o",
+                                "engine_kwargs": {"api_num_threads": 1},
+                                "generation_kwargs": {
+                                    "temperature": 0.3,
+                                    "max_completion_tokens": 1024,
+                                },
+                            },
+                            "score_range": {"min": 1.0, "max": 10.0},
+                            "verdict_formats": [
+                                {
+                                    "pattern": r"(?is)\bSCORE:\s*(\d{1,2})\b",
+                                    "capture_transform": {
+                                        "params": ["score"],
+                                        "expr": "float(score)",
+                                    },
+                                    "match_disambiguation": "match_last",
+                                    "format_type": "proper",
+                                },
+                            ],
+                        },
+                    },
+                },
             },
         )
 
@@ -74,6 +103,35 @@ def test_long_answer_benchmark_next_token() -> None:
                         "prompt_template": "{{ instruction }}\n\n{{ question }}",
                     },
                 },
+                "output_processing": {
+                    "score_fns": {
+                        "llm_grade": {
+                            "type": "llm_judge",
+                            "judge_prompt_template": "Compare `{{ correct_answer }}` to `{{ generated_answer }}` on a scale from 1-10.",
+                            "judge_model": {
+                                "model_engine": "openai",
+                                "model_path": "gpt-4o",
+                                "engine_kwargs": {"api_num_threads": 1},
+                                "generation_kwargs": {
+                                    "temperature": 0.3,
+                                    "max_completion_tokens": 1024,
+                                },
+                            },
+                            "score_range": {"min": 1.0, "max": 10.0},
+                            "verdict_formats": [
+                                {
+                                    "pattern": r"(?is)\bSCORE:\s*(\d{1,2})\b",
+                                    "capture_transform": {
+                                        "params": ["score"],
+                                        "expr": "float(score)",
+                                    },
+                                    "match_disambiguation": "match_last",
+                                    "format_type": "proper",
+                                },
+                            ],
+                        },
+                    },
+                },
             },
         )
 
@@ -97,6 +155,35 @@ def test_long_answer_benchmark_chat() -> None:
                     "question_template": "Question: {{ question }}",
                     "answer_template": "Answer: {{ answer }}",
                     "prompt_template": "{{ instruction }}\n\n{{ question }}",
+                },
+            },
+            "output_processing": {
+                "score_fns": {
+                    "llm_grade": {
+                        "type": "llm_judge",
+                        "judge_prompt_template": "Compare `{{ correct_answer }}` to `{{ generated_answer }}` on a scale from 1-10.",
+                        "judge_model": {
+                            "model_engine": "openai",
+                            "model_path": "gpt-4o",
+                            "engine_kwargs": {"api_num_threads": 1},
+                            "generation_kwargs": {
+                                "temperature": 0.3,
+                                "max_completion_tokens": 1024,
+                            },
+                        },
+                        "score_range": {"min": 1.0, "max": 10.0},
+                        "verdict_formats": [
+                            {
+                                "pattern": r"(?is)\bSCORE:\s*(\d{1,2})\b",
+                                "capture_transform": {
+                                    "params": ["score"],
+                                    "expr": "float(score)",
+                                },
+                                "match_disambiguation": "match_last",
+                                "format_type": "proper",
+                            },
+                        ],
+                    },
                 },
             },
         },
@@ -150,6 +237,35 @@ def test_long_answer_benchmark_build_dataset() -> None:
                     "subset_name": "qux",
                     "test_split": "test",
                     "dev_split": "dev",
+                },
+            },
+            "output_processing": {
+                "score_fns": {
+                    "llm_grade": {
+                        "type": "llm_judge",
+                        "judge_prompt_template": "Compare `{{ correct_answer }}` to `{{ generated_answer }}` on a scale from 1-10.",
+                        "judge_model": {
+                            "model_engine": "openai",
+                            "model_path": "gpt-4o",
+                            "engine_kwargs": {"api_num_threads": 1},
+                            "generation_kwargs": {
+                                "temperature": 0.3,
+                                "max_completion_tokens": 1024,
+                            },
+                        },
+                        "score_range": {"min": 1.0, "max": 10.0},
+                        "verdict_formats": [
+                            {
+                                "pattern": r"(?is)\bSCORE:\s*(\d{1,2})\b",
+                                "capture_transform": {
+                                    "params": ["score"],
+                                    "expr": "float(score)",
+                                },
+                                "match_disambiguation": "match_last",
+                                "format_type": "proper",
+                            },
+                        ],
+                    },
                 },
             },
         },
@@ -220,6 +336,35 @@ def test_long_answer_benchmark_build_dataset() -> None:
                     "path": "foo/baz-bar",
                     "subset_name": "qux",
                     "test_split": "test",
+                },
+            },
+            "output_processing": {
+                "score_fns": {
+                    "llm_grade": {
+                        "type": "llm_judge",
+                        "judge_prompt_template": "Compare `{{ correct_answer }}` to `{{ generated_answer }}` on a scale from 1-10.",
+                        "judge_model": {
+                            "model_engine": "openai",
+                            "model_path": "gpt-4o",
+                            "engine_kwargs": {"api_num_threads": 1},
+                            "generation_kwargs": {
+                                "temperature": 0.3,
+                                "max_completion_tokens": 1024,
+                            },
+                        },
+                        "score_range": {"min": 1.0, "max": 10.0},
+                        "verdict_formats": [
+                            {
+                                "pattern": r"(?is)\bSCORE:\s*(\d{1,2})\b",
+                                "capture_transform": {
+                                    "params": ["score"],
+                                    "expr": "float(score)",
+                                },
+                                "match_disambiguation": "match_last",
+                                "format_type": "proper",
+                            },
+                        ],
+                    },
                 },
             },
         },
@@ -294,6 +439,35 @@ def test_long_answer_benchmark_build_dataset() -> None:
                 "huggingface": {
                     "path": "foo/baz-bar",
                     "test_split": "test",
+                },
+            },
+            "output_processing": {
+                "score_fns": {
+                    "llm_grade": {
+                        "type": "llm_judge",
+                        "judge_prompt_template": "Compare `{{ correct_answer }}` to `{{ generated_answer }}` on a scale from 1-10.",
+                        "judge_model": {
+                            "model_engine": "openai",
+                            "model_path": "gpt-4o",
+                            "engine_kwargs": {"api_num_threads": 1},
+                            "generation_kwargs": {
+                                "temperature": 0.3,
+                                "max_completion_tokens": 1024,
+                            },
+                        },
+                        "score_range": {"min": 1.0, "max": 10.0},
+                        "verdict_formats": [
+                            {
+                                "pattern": r"(?is)\bSCORE:\s*(\d{1,2})\b",
+                                "capture_transform": {
+                                    "params": ["score"],
+                                    "expr": "float(score)",
+                                },
+                                "match_disambiguation": "match_last",
+                                "format_type": "proper",
+                            },
+                        ],
+                    },
                 },
             },
         },
@@ -381,8 +555,10 @@ def test_long_answer_benchmark_process_logs_chat() -> None:
             },
         },
         "output_processing": {
-            "answer_judge": {
-                "judge_prompt_template": """You are an expert evaluator tasked with comparing two answers for accuracy and completeness.
+            "score_fns": {
+                "llm_grade": {
+                    "type": "llm_judge",
+                    "judge_prompt_template": """You are an expert evaluator tasked with comparing two answers for accuracy and completeness.
 
 GOLDEN ANSWER (Expected/Correct): {{ correct_answer }}
 
@@ -393,27 +569,28 @@ Evaluate the model's answer against the golden answer and provide a score from 1
 Format your response exactly as:
 SCORE: [number]
 SUMMARY: [your summary text]""",
-                "judge_model": {
-                    "model_engine": "openai",
-                    "model_path": "gpt-4o",
-                    "engine_kwargs": {"api_num_threads": 1},
-                    "generation_kwargs": {
-                        "temperature": 0.3,
-                        "max_completion_tokens": 1024,
-                    },
-                },
-                "score_range": {"min": 1.0, "max": 10.0},
-                "verdict_formats": [
-                    {
-                        "pattern": r"(?is)\bSCORE:\s*(\d{1,2})\b.*SUMMARY:\s*(.+)",
-                        "capture_transform": {
-                            "params": ["score", "summary"],
-                            "expr": "float(score), summary.strip()",
+                    "judge_model": {
+                        "model_engine": "openai",
+                        "model_path": "gpt-4o",
+                        "engine_kwargs": {"api_num_threads": 1},
+                        "generation_kwargs": {
+                            "temperature": 0.3,
+                            "max_completion_tokens": 1024,
                         },
-                        "match_disambiguation": "match_last",
-                        "format_type": "proper",
                     },
-                ],
+                    "score_range": {"min": 1.0, "max": 10.0},
+                    "verdict_formats": [
+                        {
+                            "pattern": r"(?is)\bSCORE:\s*(\d{1,2})\b.*SUMMARY:\s*(.+)",
+                            "capture_transform": {
+                                "params": ["score", "summary"],
+                                "expr": "float(score), summary.strip()",
+                            },
+                            "match_disambiguation": "match_last",
+                            "format_type": "proper",
+                        },
+                    ],
+                },
             },
         },
     }
@@ -491,44 +668,50 @@ SUMMARY: [your summary text]""",
     ] == [
         {
             "answer_format": AnswerFormat.PROPER,
-            "judgement": {
-                "awarded_points": 8.0,
-                "min_points": 1.0,
-                "max_points": 10.0,
-                "details": "fake response",
-            },
             "label": "foo",
             "max_token_halt": False,
             "num_output_tokens": 3,
             "prediction": "Answer: foo",
+            "scores": {
+                "llm_grade": {
+                    "awarded_points": 8.0,
+                    "min_points": 1.0,
+                    "max_points": 10.0,
+                    "details": "fake response",
+                },
+            },
             "subject": "bar",
         },
         {
             "answer_format": AnswerFormat.PROPER,
-            "judgement": {
-                "awarded_points": 8.0,
-                "min_points": 1.0,
-                "max_points": 10.0,
-                "details": "fake response",
-            },
             "label": "foo",
             "max_token_halt": True,
             "num_output_tokens": 3,
             "prediction": "",
+            "scores": {
+                "llm_grade": {
+                    "awarded_points": 8.0,
+                    "min_points": 1.0,
+                    "max_points": 10.0,
+                    "details": "fake response",
+                },
+            },
             "subject": "bar",
         },
         {
             "answer_format": AnswerFormat.PROPER,
-            "judgement": {
-                "awarded_points": 8.0,
-                "min_points": 1.0,
-                "max_points": 10.0,
-                "details": "fake response",
-            },
             "label": "bar",
             "max_token_halt": False,
             "num_output_tokens": 5,
             "prediction": "<answer>BaZ</answer>",
+            "scores": {
+                "llm_grade": {
+                    "awarded_points": 8.0,
+                    "min_points": 1.0,
+                    "max_points": 10.0,
+                    "details": "fake response",
+                },
+            },
             "subject": None,
         },
     ]
@@ -551,8 +734,10 @@ def test_long_answer_benchmark_grade_aggregator() -> None:
             },
         },
         "output_processing": {
-            "answer_judge": {
-                "judge_prompt_template": """You are an expert evaluator tasked with comparing two answers for accuracy and completeness.
+            "score_fns": {
+                "llm_grade": {
+                    "type": "llm_judge",
+                    "judge_prompt_template": """You are an expert evaluator tasked with comparing two answers for accuracy and completeness.
 
 GOLDEN ANSWER (Expected/Correct): {{ correct_answer }}
 
@@ -563,27 +748,28 @@ Evaluate the model's answer against the golden answer and provide a score from 1
 Format your response exactly as:
 SCORE: [number]
 SUMMARY: [your summary text]""",
-                "judge_model": {
-                    "model_engine": "openai",
-                    "model_path": "gpt-4o",
-                    "engine_kwargs": {"api_num_threads": 1},
-                    "generation_kwargs": {
-                        "temperature": 0.3,
-                        "max_completion_tokens": 1024,
-                    },
-                },
-                "score_range": {"min": 1.0, "max": 10.0},
-                "verdict_formats": [
-                    {
-                        "pattern": r"(?is)\bSCORE:\s*(\d{1,2})\b.*SUMMARY:\s*(.+)",
-                        "capture_transform": {
-                            "params": ["score", "summary"],
-                            "expr": "float(score), summary.strip()",
+                    "judge_model": {
+                        "model_engine": "openai",
+                        "model_path": "gpt-4o",
+                        "engine_kwargs": {"api_num_threads": 1},
+                        "generation_kwargs": {
+                            "temperature": 0.3,
+                            "max_completion_tokens": 1024,
                         },
-                        "match_disambiguation": "match_last",
-                        "format_type": "proper",
                     },
-                ],
+                    "score_range": {"min": 1.0, "max": 10.0},
+                    "verdict_formats": [
+                        {
+                            "pattern": r"(?is)\bSCORE:\s*(\d{1,2})\b.*SUMMARY:\s*(.+)",
+                            "capture_transform": {
+                                "params": ["score", "summary"],
+                                "expr": "float(score), summary.strip()",
+                            },
+                            "match_disambiguation": "match_last",
+                            "format_type": "proper",
+                        },
+                    ],
+                },
             },
         },
     }
@@ -597,7 +783,13 @@ SUMMARY: [your summary text]""",
         ),
         config=bench_config,
     )
-    aggregator = benchmark_chat.grade_aggregator()
+
+    with patch(
+        "faith.model.model_engine.ModelEngine.OPENAI.create_model",
+        return_value=_FakeJudgeModel("gpt-4o"),
+    ) as mock_create_model:
+        aggregator = benchmark_chat.grade_aggregator()
+        mock_create_model.assert_called_once_with("gpt-4o", api_num_threads=1)
 
     assert [] >> aggregator == {
         "format_count": {
@@ -612,53 +804,59 @@ SUMMARY: [your summary text]""",
             "invalid": pytest.approx(float("nan"), nan_ok=True),
             "proper": pytest.approx(float("nan"), nan_ok=True),
         },
-        "mean_grade": pytest.approx(float("nan"), nan_ok=True),
-        "median_grade": pytest.approx(float("nan"), nan_ok=True),
-        "stddev_grade": pytest.approx(float("nan"), nan_ok=True),
+        "mean_llm_grade": pytest.approx(float("nan"), nan_ok=True),
+        "median_llm_grade": pytest.approx(float("nan"), nan_ok=True),
+        "stddev_llm_grade": pytest.approx(float("nan"), nan_ok=True),
         "query_count": 0,
     }
 
     assert [
         {
             "stats": {
-                "judgement": {
-                    "awarded_points": 8.0,
-                    "min_points": 0.0,
-                    "max_points": 10.0,
-                },
                 "label": "foo bar",
                 "max_token_halt": False,
                 "num_output_tokens": 4,
                 "prediction": "foo bar baz",
                 "answer_format": AnswerFormat.PROPER,
+                "scores": {
+                    "llm_grade": {
+                        "awarded_points": 8.0,
+                        "min_points": 0.0,
+                        "max_points": 10.0,
+                    },
+                },
             }
         },
         {
             "stats": {
-                "judgement": {
-                    "awarded_points": 5.0,
-                    "min_points": 0.0,
-                    "max_points": 5.0,
-                },
                 "label": "a b c d",
                 "max_token_halt": False,
                 "num_output_tokens": 5,
                 "prediction": "a b c d e",
                 "answer_format": AnswerFormat.PROPER,
+                "scores": {
+                    "llm_grade": {
+                        "awarded_points": 5.0,
+                        "min_points": 1.0,
+                        "max_points": 5.0,
+                    },
+                },
             }
         },
         {
             "stats": {
-                "judgement": {
-                    "awarded_points": 1.0,
-                    "min_points": 0.0,
-                    "max_points": 10.0,
-                },
                 "label": "one two three",
                 "max_token_halt": False,
                 "num_output_tokens": 6,
                 "prediction": "ooops",
                 "answer_format": AnswerFormat.PROPER,
+                "scores": {
+                    "llm_grade": {
+                        "awarded_points": 2.0,
+                        "min_points": 1.0,
+                        "max_points": 11.0,
+                    },
+                },
             }
         },
     ] >> aggregator == {
@@ -675,9 +873,9 @@ SUMMARY: [your summary text]""",
             "proper": pytest.approx(1),
         },
         "mean_output_tokens": pytest.approx(5),
-        "mean_grade": pytest.approx(19 / 30),
-        "median_grade": pytest.approx(4 / 5),
-        "stddev_grade": pytest.approx(math.sqrt(67 / 2) / 15),
+        "mean_llm_grade": pytest.approx(19 / 30),
+        "median_llm_grade": pytest.approx(4 / 5),
+        "stddev_llm_grade": pytest.approx(math.sqrt(67 / 2) / 15),
         "query_count": 3,
         "rate_max_token_halt": pytest.approx(0),
     }

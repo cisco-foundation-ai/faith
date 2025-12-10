@@ -165,26 +165,28 @@ class AliasAccuracyScore:
 class LLMJudgeScore:
     """An LLM-based judge for scoring long-answer responses."""
 
-    def __init__(self, judge_config: dict[str, Any]):
+    def __init__(
+        self,
+        judge_prompt_template: str,
+        judge_model: dict[str, Any],
+        verdict_formats: list[dict[str, Any]],
+        score_range: dict[str, float] | None = None,
+    ) -> None:
         """Initialize the LLM-based judge."""
-        self._judge_prompt_template = Template(
-            judge_config.get("judge_prompt_template", "")
-        )
-        self._min_score = judge_config.get("score_range", {}).get("min", 0.0)
-        self._max_score = judge_config.get("score_range", {}).get("max", 1.0)
+        self._judge_prompt_template = Template(judge_prompt_template)
+        score_range = score_range or {}
+        self._min_score = score_range.get("min", 0.0)
+        self._max_score = score_range.get("max", 1.0)
         assert (
             self._min_score < self._max_score
         ), "Invalid score range for judge: min {self._min_score} >= max {self._max_score}."
-        model_config = judge_config.get("judge_model", {})
-        model_engine = ModelEngine.from_string(model_config["model_engine"])
+        model_engine = ModelEngine.from_string(judge_model["model_engine"])
         self._judge_model = model_engine.create_model(
-            model_config["model_path"], **model_config.get("engine_kwargs", {})
+            judge_model["model_path"], **judge_model.get("engine_kwargs", {})
         )
         self._judge_model_formatter = PromptFormatter.CHAT
-        self._judge_generation_kwargs = model_config.get("generation_kwargs", {})
-        self._verdict_matcher = SequentialMatcher(
-            *judge_config.get("verdict_formats", [])
-        )
+        self._judge_generation_kwargs = judge_model.get("generation_kwargs", {})
+        self._verdict_matcher = SequentialMatcher(*verdict_formats)
 
     def _query_judge_model(self, prompt: str) -> str:
         """Prompt the judge model with an evaluation prompt and return the response."""
@@ -210,12 +212,14 @@ class LLMJudgeScore:
         self,
         label: str,
         pred: str | None,
+        ancillary_data: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> dict[str, Any]:
         """Compute the score for the predicted answer based on the judge's evaluation."""
         judge_prompt = self._judge_prompt_template.render(
             correct_answer=label,
             generated_answer=pred,
+            ancillary_data=ancillary_data or {},
         )
         verdict = self._query_judge_model(judge_prompt)
         verdict_parts, match_format = self._verdict_matcher(verdict)
@@ -230,9 +234,18 @@ class LLMJudgeScore:
             "details": ruling_details,
         }
 
-    def aggregate(self, scores: Sequence[float]) -> dict[str, float]:
-        """Aggregate a list of grades into the statistics for the benchmark."""
-        return {"mean": float(np.mean(scores))}
+    def aggregate(self, judgements: Sequence[dict[str, Any]]) -> dict[str, float]:
+        """Aggregate a list of judgement grades into the statistics for the benchmark."""
+        per_question_grades = [
+            (pts["awarded_points"] - pts["min_points"])
+            / (pts["max_points"] - pts["min_points"])
+            for pts in judgements
+        ]
+        return {
+            "mean": np.mean(per_question_grades),
+            "median": np.median(per_question_grades),
+            "stddev": np.std(per_question_grades),
+        }
 
 
 class CompositeScore:
@@ -268,6 +281,7 @@ class ScoreFn(Enum):
     )  # Score from Jaccard index between sets of labels; in [0, 1].
     LOG_SCALED_SCORE = (LogScaledScore,)  # Score for numeric answers.
     ALIAS_ACCURACY = (AliasAccuracyScore,)  # Accuracy score for alias matching.
+    LLM_JUDGE = (LLMJudgeScore,)  # Score from LLM-based judge evaluation.
     COMPOSITE = (CompositeScore,)  # Composite score from multiple sub-scores.
 
     def __init__(self, scoring_cls: Type[AnswerScoreFn]) -> None:

@@ -11,8 +11,7 @@ import pandas as pd
 from faith._internal.algo.hash import dict_sha256
 from faith._internal.algo.matching import AnswerFormat, SimpleMatcher
 from faith._internal.algo.sampling import NShotSampler
-from faith._internal.metrics.domain_specific_scores import LLMJudgeScore
-from faith._internal.metrics.llm import llm_judge_grades, llm_metadata_metrics
+from faith._internal.metrics.llm import llm_basic_metrics, llm_metadata_metrics
 from faith._internal.types.flags import GenerationMode
 from faith.benchmark.benchmark import BaseBenchmark
 from faith.benchmark.dataset.dataset import BenchmarkDataset
@@ -45,6 +44,9 @@ class LABenchmark(BaseBenchmark):
             GenerationMode.NEXT_TOKEN,
         ], "Long answer benchmarks do not support logits/next_token generation mode since long answers may be multiple tokens."
         self._answer_type = LongAnswerType(self._config["laqa_config"]["type"])
+        assert (
+            len(self._config.get("output_processing", {}).get("score_fns", {})) > 0
+        ), "Long answer benchmarks must have at least one score function defined."
 
     def _build_dataset(
         self,
@@ -72,7 +74,7 @@ class LABenchmark(BaseBenchmark):
             self.generation_mode == GenerationMode.CHAT_COMPLETION
             and self._answer_type == LongAnswerType.FREE_FORM
         ):
-            return JudgeBasedLogGrader(op_cfg, model_format_config, recompute_stats)
+            return LALogGrader(op_cfg, model_format_config, recompute_stats)
         raise ValueError(
             f"Unsupported generation mode: {self.generation_mode} for long answer log grading."
         )
@@ -114,14 +116,14 @@ class LABenchmarkDataset(BenchmarkDataset):
             raw_question=sample["question"],
             raw_answer=sample["answer"],
             examples=examples,
-            choice_map=None,  # Short answer benchmarks are not enumerable.
+            choice_map=None,  # Long answer benchmarks are not enumerable.
             subject=sample.get("subject", None),
             ancillary_data=self._extract_ancillary_data(sample),
         )
 
 
-class JudgeBasedLogGrader(LogGrader):
-    """A log grader for long-answer chat completions that are judged by an LLM."""
+class LALogGrader(LogGrader):
+    """A log grader for long-answer chat completions."""
 
     def __init__(
         self,
@@ -132,15 +134,12 @@ class JudgeBasedLogGrader(LogGrader):
         """Initialize the judge-based log grader."""
         super().__init__(output_processing_config, model_format_config, recompute_stats)
         self._answer_extractor = SimpleMatcher(model_format_config)
-        judge_config = output_processing_config.get("answer_judge", {})
-        self._judge_score = LLMJudgeScore(judge_config)
 
     def _markup_entry_impl(self, log_entry: dict[str, Any]) -> dict[str, Any]:
         """Markup a single log entry with the computed statistics / scores."""
         correct_answer = cast(str, log_entry["data"]["label"])
         gen_answer: str | None = None
         answer_format = AnswerFormat.INVALID
-        judgement: dict[str, Any] = {}
         # TODO(https://github.com/RobustIntelligence/faith/issues/286): Remove the use
         # of 'output_text' once we fully migrate to 'answer_text' at the next major
         # release.
@@ -152,13 +151,11 @@ class JudgeBasedLogGrader(LogGrader):
                 self._answer_extractor(answer_text),
                 AnswerFormat.PROPER,
             )
-            judgement = self._judge_score(correct_answer, gen_answer)
 
         log_entry["stats"] = {
             "label": correct_answer,
             "prediction": gen_answer,
             "answer_format": answer_format,
-            "judgement": judgement,
             "subject": log_entry["data"].get("subject", None),
             "num_output_tokens": log_entry["model_data"]
             .get("chat_comp", {})
@@ -191,7 +188,6 @@ class LAMetricsAggregator(GradeAggregator):
         label: Sequence[Any] = kwargs.get("label", [])
         prediction: Sequence[Any] = kwargs.get("prediction", [])
         answer_format: Sequence[AnswerFormat] = kwargs.get("answer_format", [])
-        judgements: Sequence[dict[str, Any]] = kwargs.get("judgement", [])
         scores: Sequence[dict[str, float]] = kwargs.get("scores", [])
         num_output_tokens: Sequence[int] | None = kwargs.get("num_output_tokens", None)
         max_token_halt: Sequence[bool] | None = kwargs.get("max_token_halt", None)
@@ -203,5 +199,5 @@ class LAMetricsAggregator(GradeAggregator):
                 if num_output_tokens is not None and max_token_halt is not None
                 else {}
             )
-            | llm_judge_grades(label, prediction, answer_format, judgements)
+            | llm_basic_metrics(label, prediction, answer_format)
         )

@@ -216,31 +216,6 @@ def llm_multilabel_metrics(
     )
 
 
-def llm_judge_grades(
-    label: SingleLabelSeq,
-    prediction: SingleLabelSeq,
-    answer_format: Sequence[AnswerFormat],
-    judgements: Sequence[dict[str, Any]],
-) -> dict[str, Any]:
-    """Helper function to compute judge score metrics from the awarded points given by the judge."""
-    assert_same_length(
-        label=label,
-        prediction=prediction,
-        answer_format=answer_format,
-        judgements=judgements,
-    )
-    per_question_grades = [
-        (pts["awarded_points"] - pts["min_points"])
-        / (pts["max_points"] - pts["min_points"])
-        for pts in judgements
-    ]
-    return llm_basic_metrics(label, prediction, answer_format) | {
-        "mean_grade": np.mean(per_question_grades),
-        "median_grade": np.median(per_question_grades),
-        "stddev_grade": np.std(per_question_grades),
-    }
-
-
 def llm_basic_metrics(
     label: SingleLabelSeq,
     prediction: SingleLabelSeq,
