@@ -6,7 +6,7 @@
 
 import math
 from enum import Enum
-from typing import Any, Protocol, Sequence, Type, cast
+from typing import Any, NotRequired, Protocol, Sequence, Type, TypedDict
 
 import numpy as np
 from cvss import CVSS3, CVSSError
@@ -162,6 +162,26 @@ class AliasAccuracyScore:
         return {"accuracy": float(np.mean(scores))}
 
 
+class _ParsedVerdict(TypedDict):
+    """A TypedDict representing the parsed verdict from an LLM-based judge.
+
+    This is an internal structure used for type checking from the parsed LLM response.
+    """
+
+    awarded_points: float
+    details: NotRequired[dict[str, Any]]
+
+
+class LLMJudgeVerdict(TypedDict):
+    """A TypedDict representing the full verdict from an LLM-based judge."""
+
+    awarded_points: float
+    min_points: float
+    max_points: float
+    summary_details: dict[str, Any]
+    full_response: str
+
+
 class LLMJudgeScore:
     """An LLM-based judge for scoring long-answer responses."""
 
@@ -214,7 +234,7 @@ class LLMJudgeScore:
         pred: str | None,
         ancillary_data: dict[str, Any] | None = None,
         **kwargs: Any,
-    ) -> dict[str, Any]:
+    ) -> LLMJudgeVerdict:
         """Compute the score for the predicted answer based on the judge's evaluation."""
         judge_prompt = self._judge_prompt_template.render(
             correct_answer=label,
@@ -222,17 +242,18 @@ class LLMJudgeScore:
             ancillary_data=ancillary_data or {},
         )
         verdict = self._query_judge_model(judge_prompt)
-        verdict_parts, match_format = self._verdict_matcher(verdict)
+        verdict_dict, match_format = self._verdict_matcher(verdict)
         assert (
             match_format != AnswerFormat.INVALID
         ), f"Could not parse judge verdict:\n\n{verdict}"
-        awarded_points, ruling_details = cast(tuple[float, str], verdict_parts)
-        return {
-            "awarded_points": awarded_points,
-            "min_points": self._min_score,
-            "max_points": self._max_score,
-            "details": ruling_details,
-        }
+        parsed_verdict: _ParsedVerdict = verdict_dict
+        return LLMJudgeVerdict(
+            awarded_points=parsed_verdict["awarded_points"],
+            min_points=self._min_score,
+            max_points=self._max_score,
+            summary_details=parsed_verdict.get("details", {}),
+            full_response=verdict,
+        )
 
     def aggregate(self, judgements: Sequence[dict[str, Any]]) -> dict[str, float]:
         """Aggregate a list of judgement grades into the statistics for the benchmark."""
