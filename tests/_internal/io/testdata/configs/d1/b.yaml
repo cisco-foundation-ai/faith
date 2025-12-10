@@ -9,6 +9,7 @@ lst:
   - 2
   - 3
 d:
+  eyes: !string_from "foo.txt"
   a: 456
   b: 789
   d:

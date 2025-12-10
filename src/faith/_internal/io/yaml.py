@@ -20,23 +20,25 @@ _INDEXED_PATH_RE = re.compile(
 _INDEX_RE = re.compile(r'\[(\d+|\'[^\']+\'|"[^"]+")\]')
 
 
+def _resolve_path(path: str) -> Path:
+    if path.startswith("$BENCHMARKS_ROOT/"):
+        return benchmarks_root() / path.replace("$BENCHMARKS_ROOT/", "")
+    return Path(path)
+
+
 def _parse_config_path(path: str) -> tuple[Path, list[int | str]]:
     """Parse the config path and return the base path and indices."""
     match = _INDEXED_PATH_RE.match(path)
     if not match:
         raise yaml.YAMLError(f"Invalid include path: {path}")
     file_path, selection = match.groups()
-    if file_path.startswith("$BENCHMARKS_ROOT/"):
-        file_path = benchmarks_root() / file_path.replace("$BENCHMARKS_ROOT/", "")
-    else:
-        file_path = Path(file_path)
     indices = []
     if len(selection) > 0:
         indices = [
             int(idx) if idx.isdigit() else idx.strip("'\"")
             for idx in _INDEX_RE.findall(selection)
         ]
-    return file_path, indices
+    return _resolve_path(file_path), indices
 
 
 def _deep_merge_config(
@@ -95,6 +97,18 @@ def _include_handler(loader: "_YamlIncludeLoader", node: yaml.Node) -> dict:
     raise yaml.YAMLError(f"Unsupported node type for !from: {type(node)}")
 
 
+def _string_from_handler(loader: "_YamlIncludeLoader", node: yaml.Node) -> str:
+    """YAML !string_from handler to include external files as raw strings."""
+    if isinstance(node, yaml.ScalarNode):
+        file_path = _resolve_path(loader.construct_scalar(node))
+        if not file_path.is_absolute():
+            file_path = loader.base_path / file_path
+        with open(file_path, "r", encoding="utf-8") as f:
+            return f.read()
+
+    raise yaml.YAMLError(f"Unsupported node type for !string_from: {type(node)}")
+
+
 class _YamlIncludeLoader(yaml.SafeLoader):
     """Custom YAML loader that supports the !from directive with overrides."""
 
@@ -111,8 +125,9 @@ class _YamlIncludeLoader(yaml.SafeLoader):
         return self._base_path
 
 
-# Register the !from tag
+# Register custom YAML tags.
 _YamlIncludeLoader.add_constructor("!from", _include_handler)
+_YamlIncludeLoader.add_constructor("!string_from", _string_from_handler)
 
 
 @cache
