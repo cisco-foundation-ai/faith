@@ -234,6 +234,22 @@ def test_format_pattern_answer_format() -> None:
                 ("abc", None),
             ],
         ),
+        (
+            {
+                "format_type": "proper",
+                "match_disambiguation": "match_all",
+                "pattern": r"(?is)\s*(\{.*\})\s*",
+                "capture_transform": {
+                    "params": ["dict_str"],
+                    "expr": "from_json(dict_str).get('height', None)",
+                },
+            },
+            [
+                ('{\n  "height": 180,\n  "weight": 75\n}', (180, AnswerFormat.PROPER)),
+                ('{\n  "weight": 75\n}', (None, AnswerFormat.PROPER)),
+                ("Not a JSON string", None),
+            ],
+        ),
     ],
 )
 def test_format_pattern_call(

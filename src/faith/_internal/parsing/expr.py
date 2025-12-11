@@ -63,6 +63,7 @@ def evaluate_expr(
     expr: str,
     names: dict[str, Any] | None = None,
     max_comprehension_length: int = simpleeval.MAX_COMPREHENSION_LENGTH,
+    functions: dict[str, Any] | None = None,
 ) -> Any:
     """Evaluate an expression with a limited set of allowed functions and types.
 
@@ -80,7 +81,7 @@ def evaluate_expr(
     try:
         simpleeval.MAX_COMPREHENSION_LENGTH = max_comprehension_length
         expr_evaluator = simpleeval.EvalWithCompoundTypes(
-            names=names or {}, functions=_ALLOWED_CALLABLES
+            names=names or {}, functions=_ALLOWED_CALLABLES | (functions or {})
         )
         return expr_evaluator.eval(expr)
     finally:
