@@ -135,15 +135,17 @@ def test_qa_formatter() -> None:
         "prompt": {
             "question_template": "Question: {{ question }}",
             "answer_template": "Answer: {{ answer }}",
-            "prompt_template": """{{ instruction }}
-{%- if examples %}
-{%- for example in examples %}
+            "prompt_template": """{%- if instruction -%}
+{{ instruction }}
 
+{% endif -%}
+{% if examples -%}
+{% for example in examples -%}
 {{ example.question }}
 {{ example.answer }}
-{%- endfor %}
-{%- endif %}
 
+{% endfor -%}
+{% endif -%}
 {{ question }}""",
         },
     }
@@ -167,6 +169,14 @@ def test_qa_formatter() -> None:
     assert formatter.render_answer("Paris") == "Answer: Paris"
 
     # Test rendering a prompt.
+    assert (
+        formatter._render_prompt(
+            instruction=None,
+            examples=[],
+            question="What is the capital of France?",
+        )
+        == "What is the capital of France?"
+    )
     assert (
         formatter._render_prompt(
             instruction="Please answer the following question.",
@@ -279,15 +289,17 @@ def test_qa_formatter_render_conversation() -> None:
         "prompt": {
             "question_template": "Question: {{ question }}",
             "answer_template": "Answer: {{ answer }}",
-            "prompt_template": """{{ instruction }}
-{%- if examples %}
-{%- for example in examples %}
+            "prompt_template": """{%- if instruction -%}
+{{ instruction }}
 
+{% endif -%}
+{% if examples -%}
+{% for example in examples -%}
 {{ example.question }}
 {{ example.answer }}
-{%- endfor %}
-{%- endif %}
 
+{% endfor -%}
+{% endif -%}
 {{ question }}""",
         },
     }

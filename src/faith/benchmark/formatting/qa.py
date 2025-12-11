@@ -37,7 +37,7 @@ class QARecord(DataClassJsonMixin):
 
     # Components that make up the question.
     system_prompt: str | None
-    instruction: str
+    instruction: str | None
     question: str
     choices: dict[str, str] | None  # Maps symbols (e.g., 'A', 'B') to their choice.
     label: str  # aka the "answer" or "ground truth".
@@ -67,22 +67,26 @@ class QAFormatter:
         inst_cfg = format_cfg.get("instructions", {})
         prompt_cfg = format_cfg.get("prompt", {})
         self._system_prompt = inst_cfg.get("system_prompt", None)
+        inst_tmpl: str | None = None
         if prompt_format == PromptFormatter.BASE:
-            self._inst_template = Template(inst_cfg["base_inst_template"])
+            inst_tmpl = inst_cfg.get("base_inst_template", None)
         elif prompt_format == PromptFormatter.CHAT:
-            self._inst_template = Template(inst_cfg["chat_inst_template"])
+            inst_tmpl = inst_cfg.get("chat_inst_template", None)
+        self._inst_template = Template(inst_tmpl) if inst_tmpl is not None else None
         self._question_template = Template(prompt_cfg["question_template"])
         self._answer_template = Template(prompt_cfg["answer_template"])
         self._prompt_template = Template(prompt_cfg["prompt_template"])
 
     def _instruction(
         self, choices: Sequence[str] | None = None, subject: str | None = None
-    ) -> str:
+    ) -> str | None:
         """Fetch the instruction for this benchmark with the given subject."""
+        if self._inst_template is None:
+            return None
         return self._inst_template.render(choices=choices, subject=subject)
 
     def _render_prompt(
-        self, instruction: str, examples: Sequence[QARecord], question: str
+        self, instruction: str | None, examples: Sequence[QARecord], question: str
     ) -> str:
         """Renders the prompt using the prompt template with parameters instruction, examples, and question."""
         return self._prompt_template.render(

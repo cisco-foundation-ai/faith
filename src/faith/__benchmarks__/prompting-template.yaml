@@ -5,13 +5,15 @@
 ---
 prompting:
   prompt_template: |-
+    {%- if instruction -%}
     {{ instruction }}
-    {%- if examples %}
-    {%- for example in examples %}
 
+    {% endif -%}
+    {% if examples -%}
+    {% for example in examples -%}
     {{ example.question }}
     {{ example.answer }}
-    {%- endfor %}
-    {%- endif %}
 
+    {% endfor -%}
+    {% endif -%}
     {{ question }}
