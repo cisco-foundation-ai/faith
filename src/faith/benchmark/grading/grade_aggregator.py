@@ -11,7 +11,7 @@ from typing import Any, Iterable, Sequence
 import numpy as np
 
 from faith._internal.iter.transform import Reducer
-from faith._internal.metrics.domain_specific_scores import ScoreFn
+from faith._internal.metrics.domain_specific_scores import Score, ScoreFn
 from faith._internal.types.validation import assert_same_length
 
 
@@ -81,9 +81,9 @@ class GradeAggregator(Reducer[dict[str, Any], dict[str, Any] | None]):
             },
         }
 
-    def _aggregate_scores(self, scores: Sequence[dict[str, float]]) -> dict[str, float]:
+    def _aggregate_scores(self, scores: Sequence[dict[str, Score]]) -> dict[str, float]:
         # Convert the scores into a dictionary of lists for each score function.
-        scores_dict: dict[str, list[float]] = {n: [] for n in self._score_fns.keys()}
+        scores_dict: dict[str, list[Score]] = {n: [] for n in self._score_fns.keys()}
         for score in scores:
             for name, value in score.items():
                 assert (

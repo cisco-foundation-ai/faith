@@ -18,6 +18,7 @@ from transformers import PreTrainedTokenizerBase
 from faith._internal.algo.hash import dict_sha256
 from faith._internal.algo.matching import AnswerFormat
 from faith._internal.algo.sampling import NShotSampler
+from faith._internal.metrics.domain_specific_scores import Score
 from faith._internal.metrics.llm import llm_metadata_metrics, llm_prediction_metrics
 from faith._internal.metrics.types import SingleLabelSeq
 from faith._internal.types.flags import GenerationMode
@@ -288,7 +289,7 @@ class MCMetricsAggregator(GradeAggregator):
         label: SingleLabelSeq = kwargs.get("label", [])
         prediction: SingleLabelSeq = kwargs.get("prediction", [])
         answer_format: Sequence[AnswerFormat] = kwargs.get("answer_format", [])
-        scores: Sequence[dict[str, float]] = kwargs.get("scores", [])
+        scores: Sequence[dict[str, Score]] = kwargs.get("scores", [])
         subject: SingleLabelSeq | None = kwargs.get("subject", None)
         num_output_tokens: Sequence[int] | None = kwargs.get("num_output_tokens", None)
         max_token_halt: Sequence[bool] | None = kwargs.get("max_token_halt", None)

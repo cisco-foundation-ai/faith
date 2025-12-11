@@ -21,17 +21,24 @@ from faith.model.base import GenerationError
 from faith.model.model_engine import ModelEngine
 
 
+class Score(TypedDict):
+    """A base class representing a score and any associated metadata."""
+
+    # The numeric score value given by a scoring function for a predicted answer.
+    value: float
+
+
 class AnswerScoreFn(Protocol):
     """A function that computes a score for a given predicted answer from its label."""
 
-    def __call__(self, label: Labeling, pred: Labeling | None, **kwargs: Any) -> float:
+    def __call__(self, label: Labeling, pred: Labeling | None, **kwargs: Any) -> Score:
         """Compute the score for a predicted answer against a given label.
 
         This score should be a non-negative float, where a higher score indicates a
         better match.
         """
 
-    def aggregate(self, scores: Sequence[float]) -> dict[str, float]:
+    def aggregate(self, scores: Sequence[Score]) -> dict[str, float]:
         """Aggregate a list of scores into a set of aggregate statistics."""
 
 
@@ -43,7 +50,7 @@ class CVSSScore:
         c = CVSS3(cvss_vector)
         return c.scores()[0] / 10.0
 
-    def __call__(self, label: str, pred: str | None, **kwargs: Any) -> float:
+    def __call__(self, label: str, pred: str | None, **kwargs: Any) -> Score:
         """Compute the CVSS score for a predicted CVSS vector against a label.
 
         This score computes the absolute deviation between the predicted CVSS score
@@ -56,26 +63,27 @@ class CVSSScore:
             kwargs: Additional keyword arguments (not used).
 
         Returns:
-            float: The CVSS score, normalized to [0, 1]. A score of 1.0 indicates a
+            Score: The CVSS score, normalized to [0, 1]. A score of 1.0 indicates a
             perfect match.
         """
         if pred is None:
-            return 0.0
+            return Score(value=0.0)
 
         try:
             pred_score = self.get_cvss_score(pred)
         except CVSSError:
-            return 0.0
+            return Score(value=0.0)
         label_score = self.get_cvss_score(label)
         assert 0 <= pred_score <= 1, "Predicted CVSS score must be between 0 and 1."
         assert 0 <= label_score <= 1, "Label CVSS score must be between 0 and 1."
-        return 1.0 - abs(pred_score - label_score)
+        return Score(value=1.0 - abs(pred_score - label_score))
 
-    def aggregate(self, scores: Sequence[float]) -> dict[str, float]:
+    def aggregate(self, scores: Sequence[Score]) -> dict[str, float]:
         """Aggregate a list of CVSS scores into statistics for the benchmark."""
+        score_values = [s["value"] for s in scores]
         return {
-            "mean": float(np.mean(scores)),
-            "median": float(np.median(scores)),
+            "mean": float(np.mean(score_values)),
+            "median": float(np.median(score_values)),
         }
 
 
@@ -87,22 +95,23 @@ class JaccardIndex:
         label: tuple[str, ...] | None,
         pred: tuple[str, ...] | None,
         **kwargs: Any,
-    ) -> float:
+    ) -> Score:
         """Compute the Jaccard score between two sets of labels."""
         label_set = set(label or [])
         pred_set = set(pred or [])
 
         return (
-            len(label_set & pred_set) / len(label_set | pred_set)
+            Score(value=len(label_set & pred_set) / len(label_set | pred_set))
             if label_set or pred_set
-            else 1.0
+            else Score(value=1.0)
         )
 
-    def aggregate(self, scores: Sequence[float]) -> dict[str, float]:
+    def aggregate(self, scores: Sequence[Score]) -> dict[str, float]:
         """Aggregate a list of Jaccard scores into statistics for the benchmark."""
+        score_values = [s["value"] for s in scores]
         return {
-            "mean": float(np.mean(scores)),
-            "median": float(np.median(scores)),
+            "mean": float(np.mean(score_values)),
+            "median": float(np.median(score_values)),
         }
 
 
@@ -116,24 +125,26 @@ class LogScaledScore:
         self._tolerance = tolerance
         self._scaling = scaling
 
-    def __call__(self, label: str, pred: str | None, **kwargs: Any) -> float:
+    def __call__(self, label: str, pred: str | None, **kwargs: Any) -> Score:
         """Compute the numeric answer score between a label and a prediction."""
         if pred is None:
-            return 0.0
+            return Score(value=0.0)
 
         try:
             label_value = float(label)
             pred_value = float(pred)
         except ValueError:
-            return 0.0
+            return Score(value=0.0)
 
         tol = self._tolerance * (abs(label_value) if label_value != 0 else 1)
         tol_error = abs(label_value - pred_value) / tol
-        return max(0, 1 - math.log(1 + tol_error) / math.log(1 + self._scaling))
+        return Score(
+            value=max(0, 1 - math.log(1 + tol_error) / math.log(1 + self._scaling))
+        )
 
-    def aggregate(self, scores: Sequence[float]) -> dict[str, float]:
+    def aggregate(self, scores: Sequence[Score]) -> dict[str, float]:
         """Aggregate a list of alias accuracy scores into statistics for the benchmark."""
-        return {"mean": float(np.mean(scores))}
+        return {"mean": float(np.mean([s["value"] for s in scores]))}
 
 
 class AliasAccuracyScore:
@@ -143,10 +154,10 @@ class AliasAccuracyScore:
         """Initialize the AliasAccuracyScore with a dictionary of aliases."""
         self._alias_wcc = wcc_dict(alias_map)
 
-    def __call__(self, label: str, pred: str | None, **kwargs: Any) -> float:
+    def __call__(self, label: str, pred: str | None, **kwargs: Any) -> Score:
         """Evaluate the connection between two threat actors."""
         if pred is None:
-            return 0.0
+            return Score(value=0.0)
 
         normalized_label = label.strip().lower()
         normalized_pred = pred.strip().lower()
@@ -155,11 +166,11 @@ class AliasAccuracyScore:
         assert label_alias_wcc != -1, f"Label '{label}' not found in alias dictionary."
         pred_alias_wcc = self._alias_wcc.get(normalized_pred, -1)
 
-        return 1.0 if label_alias_wcc == pred_alias_wcc else 0.0
+        return Score(value=1.0 if label_alias_wcc == pred_alias_wcc else 0.0)
 
-    def aggregate(self, scores: Sequence[float]) -> dict[str, float]:
+    def aggregate(self, scores: Sequence[Score]) -> dict[str, float]:
         """Aggregate a list of alias accuracy scores into statistics for the benchmark."""
-        return {"accuracy": float(np.mean(scores))}
+        return {"accuracy": float(np.mean([s["value"] for s in scores]))}
 
 
 class _ParsedVerdict(TypedDict):
@@ -172,12 +183,12 @@ class _ParsedVerdict(TypedDict):
     details: NotRequired[dict[str, Any]]
 
 
-class LLMJudgeVerdict(TypedDict):
+class LLMJudgeVerdict(Score):
     """A TypedDict representing the full verdict from an LLM-based judge."""
 
-    awarded_points: float
-    min_points: float
-    max_points: float
+    raw_value: float
+    min_value: float
+    max_value: float
     summary_details: dict[str, Any]
     full_response: str
 
@@ -248,25 +259,29 @@ class LLMJudgeScore:
         ), f"Could not parse judge verdict:\n\n{verdict}"
         parsed_verdict: _ParsedVerdict = verdict_dict
         return LLMJudgeVerdict(
-            awarded_points=parsed_verdict["awarded_points"],
-            min_points=self._min_score,
-            max_points=self._max_score,
+            value=(parsed_verdict["awarded_points"] - self._min_score)
+            / (self._max_score - self._min_score),
+            raw_value=parsed_verdict["awarded_points"],
+            min_value=self._min_score,
+            max_value=self._max_score,
             summary_details=parsed_verdict.get("details", {}),
             full_response=verdict,
         )
 
-    def aggregate(self, judgements: Sequence[dict[str, Any]]) -> dict[str, float]:
+    def aggregate(self, judgements: Sequence[LLMJudgeVerdict]) -> dict[str, float]:
         """Aggregate a list of judgement grades into the statistics for the benchmark."""
-        per_question_grades = [
-            (pts["awarded_points"] - pts["min_points"])
-            / (pts["max_points"] - pts["min_points"])
-            for pts in judgements
-        ]
+        per_question_grades = [s["value"] for s in judgements]
         return {
             "mean": np.mean(per_question_grades),
             "median": np.median(per_question_grades),
             "stddev": np.std(per_question_grades),
         }
+
+
+class SubScores(Score):
+    """A TypedDict representing sub-scores from multiple scoring functions."""
+
+    sub_scores: dict[str, Score]
 
 
 class CompositeScore:
@@ -277,20 +292,21 @@ class CompositeScore:
         self._reduce_expr = reduce_expr
         self._score_fns = ScoreFn.from_configs(**score_fn_configs)
 
-    def __call__(self, label: Any, pred: Any, **kwargs: Any) -> dict[str, float]:
-        """Compute the composite score for a set of labels and predictions."""
-        scores = {
+    def __call__(self, label: Any, pred: Any, **kwargs: Any) -> Score:
+        """Compute the composite score for a label and prediction from their sub-scores."""
+        sub_scores = {
             score_name: score_fn(label, pred, **kwargs)
             for score_name, score_fn in self._score_fns.items()
         }
-        return evaluate_expr(
-            self._reduce_expr,
-            names={"scores": scores},
+        scores = {name: sub_score["value"] for name, sub_score in sub_scores.items()}
+        return SubScores(
+            value=evaluate_expr(self._reduce_expr, names={"scores": scores}),
+            sub_scores=sub_scores,
         )
 
-    def aggregate(self, scores: Sequence[float]) -> dict[str, float]:
+    def aggregate(self, scores: Sequence[Score]) -> dict[str, float]:
         """Aggregate a list of composite scores into statistics for the benchmark."""
-        return {"mean": float(np.mean(scores))}
+        return {"mean": float(np.mean([s["value"] for s in scores]))}
 
 
 class ScoreFn(Enum):

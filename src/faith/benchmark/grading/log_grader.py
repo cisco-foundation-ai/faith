@@ -12,7 +12,7 @@ from tqdm import tqdm
 
 from faith._internal.algo.matching import AnswerFormat
 from faith._internal.iter.transform import IsoTransform
-from faith._internal.metrics.domain_specific_scores import ScoreFn
+from faith._internal.metrics.domain_specific_scores import Score, ScoreFn
 from faith._internal.metrics.types import Labeling
 
 logger = logging.getLogger(__name__)
@@ -53,7 +53,7 @@ class LogGrader(IsoTransform[dict[str, Any]]):
 
     def _custom_scores(
         self, label: Labeling, pred: Labeling | None, **kwargs: Any
-    ) -> dict[str, dict[str, float]]:
+    ) -> dict[str, dict[str, Score]]:
         """Return the custom scores defined in the output processing config."""
         if len(self._score_fns) == 0:
             return {}

@@ -17,6 +17,7 @@ import pandas as pd
 from faith._internal.algo.hash import dict_sha256
 from faith._internal.algo.matching import AnswerFormat
 from faith._internal.algo.sampling import NShotSampler
+from faith._internal.metrics.domain_specific_scores import Score
 from faith._internal.metrics.llm import (
     llm_basic_metrics,
     llm_metadata_metrics,
@@ -159,7 +160,7 @@ class SAMetricsAggregator(GradeAggregator):
         label: Sequence[Any] = kwargs.get("label", [])
         prediction: Sequence[Any] = kwargs.get("prediction", [])
         answer_format: Sequence[AnswerFormat] = kwargs.get("answer_format", [])
-        scores: Sequence[dict[str, float]] = kwargs.get("scores", [])
+        scores: Sequence[dict[str, Score]] = kwargs.get("scores", [])
         subject: SingleLabelSeq | None = kwargs.get("subject", None)
         num_output_tokens: Sequence[int] | None = kwargs.get("num_output_tokens", None)
         max_token_halt: Sequence[bool] | None = kwargs.get("max_token_halt", None)

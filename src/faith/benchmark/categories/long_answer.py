@@ -8,14 +8,14 @@ from typing import Any, Sequence, cast
 import numpy as np
 import pandas as pd
 
-from faith._internal.algo.hash import dict_sha256
 from faith._internal.algo.matching import AnswerFormat, SimpleMatcher
 from faith._internal.algo.sampling import NShotSampler
+from faith._internal.metrics.domain_specific_scores import Score
 from faith._internal.metrics.llm import llm_basic_metrics, llm_metadata_metrics
 from faith._internal.types.flags import GenerationMode
 from faith.benchmark.benchmark import BaseBenchmark
+from faith.benchmark.categories.short_answer import SABenchmarkDataset
 from faith.benchmark.dataset.dataset import BenchmarkDataset
-from faith.benchmark.formatting.qa import QAFormatter, QARecord
 from faith.benchmark.grading.grade_aggregator import GradeAggregator
 from faith.benchmark.grading.log_grader import LogGrader
 from faith.benchmark.types import BenchmarkSpec
@@ -57,7 +57,7 @@ class LABenchmark(BaseBenchmark):
         ancillary_columns: frozenset[str] = frozenset(),
     ) -> BenchmarkDataset:
         """Builds the dataset for this benchmark."""
-        return LABenchmarkDataset(
+        return SABenchmarkDataset(
             formatter=self.formatter,
             benchmark_data=benchmark_data,
             nshot_samlper=nshot_sampler,
@@ -82,44 +82,6 @@ class LABenchmark(BaseBenchmark):
     def grade_aggregator(self) -> GradeAggregator:
         """Fetch a grade aggregator for this benchmark."""
         return LAMetricsAggregator(self._config["output_processing"])
-
-
-class LABenchmarkDataset(BenchmarkDataset):
-    """Static dataset for long answer benchmarks."""
-
-    def __init__(
-        self,
-        formatter: QAFormatter,
-        benchmark_data: pd.DataFrame,
-        nshot_samlper: NShotSampler,
-        rng: np.random.Generator,
-        ancillary_columns: frozenset[str] = frozenset(),
-    ):
-        """Initializes the LABenchmarkDataset with the given benchmark and parameters."""
-        super().__init__(
-            formatter,
-            benchmark_data,
-            nshot_samlper,
-            rng,
-            required_columns=frozenset({"question", "answer"}),
-            ancillary_columns=ancillary_columns,
-            optional_columns=frozenset({"subject"}),
-        )
-
-    def _format_qa(
-        self, index: int, sample: pd.Series, examples: Sequence[QARecord] | None = None
-    ) -> QARecord:
-        """Format a sample into a question-answer record."""
-        return self._formatter.render_qa_record(
-            index=index,
-            sample_hash=dict_sha256(sample.to_dict()),
-            raw_question=sample["question"],
-            raw_answer=sample["answer"],
-            examples=examples,
-            choice_map=None,  # Long answer benchmarks are not enumerable.
-            subject=sample.get("subject", None),
-            ancillary_data=self._extract_ancillary_data(sample),
-        )
 
 
 class LALogGrader(LogGrader):
@@ -188,7 +150,7 @@ class LAMetricsAggregator(GradeAggregator):
         label: Sequence[Any] = kwargs.get("label", [])
         prediction: Sequence[Any] = kwargs.get("prediction", [])
         answer_format: Sequence[AnswerFormat] = kwargs.get("answer_format", [])
-        scores: Sequence[dict[str, float]] = kwargs.get("scores", [])
+        scores: Sequence[dict[str, Score]] = kwargs.get("scores", [])
         num_output_tokens: Sequence[int] | None = kwargs.get("num_output_tokens", None)
         max_token_halt: Sequence[bool] | None = kwargs.get("max_token_halt", None)
 
