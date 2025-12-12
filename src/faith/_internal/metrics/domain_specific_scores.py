@@ -5,8 +5,9 @@
 """Domain-specific scoring functions for evaluating short-answer model predictions."""
 
 import math
+from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, NotRequired, Protocol, Sequence, Type, TypedDict
+from typing import Any, Generic, NotRequired, Sequence, Type, TypedDict, TypeVar
 
 import numpy as np
 from cvss import CVSS3, CVSSError
@@ -20,37 +21,82 @@ from faith.benchmark.formatting.prompt import PromptFormatter
 from faith.model.base import GenerationError
 from faith.model.model_engine import ModelEngine
 
+_LABELING = TypeVar("_LABELING", bound=Labeling)
+
 
 class Score(TypedDict):
     """A base class representing a score and any associated metadata."""
 
     # The numeric score value given by a scoring function for a predicted answer.
-    value: float
+    value: NotRequired[float]
+    raw_value: float
 
 
-class AnswerScoreFn(Protocol):
+class AnswerScoreFn(ABC, Generic[_LABELING]):
     """A function that computes a score for a given predicted answer from its label."""
 
-    def __call__(self, label: Labeling, pred: Labeling | None, **kwargs: Any) -> Score:
+    def __init__(self, score_range: dict[str, float] | None = None) -> None:
+        """Initialize the AnswerScoreFn."""
+        score_range = score_range or {}
+        self._min_score = score_range.get("min", 0.0)
+        self._max_score = score_range.get("max", 1.0)
+        assert (
+            self._min_score < self._max_score
+        ), "Invalid score range for judge: min {self._min_score} >= max {self._max_score}."
+
+    @property
+    def _raw_score_range(self) -> tuple[float, float]:
+        """Get the raw score range for this scoring function."""
+        return (0.0, 1.0)
+
+    def __call__(
+        self, label: _LABELING, pred: _LABELING | None, **kwargs: Any
+    ) -> Score:
         """Compute the score for a predicted answer against a given label.
 
         This score should be a non-negative float, where a higher score indicates a
         better match.
         """
+        score = self._score(label, pred, **kwargs)
+        score["value"] = self._rescale_score(score["raw_value"])
+        return score
 
+    def _rescale_score(self, raw_score: float) -> float:
+        """Rescale the raw score to be within the configured score range."""
+        raw_min, raw_max = self._raw_score_range
+        assert (
+            raw_min <= raw_score <= raw_max
+        ), f"Raw score {raw_score} out of range [{raw_min}, {raw_max}]."
+        return (self._max_score - self._min_score) * (raw_score - raw_min) / (
+            raw_max - raw_min
+        ) + self._min_score
+
+    @abstractmethod
+    def _score(self, label: _LABELING, pred: _LABELING | None, **kwargs: Any) -> Score:
+        """Compute the score for a predicted answer against a given label.
+
+        This is the implementation-specific scoring logic used by __call__.
+        """
+
+    @abstractmethod
     def aggregate(self, scores: Sequence[Score]) -> dict[str, float]:
         """Aggregate a list of scores into a set of aggregate statistics."""
 
 
-class CVSSScore:
+class CVSSScore(AnswerScoreFn[str]):
     """A score for evaluating the correctness of CVSS vectors using their base score."""
+
+    @property
+    def _raw_score_range(self) -> tuple[float, float]:
+        """Get the raw score range for this scoring function."""
+        return (0.0, 10.0)
 
     def get_cvss_score(self, cvss_vector: str) -> float:
         """Get the base CVSS score from a CVSS vector string."""
         c = CVSS3(cvss_vector)
-        return c.scores()[0] / 10.0
+        return c.scores()[0]
 
-    def __call__(self, label: str, pred: str | None, **kwargs: Any) -> Score:
+    def _score(self, label: str, pred: str | None, **kwargs: Any) -> Score:
         """Compute the CVSS score for a predicted CVSS vector against a label.
 
         This score computes the absolute deviation between the predicted CVSS score
@@ -67,16 +113,16 @@ class CVSSScore:
             perfect match.
         """
         if pred is None:
-            return Score(value=0.0)
+            return Score(raw_value=0.0)
 
         try:
             pred_score = self.get_cvss_score(pred)
         except CVSSError:
-            return Score(value=0.0)
+            return Score(raw_value=0.0)
         label_score = self.get_cvss_score(label)
-        assert 0 <= pred_score <= 1, "Predicted CVSS score must be between 0 and 1."
-        assert 0 <= label_score <= 1, "Label CVSS score must be between 0 and 1."
-        return Score(value=1.0 - abs(pred_score - label_score))
+        assert 0 <= pred_score <= 10, "Predicted CVSS score must be between 0 and 10."
+        assert 0 <= label_score <= 10, "Label CVSS score must be between 0 and 10."
+        return Score(raw_value=10.0 - abs(pred_score - label_score))
 
     def aggregate(self, scores: Sequence[Score]) -> dict[str, float]:
         """Aggregate a list of CVSS scores into statistics for the benchmark."""
@@ -87,10 +133,10 @@ class CVSSScore:
         }
 
 
-class JaccardIndex:
+class JaccardIndex(AnswerScoreFn[tuple[str, ...]]):
     """A score for evaluating the correctness between two sets of labels."""
 
-    def __call__(
+    def _score(
         self,
         label: tuple[str, ...] | None,
         pred: tuple[str, ...] | None,
@@ -101,9 +147,9 @@ class JaccardIndex:
         pred_set = set(pred or [])
 
         return (
-            Score(value=len(label_set & pred_set) / len(label_set | pred_set))
+            Score(raw_value=len(label_set & pred_set) / len(label_set | pred_set))
             if label_set or pred_set
-            else Score(value=1.0)
+            else Score(raw_value=1.0)
         )
 
     def aggregate(self, scores: Sequence[Score]) -> dict[str, float]:
@@ -115,31 +161,37 @@ class JaccardIndex:
         }
 
 
-class LogScaledScore:
+class LogScaledScore(AnswerScoreFn[str]):
     """A score for evaluating numeric answers with a logarithmically scaled score."""
 
-    def __init__(self, tolerance: float, scaling: float = 10.0) -> None:
+    def __init__(
+        self,
+        tolerance: float,
+        scaling: float = 10.0,
+        score_range: dict[str, float] | None = None,
+    ) -> None:
         """Initialize the LogScaledScore with a given tolerance."""
+        super().__init__(score_range=score_range)
         assert 0 < tolerance < 1, "Tolerance must be in (0, 1)."
         assert scaling > 0, "Scaling must be positive."
         self._tolerance = tolerance
         self._scaling = scaling
 
-    def __call__(self, label: str, pred: str | None, **kwargs: Any) -> Score:
+    def _score(self, label: str, pred: str | None, **kwargs: Any) -> Score:
         """Compute the numeric answer score between a label and a prediction."""
         if pred is None:
-            return Score(value=0.0)
+            return Score(raw_value=0.0)
 
         try:
             label_value = float(label)
             pred_value = float(pred)
         except ValueError:
-            return Score(value=0.0)
+            return Score(raw_value=0.0)
 
         tol = self._tolerance * (abs(label_value) if label_value != 0 else 1)
         tol_error = abs(label_value - pred_value) / tol
         return Score(
-            value=max(0, 1 - math.log(1 + tol_error) / math.log(1 + self._scaling))
+            raw_value=max(0, 1 - math.log(1 + tol_error) / math.log(1 + self._scaling))
         )
 
     def aggregate(self, scores: Sequence[Score]) -> dict[str, float]:
@@ -147,17 +199,22 @@ class LogScaledScore:
         return {"mean": float(np.mean([s["value"] for s in scores]))}
 
 
-class AliasAccuracyScore:
+class AliasAccuracyScore(AnswerScoreFn[str]):
     """A score for evaluating accuracy in predicting a group of aliases."""
 
-    def __init__(self, alias_map: dict[str, list[str]]) -> None:
+    def __init__(
+        self,
+        alias_map: dict[str, list[str]],
+        score_range: dict[str, float] | None = None,
+    ) -> None:
         """Initialize the AliasAccuracyScore with a dictionary of aliases."""
+        super().__init__(score_range=score_range)
         self._alias_wcc = wcc_dict(alias_map)
 
-    def __call__(self, label: str, pred: str | None, **kwargs: Any) -> Score:
+    def _score(self, label: str, pred: str | None, **kwargs: Any) -> Score:
         """Evaluate the connection between two threat actors."""
         if pred is None:
-            return Score(value=0.0)
+            return Score(raw_value=0.0)
 
         normalized_label = label.strip().lower()
         normalized_pred = pred.strip().lower()
@@ -166,7 +223,7 @@ class AliasAccuracyScore:
         assert label_alias_wcc != -1, f"Label '{label}' not found in alias dictionary."
         pred_alias_wcc = self._alias_wcc.get(normalized_pred, -1)
 
-        return Score(value=1.0 if label_alias_wcc == pred_alias_wcc else 0.0)
+        return Score(raw_value=1.0 if label_alias_wcc == pred_alias_wcc else 0.0)
 
     def aggregate(self, scores: Sequence[Score]) -> dict[str, float]:
         """Aggregate a list of alias accuracy scores into statistics for the benchmark."""
@@ -186,14 +243,11 @@ class _ParsedVerdict(TypedDict):
 class LLMJudgeVerdict(Score):
     """A TypedDict representing the full verdict from an LLM-based judge."""
 
-    raw_value: float
-    min_value: float
-    max_value: float
     summary_details: dict[str, Any]
     full_response: str
 
 
-class LLMJudgeScore:
+class LLMJudgeScore(AnswerScoreFn[str]):
     """An LLM-based judge for scoring long-answer responses."""
 
     def __init__(
@@ -201,16 +255,18 @@ class LLMJudgeScore:
         judge_prompt_template: str,
         judge_model: dict[str, Any],
         verdict_formats: list[dict[str, Any]],
+        llm_score_range: dict[str, float] | None = None,
         score_range: dict[str, float] | None = None,
     ) -> None:
         """Initialize the LLM-based judge."""
+        super().__init__(score_range=score_range)
         self._judge_prompt_template = Template(judge_prompt_template)
-        score_range = score_range or {}
-        self._min_score = score_range.get("min", 0.0)
-        self._max_score = score_range.get("max", 1.0)
+        llm_score_range = llm_score_range or {}
+        self._llm_min_score = llm_score_range.get("min", 0.0)
+        self._llm_max_score = llm_score_range.get("max", 1.0)
         assert (
-            self._min_score < self._max_score
-        ), "Invalid score range for judge: min {self._min_score} >= max {self._max_score}."
+            self._llm_min_score < self._llm_max_score
+        ), "Invalid score range for judge: min {self._llm_min_score} >= max {self._llm_max_score}."
         model_engine = ModelEngine.from_string(judge_model["model_engine"])
         self._judge_model = model_engine.create_model(
             judge_model["model_path"], **judge_model.get("engine_kwargs", {})
@@ -218,6 +274,11 @@ class LLMJudgeScore:
         self._judge_model_formatter = PromptFormatter.CHAT
         self._judge_generation_kwargs = judge_model.get("generation_kwargs", {})
         self._verdict_matcher = SequentialMatcher(*verdict_formats)
+
+    @property
+    def _raw_score_range(self) -> tuple[float, float]:
+        """Get the raw score range for this scoring function."""
+        return (self._llm_min_score, self._llm_max_score)
 
     def _query_judge_model(self, prompt: str) -> str:
         """Prompt the judge model with an evaluation prompt and return the response."""
@@ -239,7 +300,7 @@ class LLMJudgeScore:
             )
         return response.answer_text or ""
 
-    def __call__(
+    def _score(
         self,
         label: str,
         pred: str | None,
@@ -259,18 +320,14 @@ class LLMJudgeScore:
         ), f"Could not parse judge verdict:\n\n{verdict}"
         parsed_verdict: _ParsedVerdict = verdict_dict
         return LLMJudgeVerdict(
-            value=(parsed_verdict["awarded_points"] - self._min_score)
-            / (self._max_score - self._min_score),
             raw_value=parsed_verdict["awarded_points"],
-            min_value=self._min_score,
-            max_value=self._max_score,
             summary_details=parsed_verdict.get("details", {}),
             full_response=verdict,
         )
 
-    def aggregate(self, judgements: Sequence[LLMJudgeVerdict]) -> dict[str, float]:
+    def aggregate(self, scores: Sequence[Score]) -> dict[str, float]:
         """Aggregate a list of judgement grades into the statistics for the benchmark."""
-        per_question_grades = [s["value"] for s in judgements]
+        per_question_grades = [s["value"] for s in scores]
         return {
             "mean": np.mean(per_question_grades),
             "median": np.median(per_question_grades),
@@ -284,15 +341,21 @@ class SubScores(Score):
     sub_scores: dict[str, Score]
 
 
-class CompositeScore:
+class CompositeScore(AnswerScoreFn[Any]):
     """A composite score function that combines multiple scoring functions."""
 
-    def __init__(self, aggregation: str, **score_fn_configs: dict[str, Any]) -> None:
+    def __init__(
+        self,
+        aggregation: str,
+        score_range: dict[str, float] | None = None,
+        **score_fn_configs: dict[str, Any],
+    ) -> None:
         """Initialize the CompositeScore with a dictionary of scoring functions."""
+        super().__init__(score_range=score_range)
         self._aggregation = aggregation
         self._score_fns = ScoreFn.from_configs(**score_fn_configs)
 
-    def __call__(self, label: Any, pred: Any, **kwargs: Any) -> Score:
+    def _score(self, label: Any, pred: Any, **kwargs: Any) -> Score:
         """Compute the composite score for a label and prediction from their sub-scores."""
         sub_scores = {
             score_name: score_fn(label, pred, **kwargs)
@@ -300,7 +363,7 @@ class CompositeScore:
         }
         scores = {name: sub_score["value"] for name, sub_score in sub_scores.items()}
         return SubScores(
-            value=evaluate_expr(self._aggregation, names={"scores": scores}),
+            raw_value=evaluate_expr(self._aggregation, names={"scores": scores}),
             sub_scores=sub_scores,
         )
 

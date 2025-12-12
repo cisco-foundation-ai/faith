@@ -58,7 +58,7 @@ def test_long_answer_benchmark_logits() -> None:
                                     "max_completion_tokens": 1024,
                                 },
                             },
-                            "score_range": {"min": 1.0, "max": 10.0},
+                            "llm_score_range": {"min": 1.0, "max": 10.0},
                             "verdict_formats": [
                                 {
                                     "pattern": r"(?is)\bSCORE:\s*(\d{1,2})\b",
@@ -117,7 +117,7 @@ def test_long_answer_benchmark_next_token() -> None:
                                     "max_completion_tokens": 1024,
                                 },
                             },
-                            "score_range": {"min": 1.0, "max": 10.0},
+                            "llm_score_range": {"min": 1.0, "max": 10.0},
                             "verdict_formats": [
                                 {
                                     "pattern": r"(?is)\bSCORE:\s*(\d{1,2})\b",
@@ -171,7 +171,7 @@ def test_long_answer_benchmark_chat() -> None:
                                 "max_completion_tokens": 1024,
                             },
                         },
-                        "score_range": {"min": 1.0, "max": 10.0},
+                        "llm_score_range": {"min": 1.0, "max": 10.0},
                         "verdict_formats": [
                             {
                                 "pattern": r"(?is)\bSCORE:\s*(\d{1,2})\b",
@@ -253,7 +253,7 @@ def test_long_answer_benchmark_build_dataset() -> None:
                                 "max_completion_tokens": 1024,
                             },
                         },
-                        "score_range": {"min": 1.0, "max": 10.0},
+                        "llm_score_range": {"min": 1.0, "max": 10.0},
                         "verdict_formats": [
                             {
                                 "pattern": r"(?is)\bSCORE:\s*(\d{1,2})\b",
@@ -352,7 +352,7 @@ def test_long_answer_benchmark_build_dataset() -> None:
                                 "max_completion_tokens": 1024,
                             },
                         },
-                        "score_range": {"min": 1.0, "max": 10.0},
+                        "llm_score_range": {"min": 1.0, "max": 10.0},
                         "verdict_formats": [
                             {
                                 "pattern": r"(?is)\bSCORE:\s*(\d{1,2})\b",
@@ -455,7 +455,7 @@ def test_long_answer_benchmark_build_dataset() -> None:
                                 "max_completion_tokens": 1024,
                             },
                         },
-                        "score_range": {"min": 1.0, "max": 10.0},
+                        "llm_score_range": {"min": 1.0, "max": 10.0},
                         "verdict_formats": [
                             {
                                 "pattern": r"(?is)\bSCORE:\s*(\d{1,2})\b",
@@ -578,7 +578,7 @@ SUMMARY: [your summary text]""",
                             "max_completion_tokens": 1024,
                         },
                     },
-                    "score_range": {"min": 1.0, "max": 10.0},
+                    "llm_score_range": {"min": 1.0, "max": 10.0},
                     "verdict_formats": [
                         {
                             "pattern": r"(?is)\bSCORE:\s*(\d{1,2})\b.*SUMMARY:\s*(.+)",
@@ -676,8 +676,6 @@ SUMMARY: [your summary text]""",
                 "llm_grade": {
                     "value": pytest.approx(7 / 9),
                     "raw_value": 8.0,
-                    "min_value": 1.0,
-                    "max_value": 10.0,
                     "summary_details": {"summary": "fake response"},
                     "full_response": "SCORE: 8\n\nSUMMARY: fake response",
                 },
@@ -694,8 +692,6 @@ SUMMARY: [your summary text]""",
                 "llm_grade": {
                     "value": pytest.approx(7 / 9),
                     "raw_value": 8.0,
-                    "min_value": 1.0,
-                    "max_value": 10.0,
                     "summary_details": {"summary": "fake response"},
                     "full_response": "SCORE: 8\n\nSUMMARY: fake response",
                 },
@@ -712,8 +708,6 @@ SUMMARY: [your summary text]""",
                 "llm_grade": {
                     "value": pytest.approx(7 / 9),
                     "raw_value": 8.0,
-                    "min_value": 1.0,
-                    "max_value": 10.0,
                     "summary_details": {"summary": "fake response"},
                     "full_response": "SCORE: 8\n\nSUMMARY: fake response",
                 },
@@ -763,7 +757,7 @@ SUMMARY: [your summary text]""",
                             "max_completion_tokens": 1024,
                         },
                     },
-                    "score_range": {"min": 1.0, "max": 10.0},
+                    "llm_score_range": {"min": 1.0, "max": 10.0},
                     "verdict_formats": [
                         {
                             "pattern": r"(?is)\bSCORE:\s*(\d{1,2})\b.*SUMMARY:\s*(.+)",
