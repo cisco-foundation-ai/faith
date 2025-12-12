@@ -287,9 +287,9 @@ class SubScores(Score):
 class CompositeScore:
     """A composite score function that combines multiple scoring functions."""
 
-    def __init__(self, reduce_expr: str, **score_fn_configs: dict[str, Any]) -> None:
+    def __init__(self, aggregation: str, **score_fn_configs: dict[str, Any]) -> None:
         """Initialize the CompositeScore with a dictionary of scoring functions."""
-        self._reduce_expr = reduce_expr
+        self._aggregation = aggregation
         self._score_fns = ScoreFn.from_configs(**score_fn_configs)
 
     def __call__(self, label: Any, pred: Any, **kwargs: Any) -> Score:
@@ -300,7 +300,7 @@ class CompositeScore:
         }
         scores = {name: sub_score["value"] for name, sub_score in sub_scores.items()}
         return SubScores(
-            value=evaluate_expr(self._reduce_expr, names={"scores": scores}),
+            value=evaluate_expr(self._aggregation, names={"scores": scores}),
             sub_scores=sub_scores,
         )
 

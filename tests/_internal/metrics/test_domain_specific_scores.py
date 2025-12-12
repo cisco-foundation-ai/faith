@@ -172,7 +172,7 @@ def test_composite_score_fn_from_configs() -> None:
     scores = ScoreFn.from_configs(
         weighted_score={
             "type": "composite",
-            "reduce_expr": "0.7 * scores.cvss_score + 0.3 * scores.jaccard_index",
+            "aggregation": "0.7 * scores.cvss_score + 0.3 * scores.jaccard_index",
             "cvss_score": {"type": "cvss"},
             "jaccard_index": {"type": "jaccard"},
         }
@@ -183,7 +183,7 @@ def test_composite_score_fn_from_configs() -> None:
 
 def test_composite_score() -> None:
     score_fn = CompositeScore(
-        reduce_expr="0.7 * scores.log_1 + 0.3 * scores.log_2",
+        aggregation="0.7 * scores.log_1 + 0.3 * scores.log_2",
         log_1={"type": "log_scaled_score", "tolerance": 0.1, "scaling": 10.0},
         log_2={"type": "log_scaled_score", "tolerance": 0.5, "scaling": 2.0},
     )
@@ -210,7 +210,7 @@ def test_composite_score() -> None:
     }
 
     simple_avg_score_fn = CompositeScore(
-        reduce_expr="sum(scores.values()) / len(scores)",
+        aggregation="sum(scores.values()) / len(scores)",
         log_1={"type": "log_scaled_score", "tolerance": 0.1, "scaling": 10.0},
         log_2={"type": "log_scaled_score", "tolerance": 0.5, "scaling": 2.0},
     )
@@ -239,7 +239,7 @@ def test_composite_score() -> None:
 
 def test_composite_score_aggregate() -> None:
     score_fn = CompositeScore(
-        reduce_expr="0.7 * scores.log_1 + 0.3 * scores.log_2",
+        aggregation="0.7 * scores.log_1 + 0.3 * scores.log_2",
         log_1={"type": "log_scaled_score", "tolerance": 0.1, "scaling": 10.0},
         log_2={"type": "log_scaled_score", "tolerance": 0.5, "scaling": 2.0},
     )
