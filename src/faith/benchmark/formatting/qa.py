@@ -23,7 +23,7 @@ class _QA:
     """
 
     question: str
-    answer: str
+    answer: str | None
 
 
 @dataclass(frozen=True)
@@ -40,11 +40,11 @@ class QARecord(DataClassJsonMixin):
     instruction: str | None
     question: str
     choices: dict[str, str] | None  # Maps symbols (e.g., 'A', 'B') to their choice.
-    label: str  # aka the "answer" or "ground truth".
+    label: str | None  # aka the "answer" or "ground truth".
 
     # Formatted question and answer.
     formatted_question: str
-    formatted_answer: str
+    formatted_answer: str | None
 
     # The full question that is passed to the model.
     question_prompt: str
@@ -104,8 +104,10 @@ class QAFormatter:
         """Renders the question using the question template and choice map."""
         return self._question_template.render(question=question, choice_map=choice_map)
 
-    def render_answer(self, answer: str) -> str:
+    def render_answer(self, answer: str | None) -> str | None:
         """Renders the answer using the answer template."""
+        if answer is None:
+            return None
         return self._answer_template.render(answer=answer)
 
     def render_qa_record(
@@ -113,7 +115,7 @@ class QAFormatter:
         index: int,
         sample_hash: str,
         raw_question: str,
-        raw_answer: str,
+        raw_answer: str | None,
         examples: Sequence[QARecord] | None = None,
         choice_map: dict[str, str] | None = None,
         subject: str | None = None,
