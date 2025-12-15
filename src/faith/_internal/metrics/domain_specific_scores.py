@@ -35,8 +35,13 @@ class Score(TypedDict):
 class AnswerScoreFn(ABC, Generic[_LABELING]):
     """A function that computes a score for a given predicted answer from its label."""
 
-    def __init__(self, score_range: dict[str, float] | None = None) -> None:
+    def __init__(
+        self,
+        attributes: dict[str, Any] | None = None,
+        score_range: dict[str, float] | None = None,
+    ) -> None:
         """Initialize the AnswerScoreFn."""
+        self._attributes = attributes or {}
         score_range = score_range or {}
         self._min_score = score_range.get("min", 0.0)
         self._max_score = score_range.get("max", 1.0)
@@ -48,6 +53,11 @@ class AnswerScoreFn(ABC, Generic[_LABELING]):
     def _raw_score_range(self) -> tuple[float, float]:
         """Get the raw score range for this scoring function."""
         return (0.0, 1.0)
+
+    @property
+    def attributes(self) -> dict[str, Any]:
+        """Get the attributes associated with this scoring function."""
+        return self._attributes
 
     def __call__(
         self, label: _LABELING, pred: _LABELING | None, **kwargs: Any
@@ -168,10 +178,11 @@ class LogScaledScore(AnswerScoreFn[str]):
         self,
         tolerance: float,
         scaling: float = 10.0,
+        attributes: dict[str, Any] | None = None,
         score_range: dict[str, float] | None = None,
     ) -> None:
         """Initialize the LogScaledScore with a given tolerance."""
-        super().__init__(score_range=score_range)
+        super().__init__(attributes=attributes, score_range=score_range)
         assert 0 < tolerance < 1, "Tolerance must be in (0, 1)."
         assert scaling > 0, "Scaling must be positive."
         self._tolerance = tolerance
@@ -205,10 +216,11 @@ class AliasAccuracyScore(AnswerScoreFn[str]):
     def __init__(
         self,
         alias_map: dict[str, list[str]],
+        attributes: dict[str, Any] | None = None,
         score_range: dict[str, float] | None = None,
     ) -> None:
         """Initialize the AliasAccuracyScore with a dictionary of aliases."""
-        super().__init__(score_range=score_range)
+        super().__init__(attributes=attributes, score_range=score_range)
         self._alias_wcc = wcc_dict(alias_map)
 
     def _score(self, label: str, pred: str | None, **kwargs: Any) -> Score:
@@ -256,10 +268,11 @@ class LLMJudgeScore(AnswerScoreFn[str]):
         judge_model: dict[str, Any],
         verdict_formats: list[dict[str, Any]],
         llm_score_range: dict[str, float] | None = None,
+        attributes: dict[str, Any] | None = None,
         score_range: dict[str, float] | None = None,
     ) -> None:
         """Initialize the LLM-based judge."""
-        super().__init__(score_range=score_range)
+        super().__init__(attributes=attributes, score_range=score_range)
         self._judge_prompt_template = Template(judge_prompt_template)
         llm_score_range = llm_score_range or {}
         self._llm_min_score = llm_score_range.get("min", 0.0)
@@ -344,26 +357,38 @@ class SubScores(Score):
 class CompositeScore(AnswerScoreFn[Any]):
     """A composite score function that combines multiple scoring functions."""
 
+    _RESERVED_NAMES = {"self"}
+
     def __init__(
         self,
         aggregation: str,
+        attributes: dict[str, Any] | None = None,
         score_range: dict[str, float] | None = None,
         **score_fn_configs: dict[str, Any],
     ) -> None:
         """Initialize the CompositeScore with a dictionary of scoring functions."""
-        super().__init__(score_range=score_range)
+        super().__init__(attributes=attributes, score_range=score_range)
         self._aggregation = aggregation
         self._score_fns = ScoreFn.from_configs(**score_fn_configs)
+        assert set(self._score_fns.keys()).isdisjoint(
+            self._RESERVED_NAMES
+        ), f"Score function names cannot be any of the reserved names: {self._RESERVED_NAMES}"
 
     def _score(self, label: Any, pred: Any, **kwargs: Any) -> Score:
         """Compute the composite score for a label and prediction from their sub-scores."""
+        attributes = {
+            score_name: score_fn.attributes
+            for score_name, score_fn in self._score_fns.items()
+        }
         sub_scores = {
             score_name: score_fn(label, pred, **kwargs)
             for score_name, score_fn in self._score_fns.items()
         }
         scores = {name: sub_score["value"] for name, sub_score in sub_scores.items()}
         return SubScores(
-            raw_value=evaluate_expr(self._aggregation, names={"scores": scores}),
+            raw_value=evaluate_expr(
+                self._aggregation, names={"attrs": attributes, "scores": scores}
+            ),
             sub_scores=sub_scores,
         )
 

@@ -240,8 +240,8 @@ def test_composite_score_fn_from_configs() -> None:
         weighted_score={
             "type": "composite",
             "aggregation": "0.7 * scores.cvss_score + 0.3 * scores.jaccard_index",
-            "cvss_score": {"type": "cvss"},
-            "jaccard_index": {"type": "jaccard"},
+            "cvss_score": {"type": "cvss", "attributes": {"weight": 0.7}},
+            "jaccard_index": {"type": "jaccard", "attributes": {"weight": 0.3}},
         }
     )
     assert set(scores.keys()) == {"weighted_score"}
@@ -285,12 +285,22 @@ def test_composite_score() -> None:
         },
     }
 
-    simple_avg_score_fn = CompositeScore(
-        aggregation="sum(scores.values()) / len(scores)",
-        log_1={"type": "log_scaled_score", "tolerance": 0.1, "scaling": 10.0},
-        log_2={"type": "log_scaled_score", "tolerance": 0.5, "scaling": 2.0},
+    attr_weight_score_fn = CompositeScore(
+        aggregation="sum(scores[k] * attrs[k]['weight'] for k in scores.keys()) / sum(a['weight'] for a in attrs.values())",
+        log_1={
+            "type": "log_scaled_score",
+            "tolerance": 0.1,
+            "scaling": 10.0,
+            "attributes": {"weight": 3},
+        },
+        log_2={
+            "type": "log_scaled_score",
+            "tolerance": 0.5,
+            "scaling": 2.0,
+            "attributes": {"weight": 1},
+        },
     )
-    assert simple_avg_score_fn("100", None) == {
+    assert attr_weight_score_fn("100", None) == {
         "value": pytest.approx(0),
         "raw_value": pytest.approx(0),
         "sub_scores": {
@@ -298,7 +308,7 @@ def test_composite_score() -> None:
             "log_2": {"value": pytest.approx(0), "raw_value": pytest.approx(0)},
         },
     }
-    assert simple_avg_score_fn("10", "10") == {
+    assert attr_weight_score_fn("10", "10") == {
         "value": pytest.approx(1),
         "raw_value": pytest.approx(1),
         "sub_scores": {
@@ -306,9 +316,9 @@ def test_composite_score() -> None:
             "log_2": {"value": pytest.approx(1), "raw_value": pytest.approx(1)},
         },
     }
-    assert simple_avg_score_fn("1000", "900") == {
-        "value": pytest.approx((0.7109351736821121 + 0.8340437671464698) / 2),
-        "raw_value": pytest.approx((0.7109351736821121 + 0.8340437671464698) / 2),
+    assert attr_weight_score_fn("1000", "900") == {
+        "value": pytest.approx((3 * 0.7109351736821121 + 0.8340437671464698) / 4),
+        "raw_value": pytest.approx((3 * 0.7109351736821121 + 0.8340437671464698) / 4),
         "sub_scores": {
             "log_1": {
                 "value": pytest.approx(0.7109351736821121),
