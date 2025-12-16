@@ -327,7 +327,10 @@ class LLMJudgeScore(AnswerScoreFn[str]):
             ancillary_data=ancillary_data or {},
         )
         verdict = self._query_judge_model(judge_prompt)
-        verdict_dict, match_format = self._verdict_matcher(verdict)
+        try:
+            verdict_dict, match_format = self._verdict_matcher(verdict)
+        except Exception as e:
+            raise RuntimeError(f"Error parsing judge verdict:\n\n{verdict}") from e
         assert (
             match_format != AnswerFormat.INVALID
         ), f"Could not parse judge verdict:\n\n{verdict}"
