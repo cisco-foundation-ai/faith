@@ -66,7 +66,10 @@ class QAFormatter:
         self._prompt_format = prompt_format
         inst_cfg = format_cfg.get("instructions", {})
         prompt_cfg = format_cfg.get("prompt", {})
-        self._system_prompt = inst_cfg.get("system_prompt", None)
+        sp_tmpl = inst_cfg.get("system_prompt_template", None)
+        self._system_prompt_template = (
+            Template(sp_tmpl) if sp_tmpl is not None else None
+        )
         inst_tmpl: str | None = None
         if prompt_format == PromptFormatter.BASE:
             inst_tmpl = inst_cfg.get("base_inst_template", None)
@@ -76,6 +79,11 @@ class QAFormatter:
         self._question_template = Template(prompt_cfg["question_template"])
         self._answer_template = Template(prompt_cfg["answer_template"])
         self._prompt_template = Template(prompt_cfg["prompt_template"])
+
+    def _render_system_prompt(self, subject: str | None = None) -> str | None:
+        if self._system_prompt_template is None:
+            return None
+        return self._system_prompt_template.render(subject=subject)
 
     def _instruction(
         self, choices: Sequence[str] | None = None, subject: str | None = None
@@ -135,7 +143,7 @@ class QAFormatter:
             benchmark_sample_index=index,
             benchmark_sample_hash=sample_hash,
             subject=subject,
-            system_prompt=self._system_prompt,
+            system_prompt=self._render_system_prompt(subject=subject),
             instruction=instruction,
             question=raw_question,
             choices=choice_map,

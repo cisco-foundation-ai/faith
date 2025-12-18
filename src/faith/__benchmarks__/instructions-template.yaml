@@ -4,7 +4,7 @@
 
 ---
 instructions:
-  system_prompt: null
+  system_prompt_template: null
   # Instruction template for base models.
   base_inst_template: null
   # Instruction template for chat models.

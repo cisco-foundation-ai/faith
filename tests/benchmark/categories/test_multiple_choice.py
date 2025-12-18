@@ -30,7 +30,7 @@ def test_multiple_choice_benchmark() -> None:
             "mcqa_config": {"answer_symbols": ["A", "B"]},
             "format": {
                 "instructions": {
-                    "system_prompt": "You are a compassionate comptroller.",
+                    "system_prompt_template": "You are a compassionate comptroller.",
                     "base_inst_template": "Please analyze and answer the following question.",
                     "chat_inst_template": "Please analyze and answer the following question in a chat format.",
                 },
@@ -66,7 +66,7 @@ def test_multiple_choice_benchmark_answer_leadin() -> None:
             "mcqa_config": {"answer_symbols": ["A", "B"]},
             "format": {
                 "instructions": {
-                    "system_prompt": "You are a compassionate comptroller.",
+                    "system_prompt_template": "You are a compassionate comptroller.",
                     "base_inst_template": "Please analyze and answer the following question.",
                     "chat_inst_template": "Please analyze and answer the following question in a chat format.",
                 },
@@ -102,7 +102,7 @@ def test_multiple_choice_benchmark_answer_leadin_multiple_answer_vars() -> None:
             "mcqa_config": {"answer_symbols": ["A", "B"]},
             "format": {
                 "instructions": {
-                    "system_prompt": "You are a compassionate comptroller.",
+                    "system_prompt_template": "You are a compassionate comptroller.",
                     "base_inst_template": "Please analyze and answer the following question.",
                     "chat_inst_template": "Please analyze and answer the following question in a chat format.",
                 },
@@ -141,7 +141,7 @@ def test_multiple_choice_benchmark_answer_token_map() -> None:
             "mcqa_config": {"answer_symbols": ["A", "B", "C", "D", "E", "F"]},
             "format": {
                 "instructions": {
-                    "system_prompt": "You are a compassionate comptroller.",
+                    "system_prompt_template": "You are a compassionate comptroller.",
                     "base_inst_template": "Please analyze and answer the following question.",
                     "chat_inst_template": "Please analyze and answer the following question in a chat format.",
                 },
@@ -192,7 +192,7 @@ def test_multiple_choice_benchmark_build_dataset() -> None:
             "mcqa_config": {"answer_symbols": ["A", "B", "C"]},
             "format": {
                 "instructions": {
-                    "system_prompt": "You are a compassionate comptroller.",
+                    "system_prompt_template": "You are a compassionate comptroller.",
                     "base_inst_template": "Please analyze and answer the following question.",
                     "chat_inst_template": "Please analyze and answer the following question in a chat format.",
                 },
@@ -277,7 +277,7 @@ Choices:
             "mcqa_config": {"answer_symbols": ["A", "B", "C", "D"]},
             "format": {
                 "instructions": {
-                    "system_prompt": "You are a compassionate comptroller.",
+                    "system_prompt_template": "You are a compassionate comptroller.",
                     "base_inst_template": "Please analyze and answer the following question.",
                     "chat_inst_template": "Please analyze and answer the following question in a chat format.",
                 },
@@ -352,7 +352,7 @@ def test_multiple_choice_benchmark_from_git_repo() -> None:
             "mcqa_config": {"answer_symbols": ["A", "B", "C", "D"]},
             "format": {
                 "instructions": {
-                    "system_prompt": "You are a compassionate comptroller.",
+                    "system_prompt_template": "You are a compassionate comptroller.",
                     "base_inst_template": "Please analyze and answer the following question.",
                     "chat_inst_template": "Please analyze and answer the following question in a chat format.",
                 },
@@ -438,7 +438,7 @@ def test_multiple_choice_benchmark_log_grader() -> None:
         "mcqa_config": {"answer_symbols": ["A", "B"]},
         "format": {
             "instructions": {
-                "system_prompt": "You are a compassionate comptroller.",
+                "system_prompt_template": "You are a compassionate comptroller.",
                 "base_inst_template": "Please analyze and answer the following question.",
                 "chat_inst_template": "Please analyze and answer the following question in a chat format.",
             },
@@ -871,7 +871,7 @@ def test_multiple_choice_benchmark_grade_aggregator_logits() -> None:
         "mcqa_config": {"answer_symbols": ["A", "B"]},
         "format": {
             "instructions": {
-                "system_prompt": "You are a compassionate comptroller.",
+                "system_prompt_template": "You are a compassionate comptroller.",
                 "base_inst_template": "Please analyze and answer the following question.",
                 "chat_inst_template": "Please analyze and answer the following question in a chat format.",
             },
@@ -1057,7 +1057,7 @@ def test_multiple_choice_benchmark_grade_aggregator_chat() -> None:
         "mcqa_config": {"answer_symbols": ["A", "B"]},
         "format": {
             "instructions": {
-                "system_prompt": "You are a compassionate comptroller.",
+                "system_prompt_template": "You are a compassionate comptroller.",
                 "base_inst_template": "Please analyze and answer the following question.",
                 "chat_inst_template": "Please analyze and answer the following question in a chat format.",
             },

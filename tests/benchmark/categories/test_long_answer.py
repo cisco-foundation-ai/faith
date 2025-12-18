@@ -34,7 +34,7 @@ def test_long_answer_benchmark_logits() -> None:
                 "laqa_config": {"type": "free_form"},
                 "format": {
                     "instructions": {
-                        "system_prompt": "You are a helpful assistant.",
+                        "system_prompt_template": "You are a helpful assistant.",
                         "base_inst_template": "Please respond to the following question.",
                         "chat_inst_template": "Please respond to the following question in a chat format.",
                     },
@@ -93,7 +93,7 @@ def test_long_answer_benchmark_next_token() -> None:
                 "laqa_config": {"type": "free_form"},
                 "format": {
                     "instructions": {
-                        "system_prompt": "You are a helpful assistant.",
+                        "system_prompt_template": "You are a helpful assistant.",
                         "base_inst_template": "Please respond to the following question.",
                         "chat_inst_template": "Please respond to the following question in a chat format.",
                     },
@@ -221,7 +221,7 @@ def test_long_answer_benchmark_build_dataset() -> None:
             "laqa_config": {"type": "free_form"},
             "format": {
                 "instructions": {
-                    "system_prompt": "You are a helpful assistant.",
+                    "system_prompt_template": "You are a helpful assistant.",
                     "base_inst_template": "Please respond to the following question.",
                     "chat_inst_template": "Please respond to the following question in a chat format.",
                 },
@@ -321,7 +321,7 @@ def test_long_answer_benchmark_build_dataset() -> None:
             "laqa_config": {"type": "free_form"},
             "format": {
                 "instructions": {
-                    "system_prompt": "You are a helpful assistant.",
+                    "system_prompt_template": "You are a helpful assistant.",
                     "base_inst_template": "Please respond to the following question.",
                     "chat_inst_template": "Please respond to the following question in a chat format.",
                 },
@@ -425,7 +425,7 @@ def test_long_answer_benchmark_build_dataset() -> None:
             "laqa_config": {"type": "free_form"},
             "format": {
                 "instructions": {
-                    "system_prompt": "You are a helpful assistant.",
+                    "system_prompt_template": "You are a helpful assistant.",
                     "base_inst_template": "Please respond to the following question.",
                     "chat_inst_template": "Please respond to the following question in a chat format.",
                 },
@@ -544,7 +544,7 @@ def test_long_answer_benchmark_process_logs_chat() -> None:
         "laqa_config": {"type": "free_form"},
         "format": {
             "instructions": {
-                "system_prompt": "You are a helpful assistant.",
+                "system_prompt_template": "You are a helpful assistant.",
                 "base_inst_template": "Please respond to the following question.",
                 "chat_inst_template": "Please respond to the following question in a chat format.",
             },
@@ -723,7 +723,7 @@ def test_long_answer_benchmark_grade_aggregator() -> None:
         "laqa_config": {"type": "free_form"},
         "format": {
             "instructions": {
-                "system_prompt": "You are a helpful assistant.",
+                "system_prompt_template": "You are a helpful assistant.",
                 "base_inst_template": "Please respond to the following question.",
                 "chat_inst_template": "Please respond to the following question in a chat format.",
             },

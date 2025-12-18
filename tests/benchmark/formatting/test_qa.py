@@ -128,7 +128,7 @@ def test_qa_formatter() -> None:
     # pylint: disable=protected-access
     format_cfg = {
         "instructions": {
-            "system_prompt": "System prompt",
+            "system_prompt_template": "System prompt for {{ subject }}",
             "base_inst_template": "Basic instruction template for {{ subject }}",
             "chat_inst_template": "Chat instruction template for {{ subject }}",
         },
@@ -243,7 +243,7 @@ Question: What is the capital of France?"""
         benchmark_sample_index=1,
         benchmark_sample_hash="hash123",
         subject="Geography",
-        system_prompt="System prompt",
+        system_prompt="System prompt for Geography",
         instruction="Basic instruction template for Geography",
         question="What is the capital of France?",
         choices=None,
@@ -267,7 +267,7 @@ Question: What is the capital of France?"""
         benchmark_sample_index=1,
         benchmark_sample_hash="hash123",
         subject="Geography",
-        system_prompt="System prompt",
+        system_prompt="System prompt for Geography",
         instruction="Basic instruction template for Geography",
         question="What is the capital of France?",
         choices={"A": "Paris", "B": "London"},
@@ -282,7 +282,7 @@ Question: What is the capital of France?"""
 def test_qa_formatter_render_conversation() -> None:
     format_cfg = {
         "instructions": {
-            "system_prompt": "System prompt",
+            "system_prompt_template": "System prompt",
             "base_inst_template": "Basic instruction template for {{ subject }}",
             "chat_inst_template": "Chat instruction template for {{ subject }}",
         },

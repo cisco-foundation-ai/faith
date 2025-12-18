@@ -32,7 +32,7 @@ def test_short_answer_benchmark_logits() -> None:
                 "saqa_config": {"type": "string_match"},
                 "format": {
                     "instructions": {
-                        "system_prompt": "You are a helpful assistant.",
+                        "system_prompt_template": "You are a helpful assistant.",
                         "base_inst_template": "Please answer the following question.",
                         "chat_inst_template": "Please answer the following question in a chat format.",
                     },
@@ -62,7 +62,7 @@ def test_short_answer_benchmark_next_token() -> None:
                 "saqa_config": {"type": "string_match"},
                 "format": {
                     "instructions": {
-                        "system_prompt": "You are a helpful assistant.",
+                        "system_prompt_template": "You are a helpful assistant.",
                         "base_inst_template": "Please answer the following question.",
                         "chat_inst_template": "Please answer the following question in a chat format.",
                     },
@@ -132,7 +132,7 @@ def test_short_answer_benchmark_build_dataset() -> None:
             "saqa_config": {"type": "string_match"},
             "format": {
                 "instructions": {
-                    "system_prompt": "You are a helpful assistant.",
+                    "system_prompt_template": "You are a helpful assistant.",
                     "base_inst_template": "Please answer the following question.",
                     "chat_inst_template": "Please answer the following question in a chat format.",
                 },
@@ -203,7 +203,7 @@ def test_short_answer_benchmark_build_dataset() -> None:
             "saqa_config": {"type": "string_match"},
             "format": {
                 "instructions": {
-                    "system_prompt": "You are a helpful assistant.",
+                    "system_prompt_template": "You are a helpful assistant.",
                     "base_inst_template": "Please answer the following question.",
                     "chat_inst_template": "Please answer the following question in a chat format.",
                 },
@@ -259,7 +259,7 @@ def test_short_answer_benchmark_build_dataset() -> None:
             "saqa_config": {"type": "string_match"},
             "format": {
                 "instructions": {
-                    "system_prompt": "You are a helpful assistant.",
+                    "system_prompt_template": "You are a helpful assistant.",
                     "base_inst_template": "Please answer the following question.",
                     "chat_inst_template": "Please answer the following question in a chat format.",
                 },
@@ -309,7 +309,7 @@ def test_short_answer_benchmark_process_logs_chat() -> None:
         "saqa_config": {"type": "string_match"},
         "format": {
             "instructions": {
-                "system_prompt": "You are a helpful assistant.",
+                "system_prompt_template": "You are a helpful assistant.",
                 "base_inst_template": "Please answer the following question.",
                 "chat_inst_template": "Please answer the following question in a chat format.",
             },
@@ -471,7 +471,7 @@ def test_short_answer_benchmark_grade_aggregator_string_match() -> None:
         "saqa_config": {"type": "string_match"},
         "format": {
             "instructions": {
-                "system_prompt": "You are a helpful assistant.",
+                "system_prompt_template": "You are a helpful assistant.",
                 "base_inst_template": "Please answer the following question.",
                 "chat_inst_template": "Please answer the following question in a chat format.",
             },
@@ -622,7 +622,7 @@ def test_short_answer_benchmark_grade_aggregator_label_set() -> None:
         "saqa_config": {"type": "label_set"},
         "format": {
             "instructions": {
-                "system_prompt": "You are a helpful assistant.",
+                "system_prompt_template": "You are a helpful assistant.",
                 "base_inst_template": "Please answer the following question.",
                 "chat_inst_template": "Please answer the following question in a chat format.",
             },
@@ -780,7 +780,7 @@ def test_short_answer_benchmark_grade_aggregator_domain_specific() -> None:
         "saqa_config": {"type": "domain_specific"},
         "format": {
             "instructions": {
-                "system_prompt": "You are a helpful assistant.",
+                "system_prompt_template": "You are a helpful assistant.",
                 "base_inst_template": "Please answer the following question.",
                 "chat_inst_template": "Please answer the following question in a chat format.",
             },
