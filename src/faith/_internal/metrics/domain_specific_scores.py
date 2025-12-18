@@ -329,16 +329,16 @@ class LLMJudgeScore(AnswerScoreFn[str]):
             generated_answer=pred,
             ancillary_data=ancillary_data or {},
         )
-        matched_format = AnswerFormat.INVALID
+        match_format = AnswerFormat.INVALID
         num_tries = 0
-        while matched_format == AnswerFormat.INVALID and num_tries < 5:
+        while match_format == AnswerFormat.INVALID and num_tries < 5:
             verdict = self._query_judge_model(judge_prompt)
             try:
                 verdict_dict, match_format = self._verdict_matcher(verdict)
             except Exception:  # pylint: disable=broad-exception-caught
                 logger.warning("Error parsing judge verdict, retrying.\n\n%s", verdict)
             num_tries += 1
-        if matched_format == AnswerFormat.INVALID:
+        if match_format == AnswerFormat.INVALID:
             try:
                 verdict_dict, match_format = self._verdict_matcher(verdict)
             except Exception as e:
