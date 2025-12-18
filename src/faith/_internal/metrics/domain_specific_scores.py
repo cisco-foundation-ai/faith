@@ -4,6 +4,7 @@
 
 """Domain-specific scoring functions for evaluating short-answer model predictions."""
 
+import logging
 import math
 from abc import ABC, abstractmethod
 from enum import Enum
@@ -20,6 +21,8 @@ from faith._internal.parsing.expr import evaluate_expr
 from faith.benchmark.formatting.prompt import PromptFormatter
 from faith.model.base import GenerationError
 from faith.model.model_engine import ModelEngine
+
+logger = logging.getLogger(__name__)
 
 _LABELING = TypeVar("_LABELING", bound=Labeling)
 
@@ -326,11 +329,20 @@ class LLMJudgeScore(AnswerScoreFn[str]):
             generated_answer=pred,
             ancillary_data=ancillary_data or {},
         )
-        verdict = self._query_judge_model(judge_prompt)
-        try:
-            verdict_dict, match_format = self._verdict_matcher(verdict)
-        except Exception as e:
-            raise RuntimeError(f"Error parsing judge verdict:\n\n{verdict}") from e
+        matched_format = AnswerFormat.INVALID
+        num_tries = 0
+        while matched_format == AnswerFormat.INVALID and num_tries < 5:
+            verdict = self._query_judge_model(judge_prompt)
+            try:
+                verdict_dict, match_format = self._verdict_matcher(verdict)
+            except Exception:  # pylint: disable=broad-exception-caught
+                logger.warning("Error parsing judge verdict, retrying.\n\n%s", verdict)
+            num_tries += 1
+        if matched_format == AnswerFormat.INVALID:
+            try:
+                verdict_dict, match_format = self._verdict_matcher(verdict)
+            except Exception as e:
+                raise RuntimeError(f"Error parsing judge verdict:\n\n{verdict}") from e
         assert (
             match_format != AnswerFormat.INVALID
         ), f"Could not parse judge verdict:\n\n{verdict}"
