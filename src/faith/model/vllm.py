@@ -132,6 +132,15 @@ def _remove_longest_common_prefix(lst: list[int], prefix: list[int]) -> list[int
     return lst[max_cut:]
 
 
+def _suffix_after(lst: list[int], sublist: list[int]) -> list[int] | None:
+    """Return the suffix of `lst` after the last occurrence of `sublist`."""
+    sublist_len = len(sublist)
+    for i in range(len(lst) - sublist_len, -1, -1):
+        if lst[i : i + sublist_len] == sublist:
+            return lst[i + sublist_len :]
+    return None
+
+
 class VLLMModel(_VLLMBackend):
     """A model wrapper for the VLLM backend that supports various generation modes."""
 
@@ -143,7 +152,7 @@ class VLLMModel(_VLLMBackend):
         seed: int = 54748,
         context_len: int = 400,
         num_log_probs: int | None = None,
-        reasoning_tokens: tuple[str, str] | None = None,
+        reasoning_tokens: tuple[str | list[int], str | list[int]] | None = None,
         **vllm_kwargs: Any,
     ):
         """Initialize the VLLM client for the model with the given parameters."""
@@ -156,52 +165,32 @@ class VLLMModel(_VLLMBackend):
             num_log_probs=num_log_probs,
             **vllm_kwargs,
         )
-        self._reasoning_tokens = None
+        self._reasoning_tokens: tuple[list[int], list[int]] | None = None
         if reasoning_tokens is not None:
-            if all(tok.isdigit() for tok in reasoning_tokens):
-                self._reasoning_tokens = tuple(int(tok) for tok in reasoning_tokens)
-            else:
-                self._reasoning_tokens = tuple(
-                    self.tokenizer.convert_tokens_to_ids(tok)
-                    for tok in reasoning_tokens
-                )
-        if self._reasoning_tokens is not None:
-            assert len(self._reasoning_tokens) == 2 and all(
-                isinstance(tok, int) for tok in self._reasoning_tokens
-            ), "Reasoning tokens, if provided, must decode to a tuple of two token IDs."
+            self._reasoning_tokens = cast(
+                tuple[list[int], list[int]],
+                tuple(
+                    self.tokenizer.encode(rt) if isinstance(rt, str) else rt
+                    for rt in reasoning_tokens
+                ),
+            )
 
     def _extract_answer_tokens(self, tokenized_response: list[int]) -> list[int]:
         """Extract the answer tokens from the tokenized response based on the chat template."""
         if self._reasoning_tokens is None:
             return tokenized_response
+        sor_tokens, eor_tokens = self._reasoning_tokens
 
-        # Find the index of the last occurrence of the start-of-reasoning token.
-        indices_sor = [
-            i
-            for i, tok in enumerate(tokenized_response)
-            if tok == self._reasoning_tokens[0]
-        ]
-        last_sor_index = indices_sor[-1] if indices_sor else None
-
-        # If there is no start-of-reasoning token, return the full response.
-        if last_sor_index is None:
+        # Only consider the response after the last start-of-reasoning token.
+        # All preceding tokens are considered part of the reasoning process.
+        # If no start-of-reasoning token was found, return the full response.
+        cropped_response = _suffix_after(tokenized_response, sor_tokens)
+        if cropped_response is None:
             return tokenized_response
 
-        # Find the index of the last occurrence of the end-of-reasoning token.
-        indices_eor = [
-            i
-            for i, tok in enumerate(tokenized_response)
-            if tok == self._reasoning_tokens[1]
-        ]
-        last_eor_index = indices_eor[-1] if indices_eor else None
-
-        # If there is no end-of-reasoning token or it comes before the final
-        # start-of-reasoning token, return an empty list as there is no valid answer.
-        if last_eor_index is None or last_eor_index < last_sor_index:
-            return []
-
-        # Return the tokens after the last end-of-reasoning token as the answer.
-        return tokenized_response[last_eor_index + 1 :]
+        # Extract the suffix after the last end-of-reasoning token,
+        # or return an empty list if not found since reasoning was not completed.
+        return _suffix_after(cropped_response, eor_tokens) or []
 
     @property
     def supported_formats(self) -> set[PromptFormatter]:

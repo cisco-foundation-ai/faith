@@ -64,8 +64,8 @@ def test_vllm_model_init_with_reasoning_tokens_as_strings(mock_llm_class: Mock) 
     mock_tokenizer = MagicMock()
     mock_tokenizer.vocab_size = 50000
     mock_tokenizer.chat_template = "some_template"
-    mock_tokenizer.convert_tokens_to_ids = Mock(
-        side_effect=lambda x: 100 if x == "<think>" else 101
+    mock_tokenizer.encode = Mock(
+        side_effect=lambda x: [100] if x == "<think>" else [101]
     )
     mock_llm_instance.get_tokenizer.return_value = mock_tokenizer
     mock_llm_class.return_value = mock_llm_instance
@@ -77,7 +77,7 @@ def test_vllm_model_init_with_reasoning_tokens_as_strings(mock_llm_class: Mock) 
     )
 
     assert model.name_or_path == "test-model"
-    assert model._reasoning_tokens == (100, 101)  # pylint: disable=protected-access
+    assert model._reasoning_tokens == ([100], [101])  # pylint: disable=protected-access
     assert model.supported_formats == {PromptFormatter.BASE, PromptFormatter.CHAT}
 
 
@@ -94,11 +94,11 @@ def test_vllm_model_init_with_reasoning_tokens_as_ids(mock_llm_class: Mock) -> N
     model = VLLMModel(
         name_or_path="test-model",
         tokenizer_name_or_path="test-tokenizer",
-        reasoning_tokens=("100", "101"),
+        reasoning_tokens=([100], [101]),
     )
 
     assert model.name_or_path == "test-model"
-    assert model._reasoning_tokens == (100, 101)  # pylint: disable=protected-access
+    assert model._reasoning_tokens == ([100], [101])  # pylint: disable=protected-access
     assert model.supported_formats == {PromptFormatter.BASE}
 
 
@@ -280,7 +280,7 @@ def test_vllm_model_query_with_reasoning_tokens(mock_llm_class: Mock) -> None:
     mock_tokenizer.apply_chat_template = Mock(return_value=[1, 2, 3])
     mock_tokenizer.decode = Mock(
         side_effect=lambda x, **kwargs: (
-            "answer" if x == [7, 8] else f"decoded_{len(x)}"
+            "answer" if x == [8, 9] else f"decoded_{len(x)}"
         )
     )
     mock_llm_instance.get_tokenizer.return_value = mock_tokenizer
@@ -291,7 +291,7 @@ def test_vllm_model_query_with_reasoning_tokens(mock_llm_class: Mock) -> None:
     mock_output = MagicMock()
     mock_output.prompt_token_ids = [1, 2, 3]
     mock_output.outputs = [MagicMock()]
-    mock_output.outputs[0].token_ids = [100, 4, 5, 101, 7, 8]
+    mock_output.outputs[0].token_ids = [100, 4, 5, 101, 7, 8, 9]
     mock_output.outputs[0].text = "<think>reasoning</think>answer"
     mock_output.outputs[0].finish_reason = "stop"
     mock_output.outputs[0].logprobs = None
@@ -301,7 +301,7 @@ def test_vllm_model_query_with_reasoning_tokens(mock_llm_class: Mock) -> None:
     model = VLLMModel(
         name_or_path="test-model",
         tokenizer_name_or_path="test-tokenizer",
-        reasoning_tokens=("100", "101"),
+        reasoning_tokens=([100], [101, 7]),
     )
 
     # Test query and check resulting ChatResponse object.
@@ -316,16 +316,16 @@ def test_vllm_model_query_with_reasoning_tokens(mock_llm_class: Mock) -> None:
             prompt_token_ids=[1, 2, 3],
             num_prompt_tokens=3,
             prompt_text="decoded_3",
-            output_token_ids=[100, 4, 5, 101, 7, 8],
-            num_output_tokens=6,
+            output_token_ids=[100, 4, 5, 101, 7, 8, 9],
+            num_output_tokens=7,
             output_text="<think>reasoning</think>answer",
             request_token_ids=[1, 2, 3],
             num_request_tokens=3,
             request_text="decoded_3",
-            response_token_ids=[100, 4, 5, 101, 7, 8],
-            num_response_tokens=6,
-            response_text="decoded_6",
-            answer_token_ids=[7, 8],
+            response_token_ids=[100, 4, 5, 101, 7, 8, 9],
+            num_response_tokens=7,
+            response_text="decoded_7",
+            answer_token_ids=[8, 9],
             num_answer_tokens=2,
             answer_text="answer",
             max_token_halt=False,

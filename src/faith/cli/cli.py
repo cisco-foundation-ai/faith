@@ -16,7 +16,7 @@ import ast
 import logging
 import os
 from pathlib import Path
-from typing import Iterator, cast
+from typing import Iterator
 
 import argcomplete
 import colorlog
@@ -31,6 +31,7 @@ from faith._internal.types.flags import (
 )
 from faith.benchmark.formatting.prompt import PromptFormatter
 from faith.benchmark.listing import benchmark_choices
+from faith.cli.flags import parse_begin_end_tokens
 from faith.experiment.params import DataSamplingParams, ExperimentParams
 from faith.model.model_engine import ModelEngine
 from faith.model.params import EngineParams, GenParams
@@ -177,9 +178,9 @@ def _add_model_args(parser: argparse.ArgumentParser) -> None:
         type=AnnotatedPath(
             name=lambda x: x,
             is_file=TypeWithDefault[bool](bool, False),
-            reasoning_tokens=TypeWithDefault[tuple[str, str] | None](
-                lambda s: cast(tuple[str, str], tuple(s.partition(",")[0::2])), None
-            ),
+            reasoning_tokens=TypeWithDefault[
+                tuple[str | list[int], str | list[int]] | None
+            ](parse_begin_end_tokens, None),
             response_pattern=TypeWithDefault[str | None](str, None),
             tokenizer=TypeWithDefault[str | None](str, None),
         ),
