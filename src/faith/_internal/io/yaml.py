@@ -14,9 +14,7 @@ import yaml
 
 from faith._internal.io.benchmarks import benchmarks_root
 
-_INDEXED_PATH_RE = re.compile(
-    r'^([^\[]+)((?:\[(?:\d+|(?:\'[^\']+\')|(?:"[^"]+"))\])*)$'
-)
+_INDEXED_PATH_RE = re.compile(r'([^\[]+)((?:\[(?:\d+|(?:\'[^\']+\')|(?:"[^"]+"))\])*)')
 _INDEX_RE = re.compile(r'\[(\d+|\'[^\']+\'|"[^"]+")\]')
 
 
@@ -28,7 +26,7 @@ def _resolve_path(path: str) -> Path:
 
 def _parse_config_path(path: str) -> tuple[Path, list[int | str]]:
     """Parse the config path and return the base path and indices."""
-    match = _INDEXED_PATH_RE.match(path)
+    match = _INDEXED_PATH_RE.fullmatch(path)
     if not match:
         raise yaml.YAMLError(f"Invalid include path: {path}")
     file_path, selection = match.groups()
