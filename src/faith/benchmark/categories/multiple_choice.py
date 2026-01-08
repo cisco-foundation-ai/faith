@@ -31,7 +31,7 @@ from faith.benchmark.grading.common_graders import (
 )
 from faith.benchmark.grading.grade_aggregator import GradeAggregator
 from faith.benchmark.grading.log_grader import LogGrader
-from faith.benchmark.scores.domain_specific import Score
+from faith.benchmark.scores.types import Score
 from faith.benchmark.types import BenchmarkSpec
 
 

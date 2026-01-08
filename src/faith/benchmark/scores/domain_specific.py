@@ -6,9 +6,8 @@
 
 import logging
 import math
-from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, Generic, NotRequired, Sequence, Type, TypedDict, TypeVar
+from typing import Any, NotRequired, Sequence, Type, TypedDict
 
 import numpy as np
 from cvss import CVSS3, CVSSError
@@ -16,87 +15,16 @@ from jinja2 import Template
 
 from faith._internal.algo.graph import wcc_dict
 from faith._internal.algo.matching import AnswerFormat, SequentialMatcher
-from faith._internal.metrics.types import Labeling
 from faith._internal.parsing.expr import evaluate_expr
 from faith.benchmark.formatting.prompt import PromptFormatter
+from faith.benchmark.scores.types import Score, ScoreFn
 from faith.model.base import GenerationError
 from faith.model.model_engine import ModelEngine
 
 logger = logging.getLogger(__name__)
 
-_LABELING = TypeVar("_LABELING", bound=Labeling)
 
-
-class Score(TypedDict):
-    """A base class representing a score and any associated metadata."""
-
-    # The numeric score value given by a scoring function for a predicted answer.
-    value: NotRequired[float]
-    raw_value: float
-
-
-class AnswerScoreFn(ABC, Generic[_LABELING]):
-    """A function that computes a score for a given predicted answer from its label."""
-
-    def __init__(
-        self,
-        attributes: dict[str, Any] | None = None,
-        score_range: dict[str, float] | None = None,
-    ) -> None:
-        """Initialize the AnswerScoreFn."""
-        self._attributes = attributes or {}
-        score_range = score_range or {}
-        self._min_score = score_range.get("min", 0.0)
-        self._max_score = score_range.get("max", 1.0)
-        assert (
-            self._min_score < self._max_score
-        ), "Invalid score range for judge: min {self._min_score} >= max {self._max_score}."
-
-    @property
-    def _raw_score_range(self) -> tuple[float, float]:
-        """Get the raw score range for this scoring function."""
-        return (0.0, 1.0)
-
-    @property
-    def attributes(self) -> dict[str, Any]:
-        """Get the attributes associated with this scoring function."""
-        return self._attributes
-
-    def __call__(
-        self, label: _LABELING, pred: _LABELING | None, **kwargs: Any
-    ) -> Score:
-        """Compute the score for a predicted answer against a given label.
-
-        This score should be a non-negative float, where a higher score indicates a
-        better match.
-        """
-        score = self._score(label, pred, **kwargs)
-        score["value"] = self._rescale_score(score["raw_value"])
-        return score
-
-    def _rescale_score(self, raw_score: float) -> float:
-        """Rescale the raw score to be within the configured score range."""
-        raw_min, raw_max = self._raw_score_range
-        assert (
-            raw_min <= raw_score <= raw_max
-        ), f"Raw score {raw_score} out of range [{raw_min}, {raw_max}]."
-        return (self._max_score - self._min_score) * (raw_score - raw_min) / (
-            raw_max - raw_min
-        ) + self._min_score
-
-    @abstractmethod
-    def _score(self, label: _LABELING, pred: _LABELING | None, **kwargs: Any) -> Score:
-        """Compute the score for a predicted answer against a given label.
-
-        This is the implementation-specific scoring logic used by __call__.
-        """
-
-    @abstractmethod
-    def aggregate(self, scores: Sequence[Score]) -> dict[str, float]:
-        """Aggregate a list of scores into a set of aggregate statistics."""
-
-
-class CVSSScore(AnswerScoreFn[str]):
+class CVSSScore(ScoreFn[str]):
     """A score for evaluating the correctness of CVSS vectors using their base score."""
 
     @property
@@ -146,7 +74,7 @@ class CVSSScore(AnswerScoreFn[str]):
         }
 
 
-class JaccardIndex(AnswerScoreFn[tuple[str, ...]]):
+class JaccardIndex(ScoreFn[tuple[str, ...]]):
     """A score for evaluating the correctness between two sets of labels."""
 
     def _score(
@@ -174,7 +102,7 @@ class JaccardIndex(AnswerScoreFn[tuple[str, ...]]):
         }
 
 
-class LogScaledScore(AnswerScoreFn[str]):
+class LogScaledScore(ScoreFn[str]):
     """A score for evaluating numeric answers with a logarithmically scaled score."""
 
     def __init__(
@@ -213,7 +141,7 @@ class LogScaledScore(AnswerScoreFn[str]):
         return {"mean": float(np.mean([s["value"] for s in scores]))}
 
 
-class AliasAccuracyScore(AnswerScoreFn[str]):
+class AliasAccuracyScore(ScoreFn[str]):
     """A score for evaluating accuracy in predicting a group of aliases."""
 
     def __init__(
@@ -262,7 +190,7 @@ class LLMJudgeVerdict(Score):
     full_response: str
 
 
-class LLMJudgeScore(AnswerScoreFn[str]):
+class LLMJudgeScore(ScoreFn[str]):
     """An LLM-based judge for scoring long-answer responses."""
 
     def __init__(
@@ -369,7 +297,7 @@ class SubScores(Score):
     sub_scores: dict[str, Score]
 
 
-class CompositeScore(AnswerScoreFn[Any]):
+class CompositeScore(ScoreFn[Any]):
     """A composite score function that combines multiple scoring functions."""
 
     _RESERVED_NAMES = {"self"}
@@ -384,7 +312,7 @@ class CompositeScore(AnswerScoreFn[Any]):
         """Initialize the CompositeScore with a dictionary of scoring functions."""
         super().__init__(attributes=attributes, score_range=score_range)
         self._aggregation = aggregation
-        self._score_fns = ScoreFn.from_configs(**score_fn_configs)
+        self._score_fns = DomainSpecificScore.from_configs(**score_fn_configs)
         assert set(self._score_fns.keys()).isdisjoint(
             self._RESERVED_NAMES
         ), f"Score function names cannot be any of the reserved names: {self._RESERVED_NAMES}"
@@ -412,8 +340,8 @@ class CompositeScore(AnswerScoreFn[Any]):
         return {"mean": float(np.mean([s["value"] for s in scores]))}
 
 
-class ScoreFn(Enum):
-    """Enum for score functions used in domain-specific benchmarks."""
+class DomainSpecificScore(Enum):
+    """Enum for scores used in domain-specific benchmarks."""
 
     CVSS = (CVSSScore,)  # Score from CVSS vectors, normalized to [0, 1].
     JACCARD = (
@@ -424,8 +352,8 @@ class ScoreFn(Enum):
     LLM_JUDGE = (LLMJudgeScore,)  # Score from LLM-based judge evaluation.
     COMPOSITE = (CompositeScore,)  # Composite score from multiple sub-scores.
 
-    def __init__(self, scoring_cls: Type[AnswerScoreFn]) -> None:
-        """Initialize the ScoreFn with the enum value's scoring class."""
+    def __init__(self, scoring_cls: Type[ScoreFn]) -> None:
+        """Initialize the DomainSpecificScore with the enum value's scoring class."""
         self._scoring_cls = scoring_cls
 
     def __str__(self) -> str:
@@ -433,24 +361,24 @@ class ScoreFn(Enum):
         return self.name.lower()
 
     @staticmethod
-    def from_string(name: str) -> "ScoreFn":
-        """Get the ScoreFn instance from its string representation."""
+    def from_string(name: str) -> "DomainSpecificScore":
+        """Get the DomainSpecificScore instance from its string representation."""
         try:
-            return ScoreFn[name.upper()]
+            return DomainSpecificScore[name.upper()]
         except KeyError as e:
             raise ValueError(
-                f"Invalid score function name: {name}. Available options: {[m.name for m in ScoreFn]}"
+                f"Invalid score function name: {name}. Available options: {[m.name for m in DomainSpecificScore]}"
             ) from e
 
-    def get_score_fn(self, **kwargs: dict[str, Any]) -> AnswerScoreFn:
+    def get_score_fn(self, **kwargs: dict[str, Any]) -> ScoreFn:
         """Get the scorer instance for this score function."""
         return self._scoring_cls(**kwargs)
 
     @staticmethod
-    def from_configs(**score_fn_kwargs: dict[str, Any]) -> dict[str, AnswerScoreFn]:
+    def from_configs(**score_fn_kwargs: dict[str, Any]) -> dict[str, ScoreFn]:
         """Load custom score functions using the config supplied by each key-word argument."""
         return {
-            name: ScoreFn.from_string(score_cfg["type"]).get_score_fn(
+            name: DomainSpecificScore.from_string(score_cfg["type"]).get_score_fn(
                 **{k: v for k, v in score_cfg.items() if k != "type"}
             )
             for name, score_cfg in score_fn_kwargs.items()

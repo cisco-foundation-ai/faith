@@ -18,7 +18,7 @@ from faith.benchmark.dataset.dataset import BenchmarkDataset
 from faith.benchmark.formatting.qa import QAFormatter, QARecord
 from faith.benchmark.grading.grade_aggregator import GradeAggregator
 from faith.benchmark.grading.log_grader import LogGrader
-from faith.benchmark.scores.domain_specific import Score
+from faith.benchmark.scores.types import Score
 from faith.benchmark.types import BenchmarkSpec
 
 

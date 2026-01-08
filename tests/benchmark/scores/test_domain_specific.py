@@ -9,28 +9,28 @@ from faith.benchmark.scores.domain_specific import (
     AliasAccuracyScore,
     CompositeScore,
     CVSSScore,
+    DomainSpecificScore,
     JaccardIndex,
     LogScaledScore,
-    Score,
-    ScoreFn,
 )
+from faith.benchmark.scores.types import Score
 
 
 def test_score_fn_enum() -> None:
     # Test valid score function names
-    assert ScoreFn.from_string("cvss") == ScoreFn.CVSS
-    assert str(ScoreFn.CVSS) == "cvss"
+    assert DomainSpecificScore.from_string("cvss") == DomainSpecificScore.CVSS
+    assert str(DomainSpecificScore.CVSS) == "cvss"
     assert (
-        ScoreFn.CVSS.get_score_fn() is not None
-    ), "ScoreFn should return a valid scoring function instance"
+        DomainSpecificScore.CVSS.get_score_fn() is not None
+    ), "DomainSpecificScore should return a valid scoring function instance"
 
     # Test invalid score function name
     with pytest.raises(ValueError):
-        ScoreFn.from_string("invalid_score_fn")
+        DomainSpecificScore.from_string("invalid_score_fn")
 
 
 def test_score_fn_from_configs() -> None:
-    scores = ScoreFn.from_configs(
+    scores = DomainSpecificScore.from_configs(
         cvss_score={"type": "cvss"},
         aliases={
             "type": "alias_accuracy",
@@ -236,7 +236,7 @@ def test_alias_accuracy_aggregate() -> None:
 
 
 def test_composite_score_fn_from_configs() -> None:
-    scores = ScoreFn.from_configs(
+    scores = DomainSpecificScore.from_configs(
         weighted_score={
             "type": "composite",
             "aggregation": "0.7 * scores.cvss_score + 0.3 * scores.jaccard_index",
