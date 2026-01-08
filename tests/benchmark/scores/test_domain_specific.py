@@ -5,7 +5,7 @@
 import pytest
 from cvss.exceptions import CVSS3MalformedError
 
-from faith._internal.metrics.domain_specific_scores import (
+from faith.benchmark.scores.domain_specific import (
     AliasAccuracyScore,
     CompositeScore,
     CVSSScore,

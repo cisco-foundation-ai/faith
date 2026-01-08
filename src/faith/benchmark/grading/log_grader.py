@@ -12,8 +12,8 @@ from tqdm import tqdm
 
 from faith._internal.algo.matching import AnswerFormat
 from faith._internal.iter.transform import IsoTransform
-from faith._internal.metrics.domain_specific_scores import Score, ScoreFn
 from faith._internal.metrics.types import Labeling
+from faith.benchmark.scores.domain_specific import Score, ScoreFn
 
 logger = logging.getLogger(__name__)
 
