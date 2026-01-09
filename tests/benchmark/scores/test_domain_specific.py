@@ -239,20 +239,38 @@ def test_composite_score_fn_from_configs() -> None:
     scores = DomainSpecificScore.from_configs(
         weighted_score={
             "type": "composite",
-            "aggregation": "0.7 * scores.cvss_score + 0.3 * scores.jaccard_index",
-            "cvss_score": {"type": "cvss", "attributes": {"weight": 0.7}},
-            "jaccard_index": {"type": "jaccard", "attributes": {"weight": 0.3}},
+            "aggregation": "sub_scores.weight.cvss_score * sub_scores.score.cvss_score + sub_scores.weight.jaccard_index * sub_scores.score.jaccard_index",
+            "sub_scores": {
+                "cvss_score": {"type": "cvss", "attributes": {"weight": 0.7}},
+                "jaccard_index": {"type": "jaccard", "attributes": {"weight": 0.3}},
+            },
         }
     )
     assert set(scores.keys()) == {"weighted_score"}
     assert isinstance(scores["weighted_score"], CompositeScore)
 
+    with pytest.raises(
+        ValueError, match="Invalid aggregation expression for composite score"
+    ):
+        DomainSpecificScore.from_configs(
+            invalid_composite={
+                "type": "composite",
+                "aggregation": "sum(sub_scores.score[k] * sub_scores.weight[k] for k in sub_scores.score.keys())",
+                "sub_scores": {
+                    "cvss_score": {"type": "cvss"},
+                    "jaccard_index": {"type": "jaccard"},
+                },
+            }
+        )
+
 
 def test_composite_score() -> None:
     score_fn = CompositeScore(
-        aggregation="0.7 * scores.log_1 + 0.3 * scores.log_2",
-        log_1={"type": "log_scaled_score", "tolerance": 0.1, "scaling": 10.0},
-        log_2={"type": "log_scaled_score", "tolerance": 0.5, "scaling": 2.0},
+        aggregation="0.7 * sub_scores.score.log_1 + 0.3 * sub_scores.score.log_2",
+        sub_scores={
+            "log_1": {"type": "log_scaled_score", "tolerance": 0.1, "scaling": 10.0},
+            "log_2": {"type": "log_scaled_score", "tolerance": 0.5, "scaling": 2.0},
+        },
     )
     assert score_fn("100", None) == {
         "value": pytest.approx(0),
@@ -286,18 +304,20 @@ def test_composite_score() -> None:
     }
 
     attr_weight_score_fn = CompositeScore(
-        aggregation="sum(scores[k] * attrs[k]['weight'] for k in scores.keys()) / sum(a['weight'] for a in attrs.values())",
-        log_1={
-            "type": "log_scaled_score",
-            "tolerance": 0.1,
-            "scaling": 10.0,
-            "attributes": {"weight": 3},
-        },
-        log_2={
-            "type": "log_scaled_score",
-            "tolerance": 0.5,
-            "scaling": 2.0,
-            "attributes": {"weight": 1},
+        aggregation="sum(sub_scores.score[k] * sub_scores.weight[k] for k in sub_scores.score.keys()) / sum(sub_scores.weight.values())",
+        sub_scores={
+            "log_1": {
+                "type": "log_scaled_score",
+                "tolerance": 0.1,
+                "scaling": 10.0,
+                "attributes": {"weight": 3},
+            },
+            "log_2": {
+                "type": "log_scaled_score",
+                "tolerance": 0.5,
+                "scaling": 2.0,
+                "attributes": {"weight": 1},
+            },
         },
     )
     assert attr_weight_score_fn("100", None) == {
@@ -334,9 +354,11 @@ def test_composite_score() -> None:
 
 def test_composite_score_aggregate() -> None:
     score_fn = CompositeScore(
-        aggregation="0.7 * scores.log_1 + 0.3 * scores.log_2",
-        log_1={"type": "log_scaled_score", "tolerance": 0.1, "scaling": 10.0},
-        log_2={"type": "log_scaled_score", "tolerance": 0.5, "scaling": 2.0},
+        aggregation="0.7 * sub_scores.score.log_1 + 0.3 * sub_scores.score.log_2",
+        sub_scores={
+            "log_1": {"type": "log_scaled_score", "tolerance": 0.1, "scaling": 10.0},
+            "log_2": {"type": "log_scaled_score", "tolerance": 0.5, "scaling": 2.0},
+        },
     )
 
     scores = [

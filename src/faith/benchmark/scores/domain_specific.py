@@ -300,40 +300,67 @@ class SubScores(Score):
 class CompositeScore(ScoreFn[Any]):
     """A composite score function that combines multiple scoring functions."""
 
-    _RESERVED_NAMES = {"self"}
+    _RESERVED_ATTRIBUTES = {"score"}
 
     def __init__(
         self,
         aggregation: str,
         attributes: dict[str, Any] | None = None,
         score_range: dict[str, float] | None = None,
-        **score_fn_configs: dict[str, Any],
+        sub_scores: dict[str, Any] | None = None,
     ) -> None:
         """Initialize the CompositeScore with a dictionary of scoring functions."""
         super().__init__(attributes=attributes, score_range=score_range)
         self._aggregation = aggregation
-        self._score_fns = DomainSpecificScore.from_configs(**score_fn_configs)
-        assert set(self._score_fns.keys()).isdisjoint(
-            self._RESERVED_NAMES
-        ), f"Score function names cannot be any of the reserved names: {self._RESERVED_NAMES}"
+        self._score_fns = DomainSpecificScore.from_configs(**(sub_scores or {}))
+        assert all(
+            attr not in self._RESERVED_ATTRIBUTES
+            for score_fn in self._score_fns.values()
+            for attr in score_fn.attributes.keys()
+        ), f"Score function attributes cannot be any of the reserved attributes: {self._RESERVED_ATTRIBUTES}"
+        try:
+            self._score_from_sub_scores(
+                {
+                    name: Score(value=score_fn._min_score, raw_value=0.0)
+                    for name, score_fn in self._score_fns.items()
+                }
+            )
+        except Exception as e:
+            raise ValueError(
+                f"Invalid aggregation expression for composite score: {self._aggregation}"
+            ) from e
+
+    def _score_from_sub_scores(self, sub_scores: dict[str, Score]) -> SubScores:
+        sub_score_attrs = {
+            attr: {
+                score_name: score_fn.attributes[attr]
+                for score_name, score_fn in self._score_fns.items()
+                if attr in score_fn.attributes
+            }
+            for attr in {
+                score_attr_name
+                for score_fn in self._score_fns.values()
+                for score_attr_name in score_fn.attributes.keys()
+            }
+        } | {
+            "score": {
+                name: sub_score["value"] for name, sub_score in sub_scores.items()
+            }
+        }
+        return SubScores(
+            raw_value=evaluate_expr(
+                self._aggregation, names={"sub_scores": sub_score_attrs}
+            ),
+            sub_scores=sub_scores,
+        )
 
     def _score(self, label: Any, pred: Any, **kwargs: Any) -> Score:
         """Compute the composite score for a label and prediction from their sub-scores."""
-        attributes = {
-            score_name: score_fn.attributes
-            for score_name, score_fn in self._score_fns.items()
-        }
         sub_scores = {
             score_name: score_fn(label, pred, **kwargs)
             for score_name, score_fn in self._score_fns.items()
         }
-        scores = {name: sub_score["value"] for name, sub_score in sub_scores.items()}
-        return SubScores(
-            raw_value=evaluate_expr(
-                self._aggregation, names={"attrs": attributes, "scores": scores}
-            ),
-            sub_scores=sub_scores,
-        )
+        return self._score_from_sub_scores(sub_scores)
 
     def aggregate(self, scores: Sequence[Score]) -> dict[str, float]:
         """Aggregate a list of composite scores into statistics for the benchmark."""
