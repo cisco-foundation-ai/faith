@@ -17,4 +17,5 @@ updates:
       day: "monday"
       time: "04:00"
       timezone: "America/Los_Angeles"
-    pull-request-cooldown: 7 # Days
+    cooldown:
+      default-days: 7
