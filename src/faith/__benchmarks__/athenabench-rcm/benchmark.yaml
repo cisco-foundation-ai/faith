@@ -47,13 +47,13 @@ benchmark:
         # Note: We accept two different '-' characters because GPT-OSS is so
         # prone to using a unicode `\u2011` hyphen instead of the ASCII `-`.
         # We normalize both to the ASCII `-` in the transform.
-        - pattern: '(?i)\b(cwe[‑-]\d+)\b'
+        - pattern: '(?i)\banswer\s*:\s*(cwe[‑-]\d+)\b'
           capture_transform:
             params: ["x"]
             expr: "x.upper().replace('‑', '-')"
           match_disambiguation: "match_if_unique"
           format_type: "proper"
-        - pattern: '(?i)\b(?:cwe|id):\s+(\d+)\b'
+        - pattern: '(?i)\b(?:cwe|id)[:‑-]\s*(\d+)\b'
           capture_transform:
             params: ["x"]
             expr: 'f"CWE-{x}"'
