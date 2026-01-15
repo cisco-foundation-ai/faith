@@ -310,29 +310,41 @@ class MCMetricsAggregator(GradeAggregator):
                 "f1_scores": dict(
                     zip(
                         self._answer_list,
-                        f1_score(
-                            label,
-                            stringified_preds,
-                            labels=self._answer_list,
-                            average=None,
-                            zero_division=np.nan,
+                        (
+                            f1_score(
+                                label,
+                                stringified_preds,
+                                labels=self._answer_list,
+                                average=None,
+                                zero_division=np.nan,
+                            )
+                            if len(label) > 0
+                            else [np.nan] * len(self._answer_list)
                         ),
                     )
                 ),
-                "weighted_avg_f1": f1_score(
-                    label,
-                    stringified_preds,
-                    labels=self._answer_list,
-                    average="weighted",
-                    zero_division=np.nan,
+                "weighted_avg_f1": (
+                    f1_score(
+                        label,
+                        stringified_preds,
+                        labels=self._answer_list,
+                        average="weighted",
+                        zero_division=np.nan,
+                    )
+                    if len(label) > 0
+                    else np.nan
                 ),
                 "confusion_matrix_count": {
                     true_label: dict(zip(extended_answers, row))
                     for true_label, row in zip(
                         extended_answers,
-                        confusion_matrix(
-                            label, stringified_preds, labels=extended_answers
-                        ).tolist(),
+                        (
+                            confusion_matrix(
+                                label, stringified_preds, labels=extended_answers
+                            ).tolist()
+                            if len(label) > 0
+                            else [[0] * len(extended_answers)] * len(extended_answers)
+                        ),
                     )
                 },
             }
