@@ -1,0 +1,52 @@
+# Copyright 2025 Cisco Systems, Inc. and its affiliates
+#
+# SPDX-License-Identifier: Apache-2.0
+
+---
+benchmark:
+  metadata: !from
+    '$BENCHMARKS_ROOT/base-template.yaml["metadata"]':
+      name: "athenabench-ate"
+      description: |-
+        The AthenaBench Benchmark for Attack Technique Extraction (ATE). This task
+        is to identify attack patterns from a given attack scenario
+        and map them to the corresponding MITRE ATT&CK technique ID.
+      urls:
+        - https://arxiv.org/abs/2511.01144
+        - https://github.com/Athena-Software-Group/athenabench
+      categories: ["security"]
+      state: experimental
+  source:
+    git_repo: !from
+      '$BENCHMARKS_ROOT/sources-template.yaml["sources"]["git_repo"]':
+        repo_url: "https://github.com/Athena-Software-Group/athenabench.git"
+        branch: "main"
+        commit: "39d3a74eaf84b93e21dde0a4b60ddd4f08620eaf"
+        type: "jsonl"
+        benchmark_data_paths:
+          - "benchmark/athena-cti-ate.jsonl"
+    options:
+      dataframe_transform_expr: |
+        df.assign(
+            question=df["prompt"].str.strip(),
+            answer=df["answer"].str.strip().str.upper().str.partition('.')[0],
+        )[["question", "answer"]]
+  saqa_config:
+    type: "string_match"
+  format:
+    # Currently no base/chat instruction is used for this benchmark as the
+    # instruction is embedded in the prompt.
+    instructions: !from '$BENCHMARKS_ROOT/instructions-template.yaml["instructions"]'
+    prompt:
+      question_template: "{{ question }}"
+      answer_template: "Answer: {{ answer }}"
+      prompt_template: !from '$BENCHMARKS_ROOT/prompting-template.yaml["prompting"]["prompt_template"]'
+  output_processing: !from
+    '$BENCHMARKS_ROOT/output-processing-template.yaml["output_processing"]':
+      answer_formats:
+        - pattern: '(?i)\banswer\s*:\s*(t\d{4})(?:\.\d{3})?\b'
+          capture_transform:
+            params: ["x"]
+            expr: "x.upper()"
+          match_disambiguation: "match_if_unique"
+          format_type: "proper"

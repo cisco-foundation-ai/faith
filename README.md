@@ -16,6 +16,7 @@ for benchmarking the knowledge and capabilities of language models in the
 cybersecurity domain. FAITH currently runs benchmarks for the following
 cybersecurity benchmarks:
 
+- [AthenaBench](https://arxiv.org/pdf/2511.01144)
 - [CTIBench](https://arxiv.org/abs/2406.07599)
 - [CyberMetric](https://arxiv.org/abs/2402.07688)
 - [MMLU](https://arxiv.org/abs/2009.03300)
