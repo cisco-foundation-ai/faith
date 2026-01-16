@@ -32,7 +32,7 @@ def test_short_answer_benchmark_logits() -> None:
                 "saqa_config": {"type": "string_match"},
                 "format": {
                     "instructions": {
-                        "system_prompt": "You are a helpful assistant.",
+                        "system_prompt_template": "You are a helpful assistant.",
                         "base_inst_template": "Please answer the following question.",
                         "chat_inst_template": "Please answer the following question in a chat format.",
                     },
@@ -62,7 +62,7 @@ def test_short_answer_benchmark_next_token() -> None:
                 "saqa_config": {"type": "string_match"},
                 "format": {
                     "instructions": {
-                        "system_prompt": "You are a helpful assistant.",
+                        "system_prompt_template": "You are a helpful assistant.",
                         "base_inst_template": "Please answer the following question.",
                         "chat_inst_template": "Please answer the following question in a chat format.",
                     },
@@ -132,7 +132,7 @@ def test_short_answer_benchmark_build_dataset() -> None:
             "saqa_config": {"type": "string_match"},
             "format": {
                 "instructions": {
-                    "system_prompt": "You are a helpful assistant.",
+                    "system_prompt_template": "You are a helpful assistant.",
                     "base_inst_template": "Please answer the following question.",
                     "chat_inst_template": "Please answer the following question in a chat format.",
                 },
@@ -174,6 +174,7 @@ def test_short_answer_benchmark_build_dataset() -> None:
                 "formatted_question": "Question: What is the capital of Austria?",
                 "formatted_answer": "Answer: Vienna",
                 "question_prompt": "Please answer the following question.\n\nQuestion: What is the capital of Austria?",
+                "ancillary_data": None,
             },
             {
                 "benchmark_sample_index": 1,
@@ -187,6 +188,7 @@ def test_short_answer_benchmark_build_dataset() -> None:
                 "formatted_question": "Question: What is 1+2?",
                 "formatted_answer": "Answer: 3",
                 "question_prompt": "Please answer the following question.\n\nQuestion: What is 1+2?",
+                "ancillary_data": None,
             },
         ]
 
@@ -201,7 +203,7 @@ def test_short_answer_benchmark_build_dataset() -> None:
             "saqa_config": {"type": "string_match"},
             "format": {
                 "instructions": {
-                    "system_prompt": "You are a helpful assistant.",
+                    "system_prompt_template": "You are a helpful assistant.",
                     "base_inst_template": "Please answer the following question.",
                     "chat_inst_template": "Please answer the following question in a chat format.",
                 },
@@ -242,6 +244,7 @@ def test_short_answer_benchmark_build_dataset() -> None:
                 "formatted_question": "Question: What is the capital of Austria?",
                 "formatted_answer": "Answer: Vienna",
                 "question_prompt": "Please answer the following question.\n\nQuestion: What is the capital of Austria?",
+                "ancillary_data": None,
             },
         ]
 
@@ -256,7 +259,7 @@ def test_short_answer_benchmark_build_dataset() -> None:
             "saqa_config": {"type": "string_match"},
             "format": {
                 "instructions": {
-                    "system_prompt": "You are a helpful assistant.",
+                    "system_prompt_template": "You are a helpful assistant.",
                     "base_inst_template": "Please answer the following question.",
                     "chat_inst_template": "Please answer the following question in a chat format.",
                 },
@@ -296,6 +299,7 @@ def test_short_answer_benchmark_build_dataset() -> None:
                 "formatted_question": "Question: What is 1+2?",
                 "formatted_answer": "Answer: 3",
                 "question_prompt": "Please answer the following question.\n\nQuestion: What is 1+2?",
+                "ancillary_data": None,
             },
         ]
 
@@ -305,7 +309,7 @@ def test_short_answer_benchmark_process_logs_chat() -> None:
         "saqa_config": {"type": "string_match"},
         "format": {
             "instructions": {
-                "system_prompt": "You are a helpful assistant.",
+                "system_prompt_template": "You are a helpful assistant.",
                 "base_inst_template": "Please answer the following question.",
                 "chat_inst_template": "Please answer the following question in a chat format.",
             },
@@ -467,7 +471,7 @@ def test_short_answer_benchmark_grade_aggregator_string_match() -> None:
         "saqa_config": {"type": "string_match"},
         "format": {
             "instructions": {
-                "system_prompt": "You are a helpful assistant.",
+                "system_prompt_template": "You are a helpful assistant.",
                 "base_inst_template": "Please answer the following question.",
                 "chat_inst_template": "Please answer the following question in a chat format.",
             },
@@ -618,7 +622,7 @@ def test_short_answer_benchmark_grade_aggregator_label_set() -> None:
         "saqa_config": {"type": "label_set"},
         "format": {
             "instructions": {
-                "system_prompt": "You are a helpful assistant.",
+                "system_prompt_template": "You are a helpful assistant.",
                 "base_inst_template": "Please answer the following question.",
                 "chat_inst_template": "Please answer the following question in a chat format.",
             },
@@ -706,7 +710,7 @@ def test_short_answer_benchmark_grade_aggregator_label_set() -> None:
                 "num_output_tokens": 13,
                 "prediction": ["B", "C"],
                 "answer_format": AnswerFormat.PROPER,
-                "scores": {"jaccard_index": 1 / 3},
+                "scores": {"jaccard_index": {"value": 1 / 3}},
             }
         },
         {
@@ -716,7 +720,7 @@ def test_short_answer_benchmark_grade_aggregator_label_set() -> None:
                 "num_output_tokens": 17,
                 "prediction": ["B"],
                 "answer_format": AnswerFormat.PROPER,
-                "scores": {"jaccard_index": 1 / 2},
+                "scores": {"jaccard_index": {"value": 1 / 2}},
             }
         },
         {
@@ -726,7 +730,7 @@ def test_short_answer_benchmark_grade_aggregator_label_set() -> None:
                 "num_output_tokens": 9,
                 "prediction": ["A"],
                 "answer_format": AnswerFormat.IMPROPER,
-                "scores": {"jaccard_index": 0},
+                "scores": {"jaccard_index": {"value": 0}},
             }
         },
     ] >> metric_aggregator == {
@@ -776,7 +780,7 @@ def test_short_answer_benchmark_grade_aggregator_domain_specific() -> None:
         "saqa_config": {"type": "domain_specific"},
         "format": {
             "instructions": {
-                "system_prompt": "You are a helpful assistant.",
+                "system_prompt_template": "You are a helpful assistant.",
                 "base_inst_template": "Please answer the following question.",
                 "chat_inst_template": "Please answer the following question in a chat format.",
             },
@@ -844,7 +848,7 @@ def test_short_answer_benchmark_grade_aggregator_domain_specific() -> None:
                 "num_output_tokens": 4,
                 "prediction": "AV:L",
                 "answer_format": AnswerFormat.PROPER,
-                "scores": {"cvss_score": 1 / 2},
+                "scores": {"cvss_score": {"value": 1 / 2}},
             }
         },
         {
@@ -854,7 +858,7 @@ def test_short_answer_benchmark_grade_aggregator_domain_specific() -> None:
                 "num_output_tokens": 8,
                 "prediction": "AV:N",
                 "answer_format": AnswerFormat.PROPER,
-                "scores": {"cvss_score": 1 / 8},
+                "scores": {"cvss_score": {"value": 1 / 8}},
             }
         },
         {
@@ -864,7 +868,7 @@ def test_short_answer_benchmark_grade_aggregator_domain_specific() -> None:
                 "num_output_tokens": 12,
                 "prediction": "AV:N",
                 "answer_format": AnswerFormat.IMPROPER,
-                "scores": {"cvss_score": 1 / 4},
+                "scores": {"cvss_score": {"value": 1 / 4}},
             }
         },
     ] >> metric_aggregator == {

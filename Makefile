@@ -1,5 +1,8 @@
 .PHONY: test test_all lint format
 
+# Set the shell to bash with globstar enabled for recursive file matching.
+SHELL:=/bin/bash -O globstar -O dotglob
+
 # Rule-function to check if a given command is installed.
 define CHECK_COMMAND
 .PHONY: check_installed_$(1)
@@ -68,6 +71,13 @@ format: check_installed_docker check_installed_yq
 		-v "$(shell pwd):/tmp/lint" \
 		-v "$(GIT_MAIN):$(GIT_MAIN)" \
 		ghcr.io/super-linter/super-linter:$(SUPER_LINTER_VERSION)
+
+fix_license:
+	docker run --rm --volume $(shell pwd):/data fsfe/reuse annotate \
+		--copyright-prefix string \
+		--copyright "Cisco Systems, Inc. and its affiliates" \
+		-l "Apache-2.0" \
+		**/*.{py,yaml,yml}
 
 # Run only unit tests (excluding slow tests).
 test:

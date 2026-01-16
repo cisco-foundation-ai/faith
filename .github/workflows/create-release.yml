@@ -1,3 +1,7 @@
+# Copyright 2025 Cisco Systems, Inc. and its affiliates
+#
+# SPDX-License-Identifier: Apache-2.0
+
 ---
 # This workflow does the following every time the version.txt file changes:
 #
@@ -30,7 +34,7 @@ jobs:
     outputs:
       faith_version: ${{ steps.global_var.outputs.faith_version }}
     steps:
-      - name: Checkout
+      - name: 📦 checkout repository
         uses: actions/checkout@v6.0.1
         with:
           persist-credentials: false
@@ -59,7 +63,7 @@ jobs:
       statuses: write
     needs: [get_version]
     steps:
-      - name: Checkout
+      - name: 📦 checkout repository
         uses: actions/checkout@v6.0.1
         with:
           persist-credentials: true

@@ -7,7 +7,10 @@
       "n_shot": "0"
     },
     "model": {
-      "name": "syntax-and-sensibility-3B"
+      "name": "syntax-and-sensibility-3B",
+      "generation": {
+        "temperature": 0.7
+      }
     }
   }
 }

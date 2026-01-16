@@ -12,8 +12,9 @@ from tqdm import tqdm
 
 from faith._internal.algo.matching import AnswerFormat
 from faith._internal.iter.transform import IsoTransform
-from faith._internal.metrics.domain_specific_scores import ScoreFn
 from faith._internal.metrics.types import Labeling
+from faith.benchmark.scores.domain_specific import DomainSpecificScore
+from faith.benchmark.scores.types import Score
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +31,7 @@ class LogGrader(IsoTransform[dict[str, Any]]):
         """Initialize the logs grader."""
         super().__init__()
         self._recompute_stats = recompute_stats
-        self._score_fns = ScoreFn.from_configs(
+        self._score_fns = DomainSpecificScore.from_configs(
             **(output_processing_config.get("score_fns", None) or {})
         )
 
@@ -52,14 +53,14 @@ class LogGrader(IsoTransform[dict[str, Any]]):
         return self._normalize_entry(log_entry)
 
     def _custom_scores(
-        self, label: Labeling, pred: Labeling | None
-    ) -> dict[str, dict[str, float]]:
+        self, label: Labeling, pred: Labeling | None, **kwargs: Any
+    ) -> dict[str, dict[str, Score]]:
         """Return the custom scores defined in the output processing config."""
         if len(self._score_fns) == 0:
             return {}
         return {
             "scores": {
-                name: score_fn(label, pred)
+                name: score_fn(label, pred, **kwargs)
                 for name, score_fn in self._score_fns.items()
             },
         }

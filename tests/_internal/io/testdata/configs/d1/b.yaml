@@ -1,6 +1,7 @@
 # Copyright 2025 Cisco Systems, Inc. and its affiliates
 #
 # SPDX-License-Identifier: Apache-2.0
+
 ---
 other: 123
 lst:
@@ -8,6 +9,7 @@ lst:
   - 2
   - 3
 d:
+  eyes: !string_from "foo.txt"
   a: 456
   b: 789
   d:

@@ -71,11 +71,13 @@ class FakeDataset(BenchmarkDataset):
                 {
                     "question": ["What is 0?", "What is 1?"],
                     "answer": ["0", "1"],
+                    "other_data": ["foo", "bar"],
                 }
             ),
             NShotSampler(None, SampleRatio(0), rng),
             rng,
             required_columns=frozenset({"question", "answer"}),
+            ancillary_columns=frozenset({"other_data"}),
         )
 
     def _format_qa(
@@ -88,6 +90,7 @@ class FakeDataset(BenchmarkDataset):
             raw_answer=sample["answer"],
             examples=examples,
             subject="apiculture",
+            ancillary_data=self._extract_ancillary_data(sample),
         )
 
 
@@ -227,6 +230,7 @@ class FakeModel(BaseModel):
                         "formatted_question": "Q: What is 0?",
                         "formatted_answer": "A: 0",
                         "question_prompt": "Answer the following question:\n\nQ: What is 0?",
+                        "ancillary_data": {"other_data": "foo"},
                     },
                     "model_data": {
                         "answer_symbol_ids": {},
@@ -265,6 +269,7 @@ class FakeModel(BaseModel):
                         "formatted_question": "Q: What is 1?",
                         "formatted_answer": "A: 1",
                         "question_prompt": "Answer the following question:\n\nQ: What is 1?",
+                        "ancillary_data": {"other_data": "bar"},
                     },
                     "model_data": {
                         "answer_symbol_ids": {},
@@ -313,6 +318,7 @@ class FakeModel(BaseModel):
                         "formatted_question": "Q: What is 0?",
                         "formatted_answer": "A: 0",
                         "question_prompt": "Answer the following question:\n\nQ: What is 0?",
+                        "ancillary_data": {"other_data": "foo"},
                     },
                     "model_data": {
                         "answer_symbol_ids": {},
@@ -351,6 +357,7 @@ class FakeModel(BaseModel):
                         "formatted_question": "Q: What is 1?",
                         "formatted_answer": "A: 1",
                         "question_prompt": "Answer the following question:\n\nQ: What is 1?",
+                        "ancillary_data": {"other_data": "bar"},
                     },
                     "model_data": {
                         "answer_symbol_ids": {},
@@ -399,6 +406,7 @@ class FakeModel(BaseModel):
                         "formatted_question": "Q: What is 0?",
                         "formatted_answer": "A: 0",
                         "question_prompt": "Answer the following question:\n\nQ: What is 0?",
+                        "ancillary_data": {"other_data": "foo"},
                     },
                     "model_data": {
                         "answer_symbol_ids": {"A": 87, "B": 31, "C": 7, "D": 9, "E": 5},
@@ -429,6 +437,7 @@ class FakeModel(BaseModel):
                         "formatted_question": "Q: What is 1?",
                         "formatted_answer": "A: 1",
                         "question_prompt": "Answer the following question:\n\nQ: What is 1?",
+                        "ancillary_data": {"other_data": "bar"},
                     },
                     "model_data": {
                         "answer_symbol_ids": {"A": 87, "B": 31, "C": 7, "D": 9, "E": 5},

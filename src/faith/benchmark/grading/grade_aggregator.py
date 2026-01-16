@@ -11,8 +11,9 @@ from typing import Any, Iterable, Sequence
 import numpy as np
 
 from faith._internal.iter.transform import Reducer
-from faith._internal.metrics.domain_specific_scores import ScoreFn
 from faith._internal.types.validation import assert_same_length
+from faith.benchmark.scores.domain_specific import DomainSpecificScore
+from faith.benchmark.scores.types import Score
 
 
 class GradeAggregator(Reducer[dict[str, Any], dict[str, Any] | None]):
@@ -21,7 +22,7 @@ class GradeAggregator(Reducer[dict[str, Any], dict[str, Any] | None]):
     def __init__(self, output_processing_config: dict[str, Any]) -> None:
         """Initialize the GradeAggregator."""
         super().__init__()
-        self._score_fns = ScoreFn.from_configs(
+        self._score_fns = DomainSpecificScore.from_configs(
             **output_processing_config.get("score_fns", {})
         )
 
@@ -81,9 +82,9 @@ class GradeAggregator(Reducer[dict[str, Any], dict[str, Any] | None]):
             },
         }
 
-    def _aggregate_scores(self, scores: Sequence[dict[str, float]]) -> dict[str, float]:
+    def _aggregate_scores(self, scores: Sequence[dict[str, Score]]) -> dict[str, float]:
         # Convert the scores into a dictionary of lists for each score function.
-        scores_dict: dict[str, list[float]] = {n: [] for n in self._score_fns.keys()}
+        scores_dict: dict[str, list[Score]] = {n: [] for n in self._score_fns.keys()}
         for score in scores:
             for name, value in score.items():
                 assert (

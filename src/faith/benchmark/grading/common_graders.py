@@ -68,7 +68,11 @@ class LogitsLogGrader(LogGrader):
                 "answer_format": answer_format,
                 "subject": log_entry["data"].get("subject", None),
             }
-            | self._custom_scores(label, extracted_pred)
+            | self._custom_scores(
+                label,
+                extracted_pred,
+                ancillary_data=log_entry["data"].get("ancillary_data", None),
+            )
         )
         return log_entry
 
@@ -110,7 +114,11 @@ class NextTokenLogGrader(LogGrader):
             "prediction": extracted_pred,
             "answer_format": answer_format,
             "subject": log_entry["data"].get("subject", None),
-        } | self._custom_scores(label, extracted_pred)
+        } | self._custom_scores(
+            label,
+            extracted_pred,
+            ancillary_data=log_entry["data"].get("ancillary_data", None),
+        )
         return log_entry
 
 
@@ -154,5 +162,9 @@ class ChatCompletionLogGrader(LogGrader):
             "max_token_halt": log_entry["model_data"]
             .get("chat_comp", {})
             .get("max_token_halt", False),
-        } | self._custom_scores(label, extracted_pred)
+        } | self._custom_scores(
+            label,
+            extracted_pred,
+            ancillary_data=log_entry["data"].get("ancillary_data", None),
+        )
         return log_entry

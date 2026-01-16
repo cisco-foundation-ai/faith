@@ -4,7 +4,7 @@
 
 import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -209,7 +209,7 @@ def test_read_only_data_context() -> None:
 # Note: The following test does not test the use of rsync to GCP storage, only the
 # scaffolding of the GCP synchronizer and the resolve_storage_path function.
 @patch("faith._internal.io.datastore.GCPSynchronizer._rsync_cmd_args")
-def test_resolve_storage_path(mock_rsync_cmd_args: MagicMock) -> None:
+def test_resolve_storage_path(mock_rsync_cmd_args: Mock) -> None:
     # Test with a command that will always fail.
     mock_rsync_cmd_args.return_value = ["false"]
     with pytest.raises(ValueError, match="Initial upload to GCP failed"):

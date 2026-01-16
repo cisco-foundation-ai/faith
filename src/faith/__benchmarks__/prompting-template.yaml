@@ -1,16 +1,19 @@
 # Copyright 2025 Cisco Systems, Inc. and its affiliates
 #
 # SPDX-License-Identifier: Apache-2.0
+
 ---
 prompting:
   prompt_template: |-
+    {%- if instruction -%}
     {{ instruction }}
-    {%- if examples %}
-    {%- for example in examples %}
 
+    {% endif -%}
+    {% if examples -%}
+    {% for example in examples -%}
     {{ example.question }}
     {{ example.answer }}
-    {%- endfor %}
-    {%- endif %}
 
+    {% endfor -%}
+    {% endif -%}
     {{ question }}

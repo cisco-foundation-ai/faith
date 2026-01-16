@@ -27,6 +27,12 @@ def test_read_extended_yaml_file() -> None:
                     "x": 100,
                     "y": 200,
                 },
+                "eyes": """Eyes that last I saw in tears
+Through division
+Here in death's dream kingdom
+The golden vision reappears
+I see the eyes but not the tears
+This is my affliction""",
             },
             "import": {
                 "x": "foo",
@@ -42,6 +48,12 @@ def test_read_extended_yaml_file() -> None:
                     "x": 101,
                     "y": 200,
                 },
+                "eyes": """Eyes that last I saw in tears
+Through division
+Here in death's dream kingdom
+The golden vision reappears
+I see the eyes but not the tears
+This is my affliction""",
             },
             "x": "foo",
             "y": "bar",
@@ -63,6 +75,12 @@ def test_read_extended_yaml_file() -> None:
                 "x": 100,
                 "y": 200,
             },
+            "eyes": """Eyes that last I saw in tears
+Through division
+Here in death's dream kingdom
+The golden vision reappears
+I see the eyes but not the tears
+This is my affliction""",
         },
         "import": {
             "x": "foo",

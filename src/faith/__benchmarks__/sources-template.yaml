@@ -1,6 +1,7 @@
 # Copyright 2025 Cisco Systems, Inc. and its affiliates
 #
 # SPDX-License-Identifier: Apache-2.0
+
 ---
 sources:
   huggingface:
@@ -10,9 +11,11 @@ sources:
     dev_split: null
   files: &files
     type: null
-    path_glob: null
+    benchmark_data_paths: null
+    path_glob: null # Deprecated: use benchmark_data_paths instead.
+    holdout_data_paths: null
     selected_columns: null
-  csv_files:
+  csv_files: # Deprecated: use 'files' config instead.
     !!merge <<: *files
     type: csv
     path_glob: "*.csv"
@@ -20,3 +23,4 @@ sources:
     !!merge <<: *files
     repo_url: null
     branch: null
+    commit: null

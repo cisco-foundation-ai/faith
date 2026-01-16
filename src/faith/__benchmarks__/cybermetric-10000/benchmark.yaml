@@ -1,6 +1,7 @@
 # Copyright 2025 Cisco Systems, Inc. and its affiliates
 #
 # SPDX-License-Identifier: Apache-2.0
+
 ---
 benchmark: !from
   '$BENCHMARKS_ROOT/mcqa-template.yaml["mcqa_common_benchmark"]':
@@ -23,7 +24,8 @@ benchmark: !from
           branch: "main"
           commit: "2f5818bd2c19350cd6cfae028b75499ebe4ffd29"
           type: "json"
-          path_glob: "CyberMetric-10000-v1.json"
+          benchmark_data_paths:
+            - "CyberMetric-10000-v1.json"
           selected_columns: ["questions"]
       options:
         dataframe_transform_expr: |

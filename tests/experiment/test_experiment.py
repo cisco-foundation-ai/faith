@@ -34,6 +34,7 @@ def test_benchmark_experiment() -> None:
         num_trials=3,
         initial_seed=3,
     )
+    assert experiment.benchmark_config["metadata"]["name"] == "for-unit-test-only"
     assert str(experiment.experiment_dir).startswith(
         "/tmp/for-unit-test-only/example_model/chat/chat_comp/5_shot/gen_params_"
     )
@@ -76,3 +77,32 @@ def test_benchmark_experiment() -> None:
             num_trials=0,
             initial_seed=27,
         )
+
+
+def test_experiment_iteration() -> None:
+    gen_params = GenParams(
+        temperature=0.1,
+        top_p=0.5,
+        max_completion_tokens=100,
+        kwargs={},
+    )
+    experiment = BenchmarkExperiment(
+        benchmark_path=benchmarks_root() / "for-unit-test-only",
+        generation_mode=GenerationMode.CHAT_COMPLETION,
+        prompt_format=PromptFormatter.CHAT,
+        n_shot=SampleRatio(5),
+        model_name="example_model",
+        gen_params=gen_params,
+        datastore_path=Path("/tmp"),
+        num_trials=2,
+        initial_seed=375,
+    )
+
+    # Test __iter__ and __next__ by iterating through the experiment
+    trial_count = 0
+    for i, (_, trial_path) in enumerate(experiment):
+        trial_count += 1
+        assert trial_path.parts[0] == "trials"
+        assert trial_path.name == "benchmark-log.json"
+        assert f"{375 + i}" in str(trial_path)
+    assert trial_count == 2

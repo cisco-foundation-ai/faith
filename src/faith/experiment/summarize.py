@@ -29,6 +29,7 @@ def _build_experiment_record(
         "prompt_format": experiment["experiment_params"]["benchmark"]["prompt_format"],
         "gen_mode": experiment["experiment_params"]["benchmark"]["generation_mode"],
         "n_shot": experiment["experiment_params"]["benchmark"]["n_shot"],
+        "temp": experiment["experiment_params"]["model"]["generation"]["temperature"],
     } | {
         f"{stat}_{substat}": value
         for stat in selected_stats

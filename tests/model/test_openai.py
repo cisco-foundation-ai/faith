@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import Mock, patch
 
 from openai.types import CompletionUsage
 from openai.types.chat import ChatCompletion, ChatCompletionMessage
@@ -14,7 +14,7 @@ from faith.model.openai import OpenAIModel
 
 
 @patch("faith.model.openai.OpenAI", spec=True)
-def test_openai_model(mock_openai_client_class: MagicMock) -> None:
+def test_openai_model(mock_openai_client_class: Mock) -> None:
     # Initialize the OpenAI model with a mock API key
     model = OpenAIModel("fake_model")
     mock_openai_client_class.assert_called_once_with(api_key=None)
@@ -67,7 +67,7 @@ def test_openai_model(mock_openai_client_class: MagicMock) -> None:
 
 
 @patch("faith.model.openai.OpenAI", spec=True)
-def test_openai_model_retry(mock_openai_client_class: MagicMock) -> None:
+def test_openai_model_retry(mock_openai_client_class: Mock) -> None:
     # Initialize the OpenAI model with a mock API key
     model = OpenAIModel("fake_model", api_max_attempts=2, api_retry_sleep_secs=0.001)
     mock_openai_instance = mock_openai_client_class.return_value
@@ -120,7 +120,7 @@ def test_openai_model_retry(mock_openai_client_class: MagicMock) -> None:
 
 
 @patch("faith.model.openai.OpenAI", spec=True)
-def test_openai_model_failed_call(mock_openai_client_class: MagicMock) -> None:
+def test_openai_model_failed_call(mock_openai_client_class: Mock) -> None:
     # Initialize the OpenAI model with a mock API key
     model = OpenAIModel("fake_model", api_max_attempts=2, api_retry_sleep_secs=0.001)
     mock_openai_instance = mock_openai_client_class.return_value

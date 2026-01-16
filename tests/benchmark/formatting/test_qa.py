@@ -25,10 +25,11 @@ def test_qa_record_sha256() -> None:
         formatted_question="Question: What is the limit of sin(x)/x as x approaches 0?",
         formatted_answer="Answer: 0",
         question_prompt="Please evaluate the following limit.\n\nQuestion: What is the limit of sin(x)/x as x approaches 0?",
+        ancillary_data=None,
     )
     assert (
         record.sha256()
-        == "735c2c600a48d2e20bfe6d3f43157253b68c69118bb9298dde889fbf6c59b029"
+        == "3fd17ec52cb1ca7712af16b588cc50d451309b98dd7d6a147d002f0c9056662e"
     )
 
 
@@ -45,6 +46,7 @@ def test_qa_record_to_dict() -> None:
         formatted_question="Question: What is the limit of sin(x)/x as x approaches 0?",
         formatted_answer="Answer: 0",
         question_prompt="Please evaluate the following limit.\n\nQuestion: What is the limit of sin(x)/x as x approaches 0?",
+        ancillary_data=None,
     )
     assert record.to_dict() == {
         "benchmark_sample_index": 6,
@@ -58,6 +60,7 @@ def test_qa_record_to_dict() -> None:
         "formatted_question": "Question: What is the limit of sin(x)/x as x approaches 0?",
         "formatted_answer": "Answer: 0",
         "question_prompt": "Please evaluate the following limit.\n\nQuestion: What is the limit of sin(x)/x as x approaches 0?",
+        "ancillary_data": None,
     }
 
 
@@ -76,6 +79,11 @@ def test_qa_record_to_dict() -> None:
             formatted_question="Formatted question",
             formatted_answer="Formatted answer",
             question_prompt="Full question with context",
+            ancillary_data={
+                "difficulty": "hard",
+                "counter": 17,
+                "tags": ["philosophy", "metaphor"],
+            },
         ),
         QARecord(
             benchmark_sample_index=1,
@@ -89,6 +97,7 @@ def test_qa_record_to_dict() -> None:
             formatted_question="Formatted question",
             formatted_answer="Formatted answer",
             question_prompt="Full question with context",
+            ancillary_data={},
         ),
         QARecord(
             benchmark_sample_index=2,
@@ -102,6 +111,7 @@ def test_qa_record_to_dict() -> None:
             formatted_question="Formatted question without choices",
             formatted_answer="Japan is the answer.",
             question_prompt="Full question without system prompt",
+            ancillary_data=None,
         ),
     ],
 )
@@ -118,22 +128,24 @@ def test_qa_formatter() -> None:
     # pylint: disable=protected-access
     format_cfg = {
         "instructions": {
-            "system_prompt": "System prompt",
+            "system_prompt_template": "System prompt for {{ subject }}",
             "base_inst_template": "Basic instruction template for {{ subject }}",
             "chat_inst_template": "Chat instruction template for {{ subject }}",
         },
         "prompt": {
             "question_template": "Question: {{ question }}",
             "answer_template": "Answer: {{ answer }}",
-            "prompt_template": """{{ instruction }}
-{%- if examples %}
-{%- for example in examples %}
+            "prompt_template": """{%- if instruction -%}
+{{ instruction }}
 
+{% endif -%}
+{% if examples -%}
+{% for example in examples -%}
 {{ example.question }}
 {{ example.answer }}
-{%- endfor %}
-{%- endif %}
 
+{% endfor -%}
+{% endif -%}
 {{ question }}""",
         },
     }
@@ -157,6 +169,14 @@ def test_qa_formatter() -> None:
     assert formatter.render_answer("Paris") == "Answer: Paris"
 
     # Test rendering a prompt.
+    assert (
+        formatter._render_prompt(
+            instruction=None,
+            examples=[],
+            question="What is the capital of France?",
+        )
+        == "What is the capital of France?"
+    )
     assert (
         formatter._render_prompt(
             instruction="Please answer the following question.",
@@ -183,6 +203,7 @@ What is the capital of France?"""
                     formatted_question="Question: What is the capital of Germany?",
                     formatted_answer="Answer: A",
                     question_prompt="Full question with context",
+                    ancillary_data=None,
                 )
             ],
             question="Question: What is the capital of France?",
@@ -214,6 +235,7 @@ Question: What is the capital of France?"""
                 formatted_question="Question: What is the capital of Germany?",
                 formatted_answer="Answer: Berlin",
                 question_prompt="Basic instruction template for Geography\n\nQuestion: What is the capital of Germany?",
+                ancillary_data=None,
             )
         ],
         subject="Geography",
@@ -221,7 +243,7 @@ Question: What is the capital of France?"""
         benchmark_sample_index=1,
         benchmark_sample_hash="hash123",
         subject="Geography",
-        system_prompt="System prompt",
+        system_prompt="System prompt for Geography",
         instruction="Basic instruction template for Geography",
         question="What is the capital of France?",
         choices=None,
@@ -229,6 +251,7 @@ Question: What is the capital of France?"""
         formatted_question="Question: What is the capital of France?",
         formatted_answer="Answer: Paris",
         question_prompt="Basic instruction template for Geography\n\nQuestion: What is the capital of Germany?\nAnswer: Berlin\n\nQuestion: What is the capital of France?",
+        ancillary_data=None,
     )
 
     # Test rendering an example with choices.
@@ -244,7 +267,7 @@ Question: What is the capital of France?"""
         benchmark_sample_index=1,
         benchmark_sample_hash="hash123",
         subject="Geography",
-        system_prompt="System prompt",
+        system_prompt="System prompt for Geography",
         instruction="Basic instruction template for Geography",
         question="What is the capital of France?",
         choices={"A": "Paris", "B": "London"},
@@ -252,28 +275,31 @@ Question: What is the capital of France?"""
         formatted_question="Question: What is the capital of France?",
         formatted_answer="Answer: A",
         question_prompt="Basic instruction template for Geography\n\nQuestion: What is the capital of France?",
+        ancillary_data=None,
     )
 
 
 def test_qa_formatter_render_conversation() -> None:
     format_cfg = {
         "instructions": {
-            "system_prompt": "System prompt",
+            "system_prompt_template": "System prompt",
             "base_inst_template": "Basic instruction template for {{ subject }}",
             "chat_inst_template": "Chat instruction template for {{ subject }}",
         },
         "prompt": {
             "question_template": "Question: {{ question }}",
             "answer_template": "Answer: {{ answer }}",
-            "prompt_template": """{{ instruction }}
-{%- if examples %}
-{%- for example in examples %}
+            "prompt_template": """{%- if instruction -%}
+{{ instruction }}
 
+{% endif -%}
+{% if examples -%}
+{% for example in examples -%}
 {{ example.question }}
 {{ example.answer }}
-{%- endfor %}
-{%- endif %}
 
+{% endfor -%}
+{% endif -%}
 {{ question }}""",
         },
     }
@@ -293,6 +319,7 @@ def test_qa_formatter_render_conversation() -> None:
                 formatted_question="Question: What is the capital of France?",
                 formatted_answer="Answer: Paris",
                 question_prompt="Basic instruction template for Geography\n\nQuestion: What is the capital of Germany?\nAnswer: Berlin\n\nQuestion: What is the capital of France?",
+                ancillary_data=None,
             ),
             None,
         )
@@ -319,6 +346,7 @@ Question: What is the capital of France?
             formatted_question="Question: What is the capital of France?",
             formatted_answer="Answer: A",
             question_prompt="Basic instruction template for Geography\n\nQuestion: What is the capital of France?",
+            ancillary_data=None,
         ),
         "Answer:",
     ) == [

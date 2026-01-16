@@ -31,6 +31,7 @@ from faith.benchmark.grading.common_graders import (
 )
 from faith.benchmark.grading.grade_aggregator import GradeAggregator
 from faith.benchmark.grading.log_grader import LogGrader
+from faith.benchmark.scores.types import Score
 from faith.benchmark.types import BenchmarkSpec
 
 
@@ -143,6 +144,7 @@ class MCBenchmark(BaseBenchmark):
         nshot_sampler: NShotSampler,
         rng: np.random.Generator,
         randomize_choices: bool = False,
+        ancillary_columns: frozenset[str] = frozenset(),
     ) -> BenchmarkDataset:
         """Builds the dataset for this benchmark."""
         return MCBenchmarkDataset(
@@ -152,6 +154,7 @@ class MCBenchmark(BaseBenchmark):
             nshot_sampler,
             rng,
             randomize_choices,
+            ancillary_columns=ancillary_columns,
         )
 
     def log_grader(
@@ -195,6 +198,7 @@ class MCBenchmarkDataset(BenchmarkDataset):
         nshot_sampler: NShotSampler,
         rng: np.random.Generator,
         randomize_choices: bool = False,
+        ancillary_columns: frozenset[str] = frozenset(),
     ):
         """Initializes the multiple choice benchmark dataset."""
         super().__init__(
@@ -203,6 +207,7 @@ class MCBenchmarkDataset(BenchmarkDataset):
             nshot_sampler,
             rng,
             required_columns=frozenset({"question", "choices", "answer"}),
+            ancillary_columns=ancillary_columns,
             optional_columns=frozenset({"subject"}),
         )
         self._answer_list = sorted(list(answer_set))
@@ -255,6 +260,7 @@ class MCBenchmarkDataset(BenchmarkDataset):
             examples=examples,
             choice_map=choice_map,
             subject=sample.get("subject", None),
+            ancillary_data=self._extract_ancillary_data(sample),
         )
 
 
@@ -283,7 +289,7 @@ class MCMetricsAggregator(GradeAggregator):
         label: SingleLabelSeq = kwargs.get("label", [])
         prediction: SingleLabelSeq = kwargs.get("prediction", [])
         answer_format: Sequence[AnswerFormat] = kwargs.get("answer_format", [])
-        scores: Sequence[dict[str, float]] = kwargs.get("scores", [])
+        scores: Sequence[dict[str, Score]] = kwargs.get("scores", [])
         subject: SingleLabelSeq | None = kwargs.get("subject", None)
         num_output_tokens: Sequence[int] | None = kwargs.get("num_output_tokens", None)
         max_token_halt: Sequence[bool] | None = kwargs.get("max_token_halt", None)

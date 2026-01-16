@@ -5,6 +5,11 @@
 from faith._internal.parsing.expr import evaluate_expr
 
 
+def _foo(x: int) -> int:
+    """Example function for testing."""
+    return x + 3
+
+
 def test_evaluate_expr() -> None:
     # Test basic arithmetic.
     assert evaluate_expr("1 + 2") == 3
@@ -25,6 +30,9 @@ def test_evaluate_expr() -> None:
     # Test function calls.
     assert evaluate_expr("max(1, 2, 3)") == 3
     assert evaluate_expr("min(10, -5, 0)") == -5
+
+    # Test custom functions.
+    assert evaluate_expr("bar(7)", functions={"bar": _foo}) == 10
 
     # Test with custom names.
     assert evaluate_expr("x + 5", {"x": 10, "y": "unused"}) == 15

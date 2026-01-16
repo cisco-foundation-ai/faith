@@ -121,16 +121,25 @@ class BaseBenchmark(Benchmark):
         if self._seed is None:
             logger.warning("No seed provided for benchmark; using default seed.")
         rng = np.random.default_rng(self._seed)
+        ancillary_columns = frozenset(
+            self._config["source"].get("ancillary_columns", None) or []
+        )
         benchdata, holdout = load_data(self.name, self._path, self._config["source"])
         benchdata, holdout = sample_datasets(
             benchdata, holdout, self._n_shot, sample_size, rng
         )
+        bench_cols = frozenset(benchdata.columns)
+        assert (
+            ancillary_columns <= bench_cols
+        ), f"Specified ancillary columns {list(ancillary_columns - bench_cols)} are not present in the benchmark data."
         if holdout is not None:
-            assert set(benchdata.columns) == set(
+            assert bench_cols == frozenset(
                 holdout.columns
             ), "Benchmark data and holdout data must have the same columns."
         nshot_sampler = NShotSampler(holdout, self._n_shot, rng)
-        return self._build_dataset(benchdata, nshot_sampler, rng, randomize_choices)
+        return self._build_dataset(
+            benchdata, nshot_sampler, rng, randomize_choices, ancillary_columns
+        )
 
     @abstractmethod
     def _build_dataset(
@@ -139,5 +148,6 @@ class BaseBenchmark(Benchmark):
         nshot_sampler: NShotSampler,
         rng: np.random.Generator,
         randomize_choices: bool = False,
+        ancillary_columns: frozenset[str] = frozenset(),
     ) -> BenchmarkDataset:
         """Builds the dataset for this benchmark, returning a BenchmarkDataset object."""

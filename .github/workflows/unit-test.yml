@@ -1,3 +1,7 @@
+# Copyright 2025 Cisco Systems, Inc. and its affiliates
+#
+# SPDX-License-Identifier: Apache-2.0
+
 ---
 name: "Unit Test Python"
 
@@ -21,7 +25,7 @@ jobs:
     steps:
       # Check out with entire commit history to ensure all commits and tags
       # are available for correct versioning.
-      - name: "Checkout"
+      - name: 📦 checkout repository
         uses: actions/checkout@v6.0.1
         with:
           fetch-depth: 0

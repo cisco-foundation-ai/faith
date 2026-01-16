@@ -30,7 +30,7 @@ def test_multiple_choice_benchmark() -> None:
             "mcqa_config": {"answer_symbols": ["A", "B"]},
             "format": {
                 "instructions": {
-                    "system_prompt": "You are a compassionate comptroller.",
+                    "system_prompt_template": "You are a compassionate comptroller.",
                     "base_inst_template": "Please analyze and answer the following question.",
                     "chat_inst_template": "Please analyze and answer the following question in a chat format.",
                 },
@@ -66,7 +66,7 @@ def test_multiple_choice_benchmark_answer_leadin() -> None:
             "mcqa_config": {"answer_symbols": ["A", "B"]},
             "format": {
                 "instructions": {
-                    "system_prompt": "You are a compassionate comptroller.",
+                    "system_prompt_template": "You are a compassionate comptroller.",
                     "base_inst_template": "Please analyze and answer the following question.",
                     "chat_inst_template": "Please analyze and answer the following question in a chat format.",
                 },
@@ -102,7 +102,7 @@ def test_multiple_choice_benchmark_answer_leadin_multiple_answer_vars() -> None:
             "mcqa_config": {"answer_symbols": ["A", "B"]},
             "format": {
                 "instructions": {
-                    "system_prompt": "You are a compassionate comptroller.",
+                    "system_prompt_template": "You are a compassionate comptroller.",
                     "base_inst_template": "Please analyze and answer the following question.",
                     "chat_inst_template": "Please analyze and answer the following question in a chat format.",
                 },
@@ -141,7 +141,7 @@ def test_multiple_choice_benchmark_answer_token_map() -> None:
             "mcqa_config": {"answer_symbols": ["A", "B", "C", "D", "E", "F"]},
             "format": {
                 "instructions": {
-                    "system_prompt": "You are a compassionate comptroller.",
+                    "system_prompt_template": "You are a compassionate comptroller.",
                     "base_inst_template": "Please analyze and answer the following question.",
                     "chat_inst_template": "Please analyze and answer the following question in a chat format.",
                 },
@@ -192,7 +192,7 @@ def test_multiple_choice_benchmark_build_dataset() -> None:
             "mcqa_config": {"answer_symbols": ["A", "B", "C"]},
             "format": {
                 "instructions": {
-                    "system_prompt": "You are a compassionate comptroller.",
+                    "system_prompt_template": "You are a compassionate comptroller.",
                     "base_inst_template": "Please analyze and answer the following question.",
                     "chat_inst_template": "Please analyze and answer the following question in a chat format.",
                 },
@@ -209,9 +209,22 @@ Choices:
                 },
             },
             "source": {
+                "ancillary_columns": ["bonus"],
                 "files": {
                     "type": "csv",
-                    "path_glob": "data/fake_mc_dataset.csv",
+                    "benchmark_data_paths": ["data/fake_mc_dataset.csv"],
+                    "holdout_data_paths": ["data/fake_mc_holdout_dataset.csv"],
+                },
+                "options": {
+                    "dataframe_transform_expr": """df.assign(
+    question=df["question"].str.strip(),
+    answer=df["answer"].str.strip().str.upper(),
+    choices=[
+        [str(c) for c in lst]
+        for lst in df[sorted(col for col in df.columns if col.startswith("option_"))].values.tolist()
+    ],
+    bonus=df["other"].str.strip(),
+)[["question", "choices", "answer", "bonus"]]""",
                 },
             },
         },
@@ -222,6 +235,20 @@ Choices:
 
     # Compare the questions as dictionaries.
     assert [q.to_dict() for q in dataset_1shot.iter_data()] == [
+        {
+            "benchmark_sample_index": 0,
+            "benchmark_sample_hash": ANY,
+            "subject": None,
+            "system_prompt": "You are a compassionate comptroller.",
+            "instruction": "Please analyze and answer the following question in a chat format.",
+            "question": "What is the capital of France?",
+            "choices": {"A": "Berlin", "B": "Paris", "C": "Prague"},
+            "label": "B",
+            "formatted_question": "Question: What is the capital of France?\n\nChoices:\n#A# Berlin\n#B# Paris\n#C# Prague",
+            "formatted_answer": "Antwort--> B",
+            "question_prompt": "Please analyze and answer the following question in a chat format.\n\nQuestion: What is the capital of France?\n\nChoices:\n#A# Berlin\n#B# Paris\n#C# Prague",
+            "ancillary_data": {"bonus": "foo"},
+        },
         {
             "benchmark_sample_index": 1,
             "benchmark_sample_hash": ANY,
@@ -234,7 +261,8 @@ Choices:
             "formatted_question": "Question: What is the formula for water?\n\nChoices:\n#A# H2O2\n#B# OH+\n#C# H2O",
             "formatted_answer": "Antwort--> C",
             "question_prompt": "Please analyze and answer the following question in a chat format.\n\nQuestion: What is the formula for water?\n\nChoices:\n#A# H2O2\n#B# OH+\n#C# H2O",
-        }
+            "ancillary_data": {"bonus": "bar"},
+        },
     ]
 
     # Run a test on 0-shot benchmark.
@@ -249,7 +277,7 @@ Choices:
             "mcqa_config": {"answer_symbols": ["A", "B", "C", "D"]},
             "format": {
                 "instructions": {
-                    "system_prompt": "You are a compassionate comptroller.",
+                    "system_prompt_template": "You are a compassionate comptroller.",
                     "base_inst_template": "Please analyze and answer the following question.",
                     "chat_inst_template": "Please analyze and answer the following question in a chat format.",
                 },
@@ -268,7 +296,7 @@ Choices:
             "source": {
                 "files": {
                     "type": "json",
-                    "path_glob": "data/*.json",
+                    "benchmark_data_paths": ["data/*.json"],
                     "selected_columns": ["questions", "metadata"],
                 },
                 "options": {
@@ -302,6 +330,7 @@ Choices:
             "formatted_question": "Question: What is the capital of Germany?\n\nChoices:\n#A# Madrid\n#B# Berlin\n#C# Paris\n#D# Rome",
             "formatted_answer": "Antwort--> B",
             "question_prompt": "Please analyze and answer the following question in a chat format.\n\nQuestion: What is the capital of Germany?\n\nChoices:\n#A# Madrid\n#B# Berlin\n#C# Paris\n#D# Rome",
+            "ancillary_data": None,
         }
     ]
 
@@ -323,7 +352,7 @@ def test_multiple_choice_benchmark_from_git_repo() -> None:
             "mcqa_config": {"answer_symbols": ["A", "B", "C", "D"]},
             "format": {
                 "instructions": {
-                    "system_prompt": "You are a compassionate comptroller.",
+                    "system_prompt_template": "You are a compassionate comptroller.",
                     "base_inst_template": "Please analyze and answer the following question.",
                     "chat_inst_template": "Please analyze and answer the following question in a chat format.",
                 },
@@ -345,7 +374,7 @@ Choices:
                     "branch": "main",
                     "commit": "2f5818bd2c19350cd6cfae028b75499ebe4ffd29",
                     "type": "json",
-                    "path_glob": "CyberMetric-80-v1.json",
+                    "benchmark_data_paths": ["CyberMetric-80-v1.json"],
                     "selected_columns": ["questions"],
                 },
                 "options": {
@@ -399,6 +428,7 @@ Choices:
 #B# Generate public keys
 #C# KDF are algorithms used to transform a secret into crucial parameters like keys and Initialization Vectors (IVs)
 #D# Authenticate digital signatures""",
+            "ancillary_data": None,
         }
     ]
 
@@ -408,7 +438,7 @@ def test_multiple_choice_benchmark_log_grader() -> None:
         "mcqa_config": {"answer_symbols": ["A", "B"]},
         "format": {
             "instructions": {
-                "system_prompt": "You are a compassionate comptroller.",
+                "system_prompt_template": "You are a compassionate comptroller.",
                 "base_inst_template": "Please analyze and answer the following question.",
                 "chat_inst_template": "Please analyze and answer the following question in a chat format.",
             },
@@ -841,7 +871,7 @@ def test_multiple_choice_benchmark_grade_aggregator_logits() -> None:
         "mcqa_config": {"answer_symbols": ["A", "B"]},
         "format": {
             "instructions": {
-                "system_prompt": "You are a compassionate comptroller.",
+                "system_prompt_template": "You are a compassionate comptroller.",
                 "base_inst_template": "Please analyze and answer the following question.",
                 "chat_inst_template": "Please analyze and answer the following question in a chat format.",
             },
@@ -1027,7 +1057,7 @@ def test_multiple_choice_benchmark_grade_aggregator_chat() -> None:
         "mcqa_config": {"answer_symbols": ["A", "B"]},
         "format": {
             "instructions": {
-                "system_prompt": "You are a compassionate comptroller.",
+                "system_prompt_template": "You are a compassionate comptroller.",
                 "base_inst_template": "Please analyze and answer the following question.",
                 "chat_inst_template": "Please analyze and answer the following question in a chat format.",
             },

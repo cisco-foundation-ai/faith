@@ -4,6 +4,7 @@
 
 """Utility functions for matching and processing answer formats."""
 
+import json
 import re
 from abc import ABC, abstractmethod
 from enum import Enum
@@ -96,6 +97,7 @@ class _FormatPattern:
         return evaluate_expr(
             self._transform_expr,
             names=dict(zip(self._transform_params, captures)),
+            functions={"from_json": json.loads},
         )
 
     def _match(self, s: str) -> list[str] | list[tuple[str, ...]]:

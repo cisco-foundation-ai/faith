@@ -2,14 +2,12 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-import math
 
 import pytest
 
 from faith._internal.algo.matching import AnswerFormat
 from faith._internal.metrics.llm import (
     llm_basic_metrics,
-    llm_judge_grades,
     llm_metadata_metrics,
     llm_multilabel_metrics,
     llm_prediction_metrics,
@@ -137,42 +135,6 @@ def test_llm_multilabel_metrics() -> None:
             "invalid": pytest.approx(1 / 4),
             "inferred": 0.0,
         },
-    }
-
-
-def test_llm_judge_grades() -> None:
-    label = ["a b c", "a f d c", "a a", "b b c"]
-    prediction = ["a b c", "a e d", "a b", "a b c"]
-    answer_format = [
-        AnswerFormat.PROPER,
-        AnswerFormat.PROPER,
-        AnswerFormat.IMPROPER,
-        AnswerFormat.INVALID,
-    ]
-    awarded_points = [3.0, 2.0, 1.0, 2.0]
-    max_points = [3.0, 4.0, 2.0, 3.0]
-    assert llm_judge_grades(
-        label, prediction, answer_format, awarded_points, max_points
-    ) == {
-        "query_count": 4,
-        "format_count": {
-            "proper": 2,
-            "improper": 1,
-            "invalid": 1,
-            "inferred": 0,
-        },
-        "format_rate": {
-            "proper": pytest.approx(1 / 2),
-            "improper": pytest.approx(1 / 4),
-            "invalid": pytest.approx(1 / 4),
-            "inferred": 0.0,
-        },
-        "per_question_grade_stats": {
-            "mean": pytest.approx(2 / 3),
-            "median": pytest.approx(7 / 12),
-            "std": pytest.approx(1 / 2 / math.sqrt(6)),
-        },
-        "weighted_grade": pytest.approx(2 / 3),
     }
 
 
