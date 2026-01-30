@@ -95,6 +95,7 @@ def _cli_query(args: argparse.Namespace, datastore_path: Path) -> Iterator[Path]
             },
         ),
         datastore_path,
+        parallelize_models=args.experimental_parallelize_models,
     )
 
 
@@ -178,6 +179,7 @@ def _add_model_args(parser: argparse.ArgumentParser) -> None:
         type=AnnotatedPath(
             name=lambda x: x,
             is_file=TypeWithDefault[bool](bool, False),
+            num_gpus=TypeWithDefault[int | None](int, None),
             reasoning_tokens=TypeWithDefault[
                 tuple[str | list[int], str | list[int]] | None
             ](parse_begin_end_tokens, None),
@@ -224,6 +226,12 @@ def _add_model_args(parser: argparse.ArgumentParser) -> None:
         type=int,
         default=1,
         help="Number of GPUs to use for querying LLMs. [Default: 1]",
+    )
+    group.add_argument(
+        "--experimental-parallelize-models",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Run multiple models in parallel with GPU pooling. [Default: False]",
     )
     group.add_argument(
         "--engine-kwargs",

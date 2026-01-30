@@ -4,6 +4,7 @@
 
 """Functions to execute queries from benchmarks on models and collect their responses."""
 
+import dataclasses
 import itertools
 import logging
 import os
@@ -12,6 +13,7 @@ import sys
 import time
 from datetime import datetime
 from enum import Enum
+from functools import partial
 from pathlib import Path
 from typing import Any, Iterable, Iterator, Type
 from zoneinfo import ZoneInfo
@@ -20,17 +22,23 @@ from tqdm import tqdm
 
 from faith import __version__
 from faith._internal.config.model_response import model_response_format_config
+from faith._internal.functools.compose import compose
 from faith._internal.io.datastore import ReadOnlyDataContext
 from faith._internal.io.json import write_as_json
 from faith._internal.io.logging import LoggingTransform
 from faith._internal.io.paths import canonical_segment
 from faith._internal.iter.transform import DevNullReducer, IsoTransform
+from faith._internal.multiprocessing.gpu_scheduling import (
+    GPUJob,
+    run_gpu_jobs_in_parallel,
+)
 from faith._internal.types.flags import GenerationMode
 from faith.benchmark.benchmark import Benchmark
 from faith.benchmark.listing import choices_to_benchmarks, find_benchmarks
 from faith.experiment.experiment import BenchmarkExperiment
 from faith.experiment.params import DataSamplingParams, ExperimentParams
 from faith.model.base import BaseModel, ChatResponse, GenerationError
+from faith.model.model_engine import ModelEngine
 from faith.model.params import EngineParams, GenParams
 
 logger = logging.getLogger(__name__)
@@ -206,148 +214,235 @@ class _ModelMethod(Enum):
         return self._transform_cls(model, gen_params)
 
 
-def run_experiment_queries(
+def _run_single_model(
+    annotated_model_path,
     exp_params: ExperimentParams,
     sampling_params: DataSamplingParams,
     engine_params: EngineParams,
     gen_params: GenParams,
     datastore_path: Path,
 ) -> Iterator[Path]:
-    """Query over given benchmarks for all specified models and generation parameters."""
+    """
+    Run benchmarks for a single model.
+
+    Args:
+        annotated_model_path: Annotated path to the model
+        exp_params: Experiment parameters
+        sampling_params: Data sampling parameters
+        engine_params: Engine parameters
+        gen_params: Generation parameters
+        datastore_path: Path to datastore
+
+    Yields:
+        Path to experiment.json for each completed experiment
+    """
+    # Initialize the model from its annotated path.
     # pylint: disable=too-many-locals
+    is_model_a_file = annotated_model_path.get_value("is_file")
+    with ReadOnlyDataContext(
+        annotated_model_path.raw_path, is_model_a_file
+    ) as model_path:
+        model_name = annotated_model_path.get_value("name")
+        if model_name is None:
+            model_name = canonical_segment(str(model_path))
+        model_tokenizer = annotated_model_path.get_value("tokenizer")
+        if model_tokenizer is not None:
+            logger.warning(
+                "Using a tokenizer other than the model's tokenizer is not recommended and may lead to incorrect queries."
+            )
+        model_reasoning_tokens = annotated_model_path.get_value("reasoning_tokens")
+        model_response_pattern = annotated_model_path.get_value("response_pattern")
+
+        model = engine_params.engine_type.create_model(
+            name_or_path=str(model_path),
+            tokenizer_name_or_path=model_tokenizer,
+            num_gpus=engine_params.num_gpus,
+            seed=exp_params.initial_seed,
+            context_len=engine_params.context_length,
+            num_log_probs=(
+                MAX_LOGITS
+                if exp_params.generation_mode == GenerationMode.LOGITS
+                else None
+            ),
+            reasoning_tokens=model_reasoning_tokens,
+            **engine_params.kwargs,
+        )
+
+        prompt_formatter = exp_params.prompt_format
+        assert (
+            prompt_formatter in model.supported_formats
+        ), f"Prompt format '{prompt_formatter}' is not supported by the model '{model.name_or_path}'. Supported formats: {model.supported_formats}"
+
+        # Create the benchmark experiments.
+        # Note: experiments is instantiated as a list so all are validated
+        # before execution begins.
+        experiments = [
+            BenchmarkExperiment(
+                benchmark_path,
+                exp_params.generation_mode,
+                prompt_formatter,
+                n_shot,
+                model_name,
+                gen_params,
+                datastore_path,
+                exp_params.num_trials,
+                initial_seed=exp_params.initial_seed,
+            )
+            for benchmark_path in itertools.chain[Path](
+                choices_to_benchmarks(exp_params.benchmark_names or []),
+                [
+                    benchmark_path
+                    for p in exp_params.custom_benchmark_paths or []
+                    for benchmark_path in find_benchmarks(p)
+                ],
+            )
+            for n_shot in exp_params.n_shot
+        ]
+        for experiment in tqdm(
+            experiments, desc="Benchmarks", unit=" benchmark", leave=False
+        ):
+            # Record the model parameters.
+            experiment_start_time = time.perf_counter()
+            run_record = {
+                "metadata": {
+                    "start_time": current_timestamp(),
+                    "version": __version__,
+                    "run_args": sys.argv,
+                },
+                "experiment_params": {
+                    "benchmark": experiment.benchmark_spec.to_dict(),
+                    "model": {
+                        "name": model_name,
+                        "path": str(model_path),
+                        "response_format": model_response_format_config(
+                            model_response_pattern
+                        ),
+                        "engine": engine_params.to_dict(),
+                        "generation": gen_params.to_dict(),
+                    },
+                },
+                "benchmark_config": experiment.benchmark_config,
+                "trial_records": {},
+            }
+
+            # Execute the trials of the experiment.
+            for benchmark, trial_path in tqdm(
+                experiment, desc="Trials", unit=" trial", leave=False
+            ):
+                trial_start_time = time.perf_counter()
+                _ = (
+                    query_over_benchmark(
+                        benchmark,
+                        sampling_params,
+                        model,
+                        gen_params,
+                    )
+                    >> LoggingTransform[dict[str, Any]](
+                        experiment.experiment_dir / trial_path
+                    )
+                    >> DevNullReducer[dict[str, Any]]()
+                )
+                run_record["trial_records"][str(trial_path.parent)] = {
+                    "runtime_seconds": time.perf_counter() - trial_start_time,
+                    "trial_log_path": str(trial_path),
+                }
+
+            # Conclude the experiment.
+            run_record["metadata"]["runtime_seconds"] = (
+                time.perf_counter() - experiment_start_time
+            )
+            run_record["metadata"]["end_time"] = current_timestamp()
+
+            # Save the record of the run.
+            experiment_path = experiment.experiment_dir / "experiment.json"
+            write_as_json(experiment_path, run_record)
+            yield experiment_path
+        del model
+
+
+def run_experiment_queries(
+    exp_params: ExperimentParams,
+    sampling_params: DataSamplingParams,
+    engine_params: EngineParams,
+    gen_params: GenParams,
+    datastore_path: Path,
+    parallelize_models: bool = True,
+) -> Iterator[Path]:
+    """Query over given benchmarks for all specified models and generation parameters."""
     assert (
         exp_params.benchmark_names or exp_params.custom_benchmark_paths
     ), "Please specify at least one benchmark to query over using '--benchmarks' or '--custom-benchmark-paths'."
 
-    for annotated_model_path in tqdm(
-        exp_params.model_paths, desc="Models:", unit=" model"
-    ):
-        # Initialize the model from its annotated path.
-        is_model_a_file = annotated_model_path.get_value("is_file")
-        with ReadOnlyDataContext(
-            annotated_model_path.raw_path, is_model_a_file
-        ) as model_path:
-            model_name = annotated_model_path.get_value("name")
-            if model_name is None:
-                model_name = canonical_segment(str(model_path))
-            model_tokenizer = annotated_model_path.get_value("tokenizer")
-            if model_tokenizer is not None:
-                logger.warning(
-                    "Using a tokenizer other than the model's tokenizer is not recommended and may lead to incorrect queries."
+    if parallelize_models:
+        assert (
+            engine_params.engine_type == ModelEngine.VLLM
+        ), "Parallel model execution is only supported for the vLLM engine."
+        logger.info("Parallel execution enabled")
+        for outcome in run_gpu_jobs_in_parallel(
+            [
+                GPUJob(
+                    id=job_id,
+                    fn=partial(
+                        compose(list, _run_single_model),
+                        annotated_model_path=annotated_model_path,
+                        exp_params=exp_params,
+                        sampling_params=sampling_params,
+                        engine_params=dataclasses.replace(
+                            engine_params, num_gpus=num_gpus
+                        ),
+                        gen_params=gen_params,
+                        datastore_path=datastore_path,
+                    ),
+                    need=num_gpus,
                 )
-            model_reasoning_tokens = annotated_model_path.get_value("reasoning_tokens")
-            model_response_pattern = annotated_model_path.get_value("response_pattern")
-
-            model = engine_params.engine_type.create_model(
-                name_or_path=str(model_path),
-                tokenizer_name_or_path=model_tokenizer,
-                num_gpus=engine_params.num_gpus,
-                seed=exp_params.initial_seed,
-                context_len=engine_params.context_length,
-                num_log_probs=(
-                    MAX_LOGITS
-                    if exp_params.generation_mode == GenerationMode.LOGITS
-                    else None
-                ),
-                reasoning_tokens=model_reasoning_tokens,
-                **engine_params.kwargs,
+                for annotated_model_path in exp_params.model_paths
+                if (
+                    num_gpus := annotated_model_path.get_value("num_gpus")
+                    or engine_params.num_gpus
+                )
+                >= 0
+                and (
+                    job_id := annotated_model_path.get_value("name")
+                    or str(annotated_model_path.raw_path)
+                )
+                is not None
+            ]
+        ):
+            if outcome.result is not None:
+                yield from outcome.result
+            else:
+                logger.error(
+                    "Model job '%s' failed with error: %s",
+                    outcome.job_id,
+                    outcome.error,
+                )
+    else:
+        # Sequential model execution.
+        for annotated_model_path in tqdm(
+            exp_params.model_paths, desc="Models:", unit=" model"
+        ):
+            yield from _run_single_model(
+                annotated_model_path=annotated_model_path,
+                exp_params=exp_params,
+                sampling_params=sampling_params,
+                engine_params=engine_params,
+                gen_params=gen_params,
+                datastore_path=datastore_path,
             )
 
-            prompt_formatter = exp_params.prompt_format
-            assert (
-                prompt_formatter in model.supported_formats
-            ), f"Prompt format '{prompt_formatter}' is not supported by the model '{model.name_or_path}'. Supported formats: {model.supported_formats}"
+    # Cleanup GPU processes after all models complete.
+    _killall_gpu_processes()
 
-            # Create the benchmark experiments.
-            # Note: experiments is instantiated as a list so all are validated
-            # before execution begins.
-            experiments = [
-                BenchmarkExperiment(
-                    benchmark_path,
-                    exp_params.generation_mode,
-                    prompt_formatter,
-                    n_shot,
-                    model_name,
-                    gen_params,
-                    datastore_path,
-                    exp_params.num_trials,
-                    initial_seed=exp_params.initial_seed,
-                )
-                for benchmark_path in itertools.chain[Path](
-                    choices_to_benchmarks(exp_params.benchmark_names or []),
-                    [
-                        benchmark_path
-                        for p in exp_params.custom_benchmark_paths or []
-                        for benchmark_path in find_benchmarks(p)
-                    ],
-                )
-                for n_shot in exp_params.n_shot
-            ]
-            for experiment in tqdm(
-                experiments, desc="Benchmarks", unit=" benchmark", leave=False
-            ):
-                # Record the model parameters.
-                experiment_start_time = time.perf_counter()
-                run_record = {
-                    "metadata": {
-                        "start_time": current_timestamp(),
-                        "version": __version__,
-                        "run_args": sys.argv,
-                    },
-                    "experiment_params": {
-                        "benchmark": experiment.benchmark_spec.to_dict(),
-                        "model": {
-                            "name": model_name,
-                            "path": str(model_path),
-                            "response_format": model_response_format_config(
-                                model_response_pattern
-                            ),
-                            "engine": engine_params.to_dict(),
-                            "generation": gen_params.to_dict(),
-                        },
-                    },
-                    "benchmark_config": experiment.benchmark_config,
-                    "trial_records": {},
-                }
 
-                # Execute the trials of the experiment.
-                for benchmark, trial_path in tqdm(
-                    experiment, desc="Trials", unit=" trial", leave=False
-                ):
-                    trial_start_time = time.perf_counter()
-                    _ = (
-                        query_over_benchmark(
-                            benchmark,
-                            sampling_params,
-                            model,
-                            gen_params,
-                        )
-                        >> LoggingTransform[dict[str, Any]](
-                            experiment.experiment_dir / trial_path
-                        )
-                        >> DevNullReducer[dict[str, Any]]()
-                    )
-                    run_record["trial_records"][str(trial_path.parent)] = {
-                        "runtime_seconds": time.perf_counter() - trial_start_time,
-                        "trial_log_path": str(trial_path),
-                    }
-
-                # Conclude the experiment.
-                run_record["metadata"]["runtime_seconds"] = (
-                    time.perf_counter() - experiment_start_time
-                )
-                run_record["metadata"]["end_time"] = current_timestamp()
-
-                # Save the record of the run.
-                experiment_path = experiment.experiment_dir / "experiment.json"
-                write_as_json(experiment_path, run_record)
-                yield experiment_path
-            del model
-
-    # Manually shutdown the vLLM model and exit as it hangs sometimes
+def _killall_gpu_processes() -> None:
+    """Manually shutdown the vLLM model processes on GPU."""
     # NOTE: This workaround kills ALL of the processes on GPU. Use responsibly!
-    pids = get_command_output(
-        "nvidia-smi --query-compute-apps=pid --format=csv,noheader"
-    )
-    if len(pids) > 0:
-        os.system(f"sudo kill -9 {pids}")
+    try:
+        pids = get_command_output(
+            "nvidia-smi --query-compute-apps=pid --format=csv,noheader"
+        )
+        if len(pids) > 0:
+            os.system(f"sudo kill -9 {pids}")
+            logger.info("Cleaned up GPU processes")
+    except subprocess.CalledProcessError as e:
+        logger.warning("Failed to cleanup GPU processes: %s", e)
