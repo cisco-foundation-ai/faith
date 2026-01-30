@@ -253,20 +253,26 @@ def _run_single_model(
         model_reasoning_tokens = annotated_model_path.get_value("reasoning_tokens")
         model_response_pattern = annotated_model_path.get_value("response_pattern")
 
-        model = engine_params.engine_type.create_model(
-            name_or_path=str(model_path),
-            tokenizer_name_or_path=model_tokenizer,
-            num_gpus=engine_params.num_gpus,
-            seed=exp_params.initial_seed,
-            context_len=engine_params.context_length,
-            num_log_probs=(
-                MAX_LOGITS
-                if exp_params.generation_mode == GenerationMode.LOGITS
-                else None
-            ),
-            reasoning_tokens=model_reasoning_tokens,
-            **engine_params.kwargs,
-        )
+        try:
+            model = engine_params.engine_type.create_model(
+                name_or_path=str(model_path),
+                tokenizer_name_or_path=model_tokenizer,
+                num_gpus=engine_params.num_gpus,
+                seed=exp_params.initial_seed,
+                context_len=engine_params.context_length,
+                num_log_probs=(
+                    MAX_LOGITS
+                    if exp_params.generation_mode == GenerationMode.LOGITS
+                    else None
+                ),
+                reasoning_tokens=model_reasoning_tokens,
+                **engine_params.kwargs,
+            )
+        except BaseException as e:
+            # Exceptions from model initialization may not be picklable, so we re-raise
+            # them as RuntimeErrors with the original message.
+            # pylint: disable-next=raise-missing-from
+            raise RuntimeError(f"Failed to initialize model: {e}")
 
         prompt_formatter = exp_params.prompt_format
         assert (
@@ -412,7 +418,7 @@ def run_experiment_queries(
                 yield from outcome.result
             else:
                 logger.error(
-                    "Model job '%s' failed with error: %s",
+                    "Model job '%s' failed; error details:\n\n%s",
                     outcome.job_id,
                     outcome.error,
                 )
