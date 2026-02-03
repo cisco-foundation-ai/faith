@@ -17,6 +17,7 @@ from faith._internal.multiprocessing.gpu_scheduling import (
     GPUJob,
     JobOutcome,
     _AllocatableJob,
+    _detect_available_cpus,
     _detect_available_gpus,
     _execute_in_gpu_context,
     _run_in_parallel,
@@ -41,25 +42,33 @@ def test_set_cuda_visible_devices(gpu_ids: list[str], expected: str) -> None:
 
 
 @pytest.mark.parametrize(
-    "gpu_ids,return_value",
+    "gpu_ids,num_threads,return_value",
     [
-        (["0", "1"], "test_result"),
-        (["2"], 42),
-        ([], {"key": "value"}),
+        (["0", "1"], 4, "test_result"),
+        (["2"], 8, 42),
+        ([], 1, {"key": "value"}),
     ],
 )
-def test_execute_in_gpu_context(gpu_ids: list[str], return_value: object) -> None:
+def test_execute_in_gpu_context(
+    gpu_ids: list[str], num_threads: int, return_value: object
+) -> None:
     """Test executing a function within a GPU context properly sets environment."""
     mock_fn = mock.Mock(return_value=return_value)
 
     with mock.patch(
         "faith._internal.multiprocessing.gpu_scheduling._set_cuda_visible_devices"
-    ) as mock_set_cuda:
-        assert _execute_in_gpu_context(mock_fn, gpu_ids) == return_value
+    ) as mock_set_cuda, mock.patch.dict(os.environ, {}, clear=False):
+        assert _execute_in_gpu_context(mock_fn, num_threads, gpu_ids) == return_value
 
         # Verify that the mock functions were called correctly.
         mock_set_cuda.assert_called_once_with(gpu_ids)
         mock_fn.assert_called_once_with()
+
+        # Verify that thread environment variables were set correctly.
+        assert os.environ["OMP_NUM_THREADS"] == str(num_threads)
+        assert os.environ["MKL_NUM_THREADS"] == str(num_threads)
+        assert os.environ["OPENBLAS_NUM_THREADS"] == str(num_threads)
+        assert os.environ["NUMEXPR_NUM_THREADS"] == str(num_threads)
 
 
 @pytest.mark.parametrize(
@@ -100,6 +109,28 @@ def test_detect_available_gpus_failure(exception_type: Exception) -> None:
     with mock.patch("subprocess.run", side_effect=exception_type):
         with pytest.raises(RuntimeError, match="Failed to detect GPUs via nvidia-smi"):
             _detect_available_gpus()
+
+
+def test_detect_available_cpus_with_sched_getaffinity() -> None:
+    """Test CPU detection using sched_getaffinity when available."""
+    with mock.patch("os.sched_getaffinity", return_value={0, 1, 2, 3}):
+        assert _detect_available_cpus() == 4
+
+
+def test_detect_available_cpus_fallback_to_cpu_count() -> None:
+    """Test CPU detection falls back to cpu_count when sched_getaffinity unavailable."""
+    mock_os = mock.MagicMock(spec=["cpu_count"])
+    mock_os.cpu_count.return_value = 8
+    with mock.patch("faith._internal.multiprocessing.gpu_scheduling.os", mock_os):
+        assert _detect_available_cpus() == 8
+
+
+def test_detect_available_cpus_fallback_to_one() -> None:
+    """Test CPU detection returns 1 when cpu_count returns None."""
+    mock_os = mock.MagicMock(spec=["cpu_count"])
+    mock_os.cpu_count.return_value = None
+    with mock.patch("faith._internal.multiprocessing.gpu_scheduling.os", mock_os):
+        assert _detect_available_cpus() == 1
 
 
 def _resource_counter(resources: list[str]) -> int:

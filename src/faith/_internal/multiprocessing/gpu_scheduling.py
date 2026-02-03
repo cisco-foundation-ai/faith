@@ -60,17 +60,28 @@ def run_gpu_jobs_in_parallel(
     Yields:
         JobOutcome as each job completes (success or failure).
     """
+    # Detect available CPUs for process pool sizing.
+    num_cpus = _detect_available_cpus()
+
     # Detect available GPUs
     gpu_ids = _detect_available_gpus()
     if not gpu_ids:
         raise RuntimeError("No GPUs detected for parallel execution")
+
+    num_threads_per_job = max(1, num_cpus // len(gpu_ids))
+    logger.info(
+        "Running jobs with %d CPUs, %d GPUs, %d threads per job",
+        num_cpus,
+        len(gpu_ids),
+        num_threads_per_job,
+    )
 
     # Run jobs with GPU resource allocation
     yield from _run_in_parallel(
         [
             _AllocatableJob[_RV](
                 id=job.id,
-                fn=partial(_execute_in_gpu_context, job.fn),
+                fn=partial(_execute_in_gpu_context, job.fn, num_threads_per_job),
                 need=job.need,
             )
             for job in jobs
@@ -134,6 +145,17 @@ def _run_in_parallel(
                     available += allocation
 
 
+def _detect_available_cpus() -> int:
+    """Detect the number of available CPUs for this process.
+    Returns:
+        Number of available CPUs.
+    """
+    # Linux/Unix: respects CPU affinity (and often cgroup constraints indirectly)
+    if hasattr(os, "sched_getaffinity"):
+        return len(os.sched_getaffinity(0))
+    return os.cpu_count() or 1
+
+
 def _detect_available_gpus() -> list[Resource]:
     """Query nvidia-smi for available GPU IDs.
 
@@ -161,7 +183,9 @@ def _detect_available_gpus() -> list[Resource]:
         raise RuntimeError("Failed to detect GPUs via nvidia-smi") from e
 
 
-def _execute_in_gpu_context(fn: Callable[[], _RV], gpu_ids: list[Resource]) -> _RV:
+def _execute_in_gpu_context(
+    fn: Callable[[], _RV], num_threads: int, gpu_ids: list[Resource]
+) -> _RV:
     """Execute the function `fn` within a GPU context set.
 
     This function is executed in a separate process and sets CUDA_VISIBLE_DEVICES
@@ -174,7 +198,12 @@ def _execute_in_gpu_context(fn: Callable[[], _RV], gpu_ids: list[Resource]) -> _
     Returns:
         The return value from `fn`.
     """
+    os.environ["OMP_NUM_THREADS"] = str(num_threads)
+    os.environ["MKL_NUM_THREADS"] = str(num_threads)
+    os.environ["OPENBLAS_NUM_THREADS"] = str(num_threads)
+    os.environ["NUMEXPR_NUM_THREADS"] = str(num_threads)
     _set_cuda_visible_devices(gpu_ids)
+
     return fn()
 
 
