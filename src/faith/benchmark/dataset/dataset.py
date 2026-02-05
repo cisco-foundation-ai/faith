@@ -41,13 +41,13 @@ class BenchmarkDataset(ABC):
         self._benchmark_data = benchmark_data
         self._nshot_sampler = nshot_sampler
         self._rng = rng
-        self._ancilliary_columns = ancillary_columns
+        self._ancillary_columns = ancillary_columns
 
     def _extract_ancillary_data(self, sample: pd.Series) -> dict[str, Any] | None:
         """Get the ancillary columns for the benchmark dataset."""
-        if not self._ancilliary_columns:
+        if not self._ancillary_columns:
             return None
-        return {col: sample.get(col, None) for col in self._ancilliary_columns}
+        return {col: sample.get(col, None) for col in self._ancillary_columns}
 
     def _get_nshot_examples(self) -> Sequence[QARecord]:
         """Get the n-shot examples for the prompt."""

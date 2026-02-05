@@ -14,7 +14,7 @@ from faith.model.base import BaseModel
 
 
 # The following functions create instances of different model types and they
-# allow us to only load the necessary model libraries on model creation.abs
+# allow us to only load the necessary model libraries on model creation.
 # This is useful for reducing the initial load time of the script particularly for
 # auto-complete purposes.
 def _create_openai_model(name_or_path: str, **kwargs: Any) -> BaseModel:

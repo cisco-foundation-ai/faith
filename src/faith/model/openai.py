@@ -53,7 +53,7 @@ class OpenAIModel(BaseModel):
     @property
     def supported_formats(self) -> set[PromptFormatter]:
         """Return the supported input formats for the OpenAI-based models."""
-        return set([PromptFormatter.CHAT])
+        return {PromptFormatter.CHAT}
 
     def query(
         self,

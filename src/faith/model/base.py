@@ -102,7 +102,7 @@ class TokenPred(DataClassJsonMixin):
     token: str
     token_id: int
     logprob: float
-    rank: Any | int | None
+    rank: int | None
 
 
 class BaseModel(ABC):
@@ -112,7 +112,7 @@ class BaseModel(ABC):
         """Initialize the base model with the given model `name_or_path`.
 
         Args:
-            name_or_path: the name/path that idenifies the model for loading.
+            name_or_path: the name/path that identifies the model for loading.
         """
         self._name_or_path = name_or_path
 

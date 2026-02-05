@@ -91,7 +91,7 @@ class SABenchmark(BaseBenchmark):
         if self.generation_mode == GenerationMode.CHAT_COMPLETION:
             return ChatCompletionLogGrader(op_cfg, model_format_config, recompute_stats)
         raise ValueError(
-            f"Unsupported generation mode: {self.generation_mode} for multiple-choice log grading."
+            f"Unsupported generation mode: {self.generation_mode} for short answer log grading."
         )
 
     def grade_aggregator(self) -> GradeAggregator:
@@ -106,7 +106,7 @@ class SABenchmarkDataset(BenchmarkDataset):
         self,
         formatter: QAFormatter,
         benchmark_data: pd.DataFrame,
-        nshot_samlper: NShotSampler,
+        nshot_sampler: NShotSampler,
         rng: np.random.Generator,
         ancillary_columns: frozenset[str] = frozenset(),
     ):
@@ -114,7 +114,7 @@ class SABenchmarkDataset(BenchmarkDataset):
         super().__init__(
             formatter,
             benchmark_data,
-            nshot_samlper,
+            nshot_sampler,
             rng,
             required_columns=frozenset({"question", "answer"}),
             ancillary_columns=ancillary_columns,

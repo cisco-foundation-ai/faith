@@ -61,7 +61,7 @@ class LABenchmark(BaseBenchmark):
         return LABenchmarkDataset(
             formatter=self.formatter,
             benchmark_data=benchmark_data,
-            nshot_samlper=nshot_sampler,
+            nshot_sampler=nshot_sampler,
             rng=rng,
             ancillary_columns=ancillary_columns,
         )
@@ -86,13 +86,13 @@ class LABenchmark(BaseBenchmark):
 
 
 class LABenchmarkDataset(BenchmarkDataset):
-    """Static dataset for short answer benchmarks."""
+    """Static dataset for long answer benchmarks."""
 
     def __init__(
         self,
         formatter: QAFormatter,
         benchmark_data: pd.DataFrame,
-        nshot_samlper: NShotSampler,
+        nshot_sampler: NShotSampler,
         rng: np.random.Generator,
         ancillary_columns: frozenset[str] = frozenset(),
     ):
@@ -100,7 +100,7 @@ class LABenchmarkDataset(BenchmarkDataset):
         super().__init__(
             formatter,
             benchmark_data,
-            nshot_samlper,
+            nshot_sampler,
             rng,
             required_columns=frozenset({"question"}),
             ancillary_columns=ancillary_columns,

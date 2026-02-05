@@ -195,7 +195,7 @@ class VLLMModel(_VLLMBackend):
     @property
     def supported_formats(self) -> set[PromptFormatter]:
         """Return the supported input formats for the model."""
-        formats = set([PromptFormatter.BASE])
+        formats = {PromptFormatter.BASE}
         if hasattr(self.tokenizer, "chat_template") and self.tokenizer.chat_template:
             formats.add(PromptFormatter.CHAT)
         return formats

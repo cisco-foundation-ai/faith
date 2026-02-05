@@ -34,12 +34,12 @@ class _TransformCompose(Transform[_IN, _OTHER], Generic[_IN, _OUT, _OTHER]):
 
     def __init__(self, first: Transform[_IN, _OUT], second: Transform[_OUT, _OTHER]):
         """Initialize with two transforms."""
-        self.first = first
-        self.second = second
+        self._first = first
+        self._second = second
 
     def __call__(self, src: Iterable[_IN]) -> Iterable[_OTHER]:
         """Apply the first transform and then the second transform."""
-        return src >> self.first >> self.second
+        return src >> self._first >> self._second
 
 
 class IsoTransform(Transform[_IN, _IN], Generic[_IN]):
