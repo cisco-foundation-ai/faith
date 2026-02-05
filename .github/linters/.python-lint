@@ -11,7 +11,7 @@ typevar-rgx=^_?[A-Z][A-Z0-9]*(?:_[A-Z][A-Z0-9]*)*$
 
 # Options for functions / methods.
 ignored-argument-names=_.*
-max-args=10
+max-args=15
 max-branches=10
 max-positional-arguments=10
 max-locals=15

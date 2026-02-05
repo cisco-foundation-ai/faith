@@ -37,6 +37,16 @@ def _create_vllm_model(name_or_path: str, **kwargs: Any) -> BaseModel:
     return VLLMModel(name_or_path, **kwargs)
 
 
+def _create_sagemaker_model(name_or_path: str, **kwargs: Any) -> BaseModel:
+    # We disable the import-outside-toplevel pylint rule here because
+    # the imports required each model type are only installed as package extras
+    # to allow for a smaller install footprint.
+    # pylint: disable=import-outside-toplevel
+    from faith.model.sagemaker import SageMakerModel
+
+    return SageMakerModel(name_or_path, **kwargs)
+
+
 class ModelEngine(Enum):
     """Enum representing different model engines and their factory methods.
 
@@ -47,6 +57,7 @@ class ModelEngine(Enum):
 
     OPENAI = (_create_openai_model,)
     VLLM = (_create_vllm_model,)
+    SAGEMAKER = (_create_sagemaker_model,)
 
     def __init__(self, create_model_fn: Callable[[str], BaseModel]) -> None:
         """Initialize the ModelEngine enum with its corresponding factory function."""

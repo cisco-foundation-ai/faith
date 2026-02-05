@@ -15,7 +15,7 @@ from faith.model.openai import OpenAIModel
 
 @patch("faith.model.openai.OpenAI", spec=True)
 def test_openai_model(mock_openai_client_class: Mock) -> None:
-    # Initialize the OpenAI model with a mock API key
+    # Initialize the OpenAI model with a mock API key.
     model = OpenAIModel("fake_model")
     mock_openai_client_class.assert_called_once_with(api_key=None)
 
@@ -23,7 +23,7 @@ def test_openai_model(mock_openai_client_class: Mock) -> None:
     assert model.name_or_path == "fake_model"
     assert model.supported_formats == {PromptFormatter.CHAT}
 
-    # Test a simple generation call (mocked)
+    # Test a simple generation call (mocked).
     mock_openai_instance = mock_openai_client_class.return_value
     mock_openai_instance.chat.completions.create.return_value = ChatCompletion(
         id="chatcmpl-1234567890",
