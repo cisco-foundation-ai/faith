@@ -7,7 +7,12 @@
 import re
 from typing import Any
 
-from faith._internal.algo.matching import AnswerFormat, SequentialMatcher, SimpleMatcher
+from faith._internal.algo.matching import (
+    AnswerFormat,
+    Matcher,
+    SequentialMatcher,
+    SimpleMatcher,
+)
 from faith._internal.metrics.types import Labeling
 from faith.benchmark.grading.log_grader import LogGrader
 
@@ -83,12 +88,11 @@ class NextTokenLogGrader(LogGrader):
     def __init__(
         self,
         output_processing_config: dict[str, Any],
-        model_format_config: dict[str, Any],
         recompute_stats: bool,
         answer_set: frozenset[str],
     ):
         """Initialize the next token log grader."""
-        super().__init__(output_processing_config, model_format_config, recompute_stats)
+        super().__init__(output_processing_config, recompute_stats)
         assert (
             len(answer_set) > 0
         ), "A non-empty answer set must be provided for next token log grader."
@@ -132,28 +136,30 @@ class ChatCompletionLogGrader(LogGrader):
         recompute_stats: bool,
     ):
         """Initialize the chat completion log grader."""
-        super().__init__(output_processing_config, model_format_config, recompute_stats)
-        self._answer_matcher = SimpleMatcher(model_format_config) | SequentialMatcher(
-            *(output_processing_config.get("answer_formats", None) or [])
-        )
+        super().__init__(output_processing_config, recompute_stats)
+        self._answer_matcher: Matcher[Any] = SimpleMatcher(model_format_config)
+        if answer_formats := output_processing_config.get("answer_formats", None):
+            self._answer_matcher |= SequentialMatcher(*answer_formats)
 
     def _markup_entry_impl(self, log_entry: dict[str, Any]) -> dict[str, Any]:
         """Markup a single log entry with the computed statistics / scores."""
         label: Labeling = log_entry["data"]["label"]
-        extracted_pred: Labeling | None = None
+        extracted_answer: Labeling | None = None
         answer_format = AnswerFormat.INVALID
+
         # TODO(https://github.com/RobustIntelligence/faith/issues/286): Remove the use
         # of 'output_text' once we fully migrate to 'answer_text' at the next major
         # release.
-        if (chat_comp := log_entry["model_data"].get("chat_comp", {})) and (
-            answer_text := chat_comp.get("answer_text", None)
-            or chat_comp.get("output_text", None)
-        ):
-            extracted_pred, answer_format = self._answer_matcher(answer_text)
+        chat_comp = log_entry["model_data"].get("chat_comp", {})
+        answer_text = chat_comp.get("answer_text", None) or chat_comp.get(
+            "output_text", None
+        )
+        if chat_comp and answer_text:
+            extracted_answer, answer_format = self._answer_matcher(answer_text)
 
         log_entry["stats"] = {
             "label": label,
-            "prediction": extracted_pred,
+            "prediction": extracted_answer,
             "answer_format": answer_format,
             "subject": log_entry["data"].get("subject", None),
             "num_output_tokens": log_entry["model_data"]
@@ -164,7 +170,7 @@ class ChatCompletionLogGrader(LogGrader):
             .get("max_token_halt", False),
         } | self._custom_scores(
             label,
-            extracted_pred,
+            extracted_answer,
             ancillary_data=log_entry["data"].get("ancillary_data", None),
         )
         return log_entry

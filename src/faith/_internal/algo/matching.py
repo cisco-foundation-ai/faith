@@ -7,6 +7,7 @@
 import json
 import re
 from abc import ABC, abstractmethod
+from collections import namedtuple
 from enum import Enum
 from typing import Any, Generic, TypeVar, cast
 
@@ -145,15 +146,18 @@ class _FormatPattern:
         return None
 
 
-_MATCH_TYPE = TypeVar("_MATCH_TYPE")
-_OTHER_TYPE = TypeVar("_OTHER_TYPE")
+_MATCH_TYPE = TypeVar("_MATCH_TYPE", covariant=True)
+_OTHER_TYPE = TypeVar("_OTHER_TYPE", covariant=True)
+
+
+Match = namedtuple("Match", ["value", "answer_format"])
 
 
 class Matcher(ABC, Generic[_MATCH_TYPE]):
     """Base class for a matcher that matches a string."""
 
     @abstractmethod
-    def __call__(self, s: str) -> _MATCH_TYPE:
+    def __call__(self, s: str) -> Match:
         """Match the string `s`.
 
         Args:
@@ -173,9 +177,9 @@ class _MatcherCompose(Matcher, Generic[_MATCH_TYPE]):
         self.first = first
         self.second = second
 
-    def __call__(self, s: str) -> _MATCH_TYPE:
+    def __call__(self, s: str) -> Match:
         """Apply the matchers in sequence."""
-        return self.second(self.first(s))
+        return self.second(self.first(s).value or "")
 
 
 class SimpleMatcher(Matcher[str]):
@@ -185,17 +189,20 @@ class SimpleMatcher(Matcher[str]):
         """Initialize with a single pattern definition."""
         self._pattern = _FormatPattern(pattern_def)
 
-    def __or__(self, other: "Matcher[_OTHER_TYPE]") -> "Matcher[_OTHER_TYPE]":
+    def __or__(self, other: Matcher[_OTHER_TYPE]) -> Matcher[_OTHER_TYPE]:
         """Allow composition of matchers with the | operator."""
         return _MatcherCompose(self, other)
 
-    def __call__(self, s: str) -> str:
+    def __call__(self, s: str) -> Match:
         """Match the string `s` with the regex pattern."""
-        match = self._pattern(s)
-        return cast(str, match[0]) if match is not None else ""
+        match_text, match_format = self._pattern(s) or (None, AnswerFormat.INVALID)
+        return Match(
+            value=cast(str, match_text) if match_text is not None else None,
+            answer_format=match_format,
+        )
 
 
-class SequentialMatcher(Matcher[tuple[Any, AnswerFormat]]):
+class SequentialMatcher(Matcher[Any]):
     """Match a string against multiple patterns in sequence, returning the first match."""
 
     def __init__(self, *pattern_defs: dict[str, Any]):
@@ -210,10 +217,9 @@ class SequentialMatcher(Matcher[tuple[Any, AnswerFormat]]):
             for pattern in self._patterns[1:]
         ), "Only the first pattern can have a proper answer format."
 
-    def __call__(self, s: str) -> tuple[Any, AnswerFormat]:
+    def __call__(self, s: str) -> Match:
         """Match the string `s` with the regex pattern."""
         for pattern in self._patterns:
-            match = pattern(s)
-            if match is not None:
-                return match
-        return None, AnswerFormat.INVALID
+            if (match := pattern(s)) is not None:
+                return Match(*match)
+        return Match(value=None, answer_format=AnswerFormat.INVALID)

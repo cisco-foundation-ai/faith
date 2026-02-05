@@ -20,7 +20,7 @@ max-statements=30
 
 # Options for class checks.
 max-attributes=25
-max-parents=5
+max-parents=10
 min-public-methods=0
 max-public-methods=10
 
@@ -56,7 +56,7 @@ ignore-long-lines=(?x)
 # Rules disabled globally.
 # import-error: Disabled since dependencies are not installed in the CI environment.
 # missing-module-docstring: Disabled to not require docstrings for __init__.py and test_*.py files.
-disable=import-error,missing-module-docstring
+disable=import-error,missing-module-docstring,typevar-name-incorrect-variance
 
 # Number of processes to use for parallel checking.
 # Specifying 0 will auto-detect the number of processors available.

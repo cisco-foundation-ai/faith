@@ -163,11 +163,9 @@ class MCBenchmark(BaseBenchmark):
         """Fetch a log grader for this benchmark."""
         op_cfg = self._config["output_processing"]
         if self.generation_mode == GenerationMode.LOGITS:
-            return LogitsLogGrader(op_cfg, model_format_config, recompute_stats)
+            return LogitsLogGrader(op_cfg, recompute_stats)
         if self.generation_mode == GenerationMode.NEXT_TOKEN:
-            return NextTokenLogGrader(
-                op_cfg, model_format_config, recompute_stats, self.answer_set
-            )
+            return NextTokenLogGrader(op_cfg, recompute_stats, self.answer_set)
         if self.generation_mode == GenerationMode.CHAT_COMPLETION:
             return ChatCompletionLogGrader(op_cfg, model_format_config, recompute_stats)
         raise ValueError(

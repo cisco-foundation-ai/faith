@@ -3,19 +3,20 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from enum import Enum
-from typing import Any, Sequence, cast
+from typing import Any, Sequence
 
 import numpy as np
 import pandas as pd
 
 from faith._internal.algo.hash import dict_sha256
-from faith._internal.algo.matching import AnswerFormat, SimpleMatcher
+from faith._internal.algo.matching import AnswerFormat
 from faith._internal.algo.sampling import NShotSampler
 from faith._internal.metrics.llm import llm_basic_metrics, llm_metadata_metrics
 from faith._internal.types.flags import GenerationMode
 from faith.benchmark.benchmark import BaseBenchmark
 from faith.benchmark.dataset.dataset import BenchmarkDataset
 from faith.benchmark.formatting.qa import QAFormatter, QARecord
+from faith.benchmark.grading.common_graders import ChatCompletionLogGrader
 from faith.benchmark.grading.grade_aggregator import GradeAggregator
 from faith.benchmark.grading.log_grader import LogGrader
 from faith.benchmark.scores.types import Score
@@ -75,7 +76,7 @@ class LABenchmark(BaseBenchmark):
             self.generation_mode == GenerationMode.CHAT_COMPLETION
             and self._answer_type == LongAnswerType.FREE_FORM
         ):
-            return LALogGrader(op_cfg, model_format_config, recompute_stats)
+            return ChatCompletionLogGrader(op_cfg, model_format_config, recompute_stats)
         raise ValueError(
             f"Unsupported generation mode: {self.generation_mode} for long answer log grading."
         )
@@ -121,55 +122,6 @@ class LABenchmarkDataset(BenchmarkDataset):
             subject=sample.get("subject", None),
             ancillary_data=self._extract_ancillary_data(sample),
         )
-
-
-class LALogGrader(LogGrader):
-    """A log grader for long-answer chat completions."""
-
-    def __init__(
-        self,
-        output_processing_config: dict[str, Any],
-        model_format_config: dict[str, Any],
-        recompute_stats: bool,
-    ):
-        """Initialize the judge-based log grader."""
-        super().__init__(output_processing_config, model_format_config, recompute_stats)
-        self._answer_extractor = SimpleMatcher(model_format_config)
-
-    def _markup_entry_impl(self, log_entry: dict[str, Any]) -> dict[str, Any]:
-        """Markup a single log entry with the computed statistics / scores."""
-        correct_answer = cast(str, log_entry["data"]["label"])
-        gen_answer: str | None = None
-        answer_format = AnswerFormat.INVALID
-        # TODO(https://github.com/RobustIntelligence/faith/issues/286): Remove the use
-        # of 'output_text' once we fully migrate to 'answer_text' at the next major
-        # release.
-        if (chat_comp := log_entry["model_data"].get("chat_comp", {})) and (
-            answer_text := chat_comp.get("answer_text", None)
-            or chat_comp.get("output_text", None)
-        ):
-            gen_answer, answer_format = (
-                self._answer_extractor(answer_text),
-                AnswerFormat.PROPER,
-            )
-
-        log_entry["stats"] = {
-            "label": correct_answer,
-            "prediction": gen_answer,
-            "answer_format": answer_format,
-            "subject": log_entry["data"].get("subject", None),
-            "num_output_tokens": log_entry["model_data"]
-            .get("chat_comp", {})
-            .get("num_output_tokens", 0),
-            "max_token_halt": log_entry["model_data"]
-            .get("chat_comp", {})
-            .get("max_token_halt", False),
-        } | self._custom_scores(
-            correct_answer,
-            gen_answer,
-            ancillary_data=log_entry["data"].get("ancillary_data", None),
-        )
-        return log_entry
 
 
 class LAMetricsAggregator(GradeAggregator):

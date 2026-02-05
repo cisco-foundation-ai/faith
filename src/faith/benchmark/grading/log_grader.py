@@ -25,7 +25,6 @@ class LogGrader(IsoTransform[dict[str, Any]]):
     def __init__(
         self,
         output_processing_config: dict[str, Any],
-        _model_format_config: dict[str, Any],
         recompute_stats: bool,
     ):
         """Initialize the logs grader."""

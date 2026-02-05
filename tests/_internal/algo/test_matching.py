@@ -9,6 +9,7 @@ import pytest
 
 from faith._internal.algo.matching import (
     AnswerFormat,
+    Match,
     MatchDisambiguation,
     SequentialMatcher,
     SimpleMatcher,
@@ -272,11 +273,11 @@ def test_simple_matcher() -> None:
         }
     )
 
-    assert matcher("5 + 7") == "5"
-    assert matcher("5 + 7 or 5+7") == ""
-    assert matcher("abc") == ""
-    assert matcher("57 abc") == ""
-    assert matcher("5 or 5 and 5") == ""
+    assert matcher("5 + 7") == Match("5", AnswerFormat.PROPER)
+    assert matcher("5 + 7 or 5+7") == Match(None, AnswerFormat.INVALID)
+    assert matcher("abc") == Match(None, AnswerFormat.INVALID)
+    assert matcher("57 abc") == Match(None, AnswerFormat.INVALID)
+    assert matcher("5 or 5 and 5") == Match(None, AnswerFormat.INVALID)
 
 
 def test_sequential_matcher() -> None:
@@ -350,8 +351,8 @@ def test_matcher_composition() -> None:
     )
     matcher = matcher1 | matcher2
 
-    assert matcher("85 + 7") == "8"
-    assert matcher("57 abc") == ""
-    assert matcher("abc") == ""
-    assert matcher("5 or 5 and 5") == ""
-    assert matcher("5 + 7 or 5+7") == ""
+    assert matcher("85 + 7") == Match("8", AnswerFormat.PROPER)
+    assert matcher("57 abc") == Match(None, AnswerFormat.INVALID)
+    assert matcher("abc") == Match(None, AnswerFormat.INVALID)
+    assert matcher("5 or 5 and 5") == Match(None, AnswerFormat.INVALID)
+    assert matcher("5 + 7 or 5+7") == Match(None, AnswerFormat.INVALID)
