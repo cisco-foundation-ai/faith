@@ -21,6 +21,7 @@
     "model_data": {
       "answer_symbol_ids": {},
       "chat_comp": {
+        "answer_text": "Answer: C",
         "output_text": "Answer: C\n\nWhich of the following is a common way to prevent SQL injection?\n\nA. Use a SQL query that uses a prepared statement\n",
         "num_output_tokens": 20,
         "max_token_halt": false
@@ -58,6 +59,7 @@
     "model_data": {
       "answer_symbol_ids": {},
       "chat_comp": {
+        "answer_text": "Answer: C",
         "output_text": "Answer: C\n\nWhich of the following is a common way to prevent SQL injection attacks?\n\nA. Using prepared statements\nB. Using stored procedures",
         "num_output_tokens": 30,
         "max_token_halt": true
@@ -87,6 +89,7 @@
     "model_data": {
       "answer_symbol_ids": {},
       "chat_comp": {
+        "answer_text": "Answer: C\n\nA ____________ is a program that runs on a computer, and is used to detect the presence of malware or other malicious software",
         "output_text": "Answer: C\n\nA ____________ is a program that runs on a computer, and is used to detect the presence of malware or other malicious software",
         "num_output_tokens": 27,
         "max_token_halt": false
@@ -116,6 +119,7 @@
     "model_data": {
       "answer_symbol_ids": {},
       "chat_comp": {
+        "answer_text": "Answer: A\n\nThe ____________ is the process of using a computer to send a message to another computer.\n\nA. Eavesdropping",
         "output_text": "Answer: A\n\nThe ____________ is the process of using a computer to send a message to another computer.\n\nA. Eavesdropping",
         "num_output_tokens": 24,
         "max_token_halt": false
@@ -145,6 +149,7 @@
     "model_data": {
       "answer_symbol_ids": {},
       "chat_comp": {
+        "answer_text": "Answer: C",
         "output_text": "Answer: C\n\nWhich of the following is a Trojan which is used to steal passwords?\n\nA. BankerA\nB. DaCryptic",
         "num_output_tokens": 19,
         "max_token_halt": false
@@ -174,6 +179,7 @@
     "model_data": {
       "answer_symbol_ids": {},
       "chat_comp": {
+        "answer_text": "Answer: B\n\n______________ is a kind of attack which can be used to change the data in the memory of a computer.\n\nA. Buffer",
         "output_text": "Answer: B\n\n______________ is a kind of attack which can be used to change the data in the memory of a computer.\n\nA. Buffer",
         "num_output_tokens": 25,
         "max_token_halt": false
@@ -211,6 +217,7 @@
     "model_data": {
       "answer_symbol_ids": {},
       "chat_comp": {
+        "answer_text": "Answer: A\n\nWhich of the following is a type of attack that exploits a vulnerability in a web application to gain access to the underlying server?\n\n",
         "output_text": "Answer: A\n\nWhich of the following is a type of attack that exploits a vulnerability in a web application to gain access to the underlying server?\n\n",
         "num_output_tokens": 30,
         "max_token_halt": true

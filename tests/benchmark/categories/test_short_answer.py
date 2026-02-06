@@ -364,6 +364,7 @@ def test_short_answer_benchmark_process_logs_chat() -> None:
                     "data": {"label": "foo", "subject": "bar"},
                     "model_data": {
                         "chat_comp": {
+                            "answer_text": "<t>Maybe </t>Answer: bar</t>Answer: foo",
                             "output_text": "<t>Maybe </t>Answer: bar</t>Answer: foo",
                             "num_output_tokens": 3,
                             "max_token_halt": False,
@@ -374,6 +375,7 @@ def test_short_answer_benchmark_process_logs_chat() -> None:
                     "data": {"label": "foo", "subject": "bar"},
                     "model_data": {
                         "chat_comp": {
+                            "answer_text": "<t>Maybe Answer: foo",
                             "output_text": "<t>Maybe Answer: foo",
                             "num_output_tokens": 3,
                             "max_token_halt": True,
@@ -384,6 +386,7 @@ def test_short_answer_benchmark_process_logs_chat() -> None:
                     "data": {"label": "bar"},
                     "model_data": {
                         "chat_comp": {
+                            "answer_text": "<answer>BaZ</answer>",
                             "output_text": "<answer>BaZ</answer>",
                             "num_output_tokens": 5,
                             "max_token_halt": False,
@@ -394,6 +397,7 @@ def test_short_answer_benchmark_process_logs_chat() -> None:
                     "data": {"label": "baz"},
                     "model_data": {
                         "chat_comp": {
+                            "answer_text": "uhm... I have no earthly idea",
                             "output_text": "uhm... I have no earthly idea",
                             "num_output_tokens": 8,
                             "max_token_halt": True,

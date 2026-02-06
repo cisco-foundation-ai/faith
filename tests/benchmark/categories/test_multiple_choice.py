@@ -741,6 +741,7 @@ Choices:
                     "data": {"label": "A"},
                     "model_data": {
                         "chat_comp": {
+                            "answer_text": "Antwort--> A",
                             "output_text": "Antwort--> A",
                             "num_output_tokens": 3,
                             "max_token_halt": False,
@@ -758,6 +759,7 @@ Choices:
                     "data": {"label": "B"},
                     "model_data": {
                         "chat_comp": {
+                            "answer_text": "uhm... I have no earthly idea",
                             "output_text": "uhm... I have no earthly idea",
                             "num_output_tokens": 7,
                             "max_token_halt": True,
@@ -797,6 +799,7 @@ Choices:
                 "data": {"label": "A"},
                 "model_data": {
                     "chat_comp": {
+                        "answer_text": "Antwort--> A",
                         "output_text": "Antwort--> A",
                         "num_output_tokens": 4,
                         "max_token_halt": False,
@@ -807,6 +810,7 @@ Choices:
                 "data": {"label": "B"},
                 "model_data": {
                     "chat_comp": {
+                        "answer_text": ":think-on:I think the answer is B or A.:think-off:Guessing...\n\nAnswer: A",
                         "output_text": ":think-on:I think the answer is B or A.:think-off:Guessing...\n\nAnswer: A",
                         "num_output_tokens": 17,
                         "max_token_halt": True,
@@ -817,6 +821,7 @@ Choices:
                 "data": {"label": "A"},
                 "model_data": {
                     "chat_comp": {
+                        "answer_text": "If I had to guess, I would say A",
                         "output_text": "If I had to guess, I would say A",
                         "num_output_tokens": 10,
                         "max_token_halt": False,

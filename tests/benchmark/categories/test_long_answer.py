@@ -632,6 +632,7 @@ SUMMARY: [your summary text]""",
                     },
                     "model_data": {
                         "chat_comp": {
+                            "answer_text": "<t>Maybe </t>Answer: bar</t>Answer: foo",
                             "output_text": "<t>Maybe </t>Answer: bar</t>Answer: foo",
                             "num_output_tokens": 3,
                             "max_token_halt": False,
@@ -646,6 +647,7 @@ SUMMARY: [your summary text]""",
                     },
                     "model_data": {
                         "chat_comp": {
+                            "answer_text": "<t>Maybe Answer: foo",
                             "output_text": "<t>Maybe Answer: foo",
                             "num_output_tokens": 3,
                             "max_token_halt": True,
@@ -656,6 +658,7 @@ SUMMARY: [your summary text]""",
                     "data": {"label": "bar", "question_prompt": "Question: baz"},
                     "model_data": {
                         "chat_comp": {
+                            "answer_text": "<answer>BaZ</answer>",
                             "output_text": "<answer>BaZ</answer>",
                             "num_output_tokens": 5,
                             "max_token_halt": False,

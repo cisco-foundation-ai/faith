@@ -147,14 +147,8 @@ class ChatCompletionLogGrader(LogGrader):
         extracted_answer: Labeling | None = None
         answer_format = AnswerFormat.INVALID
 
-        # TODO(https://github.com/RobustIntelligence/faith/issues/286): Remove the use
-        # of 'output_text' once we fully migrate to 'answer_text' at the next major
-        # release.
         chat_comp = log_entry["model_data"].get("chat_comp", {})
-        answer_text = chat_comp.get("answer_text", None) or chat_comp.get(
-            "output_text", None
-        )
-        if chat_comp and answer_text:
+        if (answer_text := chat_comp.get("answer_text", None)) is not None:
             extracted_answer, answer_format = self._answer_matcher(answer_text)
 
         log_entry["stats"] = {
@@ -162,12 +156,8 @@ class ChatCompletionLogGrader(LogGrader):
             "prediction": extracted_answer,
             "answer_format": answer_format,
             "subject": log_entry["data"].get("subject", None),
-            "num_output_tokens": log_entry["model_data"]
-            .get("chat_comp", {})
-            .get("num_output_tokens", 0),
-            "max_token_halt": log_entry["model_data"]
-            .get("chat_comp", {})
-            .get("max_token_halt", False),
+            "num_output_tokens": chat_comp.get("num_output_tokens", 0),
+            "max_token_halt": chat_comp.get("max_token_halt", False),
         } | self._custom_scores(
             label,
             extracted_answer,
