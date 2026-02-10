@@ -31,7 +31,7 @@ benchmark: !from
               # Some choices in this dataset are the literal value "None", which we want to
               # keep as a choice, but as a string, not a null value.
               choices=[
-                  [str(c) for c in lst]
+                  [c if str(c) == c else "None" for c in lst]
                   for lst in df[sorted(col for col in df.columns if col.startswith("Option"))].values.tolist()
               ],
           )[["question", "choices", "answer"]]
