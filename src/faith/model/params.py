@@ -20,19 +20,19 @@ class EngineParams(DataClassJsonMixin):
     engine_type: ModelEngine = field(
         metadata=config(decoder=ModelEngine.from_string, encoder=str)
     )
-    num_gpus: int
-    context_length: int
-    kwargs: dict[str, Any]
+    num_gpus: int = 1
+    context_length: int = 3500
+    kwargs: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
 class GenParams(DataClassJsonMixin):
     """Parameters for generation."""
 
-    temperature: float
-    top_p: float
-    max_completion_tokens: int
-    kwargs: dict[str, Any]
+    temperature: float = 0.0
+    top_p: float = 1.0
+    max_completion_tokens: int = 500
+    kwargs: dict[str, Any] = field(default_factory=dict)
 
     def sha256(self) -> str:
         """Compute the SHA-256 hash of the generation parameters."""

@@ -7,6 +7,7 @@
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
+from types import MappingProxyType
 from typing import Any, Callable, Generic, TypeVar
 
 
@@ -128,6 +129,10 @@ class PathWithAnnotations:
     def get_value(self, key: str) -> Any:
         """Get the value associated with a specific annotation key."""
         return self._values[key]
+
+    def values(self) -> MappingProxyType[str, Any]:
+        """Return a dictionary of all annotation keys and their associated values."""
+        return MappingProxyType(self._values)
 
 
 class AnnotatedPath:

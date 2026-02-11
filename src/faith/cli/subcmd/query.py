@@ -4,7 +4,6 @@
 
 """Functions to execute queries from benchmarks on models and collect their responses."""
 
-import dataclasses
 import itertools
 import logging
 import os
@@ -15,18 +14,16 @@ from datetime import datetime
 from enum import Enum
 from functools import partial
 from pathlib import Path
-from typing import Any, Iterable, Iterator, Type
+from typing import Any, Iterable, Iterator, Sequence, Type
 from zoneinfo import ZoneInfo
 
 from tqdm import tqdm
 
 from faith import __version__
-from faith._internal.config.model_response import model_response_format_config
 from faith._internal.functools.compose import compose
 from faith._internal.io.datastore import ReadOnlyDataContext
 from faith._internal.io.json import write_as_json
 from faith._internal.io.logging import LoggingTransform
-from faith._internal.io.paths import canonical_segment
 from faith._internal.iter.transform import DevNullReducer, IsoTransform
 from faith._internal.multiprocessing.gpu_scheduling import (
     GPUJob,
@@ -39,7 +36,8 @@ from faith.experiment.experiment import BenchmarkExperiment
 from faith.experiment.params import DataSamplingParams, ExperimentParams
 from faith.model.base import BaseModel, ChatResponse, GenerationError
 from faith.model.model_engine import ModelEngine
-from faith.model.params import EngineParams, GenParams
+from faith.model.params import GenParams
+from faith.model.spec import ModelSpec
 
 logger = logging.getLogger(__name__)
 
@@ -215,22 +213,19 @@ class _ModelMethod(Enum):
 
 
 def _run_single_model(
-    annotated_model_path,
+    model_spec: ModelSpec,
     exp_params: ExperimentParams,
     sampling_params: DataSamplingParams,
-    engine_params: EngineParams,
-    gen_params: GenParams,
     datastore_path: Path,
 ) -> Iterator[Path]:
     """
     Run benchmarks for a single model.
 
     Args:
-        annotated_model_path: Annotated path to the model
+        model_spec: Specification of the model to run, including path, engine,
+            and generation parameters.
         exp_params: Experiment parameters
         sampling_params: Data sampling parameters
-        engine_params: Engine parameters
-        gen_params: Generation parameters
         datastore_path: Path to datastore
 
     Yields:
@@ -238,35 +233,26 @@ def _run_single_model(
     """
     # Initialize the model from its annotated path.
     # pylint: disable=too-many-locals
-    is_model_a_file = annotated_model_path.get_value("is_file")
-    with ReadOnlyDataContext(
-        annotated_model_path.raw_path, is_model_a_file
-    ) as model_path:
-        model_name = annotated_model_path.get_value("name")
-        if model_name is None:
-            model_name = canonical_segment(str(model_path))
-        model_tokenizer = annotated_model_path.get_value("tokenizer")
-        if model_tokenizer is not None:
+    with ReadOnlyDataContext(model_spec.path, model_spec.is_file) as model_path:
+        if model_spec.tokenizer is not None:
             logger.warning(
                 "Using a tokenizer other than the model's tokenizer is not recommended and may lead to incorrect queries."
             )
-        model_reasoning_tokens = annotated_model_path.get_value("reasoning_tokens")
-        model_response_pattern = annotated_model_path.get_value("response_pattern")
 
         try:
-            model = engine_params.engine_type.create_model(
+            model = model_spec.engine.engine_type.create_model(
                 name_or_path=str(model_path),
-                tokenizer_name_or_path=model_tokenizer,
-                num_gpus=engine_params.num_gpus,
+                tokenizer_name_or_path=model_spec.tokenizer,
+                num_gpus=model_spec.engine.num_gpus,
                 seed=exp_params.initial_seed,
-                context_len=engine_params.context_length,
+                context_len=model_spec.engine.context_length,
                 num_log_probs=(
                     MAX_LOGITS
                     if exp_params.generation_mode == GenerationMode.LOGITS
                     else None
                 ),
-                reasoning_tokens=model_reasoning_tokens,
-                **engine_params.kwargs,
+                reasoning_spec=model_spec.reasoning,
+                **model_spec.engine.kwargs,
             )
         except BaseException as e:
             # Exceptions from model initialization may not be picklable, so we re-raise
@@ -288,8 +274,8 @@ def _run_single_model(
                 exp_params.generation_mode,
                 prompt_formatter,
                 n_shot,
-                model_name,
-                gen_params,
+                model_spec.name,
+                model_spec.generation,
                 datastore_path,
                 exp_params.num_trials,
                 initial_seed=exp_params.initial_seed,
@@ -317,15 +303,7 @@ def _run_single_model(
                 },
                 "experiment_params": {
                     "benchmark": experiment.benchmark_spec.to_dict(),
-                    "model": {
-                        "name": model_name,
-                        "path": str(model_path),
-                        "response_format": model_response_format_config(
-                            model_response_pattern
-                        ),
-                        "engine": engine_params.to_dict(),
-                        "generation": gen_params.to_dict(),
-                    },
+                    "model": model_spec.to_dict(),
                 },
                 "benchmark_config": experiment.benchmark_config,
                 "trial_records": {},
@@ -341,7 +319,7 @@ def _run_single_model(
                         benchmark,
                         sampling_params,
                         model,
-                        gen_params,
+                        model_spec.generation,
                     )
                     >> LoggingTransform[dict[str, Any]](
                         experiment.experiment_dir / trial_path
@@ -367,10 +345,9 @@ def _run_single_model(
 
 
 def run_experiment_queries(
+    model_specs: Sequence[ModelSpec],
     exp_params: ExperimentParams,
     sampling_params: DataSamplingParams,
-    engine_params: EngineParams,
-    gen_params: GenParams,
     datastore_path: Path,
     parallelize_models: bool = True,
 ) -> Iterator[Path]:
@@ -380,9 +357,11 @@ def run_experiment_queries(
     ), "Please specify at least one benchmark to query over using '--benchmarks' or '--custom-benchmark-paths'."
 
     if parallelize_models:
-        assert (
-            engine_params.engine_type == ModelEngine.VLLM
-        ), "Parallel model execution is only supported for the vLLM engine."
+        for model_spec in model_specs:
+            assert model_spec.engine.engine_type == ModelEngine.VLLM, (
+                f"Parallel model execution is only supported for the vLLM engine, "
+                f"but model '{model_spec.path}' uses {model_spec.engine.engine_type}."
+            )
         logger.info("Parallel execution enabled")
         for outcome in run_gpu_jobs_in_parallel(
             [
@@ -390,28 +369,15 @@ def run_experiment_queries(
                     id=job_id,
                     fn=partial(
                         compose(list, _run_single_model),
-                        annotated_model_path=annotated_model_path,
+                        model_spec=model_spec,
                         exp_params=exp_params,
                         sampling_params=sampling_params,
-                        engine_params=dataclasses.replace(
-                            engine_params, num_gpus=num_gpus
-                        ),
-                        gen_params=gen_params,
                         datastore_path=datastore_path,
                     ),
-                    need=num_gpus,
+                    need=model_spec.engine.num_gpus,
                 )
-                for annotated_model_path in exp_params.model_paths
-                if (
-                    num_gpus := annotated_model_path.get_value("num_gpus")
-                    or engine_params.num_gpus
-                )
-                >= 0
-                and (
-                    job_id := annotated_model_path.get_value("name")
-                    or str(annotated_model_path.raw_path)
-                )
-                is not None
+                for model_spec in model_specs
+                if (job_id := model_spec.name or str(model_spec.path)) is not None
             ]
         ):
             if outcome.result is not None:
@@ -424,15 +390,11 @@ def run_experiment_queries(
                 )
     else:
         # Sequential model execution.
-        for annotated_model_path in tqdm(
-            exp_params.model_paths, desc="Models:", unit=" model"
-        ):
+        for model_spec in tqdm(model_specs, desc="Models:", unit=" model"):
             yield from _run_single_model(
-                annotated_model_path=annotated_model_path,
+                model_spec=model_spec,
                 exp_params=exp_params,
                 sampling_params=sampling_params,
-                engine_params=engine_params,
-                gen_params=gen_params,
                 datastore_path=datastore_path,
             )
 

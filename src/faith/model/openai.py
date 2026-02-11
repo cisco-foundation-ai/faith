@@ -21,6 +21,7 @@ from faith.model.base import (
     PromptList,
     _is_message_list,
 )
+from faith.model.spec import ReasoningSpec
 
 
 class OpenAIModel(BaseModel):
@@ -30,7 +31,7 @@ class OpenAIModel(BaseModel):
         self,
         name_or_path: str,
         num_log_probs: int | None = None,
-        reasoning_tokens: tuple[str, str] | None = None,
+        reasoning_spec: ReasoningSpec | None = None,
         api_num_threads: int = 5,
         api_max_attempts: int = 10,
         api_retry_sleep_secs: float = 1.0,
@@ -40,7 +41,7 @@ class OpenAIModel(BaseModel):
         super().__init__(name_or_path)
         assert num_log_probs is None, "Logprobs are not supported for OpenAI models."
         assert (
-            reasoning_tokens is None
+            reasoning_spec is None
         ), "Reasoning tokens are not supported for OpenAI models."
         assert api_num_threads > 0, "Number of API threads must be greater than 0."
         assert api_max_attempts > 0, "Number of API attempts must be greater than 0."

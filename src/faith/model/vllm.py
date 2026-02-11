@@ -30,6 +30,7 @@ from faith.model.base import (
     _is_message_list,
     _is_string_list,
 )
+from faith.model.spec import ReasoningSpec
 
 logger = logging.getLogger(__name__)
 
@@ -152,7 +153,7 @@ class VLLMModel(_VLLMBackend):
         seed: int = 54748,
         context_len: int = 400,
         num_log_probs: int | None = None,
-        reasoning_tokens: tuple[str | list[int], str | list[int]] | None = None,
+        reasoning_spec: ReasoningSpec | None = None,
         **vllm_kwargs: Any,
     ):
         """Initialize the VLLM client for the model with the given parameters."""
@@ -166,31 +167,37 @@ class VLLMModel(_VLLMBackend):
             **vllm_kwargs,
         )
         self._reasoning_tokens: tuple[list[int], list[int]] | None = None
-        if reasoning_tokens is not None:
-            self._reasoning_tokens = cast(
-                tuple[list[int], list[int]],
-                tuple(
-                    self.tokenizer.encode(rt) if isinstance(rt, str) else rt
-                    for rt in reasoning_tokens
-                ),
+        if reasoning_spec is not None:
+            self._reasoning_tokens = (
+                self._parse_tokens(reasoning_spec.start_delimiter),
+                self._parse_tokens(reasoning_spec.end_delimiter),
             )
+
+    def _parse_tokens(self, token_spec: str | list[int]) -> list[int]:
+        """Parse the tokens from the given specification.
+        If the specification is given as token ids, return them directly; otherwise,
+        tokenize it using the model's tokenizer.
+        """
+        if isinstance(token_spec, str):
+            return self.tokenizer.encode(token_spec)
+        return token_spec
 
     def _extract_answer_tokens(self, tokenized_response: list[int]) -> list[int]:
         """Extract the answer tokens from the tokenized response based on the chat template."""
         if self._reasoning_tokens is None:
             return tokenized_response
-        sor_tokens, eor_tokens = self._reasoning_tokens
+        sor_token_ids, eor_token_ids = self._reasoning_tokens
 
         # Only consider the response after the last start-of-reasoning token.
         # All preceding tokens are considered part of the reasoning process.
         # If no start-of-reasoning token was found, return the full response.
-        cropped_response = _suffix_after(tokenized_response, sor_tokens)
-        if cropped_response is None:
+        cropped_resp = _suffix_after(tokenized_response, sor_token_ids)
+        if cropped_resp is None:
             return tokenized_response
 
         # Extract the suffix after the last end-of-reasoning token,
         # or return an empty list if not found since reasoning was not completed.
-        return _suffix_after(cropped_response, eor_tokens) or []
+        return _suffix_after(cropped_resp, eor_token_ids) or []
 
     @property
     def supported_formats(self) -> set[PromptFormatter]:

@@ -76,8 +76,8 @@ def compute_experiment_metrics(
         experiment_summary["experiment_params"]["benchmark"]
     )
     benchmark = load_benchmark(benchmark_spec, experiment_summary["benchmark_config"])
-    model_format_config = experiment_summary["experiment_params"]["model"].get(
-        "response_format", model_response_format_config()
+    model_format_config = model_response_format_config(
+        experiment_summary["experiment_params"]["model"].get("response_pattern", None)
     )
 
     log_grader = benchmark.log_grader(

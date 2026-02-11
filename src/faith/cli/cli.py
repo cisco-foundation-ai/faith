@@ -13,6 +13,7 @@
 
 import argparse
 import ast
+import dataclasses
 import logging
 import os
 from pathlib import Path
@@ -35,6 +36,7 @@ from faith.cli.flags import parse_begin_end_tokens
 from faith.experiment.params import DataSamplingParams, ExperimentParams
 from faith.model.model_engine import ModelEngine
 from faith.model.params import EngineParams, GenParams
+from faith.model.spec import ModelSpec, ReasoningSpec
 
 _cli_parser = argparse.ArgumentParser(
     description="General purpose script for running benchmarks on models.",
@@ -54,21 +56,11 @@ def _cli_query(args: argparse.Namespace, datastore_path: Path) -> Iterator[Path]
     # pylint: disable=import-outside-toplevel
     from faith.cli.subcmd.query import run_experiment_queries
 
-    return run_experiment_queries(
-        ExperimentParams(
-            benchmark_names=args.benchmarks,
-            custom_benchmark_paths=args.custom_benchmarks,
-            generation_mode=args.generation_mode,
-            prompt_format=args.prompt_format,
-            n_shot=args.n_shot,
-            model_paths=args.model_paths,
-            num_trials=args.num_trials,
-            initial_seed=args.seed,
-        ),
-        DataSamplingParams(
-            sample_size=args.sample_size,
-        ),
-        EngineParams(
+    # Build the list of model specs from both --model-paths and --model-configs.
+    model_specs: list[ModelSpec] = []
+
+    if args.model_paths:
+        global_engine = EngineParams(
             engine_type=args.model_engine,
             num_gpus=args.num_gpus,
             context_length=args.model_context_len,
@@ -82,8 +74,8 @@ def _cli_query(args: argparse.Namespace, datastore_path: Path) -> Iterator[Path]
                 if args.engine_kwargs is not None
                 else {}
             ),
-        ),
-        GenParams(
+        )
+        global_gen = GenParams(
             temperature=args.temperature,
             top_p=args.top_p,
             max_completion_tokens=args.max_completion_tokens,
@@ -93,6 +85,63 @@ def _cli_query(args: argparse.Namespace, datastore_path: Path) -> Iterator[Path]
                     arg_str.partition("=") for arg_str in (args.generation_kwargs or [])
                 ]
             },
+        )
+        model_specs.extend(
+            [
+                ModelSpec(
+                    path=annotated_path.raw_path,
+                    engine=dataclasses.replace(global_engine, num_gpus=num_gpus),
+                    generation=global_gen,
+                    **{
+                        k: v
+                        for k, v in annotated_path.values().items()
+                        if k != "num_gpus"
+                    },
+                )
+                for annotated_path in args.model_paths
+                if (
+                    num_gpus := annotated_path.get_value("num_gpus")
+                    or global_engine.num_gpus
+                )
+                >= 0
+            ]
+        )
+
+    if args.model_configs:
+        model_specs.extend(
+            [
+                dataclasses.replace(
+                    spec,
+                    engine=dataclasses.replace(spec.engine, num_gpus=num_gpus),
+                )
+                for annotated_config_path in args.model_configs
+                if (spec := ModelSpec.from_file(annotated_config_path.path)) is not None
+                and (
+                    num_gpus := annotated_config_path.get_value("num_gpus")
+                    or args.num_gpus
+                )
+                >= 0
+            ]
+        )
+
+    if not model_specs:
+        raise RuntimeError(
+            "error: at least one model must be specified via --model-paths or --model-configs."
+        )
+
+    return run_experiment_queries(
+        model_specs,
+        ExperimentParams(
+            benchmark_names=args.benchmarks,
+            custom_benchmark_paths=args.custom_benchmarks,
+            generation_mode=args.generation_mode,
+            prompt_format=args.prompt_format,
+            n_shot=args.n_shot,
+            num_trials=args.num_trials,
+            initial_seed=args.seed,
+        ),
+        DataSamplingParams(
+            sample_size=args.sample_size,
         ),
         datastore_path,
         parallelize_models=args.experimental_parallelize_models,
@@ -180,20 +229,24 @@ def _add_model_args(parser: argparse.ArgumentParser) -> None:
             name=lambda x: x,
             is_file=TypeWithDefault[bool](bool, False),
             num_gpus=TypeWithDefault[int | None](int, None),
-            reasoning_tokens=TypeWithDefault[
-                tuple[str | list[int], str | list[int]] | None
-            ](parse_begin_end_tokens, None),
+            reasoning=TypeWithDefault[ReasoningSpec | None](
+                parse_begin_end_tokens, None
+            ),
             response_pattern=TypeWithDefault[str | None](str, None),
             tokenizer=TypeWithDefault[str | None](str, None),
         ),
-        required=True,
-        nargs="+",
-        help="The paths/names of the models to benchmark. For OpenAI and Hugging Face models, see the model lists. For custom models, specify the path to the model.",
+        nargs="*",
+        help="The paths/names of the models to benchmark. For OpenAI and Hugging Face models, see the model lists. For custom models, specify the path to the model. Requires --model-engine.",
+    )
+    group.add_argument(
+        "--model-configs",
+        type=AnnotatedPath(num_gpus=TypeWithDefault[int | None](int, None)),
+        nargs="*",
+        help="Paths to YAML model configuration files. Each file fully specifies a model's path, engine, and generation parameters. Can be used alongside --model-paths.",
     )
     group.add_argument(
         "--model-engine",
         type=ModelEngine.from_string,
-        required=True,
         help="The type of model to use. For a list of available models, see the model list.",
         choices=list(ModelEngine),
     )

@@ -8,6 +8,7 @@ import pytest
 
 from faith.benchmark.formatting.prompt import PromptFormatter
 from faith.model.base import ChatResponse, TokenPred
+from faith.model.spec import ReasoningSpec
 from faith.model.vllm import VLLMModel, _remove_longest_common_prefix
 
 
@@ -77,7 +78,9 @@ def test_vllm_model_init_with_reasoning_tokens_as_strings(
     model = VLLMModel(
         name_or_path="test-model",
         tokenizer_name_or_path="test-tokenizer",
-        reasoning_tokens=("<think>", "</think>"),
+        reasoning_spec=ReasoningSpec(
+            start_delimiter="<think>", end_delimiter="</think>"
+        ),
     )
 
     # Test that the model has been initialized with the correct reasoning tokens.
@@ -98,7 +101,7 @@ def test_vllm_model_init_with_reasoning_tokens_as_ids(_mock_llm_class: Mock) -> 
     model = VLLMModel(
         name_or_path="test-model",
         tokenizer_name_or_path="test-tokenizer",
-        reasoning_tokens=([100], [101]),
+        reasoning_spec=ReasoningSpec(start_delimiter=[100], end_delimiter=[101]),
     )
 
     # Test that the model has been initialized with the correct reasoning tokens.
@@ -372,7 +375,7 @@ def test_vllm_model_query_with_reasoning_tokens(_mock_llm_class: Mock) -> None:
     model = VLLMModel(
         name_or_path="test-model",
         tokenizer_name_or_path="test-tokenizer",
-        reasoning_tokens=([100], [101, 7]),
+        reasoning_spec=ReasoningSpec(start_delimiter=[100], end_delimiter=[101, 7]),
     )
 
     # Test query and check resulting ChatResponse object derived from the mock outputs.

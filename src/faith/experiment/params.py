@@ -10,7 +10,7 @@ from typing import Sequence
 
 from dataclasses_json import DataClassJsonMixin
 
-from faith._internal.types.flags import GenerationMode, PathWithAnnotations, SampleRatio
+from faith._internal.types.flags import GenerationMode, SampleRatio
 from faith.benchmark.formatting.prompt import PromptFormatter
 
 
@@ -30,6 +30,5 @@ class ExperimentParams:
     generation_mode: GenerationMode
     prompt_format: PromptFormatter
     n_shot: Sequence[SampleRatio]
-    model_paths: Sequence[PathWithAnnotations]
     num_trials: int
     initial_seed: int

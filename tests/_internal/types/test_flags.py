@@ -81,6 +81,7 @@ def test_path_with_values() -> None:
     assert path_with_values.raw_path == "example.txt"
     assert path_with_values.get_value("version") == 1.0
     assert path_with_values.get_value("format") == "csv"
+    assert path_with_values.values() == {"version": 1.0, "format": "csv"}
 
     with pytest.raises(KeyError):
         path_with_values.get_value("nonexistent_key")
