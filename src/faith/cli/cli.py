@@ -227,7 +227,6 @@ def _add_model_args(parser: argparse.ArgumentParser) -> None:
         "--model-paths",
         type=AnnotatedPath(
             name=lambda x: x,
-            is_file=TypeWithDefault[bool](bool, False),
             num_gpus=TypeWithDefault[int | None](int, None),
             reasoning=TypeWithDefault[ReasoningSpec | None](
                 parse_begin_end_tokens, None

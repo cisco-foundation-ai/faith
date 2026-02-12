@@ -5,12 +5,11 @@
 """Utility functions for managing datastores and synchronizing them with GCP storage."""
 
 import logging
-import os
 import sys
 import tempfile
 from abc import ABC, abstractmethod
 from pathlib import Path
-from subprocess import DEVNULL, STDOUT, Popen
+from subprocess import DEVNULL, PIPE, STDOUT, Popen
 from types import TracebackType
 
 logger = logging.getLogger(__name__)
@@ -92,16 +91,23 @@ class RemoteDataStore(DataStore):
         return self._local_path
 
 
+def _gcp_url(bucket_path: Path) -> str:
+    """Return the GCP store url as a string."""
+    return f"gs://{str(bucket_path)}"
+
+
 class GCPDataStore(RemoteDataStore):
     """A GCP-base data store that uses `gsutil rsync` to synchronize data."""
 
     def __init__(self, remote_path: str, local_path: Path | None = None):
         """Initialize the GCPDataStore with a given remote path/url."""
-        super().__init__(local_path)
         assert remote_path.startswith(
             "gs://"
         ), "GCP datastore location must start with 'gs://'."
-        self._bucket_path = Path(remote_path[5:])  # Remove 'gs://' prefix
+        super().__init__(local_path)
+        _bucket_path = Path(remote_path[5:])  # Remove 'gs://' prefix
+        self._filename = _bucket_path.name if self._is_file(remote_path) else None
+        self._bucket_path = _bucket_path.parent if self._filename else _bucket_path
 
     @staticmethod
     def _rsync_cmd_args(src: str, dest: str) -> list[str]:
@@ -119,7 +125,7 @@ class GCPDataStore(RemoteDataStore):
 
     @staticmethod
     def _rsync(src: str, dest: str) -> None:
-        """Execute the rsync command to synchronize src to dest."""
+        """Execute the gsutil rsync command to synchronize src to dest."""
         with Popen(
             GCPDataStore._rsync_cmd_args(src, dest),  # noqa: SLF001
             stdout=sys.stdout,
@@ -129,16 +135,50 @@ class GCPDataStore(RemoteDataStore):
             if process.returncode != 0:
                 raise ValueError(f"Failed to rsync from '{src}' to '{dest}'.")
 
-    def _gcp_url(self, bucket_path: Path) -> str:
-        """Return the GCP store url as a string."""
-        return f"gs://{str(bucket_path)}"
+    @staticmethod
+    def _cp_cmd_args(src: str, dest: str) -> list[str]:
+        """Return the command arguments to execute cp from src to dest."""
+        return [
+            "gsutil",
+            "cp",
+            "-J",
+            src,
+            dest,
+        ]
+
+    @staticmethod
+    def _cp(src: str, dest: str) -> None:
+        """Execute the gsutil cp command to copy src to dest."""
+        with Popen(
+            GCPDataStore._cp_cmd_args(src, dest),  # noqa: SLF001
+            stdout=sys.stdout,
+            stderr=sys.stderr,
+        ) as process:
+            process.wait()
+            if process.returncode != 0:
+                raise ValueError(f"Failed to copy from '{src}' to '{dest}'.")
+
+    @staticmethod
+    def _is_file(gcp_path: str) -> bool:
+        """Return True if the GCP path refers to an object (file).
+
+        Uses `gsutil ls -d -l` which outputs a `TOTAL:` summary line
+        only when the path matches an actual object, not a prefix.
+        """
+        with Popen(
+            ["gsutil", "ls", "-d", "-l", gcp_path],
+            stdout=PIPE,
+            stderr=DEVNULL,
+        ) as process:
+            stdout, _ = process.communicate()
+            if process.returncode != 0:
+                raise ValueError(f"Failed to check if GCP path '{gcp_path}' is a file.")
+            return "TOTAL: 1 objects," in stdout.decode()
 
     def sub_store(self, sub_path: Path) -> DataStore:
         """Return a sub-store for the given `sub_path`."""
         remote_sub_path = DataStore.sub_path(self._bucket_path, sub_path)
-        return GCPDataStore(
-            self._gcp_url(remote_sub_path), self._local_store / sub_path
-        )
+        return GCPDataStore(_gcp_url(remote_sub_path), self._local_store / sub_path)
 
     def push(self) -> None:
         """Synchronize the local store to the datastore.
@@ -148,7 +188,16 @@ class GCPDataStore(RemoteDataStore):
         assert (
             self._local_store.exists()
         ), f"Local path {self._local_store} does not exist."
-        self._rsync(str(self._local_store), self._gcp_url(self._bucket_path))
+        if self._filename:
+            # If the bucket path is a file, use cp to copy to sync the bucket path.
+            local_file = self._local_store / self._filename
+            assert (
+                local_file.exists()
+            ), f"Expected local file {local_file} does not exist."
+            self._cp(str(local_file), _gcp_url(self._bucket_path / self._filename))
+        else:
+            # Otherwise use rsync.
+            self._rsync(str(self._local_store), _gcp_url(self._bucket_path))
 
     def pull(self) -> Path:
         """Synchronize the datastore to the local store and return its local path.
@@ -157,7 +206,14 @@ class GCPDataStore(RemoteDataStore):
         """
         # Ensure the local path exists.
         self._local_store.mkdir(parents=True, exist_ok=True)
-        self._rsync(self._gcp_url(self._bucket_path), str(self._local_store))
+        if self._filename:
+            # If the bucket path is a file, use cp to copy to sync to the local path.
+            self._cp(
+                _gcp_url(self._bucket_path / self._filename), str(self._local_store)
+            )
+            return self._local_store / self._filename
+        # Otherwise use rsync.
+        self._rsync(_gcp_url(self._bucket_path), str(self._local_store))
         return self._local_store
 
 
@@ -199,24 +255,15 @@ class DataStoreContext:
 class ReadOnlyDataContext:
     """A context manager for a read-only data store for directories or files."""
 
-    def __init__(self, path_to_data: str, is_file: bool):
+    def __init__(self, path_to_data: str):
         """Initialize the ReadOnlyDataContext with a given path."""
         self._path_to_data = path_to_data
-        self._is_file = is_file
         self._datastore: DataStore | None = None
 
     def __enter__(self) -> Path:
         """Return the path to the data, ensuring it exists."""
-        datastore_path = self._path_to_data
-        filename = None
-        if self._is_file:
-            filename = os.path.basename(datastore_path)
-            datastore_path = os.path.dirname(datastore_path)
-        self._datastore = _datastore_from_path(datastore_path)
-
+        self._datastore = _datastore_from_path(self._path_to_data)
         local_path = self._datastore.pull()
-        if filename is not None:
-            local_path = local_path / filename
         return local_path
 
     def __exit__(

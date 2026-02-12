@@ -233,7 +233,7 @@ def _run_single_model(
     """
     # Initialize the model from its annotated path.
     # pylint: disable=too-many-locals
-    with ReadOnlyDataContext(model_spec.path, model_spec.is_file) as model_path:
+    with ReadOnlyDataContext(model_spec.path) as model_path:
         if model_spec.tokenizer is not None:
             logger.warning(
                 "Using a tokenizer other than the model's tokenizer is not recommended and may lead to incorrect queries."

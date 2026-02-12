@@ -27,7 +27,6 @@ def test_full_config() -> None:
             kwargs={"max_num_batched_tokens": 8192},
         ),
         name="llama2-7b",
-        is_file=False,
         tokenizer="/path/to/tokenizer",
         reasoning=ReasoningSpec(start_delimiter="<think>", end_delimiter="</think>"),
         response_pattern="Answer: (.*)",

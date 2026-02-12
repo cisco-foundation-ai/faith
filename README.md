@@ -340,7 +340,6 @@ and `model.engine.engine_type`; all other fields have defaults.
 model:
   name: "" # display name (defaults to model path segment)
   path: "" # model path or name [REQUIRED]
-  is_file: false # whether path is a file (default: false)
   response_pattern: null # regex pattern for extracting responses
   tokenizer: null # custom tokenizer path (optional)
   engine:

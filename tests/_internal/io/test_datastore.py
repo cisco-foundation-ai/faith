@@ -32,12 +32,15 @@ def test_local_data_store() -> None:
         sub_store.push()
 
 
-def test_gcp_data_store_pull_and_push() -> None:
+def test_gcp_data_store_directory_pull_and_push() -> None:
     # Test the GCPDataStore class for pulling and pushing data by modifying the rsync
     # command arguments to read and write to local files instead of GCP storage.
-    with patch(
-        "faith._internal.io.datastore.GCPDataStore._rsync_cmd_args"
-    ) as mock_rsync_cmd_args:
+    with (
+        patch("faith._internal.io.datastore.GCPDataStore._is_file", return_value=False),
+        patch(
+            "faith._internal.io.datastore.GCPDataStore._rsync_cmd_args"
+        ) as mock_rsync_cmd_args,
+    ):
         datastore = GCPDataStore("gs://test-bucket/fake-datastore")
 
         # Test the pull method.
@@ -111,11 +114,49 @@ def test_gcp_data_store_pull_and_push() -> None:
             ).exists(), f"Expected `foo.txt` to exist: {', '.join(str(p) for p in Path(temp_sub_dir).rglob('*'))}"
 
 
-def test_gcp_datastore_pull_failure() -> None:
+def test_gcp_data_store_file_pull_and_push() -> None:
+    # Test the GCPDataStore class for pulling and pushing a file by modifying the cp
+    # command arguments to read and write to local files instead of GCP storage.
+    with (
+        patch("faith._internal.io.datastore.GCPDataStore._is_file", return_value=True),
+        patch(
+            "faith._internal.io.datastore.GCPDataStore._cp_cmd_args"
+        ) as mock_cp_cmd_args,
+    ):
+        datastore = GCPDataStore("gs://test-bucket/fake-datastore/bar.txt")
+
+        # Test the pull method.
+        mock_cp_cmd_args.side_effect = lambda src, dest: [
+            "cp",
+            str(Path(__file__).parent / "testdata" / "fake_gcp_datastore" / "bar.txt"),
+            str(dest),
+        ]
+        path = datastore.pull()
+        assert path.exists() and path.is_file()
+
+        # Test the push method.
+        with tempfile.TemporaryDirectory() as temp_dir:
+            mock_cp_cmd_args.side_effect = lambda src, dest: [
+                "cp",
+                str(src),
+                str(temp_dir),
+            ]
+
+            datastore.push()
+
+            assert (
+                Path(temp_dir) / "bar.txt"
+            ).exists(), f"Expected `bar.txt` to exist:  {', '.join(str(p) for p in Path(temp_dir).rglob('*'))}"
+
+
+def test_gcp_datastore_directory_pull_failure() -> None:
     # Test the GCPDataStore class for pulling data with a command that will always fail.
-    with patch(
-        "faith._internal.io.datastore.GCPDataStore._rsync_cmd_args"
-    ) as mock_rsync_cmd_args:
+    with (
+        patch("faith._internal.io.datastore.GCPDataStore._is_file", return_value=False),
+        patch(
+            "faith._internal.io.datastore.GCPDataStore._rsync_cmd_args"
+        ) as mock_rsync_cmd_args,
+    ):
         datastore = GCPDataStore("gs://test-bucket/fake-datastore")
 
         # Mock the rsync command arguments to always fail.
@@ -128,21 +169,119 @@ def test_gcp_datastore_pull_failure() -> None:
             datastore.pull()
 
 
+def test_gcp_datastore_file_pull_failure() -> None:
+    # Test the GCPDataStore class for pulling data with a command that will always fail.
+    with (
+        patch("faith._internal.io.datastore.GCPDataStore._is_file", return_value=True),
+        patch(
+            "faith._internal.io.datastore.GCPDataStore._cp_cmd_args"
+        ) as mock_cp_cmd_args,
+    ):
+        datastore = GCPDataStore("gs://test-bucket/fake-datastore/bar.txt")
+
+        # Mock the rsync command arguments to always fail.
+        mock_cp_cmd_args.return_value = ["false"]
+
+        with pytest.raises(
+            ValueError,
+            match="Failed to copy from 'gs://test-bucket/fake-datastore/bar.txt' to '.*'.",
+        ):
+            datastore.pull()
+
+
 def test_gcp_datastore_rsync_cmd_args() -> None:
     # Test the rsync command arguments.
     # pylint: disable=protected-access
-    synchronizer = GCPDataStore("gs://test-bucket/fake-datastore")
-    args = synchronizer._rsync_cmd_args("gs://test-bucket/fake-datastore", "/tmp/foo")
-    assert args == [
-        "gsutil",
-        "-m",
-        "rsync",
-        "-R",
-        "-J",
-        "-P",
-        "gs://test-bucket/fake-datastore",
-        "/tmp/foo",
-    ]
+    with patch(
+        "faith._internal.io.datastore.GCPDataStore._is_file", return_value=False
+    ):
+        synchronizer = GCPDataStore("gs://test-bucket/fake-datastore")
+        args = synchronizer._rsync_cmd_args(
+            "gs://test-bucket/fake-datastore", "/tmp/foo"
+        )
+        assert args == [
+            "gsutil",
+            "-m",
+            "rsync",
+            "-R",
+            "-J",
+            "-P",
+            "gs://test-bucket/fake-datastore",
+            "/tmp/foo",
+        ]
+
+
+def test_gcp_datastore_is_file_true() -> None:
+    # Test _is_file returns True when gsutil ls -d -l reports an object.
+    # pylint: disable=protected-access
+    file_output = (
+        b"        1234  2024-01-01T00:00:00Z  gs://test-bucket/fake-datastore/bar.txt\n"
+        b"TOTAL: 1 objects, 1234 bytes (1.21 KiB)\n"
+    )
+    with patch("faith._internal.io.datastore.Popen") as mock_popen:
+        mock_process = Mock()
+        mock_process.communicate.return_value = (file_output, b"")
+        mock_process.returncode = 0
+        mock_process.__enter__ = Mock(return_value=mock_process)
+        mock_process.__exit__ = Mock(return_value=False)
+        mock_popen.return_value = mock_process
+
+        assert GCPDataStore._is_file("gs://test-bucket/fake-datastore/bar.txt") is True
+        mock_popen.assert_called_once_with(
+            ["gsutil", "ls", "-d", "-l", "gs://test-bucket/fake-datastore/bar.txt"],
+            stdout=-1,  # subprocess.PIPE
+            stderr=-3,  # subprocess.DEVNULL
+        )
+
+
+def test_gcp_datastore_is_file_false() -> None:
+    # Test _is_file returns False when gsutil ls -d -l reports a prefix (directory).
+    # pylint: disable=protected-access
+    dir_output = b"                                 gs://test-bucket/fake-datastore/\n"
+    with patch("faith._internal.io.datastore.Popen") as mock_popen:
+        mock_process = Mock()
+        mock_process.communicate.return_value = (dir_output, b"")
+        mock_process.returncode = 0
+        mock_process.__enter__ = Mock(return_value=mock_process)
+        mock_process.__exit__ = Mock(return_value=False)
+        mock_popen.return_value = mock_process
+
+        assert GCPDataStore._is_file("gs://test-bucket/fake-datastore") is False
+
+
+def test_gcp_datastore_is_file_failure() -> None:
+    # Test _is_file raises ValueError when gsutil ls -d -l fails.
+    # pylint: disable=protected-access
+    with patch("faith._internal.io.datastore.Popen") as mock_popen:
+        mock_process = Mock()
+        mock_process.communicate.return_value = (b"", b"")
+        mock_process.returncode = 1
+        mock_process.__enter__ = Mock(return_value=mock_process)
+        mock_process.__exit__ = Mock(return_value=False)
+        mock_popen.return_value = mock_process
+
+        with pytest.raises(
+            ValueError,
+            match="Failed to check if GCP path 'gs://test-bucket/bad-path' is a file.",
+        ):
+            GCPDataStore._is_file("gs://test-bucket/bad-path")
+
+
+def test_gcp_datastore_cp_cmd_args() -> None:
+    # Test the cp command arguments.
+    # pylint: disable=protected-access
+    with patch("faith._internal.io.datastore.GCPDataStore._is_file", return_value=True):
+        synchronizer = GCPDataStore("gs://test-bucket/fake-datastore")
+        args = synchronizer._cp_cmd_args(
+            "gs://test-bucket/fake-datastore/bar.txt", "/tmp/foo"
+        )
+        assert args == [
+            "gsutil",
+            "cp",
+            "-J",
+            "gs://test-bucket/fake-datastore/bar.txt",
+            "/tmp/foo",
+        ]
 
 
 def test_datastore_context() -> None:
@@ -157,6 +296,7 @@ def test_datastore_context() -> None:
         assert (path / "sub" / "foo.txt").exists()
 
     with (
+        patch("faith._internal.io.datastore.GCPDataStore._is_file", return_value=False),
         patch(
             "faith._internal.io.datastore.GCPDataStore._rsync_cmd_args"
         ) as mock_rsync_cmd_args,
@@ -183,14 +323,16 @@ def test_read_only_data_context() -> None:
     # Test the ReadOnlyDataContext class with a local path.
     with ReadOnlyDataContext(
         str(Path(__file__).parent / "testdata" / "fake_gcp_datastore" / "bar.txt"),
-        is_file=True,
     ) as data_path:
         assert data_path.name == "bar.txt"
         assert data_path.exists() and data_path.is_file()
 
-    with patch(
-        "faith._internal.io.datastore.GCPDataStore._rsync_cmd_args"
-    ) as mock_rsync_cmd_args:
+    with (
+        patch("faith._internal.io.datastore.GCPDataStore._is_file", return_value=False),
+        patch(
+            "faith._internal.io.datastore.GCPDataStore._rsync_cmd_args"
+        ) as mock_rsync_cmd_args,
+    ):
         # Mock the rsync command arguments to read from local files instead of GCP.
         mock_rsync_cmd_args.side_effect = lambda src, dest: [
             "rsync",
@@ -199,7 +341,7 @@ def test_read_only_data_context() -> None:
             str(dest),
         ]
         with ReadOnlyDataContext(
-            "gs://test-bucket/fake-datastore", is_file=False
+            "gs://test-bucket/fake-datastore",
         ) as data_path:
             assert data_path.exists() and data_path.is_dir()
             assert (data_path / "bar.txt").exists()

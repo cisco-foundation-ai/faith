@@ -35,7 +35,6 @@ class ModelSpec(DataClassJsonMixin):
     path: str
     engine: EngineParams
     name: str = ""
-    is_file: bool = False
     reasoning: ReasoningSpec | None = None
     response_pattern: str | None = None
     tokenizer: str | None = None

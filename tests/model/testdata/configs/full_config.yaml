@@ -7,7 +7,6 @@ model:
   path: "meta-llama/Llama-2-7b"
   name: "llama2-7b"
   tokenizer: "/path/to/tokenizer"
-  is_file: false
   reasoning:
     start_delimiter: "<think>"
     end_delimiter: "</think>"
