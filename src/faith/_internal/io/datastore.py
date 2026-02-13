@@ -15,6 +15,34 @@ from types import TracebackType
 logger = logging.getLogger(__name__)
 
 
+def _ensure_trailing_slash(path: str) -> str:
+    """Ensure a directory path ends with a trailing slash.
+
+    This prevents rsync from creating a subdirectory at the destination
+    instead of copying the source directory's contents directly into the destination.
+    """
+    return path if path.endswith("/") else path + "/"
+
+
+def _cp_cmd_args(src: str, dest: str) -> list[str]:
+    """Return the command arguments to execute cp from src to dest."""
+    return ["gsutil", "cp", "-J", src, dest]
+
+
+def _rsync_cmd_args(src: str, dest: str) -> list[str]:
+    """Return the command arguments to execute rsync from src to dest."""
+    return [
+        "gsutil",
+        "-m",
+        "rsync",
+        "-R",
+        "-J",
+        "-P",
+        _ensure_trailing_slash(src),
+        _ensure_trailing_slash(dest),
+    ]
+
+
 class DataStore(ABC):
     """An abstract base class for a datastore."""
 
@@ -110,49 +138,26 @@ class GCPDataStore(RemoteDataStore):
         self._bucket_path = _bucket_path.parent if self._filename else _bucket_path
 
     @staticmethod
-    def _rsync_cmd_args(src: str, dest: str) -> list[str]:
-        """Return the command arguments to execute rsync from src to dest."""
-        return [
-            "gsutil",
-            "-m",
-            "rsync",
-            "-R",
-            "-J",
-            "-P",
-            src,
-            dest,
-        ]
-
-    @staticmethod
     def _rsync(src: str, dest: str) -> None:
         """Execute the gsutil rsync command to synchronize src to dest."""
         with Popen(
-            GCPDataStore._rsync_cmd_args(src, dest),  # noqa: SLF001
+            _rsync_cmd_args(src, dest),
             stdout=sys.stdout,
             stderr=sys.stderr,
+            text=True,
         ) as process:
             process.wait()
             if process.returncode != 0:
                 raise ValueError(f"Failed to rsync from '{src}' to '{dest}'.")
 
     @staticmethod
-    def _cp_cmd_args(src: str, dest: str) -> list[str]:
-        """Return the command arguments to execute cp from src to dest."""
-        return [
-            "gsutil",
-            "cp",
-            "-J",
-            src,
-            dest,
-        ]
-
-    @staticmethod
     def _cp(src: str, dest: str) -> None:
         """Execute the gsutil cp command to copy src to dest."""
         with Popen(
-            GCPDataStore._cp_cmd_args(src, dest),  # noqa: SLF001
+            _cp_cmd_args(src, dest),
             stdout=sys.stdout,
             stderr=sys.stderr,
+            text=True,
         ) as process:
             process.wait()
             if process.returncode != 0:
@@ -169,11 +174,12 @@ class GCPDataStore(RemoteDataStore):
             ["gsutil", "ls", "-d", "-l", gcp_path],
             stdout=PIPE,
             stderr=DEVNULL,
+            text=True,
         ) as process:
             stdout, _ = process.communicate()
             if process.returncode != 0:
                 raise ValueError(f"Failed to check if GCP path '{gcp_path}' is a file.")
-            return "TOTAL: 1 objects," in stdout.decode()
+            return "TOTAL: 1 objects," in stdout
 
     def sub_store(self, sub_path: Path) -> DataStore:
         """Return a sub-store for the given `sub_path`."""
@@ -299,9 +305,10 @@ class GCPSynchronizer:
         if test_run:
             logger.info("Running gsutil rsync test...")
             with Popen(
-                self._rsync_cmd_args(),
+                _rsync_cmd_args(str(self._temp_dir.name), str(self._gcp_storage_path)),
                 stdout=sys.stdout,
                 stderr=sys.stderr,
+                text=True,
             ) as trial_upload:
                 trial_upload.wait()
                 if trial_upload.returncode != 0:
@@ -315,25 +322,15 @@ class GCPSynchronizer:
         if self._temp_dir is not None:
             self._temp_dir.cleanup()
 
-    def _rsync_cmd_args(self) -> list[str]:
-        """Return the command arguments to execute rsync to the GCP storage path."""
-        return [
-            "gsutil",
-            "rsync",
-            "-R",
-            "-J",
-            "-P",
-            str(self._temp_dir.name),
-            str(self._gcp_storage_path),
-        ]
-
     def __enter__(self) -> Path:
         """Create a temporary directory and start periodic rsync to GCP storage."""
         logger.info("Running periodic gsutil rsync...")
         self._watch_process = Popen(
-            ["watch", "-n", str(self._watch_rate)] + self._rsync_cmd_args(),
+            ["watch", "-n", str(self._watch_rate)]
+            + _rsync_cmd_args(str(self._temp_dir.name), str(self._gcp_storage_path)),
             stdout=DEVNULL,
             stderr=STDOUT,
+            text=True,
         )
         return Path(self._temp_dir.name)
 
@@ -348,7 +345,12 @@ class GCPSynchronizer:
         if self._watch_process:
             self._watch_process.terminate()
             self._watch_process.wait()
-        with Popen(self._rsync_cmd_args(), stdout=DEVNULL, stderr=STDOUT) as final_sync:
+        with Popen(
+            _rsync_cmd_args(str(self._temp_dir.name), str(self._gcp_storage_path)),
+            stdout=DEVNULL,
+            stderr=STDOUT,
+            text=True,
+        ) as final_sync:
             final_sync.wait()
             assert final_sync.returncode == 0, "Final gsutil rsync failed."
         self._temp_dir.cleanup()
