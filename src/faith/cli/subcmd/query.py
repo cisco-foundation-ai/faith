@@ -21,7 +21,7 @@ from tqdm import tqdm
 
 from faith import __version__
 from faith._internal.functools.compose import compose
-from faith._internal.io.datastore import ReadOnlyDataContext
+from faith._internal.io.datastore import DataStoreContext
 from faith._internal.io.json import write_as_json
 from faith._internal.io.logging import LoggingTransform
 from faith._internal.iter.transform import DevNullReducer, IsoTransform
@@ -233,15 +233,16 @@ def _run_single_model(
     """
     # Initialize the model from its annotated path.
     # pylint: disable=too-many-locals
-    with ReadOnlyDataContext(model_spec.path) as model_path:
+    with DataStoreContext(model_spec.path) as model_datastore:
         if model_spec.tokenizer is not None:
             logger.warning(
                 "Using a tokenizer other than the model's tokenizer is not recommended and may lead to incorrect queries."
             )
 
+        model_datastore.pull(raise_on_error=True)
         try:
             model = model_spec.engine.engine_type.create_model(
-                name_or_path=str(model_path),
+                name_or_path=str(model_datastore.path),
                 tokenizer_name_or_path=model_spec.tokenizer,
                 num_gpus=model_spec.engine.num_gpus,
                 seed=exp_params.initial_seed,

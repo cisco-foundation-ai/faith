@@ -16,14 +16,16 @@ import ast
 import dataclasses
 import logging
 import os
+from functools import partial
 from pathlib import Path
 from typing import Iterator
 
 import argcomplete
 import colorlog
 
-from faith._internal.io.datastore import resolve_storage_path
+from faith._internal.io.datastore import DataStoreContext
 from faith._internal.iter.transform import DevNullReducer
+from faith._internal.threading.periodic import PeriodicTaskContext
 from faith._internal.types.flags import (
     AnnotatedPath,
     GenerationMode,
@@ -150,8 +152,11 @@ def _cli_query(args: argparse.Namespace, datastore_path: Path) -> Iterator[Path]
 
 def _query_main(args: argparse.Namespace) -> None:
     """Query model(s) over the questions in one or more benchmarks."""
-    with resolve_storage_path(args.datastore_location) as datastore_path:
-        _ = _cli_query(args, datastore_path) >> DevNullReducer[Path]()
+    with DataStoreContext(args.datastore_location) as datastore:
+        with PeriodicTaskContext(
+            partial(datastore.push, raise_on_error=False), interval=150
+        ):
+            _ = _cli_query(args, datastore.path) >> DevNullReducer[Path]()
 
 
 def _add_experiment_args(parser: argparse.ArgumentParser) -> None:
@@ -446,16 +451,19 @@ def _run_all_main(args: argparse.Namespace) -> None:
     from faith.cli.subcmd.eval import RecordHandlingParams, compute_experiment_metrics
     from faith.cli.subcmd.summarize import summarize_experiments
 
-    with resolve_storage_path(args.datastore_location) as datastore_path:
-        for experiment_path in _cli_query(args, datastore_path):
-            compute_experiment_metrics(
-                experiment_path,
-                RecordHandlingParams(
-                    annotate_prediction_stats=args.cache_prediction_stats,
-                    recompute_stats=args.force_compute_stats,
-                ),
-            )
-        summarize_experiments(datastore_path, args.stats, args.summary_filepath)
+    with DataStoreContext(args.datastore_location) as datastore:
+        with PeriodicTaskContext(
+            partial(datastore.push, raise_on_error=False), interval=150
+        ):
+            for experiment_path in _cli_query(args, datastore.path):
+                compute_experiment_metrics(
+                    experiment_path,
+                    RecordHandlingParams(
+                        annotate_prediction_stats=args.cache_prediction_stats,
+                        recompute_stats=args.force_compute_stats,
+                    ),
+                )
+            summarize_experiments(datastore.path, args.stats, args.summary_filepath)
 
 
 _run_all_parser = _cli_subparsers.add_parser(

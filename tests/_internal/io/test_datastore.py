@@ -13,11 +13,9 @@ from faith._internal.io.datastore import (
     DataStoreContext,
     GCPDataStore,
     LocalDataStore,
-    ReadOnlyDataContext,
     _cp_cmd_args,
     _ensure_trailing_slash,
     _rsync_cmd_args,
-    resolve_storage_path,
 )
 
 _EXPECTED_BAR_TXT_CONTENT = """# Copyright 2025 Cisco Systems, Inc. and its affiliates
@@ -60,6 +58,7 @@ def test_cp_cmd_args() -> None:
 def test_local_data_store() -> None:
     with tempfile.TemporaryDirectory() as temp_dir:
         datastore = LocalDataStore(Path(temp_dir) / "datastore")
+        assert datastore.path == Path(temp_dir) / "datastore"
         assert datastore.pull().name == "datastore"
         datastore.push()
 
@@ -150,11 +149,16 @@ def test_gcp_datastore_directory_pull_failure() -> None:
         patch("faith._internal.io.datastore.GCPDataStore._is_file", return_value=False),
     ):
         datastore = GCPDataStore("gs://test/fake-ds")
+
+        # Test that pull does not raise when raise_on_error=False (default).
+        assert datastore.pull() is not None
+
+        # Test that pull raises a RuntimeError when raise_on_error=True.
         with pytest.raises(
-            ValueError,
+            RuntimeError,
             match="Failed to rsync from 'gs://test/fake-ds'",
         ):
-            datastore.pull()
+            datastore.pull(raise_on_error=True)
 
 
 def test_gcp_datastore_file_pull_failure() -> None:
@@ -165,11 +169,16 @@ def test_gcp_datastore_file_pull_failure() -> None:
         patch("faith._internal.io.datastore.GCPDataStore._is_file", return_value=True),
     ):
         datastore = GCPDataStore("gs://test/fake-ds/bar.txt")
+
+        # Test that pull does not raise when raise_on_error=False (default).
+        assert datastore.pull() is not None
+
+        # Test that pull raises a RuntimeError when raise_on_error=True.
         with pytest.raises(
-            ValueError,
+            RuntimeError,
             match="Failed to copy from 'gs://test/fake-ds/bar.txt'",
         ):
-            datastore.pull()
+            datastore.pull(raise_on_error=True)
 
 
 def test_gcp_datastore_is_file_true() -> None:
@@ -233,16 +242,20 @@ def test_gcp_datastore_is_file_failure() -> None:
 
 
 def test_datastore_context() -> None:
-    # Test the DataStoreContext class with a local path.
-    with DataStoreContext(
-        str(Path(__file__).parent / "testdata" / "fake_gcp_datastore")
-    ) as ds:
+    local_ds = Path(__file__).parent / "testdata" / "fake_gcp_datastore"
+    fake_gcp_addr = "gs://test-bucket/fake-datastore"
+
+    # Test the DataStoreContext with a local directory.
+    with DataStoreContext(str(local_ds)) as ds:
         assert isinstance(ds, LocalDataStore)
         assert_directory_contents(ds.pull(), {"bar.txt", "sub", "sub/foo.txt"})
 
+    # Test the DataStoreContext with a local file.
+    with DataStoreContext(str(local_ds / "bar.txt")) as ds:
+        assert isinstance(ds, LocalDataStore)
+        assert ds.pull().read_text() == _EXPECTED_BAR_TXT_CONTENT
+
     # Test the DataStoreContext class with a fake GCP path.
-    fake_gcp_addr = "gs://test-bucket/fake-datastore"
-    fake_ds_path = str(Path(__file__).parent / "testdata" / "fake_gcp_datastore")
     with tempfile.TemporaryDirectory() as temp_dir:
         with (
             patch(
@@ -250,7 +263,7 @@ def test_datastore_context() -> None:
                 side_effect=lambda src, dest: [
                     "rsync",
                     "-a",
-                    _ensure_trailing_slash(src.replace(fake_gcp_addr, fake_ds_path)),
+                    _ensure_trailing_slash(src.replace(fake_gcp_addr, str(local_ds))),
                     _ensure_trailing_slash(dest.replace(fake_gcp_addr, str(temp_dir))),
                 ],
             ),
@@ -261,47 +274,3 @@ def test_datastore_context() -> None:
         ):
             assert isinstance(ds, GCPDataStore)
             assert_directory_contents(ds.pull(), {"bar.txt", "sub", "sub/foo.txt"})
-
-
-def test_read_only_data_context() -> None:
-    # Test the ReadOnlyDataContext class with a local path.
-    with ReadOnlyDataContext(
-        str(Path(__file__).parent / "testdata" / "fake_gcp_datastore" / "bar.txt"),
-    ) as data_path:
-        assert data_path.exists() and data_path.is_file()
-        assert data_path.name == "bar.txt"
-
-    with (
-        patch("faith._internal.io.datastore._rsync_cmd_args") as mock_rsync_cmd_args,
-        patch("faith._internal.io.datastore.GCPDataStore._is_file", return_value=False),
-    ):
-        # Mock the rsync command arguments to read from local files instead of GCP.
-        mock_rsync_cmd_args.side_effect = lambda src, dest: [
-            "rsync",
-            "-a",
-            str(Path(__file__).parent / "testdata" / "fake_gcp_datastore") + "/",
-            str(dest),
-        ]
-        with ReadOnlyDataContext("gs://test-bucket/fake-datastore") as data_path:
-            assert_directory_contents(data_path, {"bar.txt", "sub", "sub/foo.txt"})
-
-
-# Note: The following test does not test the use of rsync to GCP storage, only the
-# scaffolding of the GCP synchronizer and the resolve_storage_path function.
-def test_resolve_storage_path() -> None:
-    # Test with a command that will always fail.
-    with (
-        patch("faith._internal.io.datastore._rsync_cmd_args", return_value=["false"]),
-        pytest.raises(ValueError, match="Initial upload to GCP failed"),
-    ):
-        resolve_storage_path("gs://test-bucket")
-
-    # Test with a command that will always succeed.
-    with (
-        patch("faith._internal.io.datastore._rsync_cmd_args", return_value=["true"]),
-        resolve_storage_path("gs://test-bucket") as path,
-    ):
-        assert path.exists() and path.is_dir()
-
-    with resolve_storage_path("/tmp/test-dir") as path:
-        assert str(path) == "/tmp/test-dir"
