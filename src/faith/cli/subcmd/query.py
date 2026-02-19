@@ -216,7 +216,7 @@ def _run_single_model(
     model_spec: ModelSpec,
     exp_params: ExperimentParams,
     sampling_params: DataSamplingParams,
-    exp_datastore: Datastore,
+    datastore: Datastore,
 ) -> Iterator[Path]:
     """
     Run benchmarks for a single model.
@@ -226,7 +226,7 @@ def _run_single_model(
             and generation parameters.
         exp_params: Experiment parameters
         sampling_params: Data sampling parameters
-        exp_datastore: The datastore to use for storing experiment results.
+        datastore: The datastore to use for storing experiment results.
 
     Yields:
         Path to experiment.json for each completed experiment
@@ -267,8 +267,6 @@ def _run_single_model(
         ), f"Prompt format '{prompt_formatter}' is not supported by the model '{model.name_or_path}'. Supported formats: {model.supported_formats}"
 
         # Create the benchmark experiments.
-        # Note: experiments is instantiated as a list so all are validated
-        # before execution begins.
         experiments = [
             BenchmarkExperiment(
                 benchmark_path,
@@ -277,7 +275,7 @@ def _run_single_model(
                 n_shot,
                 model_spec.name,
                 model_spec.generation,
-                exp_datastore.path,
+                datastore,
                 exp_params.num_trials,
                 initial_seed=exp_params.initial_seed,
             )
@@ -294,6 +292,10 @@ def _run_single_model(
         for experiment in tqdm(
             experiments, desc="Benchmarks", unit=" benchmark", leave=False
         ):
+            # Pull prior results from the experiment's datastore before the trials.
+            exp_datastore = experiment.datastore
+            exp_datastore.pull(raise_on_error=True)
+
             # Record the model parameters.
             experiment_start_time = time.perf_counter()
             run_record = {
@@ -322,9 +324,7 @@ def _run_single_model(
                         model,
                         model_spec.generation,
                     )
-                    >> LoggingTransform[dict[str, Any]](
-                        experiment.experiment_dir / trial_path
-                    )
+                    >> LoggingTransform[dict[str, Any]](exp_datastore.path / trial_path)
                     >> DevNullReducer[dict[str, Any]]()
                 )
                 run_record["trial_records"][str(trial_path.parent)] = {
@@ -339,7 +339,7 @@ def _run_single_model(
             run_record["metadata"]["end_time"] = current_timestamp()
 
             # Save the record of the run.
-            experiment_path = experiment.experiment_dir / "experiment.json"
+            experiment_path = exp_datastore.path / "experiment.json"
             write_as_json(experiment_path, run_record)
             yield experiment_path
         del model
@@ -378,7 +378,7 @@ def run_experiment_queries(
                         model_spec=model_spec,
                         exp_params=exp_params,
                         sampling_params=sampling_params,
-                        exp_datastore=datastore,
+                        datastore=datastore,
                     ),
                     need=model_spec.engine.num_gpus,
                 )
@@ -401,7 +401,7 @@ def run_experiment_queries(
                 model_spec=model_spec,
                 exp_params=exp_params,
                 sampling_params=sampling_params,
-                exp_datastore=datastore,
+                datastore=datastore,
             )
 
     # Cleanup GPU processes after all models complete.

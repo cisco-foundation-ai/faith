@@ -7,11 +7,32 @@ from pathlib import Path
 import pytest
 
 from faith._internal.io.benchmarks import benchmarks_root
+from faith._internal.io.datastore import Datastore
 from faith._internal.types.flags import GenerationMode, SampleRatio
 from faith.benchmark.formatting.prompt import PromptFormatter
 from faith.benchmark.types import BenchmarkSpec
 from faith.experiment.experiment import BenchmarkExperiment
 from faith.model.params import GenParams
+
+
+class FakeDatastore(Datastore):
+    """A fake datastore implementation for testing purposes."""
+
+    def __init__(self, root_path: Path):
+        self._root_path = root_path
+
+    @property
+    def path(self) -> Path:
+        return self._root_path
+
+    def pull(self, *, raise_on_error: bool = False) -> Path:
+        return self._root_path
+
+    def push(self, *, raise_on_error: bool = False) -> None:
+        pass
+
+    def sub_store(self, sub_path: Path) -> Datastore:
+        return FakeDatastore(self._root_path / sub_path)
 
 
 def test_benchmark_experiment() -> None:
@@ -30,12 +51,12 @@ def test_benchmark_experiment() -> None:
         n_shot=SampleRatio(5),
         model_name="example_model",
         gen_params=gen_params,
-        datastore_path=Path("/tmp"),
+        root_datastore=FakeDatastore(Path("/tmp")),
         num_trials=3,
         initial_seed=3,
     )
     assert experiment.benchmark_config["metadata"]["name"] == "for-unit-test-only"
-    assert str(experiment.experiment_dir).startswith(
+    assert str(experiment.datastore.path).startswith(
         "/tmp/for-unit-test-only/example_model/chat/chat_comp/5_shot/gen_params_"
     )
     assert experiment.benchmark_spec == BenchmarkSpec(
@@ -58,7 +79,7 @@ def test_benchmark_experiment() -> None:
             n_shot=SampleRatio(0),
             model_name="example_model",
             gen_params=gen_params,
-            datastore_path=Path("/tmp"),
+            root_datastore=FakeDatastore(Path("/tmp")),
             num_trials=3,
             initial_seed=81,
         )
@@ -73,7 +94,7 @@ def test_benchmark_experiment() -> None:
             n_shot=SampleRatio(1, 4),
             model_name="example_model",
             gen_params=gen_params,
-            datastore_path=Path("/tmp"),
+            root_datastore=FakeDatastore(Path("/tmp")),
             num_trials=0,
             initial_seed=27,
         )
@@ -93,7 +114,7 @@ def test_experiment_iteration() -> None:
         n_shot=SampleRatio(5),
         model_name="example_model",
         gen_params=gen_params,
-        datastore_path=Path("/tmp"),
+        root_datastore=FakeDatastore(Path("/tmp")),
         num_trials=2,
         initial_seed=375,
     )
