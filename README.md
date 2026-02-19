@@ -24,7 +24,8 @@ cybersecurity benchmarks:
 
 FAITH uses [vLLM](https://github.com/vllm-project/vllm) for querying
 [HuggingFace](https://huggingface.co/) models as well as providing
-API-based querying for [OpenAI models](https://platform.openai.com/docs/models).
+API-based querying for [OpenAI models](https://platform.openai.com/docs/models)
+and models available through [OpenRouter](https://openrouter.ai/).
 
 ## Getting Started
 
@@ -94,6 +95,11 @@ for FAITH are:
   Note: Benchmarking OpenAI models will be billed to your OpenAI account;
   you must export your OpenAI key as the environment variable `OPENAI_API_KEY`
   to query models using their API.
+- `openrouter`: installs dependencies to query models via
+  [OpenRouter](https://openrouter.ai/), which provides access to many models
+  (e.g., Anthropic Claude, Google Gemini) through a unified API.
+  Note: You must export your OpenRouter key as the environment variable
+  `OPENROUTER_API_KEY` to query models using their API.
 - `vllm`: installs dependencies to run models with
   [vLLM](https://docs.vllm.ai/en/latest/).
   This can run many models from HuggingFace.
@@ -205,6 +211,10 @@ You can then use the following commands:
     Note: Benchmarking OpenAI models will be billed to your OpenAI account;
     you must export your OpenAI key as the environment variable `OPENAI_API_KEY`
     to query models using their API.
+  - `openrouter`: installs dependencies to query models via
+    [OpenRouter](https://openrouter.ai/).
+    Note: You must export your OpenRouter key as the environment variable
+    `OPENROUTER_API_KEY` to query models using their API.
   - `vllm`: installs dependencies to run models with
     [vLLM](https://docs.vllm.ai/en/latest/).
     This can run many models from HuggingFace.
@@ -251,7 +261,7 @@ which need to be processed by subsequent commands.
   [Required unless --model-paths is provided]
   - Note: You can annotate each path with `@num_gpus=<N>` to override
     the number of GPUs specified in the config file.
-- `--model-engine` [`openai`, `sagemaker`, `vllm`]:
+- `--model-engine` [`openai`, `openrouter`, `sagemaker`, `vllm`]:
   the backend engine to drive the model. [Required with --model-paths]
 - `--num-gpus` [int]: the number of GPUs used by vLLM for querying LLMs.
   [Default: 1]
@@ -292,6 +302,19 @@ which also takes a list of key-value pairs, like:
 ```shell
 --generation-kwargs reasoning_effort='"high"'
 ```
+
+#### OpenRouter Models
+
+To assess models available through [OpenRouter](https://openrouter.ai/),
+set the `OPENROUTER_API_KEY` environment variable and use the `openrouter`
+engine type. The `--model-paths` argument should specify the OpenRouter model
+identifier (e.g. `anthropic/claude-3.5-sonnet`, `google/gemini-pro`).
+
+The following engine kwargs are supported:
+
+- `api_num_threads`: Number of concurrent API threads (default: 5).
+- `api_max_attempts`: Maximum number of retry attempts (default: 10).
+- `api_retry_sleep_secs`: Sleep duration between retries in seconds (default: 1.0).
 
 #### SageMaker Models
 
@@ -370,6 +393,21 @@ model:
   generation:
     temperature: 0.3
     max_completion_tokens: 5000
+```
+
+**Example for an OpenRouter model**:
+
+```yaml
+model:
+  path: "anthropic/claude-3.5-sonnet"
+  engine:
+    engine_type: openrouter
+    context_length: 8192
+    kwargs:
+      api_num_threads: 10
+  generation:
+    temperature: 0.3
+    max_completion_tokens: 2000
 ```
 
 **Example for a VLLM model**:

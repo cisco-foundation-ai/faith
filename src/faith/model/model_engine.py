@@ -27,6 +27,16 @@ def _create_openai_model(name_or_path: str, **kwargs: Any) -> BaseModel:
     return OpenAIModel(name_or_path, **kwargs)
 
 
+def _create_open_router_model(name_or_path: str, **kwargs: Any) -> BaseModel:
+    # We disable the import-outside-toplevel pylint rule here because
+    # the imports required each model type are only installed as package extras
+    # to allow for a smaller install footprint.
+    # pylint: disable=import-outside-toplevel
+    from faith.model.open_router import OpenRouterModel
+
+    return OpenRouterModel(name_or_path, **kwargs)
+
+
 def _create_vllm_model(name_or_path: str, **kwargs: Any) -> BaseModel:
     # We disable the import-outside-toplevel pylint rule here because
     # the imports required each model type are only installed as package extras
@@ -56,6 +66,7 @@ class ModelEngine(Enum):
     """
 
     OPENAI = (_create_openai_model,)
+    OPENROUTER = (_create_open_router_model,)
     VLLM = (_create_vllm_model,)
     SAGEMAKER = (_create_sagemaker_model,)
 

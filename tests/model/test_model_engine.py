@@ -11,6 +11,9 @@ from faith.model.model_engine import ModelEngine
 
 def test_model_engine_strings() -> None:
     assert ModelEngine.from_string(str(ModelEngine.OPENAI)) == ModelEngine.OPENAI
+    assert (
+        ModelEngine.from_string(str(ModelEngine.OPENROUTER)) == ModelEngine.OPENROUTER
+    )
     assert ModelEngine.from_string(str(ModelEngine.SAGEMAKER)) == ModelEngine.SAGEMAKER
     assert ModelEngine.from_string(str(ModelEngine.VLLM)) == ModelEngine.VLLM
 
@@ -23,6 +26,12 @@ def test_model_engine_create_model() -> None:
     with patch("faith.model.openai.OpenAI"):
         openai_model = ModelEngine.OPENAI.create_model("fake-0.5-turbo")
         assert openai_model.name_or_path == "fake-0.5-turbo"
+
+    with patch("faith.model.open_router.OpenRouter"):
+        open_router_model = ModelEngine.OPENROUTER.create_model(
+            "anthropic/claude-3.5-sonnet"
+        )
+        assert open_router_model.name_or_path == "anthropic/claude-3.5-sonnet"
 
     with patch("faith.model.sagemaker.boto3.client"):
         sagemaker_model = ModelEngine.SAGEMAKER.create_model(
