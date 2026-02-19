@@ -23,7 +23,7 @@ from typing import Iterator
 import argcomplete
 import colorlog
 
-from faith._internal.io.datastore import DataStoreContext
+from faith._internal.io.datastore import Datastore, DatastoreContext
 from faith._internal.iter.transform import DevNullReducer
 from faith._internal.threading.periodic import PeriodicTaskContext
 from faith._internal.types.flags import (
@@ -50,7 +50,7 @@ _cli_subparsers = _cli_parser.add_subparsers(required=True)
 ########################################
 
 
-def _cli_query(args: argparse.Namespace, datastore_path: Path) -> Iterator[Path]:
+def _cli_query(args: argparse.Namespace, datastore: Datastore) -> Iterator[Path]:
     """Helper function to run the query sub-command over the CLI arguments."""
     # We disable the import-outside-toplevel pylint rule here since each
     # sub-command has different dependencies and importing them as part of the
@@ -145,18 +145,18 @@ def _cli_query(args: argparse.Namespace, datastore_path: Path) -> Iterator[Path]
         DataSamplingParams(
             sample_size=args.sample_size,
         ),
-        datastore_path,
+        datastore,
         parallelize_models=args.experimental_parallelize_models,
     )
 
 
 def _query_main(args: argparse.Namespace) -> None:
     """Query model(s) over the questions in one or more benchmarks."""
-    with DataStoreContext(args.datastore_location) as datastore:
+    with DatastoreContext.from_path(args.datastore_location) as datastore:
         with PeriodicTaskContext(
             partial(datastore.push, raise_on_error=False), interval=150
         ):
-            _ = _cli_query(args, datastore.path) >> DevNullReducer[Path]()
+            _ = _cli_query(args, datastore) >> DevNullReducer[Path]()
 
 
 def _add_experiment_args(parser: argparse.ArgumentParser) -> None:
@@ -451,11 +451,11 @@ def _run_all_main(args: argparse.Namespace) -> None:
     from faith.cli.subcmd.eval import RecordHandlingParams, compute_experiment_metrics
     from faith.cli.subcmd.summarize import summarize_experiments
 
-    with DataStoreContext(args.datastore_location) as datastore:
+    with DatastoreContext.from_path(args.datastore_location) as datastore:
         with PeriodicTaskContext(
             partial(datastore.push, raise_on_error=False), interval=150
         ):
-            for experiment_path in _cli_query(args, datastore.path):
+            for experiment_path in _cli_query(args, datastore):
                 compute_experiment_metrics(
                     experiment_path,
                     RecordHandlingParams(

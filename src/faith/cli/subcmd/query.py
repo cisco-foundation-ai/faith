@@ -21,7 +21,7 @@ from tqdm import tqdm
 
 from faith import __version__
 from faith._internal.functools.compose import compose
-from faith._internal.io.datastore import DataStoreContext
+from faith._internal.io.datastore import Datastore, DatastoreContext
 from faith._internal.io.json import write_as_json
 from faith._internal.io.logging import LoggingTransform
 from faith._internal.iter.transform import DevNullReducer, IsoTransform
@@ -216,7 +216,7 @@ def _run_single_model(
     model_spec: ModelSpec,
     exp_params: ExperimentParams,
     sampling_params: DataSamplingParams,
-    datastore_path: Path,
+    exp_datastore: Datastore,
 ) -> Iterator[Path]:
     """
     Run benchmarks for a single model.
@@ -226,19 +226,19 @@ def _run_single_model(
             and generation parameters.
         exp_params: Experiment parameters
         sampling_params: Data sampling parameters
-        datastore_path: Path to datastore
+        exp_datastore: The datastore to use for storing experiment results.
 
     Yields:
         Path to experiment.json for each completed experiment
     """
-    # Initialize the model from its annotated path.
     # pylint: disable=too-many-locals
-    with DataStoreContext(model_spec.path) as model_datastore:
-        if model_spec.tokenizer is not None:
-            logger.warning(
-                "Using a tokenizer other than the model's tokenizer is not recommended and may lead to incorrect queries."
-            )
+    if model_spec.tokenizer is not None:
+        logger.warning(
+            "Using a tokenizer other than the model's tokenizer is not recommended and may lead to incorrect queries."
+        )
 
+    # Initialize the model from its annotated path.
+    with DatastoreContext.from_path(model_spec.path) as model_datastore:
         model_datastore.pull(raise_on_error=True)
         try:
             model = model_spec.engine.engine_type.create_model(
@@ -277,7 +277,7 @@ def _run_single_model(
                 n_shot,
                 model_spec.name,
                 model_spec.generation,
-                datastore_path,
+                exp_datastore.path,
                 exp_params.num_trials,
                 initial_seed=exp_params.initial_seed,
             )
@@ -349,7 +349,7 @@ def run_experiment_queries(
     model_specs: Sequence[ModelSpec],
     exp_params: ExperimentParams,
     sampling_params: DataSamplingParams,
-    datastore_path: Path,
+    datastore: Datastore,
     parallelize_models: bool = True,
 ) -> Iterator[Path]:
     """Query over given benchmarks for all specified models and generation parameters."""
@@ -357,6 +357,11 @@ def run_experiment_queries(
         exp_params.benchmark_names or exp_params.custom_benchmark_paths
     ), "Please specify at least one benchmark to query over using '--benchmarks' or '--custom-benchmark-paths'."
 
+    # Running the function _run_single_model requires a blood-brain barrier.
+    # All data passed to it must be picklable to allow for multiprocessing so its
+    # arguments are limited to simple data structures that can be serialized.
+    # Similarly the function must not rely on any global state that may not be shared
+    # across processes, and its return value must be picklable.
     if parallelize_models:
         for model_spec in model_specs:
             assert model_spec.engine.engine_type == ModelEngine.VLLM, (
@@ -373,7 +378,7 @@ def run_experiment_queries(
                         model_spec=model_spec,
                         exp_params=exp_params,
                         sampling_params=sampling_params,
-                        datastore_path=datastore_path,
+                        exp_datastore=datastore,
                     ),
                     need=model_spec.engine.num_gpus,
                 )
@@ -396,7 +401,7 @@ def run_experiment_queries(
                 model_spec=model_spec,
                 exp_params=exp_params,
                 sampling_params=sampling_params,
-                datastore_path=datastore_path,
+                exp_datastore=datastore,
             )
 
     # Cleanup GPU processes after all models complete.
