@@ -7,25 +7,15 @@
 import logging
 import os
 from functools import partial
-from typing import Any, Iterable, cast
+from typing import Any
 
 import boto3
 import orjson
 from botocore.config import Config
-from tqdm import tqdm
 
-from faith._internal.functools.retriable import RetryFunctionWrapper
-from faith._internal.iter.fork_merge import ForkAndMergeTransform
 from faith._internal.parsing.expr import evaluate_expr
-from faith.benchmark.formatting.prompt import PromptFormatter
-from faith.model.base import (
-    BaseModel,
-    ChatResponse,
-    GenerationError,
-    PromptList,
-    ReasoningSpec,
-    _is_message_list,
-)
+from faith.model.api_model import APIBasedModel
+from faith.model.base import ChatResponse, GenerationError, ReasoningSpec
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +39,7 @@ _DEFAULT_RESPONSE_PARSING_EXPR = """
 """
 
 
-class SageMakerModel(BaseModel):
+class SageMakerModel(APIBasedModel):
     """A model that uses the SageMaker API to generate responses from a SageMaker endpoint."""
 
     def __init__(
@@ -79,17 +69,14 @@ class SageMakerModel(BaseModel):
             api_retry_sleep_secs: Sleep duration between retries.
             aws_region: AWS region for the SageMaker endpoint.
         """
-        super().__init__(name_or_path)
-        assert num_log_probs is None, "Logprobs are not supported for SageMaker models."
-        assert (
-            reasoning_spec is None
-        ), "Reasoning tokens are not supported for SageMaker models."
-        assert api_num_threads > 0, "Number of API threads must be greater than 0."
-        assert api_max_attempts > 0, "Number of API attempts must be greater than 0."
-        assert api_retry_sleep_secs > 0, "Retry sleep seconds must be greater than 0."
-        self._api_num_threads = api_num_threads
-        self._api_max_attempts = api_max_attempts
-        self._api_retry_sleep_secs = api_retry_sleep_secs
+        super().__init__(
+            name_or_path,
+            num_log_probs=num_log_probs,
+            reasoning_spec=reasoning_spec,
+            api_num_threads=api_num_threads,
+            api_max_attempts=api_max_attempts,
+            api_retry_sleep_secs=api_retry_sleep_secs,
+        )
 
         # Determine AWS region
         region = aws_region or os.getenv("AWS_REGION", "")
@@ -107,45 +94,6 @@ class SageMakerModel(BaseModel):
             "sagemaker-runtime",
             region_name=region,
             config=Config(read_timeout=endpoint_timeout_secs),
-        )
-
-    @property
-    def supported_formats(self) -> set[PromptFormatter]:
-        """Return the supported input formats for the SageMaker-based models."""
-        return {PromptFormatter.CHAT}
-
-    def query(
-        self,
-        inputs: PromptList,
-        _verbose_resps: bool = False,
-        max_completion_tokens: int = 500,
-        **gen_params: Any,
-    ) -> Iterable[ChatResponse | GenerationError]:
-        """Map each input in `inputs` to the model's generated response for it."""
-        assert _is_message_list(
-            inputs
-        ), "All inputs must be a list of messages. Please convert it to a list of messages before passing it to the model."
-
-        if max_completion_tokens > 0:
-            gen_params["max_completion_tokens"] = max_completion_tokens
-
-        yield from tqdm(
-            cast(Iterable[list[dict[str, str]]], inputs)
-            >> ForkAndMergeTransform[
-                list[dict[str, str]], ChatResponse | GenerationError
-            ](
-                RetryFunctionWrapper[ChatResponse](
-                    lambda msg: self._query_api(msg, **gen_params),
-                    max_attempts=self._api_max_attempts,
-                    retry_sleep_secs=self._api_retry_sleep_secs,
-                ),
-                SageMakerModel._handle_query_error,
-                max_workers=self._api_num_threads,
-            ),
-            total=len(inputs),
-            leave=False,
-            desc="SageMaker Queries",
-            unit=" prompts",
         )
 
     def _query_api(
