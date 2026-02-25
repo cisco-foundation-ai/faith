@@ -41,12 +41,12 @@ class _RecordReconciliation(
     ) -> Iterable[tuple[RecordStatus, dict[str, Any]]]:
         """Reconcile each pair of (new, existing) records according to the specified strategy."""
         for new, existing in src:
-            yield self._reconcile_matching_records(existing, new)
+            yield self._reconcile_matching_records(new, existing)
 
     def _reconcile_matching_records(
         self,
-        existing: dict[str, Any] | None,
         new: dict[str, Any],
+        existing: dict[str, Any] | None,
     ) -> tuple[RecordStatus, dict[str, Any]]:
         """Reconcile two records according to the specified strategy."""
         if existing is None:
