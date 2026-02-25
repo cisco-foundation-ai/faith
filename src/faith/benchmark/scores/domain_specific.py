@@ -397,7 +397,7 @@ class DomainSpecificScore(Enum):
                 f"Invalid score function name: {name}. Available options: {[m.name for m in DomainSpecificScore]}"
             ) from e
 
-    def get_score_fn(self, **kwargs: dict[str, Any]) -> ScoreFn:
+    def get_score_fn(self, **kwargs: Any) -> ScoreFn:
         """Get the scorer instance for this score function."""
         return self._scoring_cls(**kwargs)
 

@@ -56,7 +56,7 @@ class SageMakerModel(APIBasedModel):
         inference_component_name: str | None = None,
         request_body_expr: str = _DEFAULT_REQUEST_BODY_EXPR,
         response_parsing_expr: str = _DEFAULT_RESPONSE_PARSING_EXPR,
-        **_kwargs: dict[str, Any],
+        **_kwargs: Any,
     ):
         """Initialize the SageMaker API backend with the given parameters.
 

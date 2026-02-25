@@ -24,7 +24,7 @@ class OpenRouterModel(APIBasedModel):
         api_num_threads: int = 5,
         api_max_attempts: int = 10,
         api_retry_sleep_secs: float = 1.0,
-        **_kwargs: dict[str, Any],
+        **_kwargs: Any,
     ):
         """Initialize the OpenRouter API backend with the given parameters."""
         super().__init__(
