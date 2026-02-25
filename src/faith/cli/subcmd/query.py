@@ -18,19 +18,32 @@ from typing import Any, Iterable, Iterator, Sequence, Type
 from zoneinfo import ZoneInfo
 
 from tqdm import tqdm
+from transformers import PreTrainedTokenizerBase
 
 from faith import __version__
 from faith._internal.functools.compose import compose
 from faith._internal.io.datastore import Datastore, DatastoreContext
-from faith._internal.io.json import write_as_json
+from faith._internal.io.json import read_json_logs, write_as_json
 from faith._internal.io.logging import LoggingTransform
-from faith._internal.iter.transform import DevNullReducer, IsoTransform
+from faith._internal.iter.mux import MuxTransform
+from faith._internal.iter.transform import (
+    DevNullReducer,
+    IdentityTransform,
+    IsoTransform,
+    Transform,
+)
 from faith._internal.multiprocessing.gpu_scheduling import (
     GPUJob,
     run_gpu_jobs_in_parallel,
 )
+from faith._internal.records.reconciliation import (
+    RecordStatus,
+    ReplacementStrategy,
+    reconcile_records,
+)
 from faith._internal.types.flags import GenerationMode
 from faith.benchmark.benchmark import Benchmark
+from faith.benchmark.formatting.qa import QARecord
 from faith.benchmark.listing import choices_to_benchmarks, find_benchmarks
 from faith.experiment.experiment import BenchmarkExperiment
 from faith.experiment.params import DataSamplingParams, ExperimentParams
@@ -65,56 +78,72 @@ def current_timestamp() -> str:
     )
 
 
-def query_over_benchmark(
-    benchmark: Benchmark,
-    sampling_params: DataSamplingParams,
+def read_trial_log(trial_log_path: Path) -> Iterable[dict[str, Any]]:
+    """Read the trial log records from the given path."""
+    if trial_log_path.exists():
+        return read_json_logs(trial_log_path)
+    return []  # No records if the log file doesn't exist yet.
+
+
+class BenchmarkRecordTransform(Transform[QARecord, dict[str, Any]]):
+    """Transform that converts `QARecord`s into log records for querying the model."""
+
+    def __init__(self, benchmark: Benchmark, tokenizer: PreTrainedTokenizerBase | None):
+        self._bench_formatter = benchmark.formatter
+        self._bench_version = benchmark.version
+
+        # Create the lead-in string for the answer portion of the prompt.
+        self._answer_leadin = None
+        if benchmark.generation_mode in [
+            GenerationMode.LOGITS,
+            GenerationMode.NEXT_TOKEN,
+        ]:
+            assert (
+                tokenizer is not None
+            ), f"Model tokenizer required for {str(benchmark.generation_mode)}."
+            self._answer_leadin = benchmark.answer_leadin(tokenizer)
+
+        # Translate the answer symbols to the model's tokenizer's token IDs.
+        self._answer_symbol_ids = {}
+        if benchmark.generation_mode == GenerationMode.LOGITS:
+            assert hasattr(
+                benchmark, "answer_token_map"
+            ), "Token map required for logits generation."
+            assert (
+                tokenizer is not None
+            ), "Model tokenizer is required for logits generation."
+            self._answer_symbol_ids = benchmark.answer_token_map(tokenizer)
+
+    def __call__(self, records: Iterable[QARecord]) -> Iterable[dict[str, Any]]:
+        """Transform a `QARecord` into a dictionary containing the data and metadata for querying."""
+        for example in records:
+            yield {
+                "metadata": {
+                    "version": self._bench_version,
+                    "data_hash": example.sha256(),
+                },
+                "data": example.to_dict(),
+                "model_data": {
+                    "prompt": self._bench_formatter.render_conversation(
+                        example, self._answer_leadin
+                    ),
+                    "answer_symbol_ids": self._answer_symbol_ids,
+                },
+            }
+
+
+def model_querier(
     model: BaseModel,
+    generation_mode: GenerationMode,
     gen_params: GenParams,
-) -> Iterable[dict[str, Any]]:
-    """Query over a benchmark for the specified model and generation parameters."""
-    bench_formatter = benchmark.formatter
-    answer_leadin = None
-    if benchmark.generation_mode in [GenerationMode.LOGITS, GenerationMode.NEXT_TOKEN]:
-        assert (
-            model.tokenizer is not None
-        ), f"Model tokenizer required for {str(benchmark.generation_mode)}."
-        answer_leadin = benchmark.answer_leadin(model.tokenizer)
-
-    # Translate the answer symbols to the model's tokenizer's token IDs.
-    answer_symbol_ids = {}
-    if benchmark.generation_mode == GenerationMode.LOGITS:
-        assert hasattr(
-            benchmark, "answer_token_map"
-        ), f"Model tokenizer required for {str(benchmark.generation_mode)}."
-        assert (
-            model.tokenizer is not None
-        ), "Model tokenizer is required for logits generation."
-        answer_symbol_ids = benchmark.answer_token_map(model.tokenizer)
-
+) -> IsoTransform[dict[str, Any]]:
+    """Create a transform that queries the model according to the specified generation mode."""
     mode_map = {
         GenerationMode.LOGITS: _ModelMethod.LOGITS,
         GenerationMode.NEXT_TOKEN: _ModelMethod.NEXT_TOKEN,
         GenerationMode.CHAT_COMPLETION: _ModelMethod.GENERATION,
     }
-    model_querier = mode_map[benchmark.generation_mode].create_transform(
-        model=model,
-        gen_params=gen_params,
-    )
-
-    return (
-        {
-            "metadata": {
-                "version": benchmark.version,
-                "data_hash": example.sha256(),
-            },
-            "data": example.to_dict(),
-            "model_data": {
-                "prompt": bench_formatter.render_conversation(example, answer_leadin),
-                "answer_symbol_ids": answer_symbol_ids,
-            },
-        }
-        for example in benchmark.build_dataset(**sampling_params.to_dict()).iter_data()  # type: ignore[arg-type]
-    ) >> model_querier
+    return mode_map[generation_mode].create_transform(model, gen_params)
 
 
 class _PredictionTransform(IsoTransform[dict[str, Any]]):
@@ -318,11 +347,21 @@ def _run_single_model(
             ):
                 trial_start_time = time.perf_counter()
                 _ = (
-                    query_over_benchmark(
-                        benchmark,
-                        sampling_params,
-                        model,
-                        model_spec.generation,
+                    benchmark.build_dataset(**sampling_params.to_dict()).iter_data()
+                    >> BenchmarkRecordTransform(benchmark, model.tokenizer)
+                    >> reconcile_records(
+                        read_trial_log(exp_datastore.path / trial_path),
+                        ReplacementStrategy.ALWAYS,
+                    )
+                    >> MuxTransform(
+                        {
+                            # Pass through clean records unchanged.
+                            RecordStatus.CLEAN: IdentityTransform[dict[str, Any]](),
+                            # For dirty records, query the model and update the record.
+                            RecordStatus.DIRTY: model_querier(
+                                model, benchmark.generation_mode, model_spec.generation
+                            ),
+                        }
                     )
                     >> LoggingTransform[dict[str, Any]](exp_datastore.path / trial_path)
                     >> DevNullReducer[dict[str, Any]]()

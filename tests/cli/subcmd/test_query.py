@@ -21,7 +21,7 @@ from faith.benchmark.formatting.qa import QAFormatter, QARecord
 from faith.benchmark.grading.grade_aggregator import GradeAggregator
 from faith.benchmark.grading.log_grader import LogGrader
 from faith.benchmark.types import BenchmarkSpec
-from faith.cli.subcmd.query import DataSamplingParams, GenParams, query_over_benchmark
+from faith.cli.subcmd.query import BenchmarkRecordTransform, model_querier
 from faith.model.base import (
     BaseModel,
     ChatResponse,
@@ -29,6 +29,7 @@ from faith.model.base import (
     PromptList,
     TokenPred,
 )
+from faith.model.params import GenParams
 
 
 class FakeBenchmark(Benchmark):
@@ -206,8 +207,61 @@ class FakeModel(BaseModel):
         ]
 
 
+_FAKE_BENCHMARK_CONFIG: dict[str, Any] = {
+    "format": {
+        "instructions": {
+            "system": "You are a fake assistant.",
+            "base_inst_template": "Answer the following question:",
+            "chat_inst_template": "Answer the question!",
+        },
+        "prompt": {
+            "question_template": "Q: {{ question }}",
+            "answer_template": "A: {{ answer }}",
+            "prompt_template": "{{ instruction }}\n\n{{ question }}",
+        },
+    },
+}
+
+_DATA_RECORD_0: dict[str, Any] = {
+    "benchmark_sample_index": 0,
+    "benchmark_sample_hash": "f0",
+    "subject": "apiculture",
+    "system_prompt": None,
+    "instruction": "Answer the following question:",
+    "question": "What is 0?",
+    "choices": None,
+    "label": "0",
+    "formatted_question": "Q: What is 0?",
+    "formatted_answer": "A: 0",
+    "question_prompt": "Answer the following question:\n\nQ: What is 0?",
+    "ancillary_data": {"other_data": "foo"},
+}
+
+_DATA_RECORD_1: dict[str, Any] = {
+    "benchmark_sample_index": 1,
+    "benchmark_sample_hash": "f1",
+    "subject": "apiculture",
+    "system_prompt": None,
+    "instruction": "Answer the following question:",
+    "question": "What is 1?",
+    "choices": None,
+    "label": "1",
+    "formatted_question": "Q: What is 1?",
+    "formatted_answer": "A: 1",
+    "question_prompt": "Answer the following question:\n\nQ: What is 1?",
+    "ancillary_data": {"other_data": "bar"},
+}
+
+_PROMPT_NO_LEADIN_0 = "Answer the following question:\n\nQ: What is 0?\n"
+_PROMPT_NO_LEADIN_1 = "Answer the following question:\n\nQ: What is 1?\n"
+_PROMPT_WITH_LEADIN_0 = "Answer the following question:\n\nQ: What is 0?\nA: "
+_PROMPT_WITH_LEADIN_1 = "Answer the following question:\n\nQ: What is 1?\nA: "
+
+_ANSWER_TOKEN_MAP: dict[str, int] = {"A": 87, "B": 31, "C": 7, "D": 9, "E": 5}
+
+
 @pytest.mark.parametrize(
-    "spec, expected_logs",
+    "spec, expected_records",
     [
         (
             BenchmarkSpec(
@@ -218,80 +272,18 @@ class FakeModel(BaseModel):
             ),
             [
                 {
-                    "data": {
-                        "benchmark_sample_index": 0,
-                        "benchmark_sample_hash": "f0",
-                        "subject": "apiculture",
-                        "system_prompt": None,
-                        "instruction": "Answer the following question:",
-                        "question": "What is 0?",
-                        "choices": None,
-                        "label": "0",
-                        "formatted_question": "Q: What is 0?",
-                        "formatted_answer": "A: 0",
-                        "question_prompt": "Answer the following question:\n\nQ: What is 0?",
-                        "ancillary_data": {"other_data": "foo"},
-                    },
+                    "data": _DATA_RECORD_0,
                     "model_data": {
                         "answer_symbol_ids": {},
-                        "chat_comp": {
-                            "prompt_token_ids": None,
-                            "num_prompt_tokens": 46,
-                            "prompt_text": "Answer the following question:\n\nQ: What is 0?\n",
-                            "output_token_ids": None,
-                            "num_output_tokens": 17,
-                            "output_text": "Fake response to: Answer the following question:\n\nQ: What is 0?\n",
-                            "max_token_halt": False,
-                            "request_token_ids": None,
-                            "num_request_tokens": 45,
-                            "request_text": "Answer the following question:\n\nQ: What is 0?",
-                            "response_token_ids": None,
-                            "num_response_tokens": 18,
-                            "response_text": "\nFake response to: Answer the following question:\n\nQ: What is 0?\n",
-                            "answer_token_ids": None,
-                            "num_answer_tokens": 18,
-                            "answer_text": "\nFake response to: Answer the following question:\n\nQ: What is 0?\n",
-                        },
-                        "prompt": "Answer the following question:\n\nQ: What is 0?\n",
+                        "prompt": _PROMPT_NO_LEADIN_0,
                     },
                     "metadata": ANY,
                 },
                 {
-                    "data": {
-                        "benchmark_sample_index": 1,
-                        "benchmark_sample_hash": "f1",
-                        "subject": "apiculture",
-                        "system_prompt": None,
-                        "instruction": "Answer the following question:",
-                        "question": "What is 1?",
-                        "choices": None,
-                        "label": "1",
-                        "formatted_question": "Q: What is 1?",
-                        "formatted_answer": "A: 1",
-                        "question_prompt": "Answer the following question:\n\nQ: What is 1?",
-                        "ancillary_data": {"other_data": "bar"},
-                    },
+                    "data": _DATA_RECORD_1,
                     "model_data": {
                         "answer_symbol_ids": {},
-                        "chat_comp": {
-                            "prompt_token_ids": None,
-                            "num_prompt_tokens": 46,
-                            "prompt_text": "Answer the following question:\n\nQ: What is 1?\n",
-                            "output_token_ids": None,
-                            "num_output_tokens": 17,
-                            "output_text": "Fake response to: Answer the following question:\n\nQ: What is 1?\n",
-                            "max_token_halt": False,
-                            "request_token_ids": None,
-                            "num_request_tokens": 45,
-                            "request_text": "Answer the following question:\n\nQ: What is 1?",
-                            "response_token_ids": None,
-                            "num_response_tokens": 18,
-                            "response_text": "\nFake response to: Answer the following question:\n\nQ: What is 1?\n",
-                            "answer_token_ids": None,
-                            "num_answer_tokens": 18,
-                            "answer_text": "\nFake response to: Answer the following question:\n\nQ: What is 1?\n",
-                        },
-                        "prompt": "Answer the following question:\n\nQ: What is 1?\n",
+                        "prompt": _PROMPT_NO_LEADIN_1,
                     },
                     "metadata": ANY,
                 },
@@ -306,80 +298,18 @@ class FakeModel(BaseModel):
             ),
             [
                 {
-                    "data": {
-                        "benchmark_sample_index": 0,
-                        "benchmark_sample_hash": "f0",
-                        "subject": "apiculture",
-                        "system_prompt": None,
-                        "instruction": "Answer the following question:",
-                        "question": "What is 0?",
-                        "choices": None,
-                        "label": "0",
-                        "formatted_question": "Q: What is 0?",
-                        "formatted_answer": "A: 0",
-                        "question_prompt": "Answer the following question:\n\nQ: What is 0?",
-                        "ancillary_data": {"other_data": "foo"},
-                    },
+                    "data": _DATA_RECORD_0,
                     "model_data": {
                         "answer_symbol_ids": {},
-                        "next_token": {
-                            "answer_text": " Token 0",
-                            "answer_token_ids": None,
-                            "max_token_halt": True,
-                            "num_answer_tokens": 18,
-                            "num_output_tokens": 17,
-                            "num_prompt_tokens": 49,
-                            "num_request_tokens": 48,
-                            "num_response_tokens": 18,
-                            "output_text": "Token 0",
-                            "output_token_ids": None,
-                            "prompt_text": "Answer the following question:\n\nQ: What is 0?\nA: ",
-                            "prompt_token_ids": None,
-                            "request_text": "Answer the following question:\n\nQ: What is 0?\nA:",
-                            "request_token_ids": None,
-                            "response_text": " Token 0",
-                            "response_token_ids": None,
-                        },
-                        "prompt": "Answer the following question:\n\nQ: What is 0?\nA: ",
+                        "prompt": _PROMPT_WITH_LEADIN_0,
                     },
                     "metadata": ANY,
                 },
                 {
-                    "data": {
-                        "benchmark_sample_index": 1,
-                        "benchmark_sample_hash": "f1",
-                        "subject": "apiculture",
-                        "system_prompt": None,
-                        "instruction": "Answer the following question:",
-                        "question": "What is 1?",
-                        "choices": None,
-                        "label": "1",
-                        "formatted_question": "Q: What is 1?",
-                        "formatted_answer": "A: 1",
-                        "question_prompt": "Answer the following question:\n\nQ: What is 1?",
-                        "ancillary_data": {"other_data": "bar"},
-                    },
+                    "data": _DATA_RECORD_1,
                     "model_data": {
                         "answer_symbol_ids": {},
-                        "next_token": {
-                            "answer_text": " Token 1",
-                            "answer_token_ids": None,
-                            "max_token_halt": True,
-                            "num_answer_tokens": 18,
-                            "num_output_tokens": 17,
-                            "num_prompt_tokens": 49,
-                            "num_request_tokens": 48,
-                            "num_response_tokens": 18,
-                            "output_text": "Token 1",
-                            "output_token_ids": None,
-                            "prompt_text": "Answer the following question:\n\nQ: What is 1?\nA: ",
-                            "prompt_token_ids": None,
-                            "request_text": "Answer the following question:\n\nQ: What is 1?\nA:",
-                            "request_token_ids": None,
-                            "response_text": " Token 1",
-                            "response_token_ids": None,
-                        },
-                        "prompt": "Answer the following question:\n\nQ: What is 1?\nA: ",
+                        "prompt": _PROMPT_WITH_LEADIN_1,
                     },
                     "metadata": ANY,
                 },
@@ -394,64 +324,18 @@ class FakeModel(BaseModel):
             ),
             [
                 {
-                    "data": {
-                        "benchmark_sample_index": 0,
-                        "benchmark_sample_hash": "f0",
-                        "subject": "apiculture",
-                        "system_prompt": None,
-                        "instruction": "Answer the following question:",
-                        "question": "What is 0?",
-                        "choices": None,
-                        "label": "0",
-                        "formatted_question": "Q: What is 0?",
-                        "formatted_answer": "A: 0",
-                        "question_prompt": "Answer the following question:\n\nQ: What is 0?",
-                        "ancillary_data": {"other_data": "foo"},
-                    },
+                    "data": _DATA_RECORD_0,
                     "model_data": {
-                        "answer_symbol_ids": {"A": 87, "B": 31, "C": 7, "D": 9, "E": 5},
-                        "logits": [
-                            [
-                                {
-                                    "logprob": -1.0,
-                                    "rank": 0,
-                                    "token": "Token 0",
-                                    "token_id": 0,
-                                },
-                            ]
-                        ],
-                        "prompt": "Answer the following question:\n\nQ: What is 0?\nA: ",
+                        "answer_symbol_ids": _ANSWER_TOKEN_MAP,
+                        "prompt": _PROMPT_WITH_LEADIN_0,
                     },
                     "metadata": ANY,
                 },
                 {
-                    "data": {
-                        "benchmark_sample_index": 1,
-                        "benchmark_sample_hash": "f1",
-                        "subject": "apiculture",
-                        "system_prompt": None,
-                        "instruction": "Answer the following question:",
-                        "question": "What is 1?",
-                        "choices": None,
-                        "label": "1",
-                        "formatted_question": "Q: What is 1?",
-                        "formatted_answer": "A: 1",
-                        "question_prompt": "Answer the following question:\n\nQ: What is 1?",
-                        "ancillary_data": {"other_data": "bar"},
-                    },
+                    "data": _DATA_RECORD_1,
                     "model_data": {
-                        "answer_symbol_ids": {"A": 87, "B": 31, "C": 7, "D": 9, "E": 5},
-                        "logits": [
-                            [
-                                {
-                                    "logprob": -1.0,
-                                    "rank": 0,
-                                    "token": "Token 1",
-                                    "token_id": 1,
-                                },
-                            ]
-                        ],
-                        "prompt": "Answer the following question:\n\nQ: What is 1?\nA: ",
+                        "answer_symbol_ids": _ANSWER_TOKEN_MAP,
+                        "prompt": _PROMPT_WITH_LEADIN_1,
                     },
                     "metadata": ANY,
                 },
@@ -459,45 +343,222 @@ class FakeModel(BaseModel):
         ),
     ],
 )
-def test_query_over_benchmark(
-    spec: BenchmarkSpec, expected_logs: dict[str, Any]
+def test_benchmark_record_transform(
+    spec: BenchmarkSpec, expected_records: list[dict[str, Any]]
 ) -> None:
-    # Define the parameters for the queries.
-    gen_params = GenParams(
-        temperature=0.5,
-        top_p=1.0,
-        max_completion_tokens=100,
-        kwargs={},
+    model = FakeModel(model_name="fake-model")
+    benchmark = FakeBenchmark(spec, config=_FAKE_BENCHMARK_CONFIG, seed=147)
+
+    records = list(
+        benchmark.build_dataset().iter_data()
+        >> BenchmarkRecordTransform(benchmark, model.tokenizer)
     )
 
-    sampling_params = DataSamplingParams(
-        sample_size=None,
-    )
+    assert records == expected_records
 
-    benchmark_logs = list(
-        query_over_benchmark(
-            FakeBenchmark(
-                spec,
-                config={
-                    "format": {
-                        "instructions": {
-                            "system": "You are a fake assistant.",
-                            "base_inst_template": "Answer the following question:",
-                            "chat_inst_template": "Answer the question!",
-                        },
-                        "prompt": {
-                            "question_template": "Q: {{ question }}",
-                            "answer_template": "A: {{ answer }}",
-                            "prompt_template": "{{ instruction }}\n\n{{ question }}",
+
+@pytest.mark.parametrize(
+    "generation_mode, gen_params, input_records, expected_records",
+    [
+        (
+            GenerationMode.CHAT_COMPLETION,
+            GenParams(temperature=0.5, top_p=1.0, max_completion_tokens=100, kwargs={}),
+            [
+                {
+                    "model_data": {
+                        "prompt": _PROMPT_NO_LEADIN_0,
+                        "answer_symbol_ids": {},
+                    }
+                },
+                {
+                    "model_data": {
+                        "prompt": _PROMPT_NO_LEADIN_1,
+                        "answer_symbol_ids": {},
+                    }
+                },
+            ],
+            [
+                {
+                    "model_data": {
+                        "prompt": _PROMPT_NO_LEADIN_0,
+                        "answer_symbol_ids": {},
+                        "chat_comp": {
+                            "prompt_token_ids": None,
+                            "num_prompt_tokens": 46,
+                            "prompt_text": _PROMPT_NO_LEADIN_0,
+                            "output_token_ids": None,
+                            "num_output_tokens": 17,
+                            "output_text": f"Fake response to: {_PROMPT_NO_LEADIN_0}",
+                            "max_token_halt": False,
+                            "request_token_ids": None,
+                            "num_request_tokens": 45,
+                            "request_text": "Answer the following question:\n\nQ: What is 0?",
+                            "response_token_ids": None,
+                            "num_response_tokens": 18,
+                            "response_text": f"\nFake response to: {_PROMPT_NO_LEADIN_0}",
+                            "answer_token_ids": None,
+                            "num_answer_tokens": 18,
+                            "answer_text": f"\nFake response to: {_PROMPT_NO_LEADIN_0}",
                         },
                     },
                 },
-                seed=147,
-            ),
-            sampling_params=sampling_params,
-            model=FakeModel(model_name="fake-model"),
-            gen_params=gen_params,
-        )
-    )
+                {
+                    "model_data": {
+                        "prompt": _PROMPT_NO_LEADIN_1,
+                        "answer_symbol_ids": {},
+                        "chat_comp": {
+                            "prompt_token_ids": None,
+                            "num_prompt_tokens": 46,
+                            "prompt_text": _PROMPT_NO_LEADIN_1,
+                            "output_token_ids": None,
+                            "num_output_tokens": 17,
+                            "output_text": f"Fake response to: {_PROMPT_NO_LEADIN_1}",
+                            "max_token_halt": False,
+                            "request_token_ids": None,
+                            "num_request_tokens": 45,
+                            "request_text": "Answer the following question:\n\nQ: What is 1?",
+                            "response_token_ids": None,
+                            "num_response_tokens": 18,
+                            "response_text": f"\nFake response to: {_PROMPT_NO_LEADIN_1}",
+                            "answer_token_ids": None,
+                            "num_answer_tokens": 18,
+                            "answer_text": f"\nFake response to: {_PROMPT_NO_LEADIN_1}",
+                        },
+                    },
+                },
+            ],
+        ),
+        (
+            GenerationMode.NEXT_TOKEN,
+            GenParams(temperature=0.5, top_p=1.0, max_completion_tokens=100, kwargs={}),
+            [
+                {
+                    "model_data": {
+                        "prompt": _PROMPT_WITH_LEADIN_0,
+                        "answer_symbol_ids": {},
+                    }
+                },
+                {
+                    "model_data": {
+                        "prompt": _PROMPT_WITH_LEADIN_1,
+                        "answer_symbol_ids": {},
+                    }
+                },
+            ],
+            [
+                {
+                    "model_data": {
+                        "prompt": _PROMPT_WITH_LEADIN_0,
+                        "answer_symbol_ids": {},
+                        "next_token": {
+                            "prompt_token_ids": None,
+                            "num_prompt_tokens": 49,
+                            "prompt_text": _PROMPT_WITH_LEADIN_0,
+                            "output_token_ids": None,
+                            "num_output_tokens": 17,
+                            "output_text": "Token 0",
+                            "max_token_halt": True,
+                            "request_token_ids": None,
+                            "num_request_tokens": 48,
+                            "request_text": "Answer the following question:\n\nQ: What is 0?\nA:",
+                            "response_token_ids": None,
+                            "num_response_tokens": 18,
+                            "response_text": " Token 0",
+                            "answer_token_ids": None,
+                            "num_answer_tokens": 18,
+                            "answer_text": " Token 0",
+                        },
+                    },
+                },
+                {
+                    "model_data": {
+                        "prompt": _PROMPT_WITH_LEADIN_1,
+                        "answer_symbol_ids": {},
+                        "next_token": {
+                            "prompt_token_ids": None,
+                            "num_prompt_tokens": 49,
+                            "prompt_text": _PROMPT_WITH_LEADIN_1,
+                            "output_token_ids": None,
+                            "num_output_tokens": 17,
+                            "output_text": "Token 1",
+                            "max_token_halt": True,
+                            "request_token_ids": None,
+                            "num_request_tokens": 48,
+                            "request_text": "Answer the following question:\n\nQ: What is 1?\nA:",
+                            "response_token_ids": None,
+                            "num_response_tokens": 18,
+                            "response_text": " Token 1",
+                            "answer_token_ids": None,
+                            "num_answer_tokens": 18,
+                            "answer_text": " Token 1",
+                        },
+                    },
+                },
+            ],
+        ),
+        (
+            GenerationMode.LOGITS,
+            GenParams(temperature=0.5, top_p=1.0, max_completion_tokens=100, kwargs={}),
+            [
+                {
+                    "model_data": {
+                        "prompt": _PROMPT_WITH_LEADIN_0,
+                        "answer_symbol_ids": _ANSWER_TOKEN_MAP,
+                    }
+                },
+                {
+                    "model_data": {
+                        "prompt": _PROMPT_WITH_LEADIN_1,
+                        "answer_symbol_ids": _ANSWER_TOKEN_MAP,
+                    }
+                },
+            ],
+            [
+                {
+                    "model_data": {
+                        "prompt": _PROMPT_WITH_LEADIN_0,
+                        "answer_symbol_ids": _ANSWER_TOKEN_MAP,
+                        "logits": [
+                            [
+                                {
+                                    "token": "Token 0",
+                                    "token_id": 0,
+                                    "logprob": -1.0,
+                                    "rank": 0,
+                                },
+                            ]
+                        ],
+                    },
+                },
+                {
+                    "model_data": {
+                        "prompt": _PROMPT_WITH_LEADIN_1,
+                        "answer_symbol_ids": _ANSWER_TOKEN_MAP,
+                        "logits": [
+                            [
+                                {
+                                    "token": "Token 1",
+                                    "token_id": 1,
+                                    "logprob": -1.0,
+                                    "rank": 0,
+                                },
+                            ]
+                        ],
+                    },
+                },
+            ],
+        ),
+    ],
+)
+def test_model_querier(
+    generation_mode: GenerationMode,
+    gen_params: GenParams,
+    input_records: list[dict[str, Any]],
+    expected_records: list[dict[str, Any]],
+) -> None:
+    model = FakeModel(model_name="fake-model")
+    transform = model_querier(model, generation_mode, gen_params)
 
-    assert benchmark_logs == expected_logs
+    results = list(transform(input_records))
+
+    assert results == expected_records
