@@ -20,7 +20,7 @@ SUPER_LINTER_ENV_FLAGS := $(shell yq eval \
     "$(GITHUB_WORKFLOW_FILE)")
 
 # Define the version of super-linter to use.
-SUPER_LINTER_VERSION := "v8.2.0"
+SUPER_LINTER_VERSION := "v8.5.0"
 
 # Get the absolute path to the root of the main git repository.
 GIT_MAIN := $(shell git rev-parse --path-format=absolute --git-common-dir | sed 's/\/\.git//')
