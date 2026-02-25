@@ -7,8 +7,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from faith.benchmark.formatting.prompt import PromptFormatter
-from faith.model.base import ChatResponse, TokenPred
-from faith.model.spec import ReasoningSpec
+from faith.model.base import ChatResponse, ReasoningSpec, TokenPred
 from faith.model.vllm import VLLMModel, _remove_longest_common_prefix
 
 

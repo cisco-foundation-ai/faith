@@ -36,9 +36,10 @@ from faith.benchmark.formatting.prompt import PromptFormatter
 from faith.benchmark.listing import benchmark_choices
 from faith.cli.flags import parse_begin_end_tokens
 from faith.experiment.params import DataSamplingParams, ExperimentParams
+from faith.model.base import ReasoningSpec
 from faith.model.model_engine import ModelEngine
 from faith.model.params import EngineParams, GenParams
-from faith.model.spec import ModelSpec, ReasoningSpec
+from faith.model.spec import ModelSpec
 
 _cli_parser = argparse.ArgumentParser(
     description="General purpose script for running benchmarks on models.",

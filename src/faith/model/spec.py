@@ -12,16 +12,9 @@ from dataclasses_json import DataClassJsonMixin
 
 from faith._internal.io.paths import canonical_segment
 from faith._internal.io.yaml import read_extended_yaml_file
+from faith.model.base import ReasoningSpec
 from faith.model.model_engine import ModelEngine
 from faith.model.params import EngineParams, GenParams
-
-
-@dataclass
-class ReasoningSpec(DataClassJsonMixin):
-    """Delimiters used to denote reasoning steps in the model's output."""
-
-    start_delimiter: str | list[int]
-    end_delimiter: str | list[int]
 
 
 @dataclass

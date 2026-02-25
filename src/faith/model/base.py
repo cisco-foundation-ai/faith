@@ -105,6 +105,14 @@ class TokenPred(DataClassJsonMixin):
     rank: int | None
 
 
+@dataclass
+class ReasoningSpec(DataClassJsonMixin):
+    """Delimiters used to denote reasoning steps in the model's output."""
+
+    start_delimiter: str | list[int]
+    end_delimiter: str | list[int]
+
+
 class BaseModel(ABC):
     """Base class for all models engine backends used to drive model inference."""
 

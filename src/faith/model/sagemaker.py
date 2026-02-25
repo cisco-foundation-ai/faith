@@ -23,9 +23,9 @@ from faith.model.base import (
     ChatResponse,
     GenerationError,
     PromptList,
+    ReasoningSpec,
     _is_message_list,
 )
-from faith.model.spec import ReasoningSpec
 
 logger = logging.getLogger(__name__)
 

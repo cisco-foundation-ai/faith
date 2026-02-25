@@ -9,9 +9,10 @@ from pathlib import Path
 import pytest
 from dacite.exceptions import MissingValueError
 
+from faith.model.base import ReasoningSpec
 from faith.model.model_engine import ModelEngine
 from faith.model.params import EngineParams, GenParams
-from faith.model.spec import ModelSpec, ReasoningSpec
+from faith.model.spec import ModelSpec
 
 _CONFIGS_DIR = Path(__file__).parent / "testdata" / "configs"
 

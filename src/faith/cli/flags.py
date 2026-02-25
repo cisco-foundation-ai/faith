@@ -4,7 +4,7 @@
 
 import re
 
-from faith.model.spec import ReasoningSpec
+from faith.model.base import ReasoningSpec
 
 _INT_PAT = r"(?:0|-?[1-9]\d*)"
 _INT_CSV_PAT = rf"{_INT_PAT}(?:\s*,\s*{_INT_PAT})*"

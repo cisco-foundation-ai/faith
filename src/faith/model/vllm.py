@@ -26,11 +26,11 @@ from faith.model.base import (
     ChatResponse,
     GenerationError,
     PromptList,
+    ReasoningSpec,
     TokenPred,
     _is_message_list,
     _is_string_list,
 )
-from faith.model.spec import ReasoningSpec
 
 logger = logging.getLogger(__name__)
 
