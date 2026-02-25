@@ -4,6 +4,8 @@
 
 """Utility functions for reading and writing files."""
 
+import os
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -29,15 +31,29 @@ def read_json_file(file_path: Path) -> Any:
 
 
 def write_as_json(file_path: Path, obj: Any) -> None:
-    """Writes `obj` to a file as a json record."""
+    """Writes `obj` to a file as a json record.
+
+    Uses atomic write-and-rename so that a partial write (e.g. disk full,
+    SIGKILL) never corrupts or truncates the target file.
+    """
     file_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(file_path, "wb") as file:
-        file.write(
-            orjson.dumps(
-                obj,
-                option=orjson.OPT_INDENT_2
-                | orjson.OPT_SORT_KEYS
-                | orjson.OPT_APPEND_NEWLINE
-                | orjson.OPT_SERIALIZE_NUMPY,
-            )
-        )
+    data = orjson.dumps(
+        obj,
+        option=orjson.OPT_INDENT_2
+        | orjson.OPT_SORT_KEYS
+        | orjson.OPT_APPEND_NEWLINE
+        | orjson.OPT_SERIALIZE_NUMPY,
+    )
+    # Temp file in the same directory ensures os.replace() is an atomic
+    # same-filesystem rename. On success the rename removes the temp path;
+    # on failure the context manager cleans it up.
+    with tempfile.NamedTemporaryFile(
+        mode="wb", dir=file_path.parent, delete=False
+    ) as tmp:
+        try:
+            tmp.write(data)
+            tmp.flush()
+            os.fsync(tmp.fileno())
+            os.replace(tmp.name, file_path)
+        finally:
+            Path(tmp.name).unlink(missing_ok=True)
