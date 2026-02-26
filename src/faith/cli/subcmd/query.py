@@ -30,7 +30,7 @@ from faith._internal.iter.transform import (
     DevNullReducer,
     IdentityTransform,
     IsoTransform,
-    Transform,
+    Mapping,
 )
 from faith._internal.multiprocessing.gpu_scheduling import (
     GPUJob,
@@ -85,7 +85,7 @@ def read_trial_log(trial_log_path: Path) -> Iterable[dict[str, Any]]:
     return []  # No records if the log file doesn't exist yet.
 
 
-class BenchmarkRecordTransform(Transform[QARecord, dict[str, Any]]):
+class BenchmarkRecordTransform(Mapping[QARecord, dict[str, Any]]):
     """Transform that converts `QARecord`s into log records for querying the model."""
 
     def __init__(self, benchmark: Benchmark, tokenizer: PreTrainedTokenizerBase | None):
@@ -114,22 +114,21 @@ class BenchmarkRecordTransform(Transform[QARecord, dict[str, Any]]):
             ), "Model tokenizer is required for logits generation."
             self._answer_symbol_ids = benchmark.answer_token_map(tokenizer)
 
-    def __call__(self, records: Iterable[QARecord]) -> Iterable[dict[str, Any]]:
-        """Transform a `QARecord` into a dictionary containing the data and metadata for querying."""
-        for example in records:
-            yield {
-                "metadata": {
-                    "version": self._bench_version,
-                    "data_hash": example.sha256(),
-                },
-                "data": example.to_dict(),
-                "model_data": {
-                    "prompt": self._bench_formatter.render_conversation(
-                        example, self._answer_leadin
-                    ),
-                    "answer_symbol_ids": self._answer_symbol_ids,
-                },
-            }
+    def _map_fn(self, element: QARecord) -> dict[str, Any]:
+        """Map a `QARecord` into a dictionary containing the data and metadata for querying."""
+        return {
+            "metadata": {
+                "version": self._bench_version,
+                "data_hash": element.sha256(),
+            },
+            "data": element.to_dict(),
+            "model_data": {
+                "prompt": self._bench_formatter.render_conversation(
+                    element, self._answer_leadin
+                ),
+                "answer_symbol_ids": self._answer_symbol_ids,
+            },
+        }
 
 
 def model_querier(

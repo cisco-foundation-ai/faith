@@ -6,7 +6,7 @@ from enum import Enum, StrEnum, auto
 from typing import Any, Iterable
 
 from faith._internal.iter.join import LeftJoinTransform
-from faith._internal.iter.transform import Transform
+from faith._internal.iter.transform import Mapping, Transform
 
 
 class ReplacementStrategy(StrEnum):
@@ -25,7 +25,7 @@ class RecordStatus(Enum):
 
 
 class _RecordReconciliation(
-    Transform[
+    Mapping[
         tuple[dict[str, Any], dict[str, Any] | None],
         tuple[RecordStatus, dict[str, Any]],
     ]
@@ -35,20 +35,11 @@ class _RecordReconciliation(
     def __init__(self, strategy: ReplacementStrategy):
         self._strategy = strategy
 
-    def __call__(
-        self,
-        src: Iterable[tuple[dict[str, Any], dict[str, Any] | None]],
-    ) -> Iterable[tuple[RecordStatus, dict[str, Any]]]:
-        """Reconcile each pair of (new, existing) records according to the specified strategy."""
-        for new, existing in src:
-            yield self._reconcile_matching_records(new, existing)
-
-    def _reconcile_matching_records(
-        self,
-        new: dict[str, Any],
-        existing: dict[str, Any] | None,
+    def _map_fn(
+        self, element: tuple[dict[str, Any], dict[str, Any] | None]
     ) -> tuple[RecordStatus, dict[str, Any]]:
-        """Reconcile two records according to the specified strategy."""
+        """Reconcile a pair of (new, existing) records according to the specified strategy."""
+        new, existing = element
         if existing is None:
             return (RecordStatus.DIRTY, new)
 
