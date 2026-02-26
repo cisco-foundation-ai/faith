@@ -7,16 +7,16 @@ from typing import Any
 import pytest
 
 from faith._internal.records.reconciliation import (
-    RecordStatus,
     ReplacementStrategy,
     reconcile_records,
 )
+from faith._internal.records.types import Record, RecordStatus
 
 CLEAN = RecordStatus.CLEAN
 DIRTY = RecordStatus.DIRTY
 
 
-def _rec(sample_hash: str, data_hash: str, **extra: Any) -> dict:
+def _rec(sample_hash: str, data_hash: str, **extra: Any) -> Record:
     """Build a minimal record for testing."""
     return {
         "metadata": {"data_hash": data_hash},
@@ -65,7 +65,11 @@ def _rec(sample_hash: str, data_hash: str, **extra: Any) -> dict:
         "preserves-input-order",
     ],
 )
-def test_strategy_never(existing: list, new: list, expected: list) -> None:
+def test_strategy_never(
+    existing: list[Record],
+    new: list[Record],
+    expected: list[tuple[RecordStatus, Record]],
+) -> None:
     """NEVER: always keep the existing record when one matches."""
     assert (
         list(new >> reconcile_records(existing, ReplacementStrategy.NEVER)) == expected
@@ -103,7 +107,11 @@ def test_strategy_never(existing: list, new: list, expected: list) -> None:
         "mixed-all-dirty",
     ],
 )
-def test_strategy_always(existing: list, new: list, expected: list) -> None:
+def test_strategy_always(
+    existing: list[Record],
+    new: list[Record],
+    expected: list[tuple[RecordStatus, Record]],
+) -> None:
     """ALWAYS: always take the new record, regardless of match."""
     assert (
         list(new >> reconcile_records(existing, ReplacementStrategy.ALWAYS)) == expected
@@ -146,7 +154,9 @@ def test_strategy_always(existing: list, new: list, expected: list) -> None:
     ],
 )
 def test_strategy_if_data_hash_differs(
-    existing: list, new: list, expected: list
+    existing: list[Record],
+    new: list[Record],
+    expected: list[tuple[RecordStatus, Record]],
 ) -> None:
     """IF_DATA_HASH_DIFFERS: take new only when the data_hash changed."""
     assert (

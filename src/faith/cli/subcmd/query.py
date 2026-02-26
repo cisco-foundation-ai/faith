@@ -14,7 +14,7 @@ from datetime import datetime
 from enum import Enum
 from functools import partial
 from pathlib import Path
-from typing import Any, Iterable, Iterator, Sequence, Type
+from typing import Iterable, Iterator, Sequence, Type
 from zoneinfo import ZoneInfo
 
 from tqdm import tqdm
@@ -37,10 +37,10 @@ from faith._internal.multiprocessing.gpu_scheduling import (
     run_gpu_jobs_in_parallel,
 )
 from faith._internal.records.reconciliation import (
-    RecordStatus,
     ReplacementStrategy,
     reconcile_records,
 )
+from faith._internal.records.types import Record, RecordStatus
 from faith._internal.types.flags import GenerationMode
 from faith.benchmark.benchmark import Benchmark
 from faith.benchmark.formatting.qa import QARecord
@@ -78,14 +78,14 @@ def current_timestamp() -> str:
     )
 
 
-def read_trial_log(trial_log_path: Path) -> Iterable[dict[str, Any]]:
+def read_trial_log(trial_log_path: Path) -> Iterable[Record]:
     """Read the trial log records from the given path."""
     if trial_log_path.exists():
         return read_json_logs(trial_log_path)
     return []  # No records if the log file doesn't exist yet.
 
 
-class BenchmarkRecordTransform(Mapping[QARecord, dict[str, Any]]):
+class BenchmarkRecordTransform(Mapping[QARecord, Record]):
     """Transform that converts `QARecord`s into log records for querying the model."""
 
     def __init__(self, benchmark: Benchmark, tokenizer: PreTrainedTokenizerBase | None):
@@ -114,8 +114,8 @@ class BenchmarkRecordTransform(Mapping[QARecord, dict[str, Any]]):
             ), "Model tokenizer is required for logits generation."
             self._answer_symbol_ids = benchmark.answer_token_map(tokenizer)
 
-    def _map_fn(self, element: QARecord) -> dict[str, Any]:
-        """Map a `QARecord` into a dictionary containing the data and metadata for querying."""
+    def _map_fn(self, element: QARecord) -> Record:
+        """Map a `QARecord` into a log record containing the data and metadata for querying."""
         return {
             "metadata": {
                 "version": self._bench_version,
@@ -135,7 +135,7 @@ def model_querier(
     model: BaseModel,
     generation_mode: GenerationMode,
     gen_params: GenParams,
-) -> IsoTransform[dict[str, Any]]:
+) -> IsoTransform[Record]:
     """Create a transform that queries the model according to the specified generation mode."""
     mode_map = {
         GenerationMode.LOGITS: _ModelMethod.LOGITS,
@@ -145,7 +145,7 @@ def model_querier(
     return mode_map[generation_mode].create_transform(model, gen_params)
 
 
-class _PredictionTransform(IsoTransform[dict[str, Any]]):
+class _PredictionTransform(IsoTransform[Record]):
     """Base class for prediction transforms that generate model outputs."""
 
     def __init__(self, model: BaseModel, gen_params: GenParams):
@@ -158,7 +158,7 @@ class _PredictionTransform(IsoTransform[dict[str, Any]]):
 class _LogitsTransform(_PredictionTransform):
     """Transform for generating logits from a model."""
 
-    def __call__(self, records: Iterable[dict[str, Any]]) -> Iterable[dict[str, Any]]:
+    def __call__(self, records: Iterable[Record]) -> Iterable[Record]:
         """Generate the next-token logits for each input in `records`."""
         inputs = list(records)
         logit_responses = self._model.logits(
@@ -180,7 +180,7 @@ class _LogitsTransform(_PredictionTransform):
 class _NextTokenTransform(_PredictionTransform):
     """Transform for generating next token predictions from a model."""
 
-    def __call__(self, records: Iterable[dict[str, Any]]) -> Iterable[dict[str, Any]]:
+    def __call__(self, records: Iterable[Record]) -> Iterable[Record]:
         """Generate next token predictions for each input in `records`."""
         inputs = list(records)
         responses = self._model.next_token(
@@ -200,7 +200,7 @@ class _NextTokenTransform(_PredictionTransform):
 class _GenerationTransform(_PredictionTransform):
     """Transform for generating chat completions from a model."""
 
-    def __call__(self, records: Iterable[dict[str, Any]]) -> Iterable[dict[str, Any]]:
+    def __call__(self, records: Iterable[Record]) -> Iterable[Record]:
         """Generate chat completion responses for each input in `records`."""
         inputs = list(records)
         responses = self._model.query(
@@ -235,7 +235,7 @@ class _ModelMethod(Enum):
 
     def create_transform(
         self, model: BaseModel, gen_params: GenParams
-    ) -> IsoTransform[dict[str, Any]]:
+    ) -> IsoTransform[Record]:
         """Create an instance of the transform for the model and generation parameters."""
         return self._transform_cls(model, gen_params)
 
@@ -355,15 +355,15 @@ def _run_single_model(
                     >> MuxTransform(
                         {
                             # Pass through clean records unchanged.
-                            RecordStatus.CLEAN: IdentityTransform[dict[str, Any]](),
+                            RecordStatus.CLEAN: IdentityTransform[Record](),
                             # For dirty records, query the model and update the record.
                             RecordStatus.DIRTY: model_querier(
                                 model, benchmark.generation_mode, model_spec.generation
                             ),
                         }
                     )
-                    >> LoggingTransform[dict[str, Any]](exp_datastore.path / trial_path)
-                    >> DevNullReducer[dict[str, Any]]()
+                    >> LoggingTransform[Record](exp_datastore.path / trial_path)
+                    >> DevNullReducer[Record]()
                 )
                 run_record["trial_records"][str(trial_path.parent)] = {
                     "runtime_seconds": time.perf_counter() - trial_start_time,

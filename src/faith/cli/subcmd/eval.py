@@ -20,6 +20,7 @@ from faith._internal.metrics.aggregations import (
     agg_trial_stats,
     is_breakdown_dict,
 )
+from faith._internal.records.types import Record
 from faith.benchmark.benchmark import BenchmarkSpec
 from faith.benchmark.load import load_benchmark
 
@@ -104,7 +105,7 @@ def compute_experiment_metrics(
                 >> (
                     LoggingTransform(trial_log_filepath)
                     if record_params.annotate_prediction_stats
-                    else IdentityTransform[dict[str, Any]]()
+                    else IdentityTransform[Record]()
                 )
                 >> grade_aggregator
             ).get("query_count", 0)

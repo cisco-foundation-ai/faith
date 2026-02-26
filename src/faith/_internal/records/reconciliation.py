@@ -2,11 +2,12 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from enum import Enum, StrEnum, auto
-from typing import Any, Iterable
+from enum import StrEnum, auto
+from typing import Iterable
 
 from faith._internal.iter.join import LeftJoinTransform
 from faith._internal.iter.transform import Mapping, Transform
+from faith._internal.records.types import Record, RecordStatus
 
 
 class ReplacementStrategy(StrEnum):
@@ -17,18 +18,8 @@ class ReplacementStrategy(StrEnum):
     IF_DATA_HASH_DIFFERS = auto()
 
 
-class RecordStatus(Enum):
-    """Indicates whether a record is clean (unchanged) or dirty (new or updated)."""
-
-    CLEAN = auto()
-    DIRTY = auto()
-
-
 class _RecordReconciliation(
-    Mapping[
-        tuple[dict[str, Any], dict[str, Any] | None],
-        tuple[RecordStatus, dict[str, Any]],
-    ]
+    Mapping[tuple[Record, Record | None], tuple[RecordStatus, Record]]
 ):
     """A transform that reconciles new data with existing data according to a specified strategy."""
 
@@ -36,8 +27,8 @@ class _RecordReconciliation(
         self._strategy = strategy
 
     def _map_fn(
-        self, element: tuple[dict[str, Any], dict[str, Any] | None]
-    ) -> tuple[RecordStatus, dict[str, Any]]:
+        self, element: tuple[Record, Record | None]
+    ) -> tuple[RecordStatus, Record]:
         """Reconcile a pair of (new, existing) records according to the specified strategy."""
         new, existing = element
         if existing is None:
@@ -56,9 +47,8 @@ class _RecordReconciliation(
 
 
 def reconcile_records(
-    existing: Iterable[dict[str, Any]],
-    strategy: ReplacementStrategy,
-) -> Transform[dict[str, Any], tuple[RecordStatus, dict[str, Any]]]:
+    existing: Iterable[Record], strategy: ReplacementStrategy
+) -> Transform[Record, tuple[RecordStatus, Record]]:
     """Creates a transform that reconciles a new record stream with existing records."""
     return LeftJoinTransform(
         existing, on_key=lambda record: record["data"]["benchmark_sample_hash"]
