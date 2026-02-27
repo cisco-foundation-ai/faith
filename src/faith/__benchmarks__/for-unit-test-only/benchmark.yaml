@@ -11,3 +11,4 @@ benchmark: !from
         name: "for-unit-test-only"
         description: "A simple benchmark config for unit testing benchmarks."
         state: test_only
+        primary_metric: "accuracy.mean"

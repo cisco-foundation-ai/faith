@@ -23,6 +23,7 @@ benchmark: !from
           - https://arxiv.org/abs/2412.20787
           - https://secbench.org/
           - https://github.com/secbench-git/SecBench
+        primary_metric: "accuracy.mean"
         categories: ["security"]
     source:
       git_repo: !from

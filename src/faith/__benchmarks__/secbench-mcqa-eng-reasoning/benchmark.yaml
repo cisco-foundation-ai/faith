@@ -20,6 +20,7 @@ benchmark: !from
           - https://secbench.org/
           - https://github.com/secbench-git/SecBench
         categories: ["security", "reasoning"]
+        primary_metric: "accuracy.mean"
     source:
       git_repo: !from
         '$BENCHMARKS_ROOT/sources-template.yaml["sources"]["git_repo"]':

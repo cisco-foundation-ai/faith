@@ -19,6 +19,7 @@ benchmark:
         - https://huggingface.co/datasets/AI4Sec/cti-bench
       categories: ["security"]
       state: experimental
+      primary_metric: "accuracy.mean"
   source:
     huggingface: !from
       '$BENCHMARKS_ROOT/sources-template.yaml["sources"]["huggingface"]':

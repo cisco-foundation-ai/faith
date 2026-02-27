@@ -17,6 +17,7 @@ benchmark: !from
           - https://arxiv.org/abs/2402.07688
           - https://github.com/CyberMetric
         categories: ["security"]
+        primary_metric: "accuracy.mean"
     source:
       git_repo: !from
         '$BENCHMARKS_ROOT/sources-template.yaml["sources"]["git_repo"]':

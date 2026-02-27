@@ -17,6 +17,7 @@ benchmark: !from
           - https://github.com/xashru/cti-bench
           - https://huggingface.co/datasets/AI4Sec/cti-bench
         categories: ["security"]
+        primary_metric: "accuracy.mean"
     source:
       huggingface: !from
         '$BENCHMARKS_ROOT/sources-template.yaml["sources"]["huggingface"]':

@@ -6,7 +6,8 @@ from pathlib import Path
 
 import pytest
 
-from faith._internal.io.resources import benchmarks_root
+from faith._internal.io.benchmarks import benchmarks_root
+from faith.benchmark.config import load_config_from_path
 from faith.benchmark.listing import (
     BenchmarkState,
     benchmark_choices,
@@ -172,3 +173,23 @@ def test_find_benchmarks() -> None:
             Path(__file__).parent / "testdata" / "sub" / "bench-c",
         ]
     )
+
+
+def test_all_benchmarks_have_primary_metric() -> None:
+    """Ensure all benchmarks define a primary_metric for analytics."""
+    core_benchmarks = find_benchmarks(benchmarks_root())
+    for benchmark_path in core_benchmarks:
+        config = load_config_from_path(benchmark_path)
+        primary_metric = config.get("metadata", {}).get("primary_metric")
+
+        assert primary_metric is not None, (
+            f"Benchmark {benchmark_path.name} missing primary_metric. "
+            f"Add 'primary_metric' field to {benchmark_path}/benchmark.yaml"
+        )
+        assert isinstance(primary_metric, str), (
+            f"Benchmark {benchmark_path.name} primary_metric must be a string, "
+            f"got {type(primary_metric).__name__}"
+        )
+        assert (
+            len(primary_metric) > 0
+        ), f"Benchmark {benchmark_path.name} primary_metric cannot be empty"

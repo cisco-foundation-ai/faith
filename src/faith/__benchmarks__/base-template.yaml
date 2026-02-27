@@ -10,3 +10,4 @@ metadata:
   urls: []
   categories: []
   state: enabled
+  primary_metric: null # Primary metric for analytics (e.g., "accuracy.mean")
