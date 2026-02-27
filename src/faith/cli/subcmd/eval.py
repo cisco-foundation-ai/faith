@@ -12,7 +12,7 @@ from typing import Any
 from tqdm import tqdm
 
 from faith._internal.config.model_response import model_response_format_config
-from faith._internal.io.json import read_json_file, read_json_logs, write_as_json
+from faith._internal.io.json import read_json_file, write_as_json
 from faith._internal.io.logging import LoggingTransform
 from faith._internal.iter.transform import IdentityTransform
 from faith._internal.metrics.aggregations import (
@@ -20,6 +20,7 @@ from faith._internal.metrics.aggregations import (
     agg_trial_stats,
     is_breakdown_dict,
 )
+from faith._internal.records.io import load_records_from_json
 from faith._internal.records.types import Record
 from faith.benchmark.benchmark import Benchmark, BenchmarkSpec
 from faith.benchmark.load import load_benchmark
@@ -81,7 +82,7 @@ def evaluate_experiment_logs(
             trial_logs.items(), desc="Processing trials", unit="trial", leave=False
         )
         if (
-            trial_metrics := read_json_logs(trial_log_filepath)
+            trial_metrics := load_records_from_json(trial_log_filepath)
             >> benchmark.log_grader(**kwargs)
             >> (
                 LoggingTransform(trial_log_filepath)

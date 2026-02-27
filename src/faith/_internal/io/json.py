@@ -11,18 +11,6 @@ from typing import Any
 
 import orjson
 
-from faith._internal.records.types import Record
-
-
-def read_json_logs(file_path: Path) -> list[Record]:
-    """Reads a JSONL file and returns a list of dictionaries."""
-    logs = read_json_file(file_path)
-    assert isinstance(logs, list), f"Expected a list, got {type(logs)}"
-    assert all(
-        isinstance(log, dict) for log in logs
-    ), "Expected all elements to be dictionaries"
-    return logs
-
 
 def read_json_file(file_path: Path) -> Any:
     """Reads a JSON file and returns the content."""
