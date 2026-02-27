@@ -470,7 +470,15 @@ def _summarize_main(args: argparse.Namespace) -> None:
     # pylint: disable=import-outside-toplevel
     from faith.cli.subcmd.summarize import summarize_experiments
 
-    summarize_experiments(args.experiment_path, args.stats, args.summary_filepath)
+    summarize_experiments(
+        args.experiment_path,
+        args.stats,
+        args.summary_filepath,
+        output_format=args.output_format,
+        bigquery_project=args.bigquery_project,
+        bigquery_dataset=args.bigquery_dataset,
+        bigquery_table=args.bigquery_table,
+    )
 
 
 def _add_summarize_args(parser: argparse.ArgumentParser) -> None:
@@ -480,17 +488,47 @@ def _add_summarize_args(parser: argparse.ArgumentParser) -> None:
     )
 
     group.add_argument(
+        "--output-format",
+        type=str,
+        default="table",
+        choices=["table", "csv", "bigquery"],
+        help="Output format: 'table' (print to console), 'csv' (save to file), or 'bigquery' (ingest to BigQuery).",
+    )
+    group.add_argument(
         "--stats",
         type=str,
         default=[],
         nargs="*",
-        help="The stats to summarize. This should be a comma-separated list of metric names.",
+        help="The stats to summarize (for table/csv output). This should be a comma-separated list of metric names.",
     )
     group.add_argument(
         "--summary-filepath",
         type=Path,
         default=None,
-        help="The path to the output directory where the summary will be saved.",
+        help="The path to the output directory where the summary will be saved (for csv output).",
+    )
+
+    # BigQuery-specific arguments
+    bigquery_group = parser.add_argument_group(
+        "bigquery", "Arguments for BigQuery output (requires --output-format bigquery)"
+    )
+    bigquery_group.add_argument(
+        "--bigquery-project",
+        type=str,
+        default=None,
+        help="GCP project ID for BigQuery. Can also be set via FAITH_BIGQUERY_PROJECT environment variable.",
+    )
+    bigquery_group.add_argument(
+        "--bigquery-dataset",
+        type=str,
+        default=None,
+        help="BigQuery dataset name. Can also be set via FAITH_BIGQUERY_DATASET environment variable.",
+    )
+    bigquery_group.add_argument(
+        "--bigquery-table",
+        type=str,
+        default=None,
+        help="BigQuery table name (default: metrics). Can also be set via FAITH_BIGQUERY_TABLE environment variable.",
     )
 
 

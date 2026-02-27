@@ -4,13 +4,21 @@
 
 import contextlib
 import io
+import json
 import tempfile
 from pathlib import Path
+from unittest.mock import patch
 
 import pandas as pd
+import pytest
 from pandas.testing import assert_frame_equal
 
-from faith.cli.subcmd.summarize import summarize_experiments
+from faith.cli.subcmd.summarize import (
+    _find_metrics_files,
+    _process_metrics_file,
+    _resolve_bigquery_config,
+    summarize_experiments,
+)
 
 
 def test_summarize_experiments() -> None:
@@ -67,3 +75,128 @@ def test_summarize_experiments_fails_on_existing() -> None:
             summarize_experiments(experiment_path, selected_stats, summary_filepath)
         except FileExistsError as e:
             assert str(e) == f"Output path {summary_filepath} already exists"
+
+
+class TestResolveBigQueryConfig:
+    """Tests for BigQuery configuration resolution."""
+
+    def test_resolve_from_flags(self):
+        """Test config resolution from explicit flags."""
+        project, dataset, table = _resolve_bigquery_config(
+            "my-project", "my-dataset", "my-table"
+        )
+        assert project == "my-project"
+        assert dataset == "my-dataset"
+        assert table == "my-table"
+
+    def test_resolve_from_env_vars(self):
+        """Test config resolution from environment variables."""
+        with patch.dict(
+            "os.environ",
+            {
+                "FAITH_BIGQUERY_PROJECT": "env-project",
+                "FAITH_BIGQUERY_DATASET": "env-dataset",
+                "FAITH_BIGQUERY_TABLE": "env-table",
+            },
+        ):
+            project, dataset, table = _resolve_bigquery_config(None, None, None)
+            assert project == "env-project"
+            assert dataset == "env-dataset"
+            assert table == "env-table"
+
+    def test_resolve_flags_override_env(self):
+        """Test that explicit flags override environment variables."""
+        with patch.dict(
+            "os.environ",
+            {
+                "FAITH_BIGQUERY_PROJECT": "env-project",
+                "FAITH_BIGQUERY_DATASET": "env-dataset",
+            },
+        ):
+            project, dataset, table = _resolve_bigquery_config(
+                "flag-project", "flag-dataset", "flag-table"
+            )
+            assert project == "flag-project"
+            assert dataset == "flag-dataset"
+            assert table == "flag-table"
+
+    def test_resolve_missing_project(self):
+        """Test that missing project raises assertion."""
+        with pytest.raises(AssertionError, match="project not specified"):
+            _resolve_bigquery_config(None, "dataset", "table")
+
+    def test_resolve_missing_dataset(self):
+        """Test that missing dataset raises assertion."""
+        with pytest.raises(AssertionError, match="dataset not specified"):
+            _resolve_bigquery_config("project", None, "table")
+
+    def test_resolve_default_table(self):
+        """Test default table name when not specified."""
+        with patch.dict(
+            "os.environ",
+            {"FAITH_BIGQUERY_PROJECT": "project", "FAITH_BIGQUERY_DATASET": "dataset"},
+        ):
+            _, _, table = _resolve_bigquery_config(None, None, "metrics")
+            assert table == "metrics"
+
+
+class TestFindMetricsFiles:
+    """Tests for finding metrics files."""
+
+    def test_find_metrics_files(self, tmp_path):
+        """Test finding metrics.json files recursively."""
+        # Create test structure
+        (tmp_path / "bench1" / "model1").mkdir(parents=True)
+        (tmp_path / "bench1" / "model1" / "metrics.json").write_text("{}")
+        (tmp_path / "bench2" / "model2").mkdir(parents=True)
+        (tmp_path / "bench2" / "model2" / "metrics.json").write_text("{}")
+
+        metrics_files = _find_metrics_files(tmp_path)
+        assert len(metrics_files) == 2
+        assert all(f.name == "metrics.json" for f in metrics_files)
+
+    def test_find_metrics_files_not_found(self, tmp_path):
+        """Test error when no metrics.json files found."""
+        with pytest.raises(FileNotFoundError, match="No metrics.json files found"):
+            _find_metrics_files(tmp_path)
+
+
+class TestProcessMetricsFile:
+    """Tests for processing individual metrics files."""
+
+    def test_process_metrics_file_missing_experiment(self, tmp_path):
+        """Test that missing experiment.json returns empty list with warning."""
+        metrics_file = tmp_path / "metrics.json"
+        metrics_file.write_text('{"stats": {"accuracy": {"mean": 0.8}}}')
+
+        result = _process_metrics_file(metrics_file)
+        assert result == []
+
+    def test_process_metrics_file_success(self, tmp_path):
+        """Test successful metrics file processing."""
+        # Create experiment.json
+        exp_file = tmp_path / "experiment.json"
+        exp_data = {
+            "experiment_params": {
+                "benchmark": {
+                    "name": "test-bench",
+                    "generation_mode": "chat_comp",
+                    "prompt_format": "chat",
+                    "n_shot": "0",
+                },
+                "model": {"path": "test/model"},
+            },
+            "metadata": {},
+        }
+        exp_file.write_text(json.dumps(exp_data))
+
+        # Create metrics.json
+        metrics_file = tmp_path / "metrics.json"
+        metrics_data = {"stats": {"accuracy": {"mean": 0.85}}}
+        metrics_file.write_text(json.dumps(metrics_data))
+
+        result = _process_metrics_file(metrics_file)
+        assert len(result) == 1
+        assert result[0]["metric_name"] == "accuracy.mean"
+        assert result[0]["metric_value"] == 0.85
+        assert result[0]["benchmark"] == "test-bench"
