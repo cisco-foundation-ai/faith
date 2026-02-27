@@ -182,16 +182,24 @@ class _MatcherCompose(Matcher, Generic[_MATCH_TYPE]):
         return self.second(self.first(s).value or "")
 
 
-class SimpleMatcher(Matcher[str]):
+class _StringMatcher(Matcher[str]):
+    """Base class for a matcher that matches a string and returns a string.
+
+    This provides a composition operator for matchers that return strings, as
+    these can be chained together to apply multiple regex patterns in sequence.
+    """
+
+    def __or__(self, other: Matcher[_OTHER_TYPE]) -> Matcher[_OTHER_TYPE]:
+        """Allow composition of matchers with the | operator."""
+        return _MatcherCompose(self, other)
+
+
+class SimpleMatcher(_StringMatcher):
     """Reduce a string to a subselection using a regex pattern."""
 
     def __init__(self, pattern_def: dict[str, Any]):
         """Initialize with a single pattern definition."""
         self._pattern = _FormatPattern(pattern_def)
-
-    def __or__(self, other: Matcher[_OTHER_TYPE]) -> Matcher[_OTHER_TYPE]:
-        """Allow composition of matchers with the | operator."""
-        return _MatcherCompose(self, other)
 
     def __call__(self, s: str) -> Match:
         """Match the string `s` with the regex pattern."""
@@ -200,6 +208,14 @@ class SimpleMatcher(Matcher[str]):
             value=cast(str, match_text) if match_text is not None else None,
             answer_format=match_format,
         )
+
+
+class AllMatcher(_StringMatcher):
+    """A matcher that matches the entirety of any string."""
+
+    def __call__(self, s: str) -> Match:
+        """Match any string `s` and return it verbatim with a proper answer format."""
+        return Match(value=s, answer_format=AnswerFormat.PROPER)
 
 
 class SequentialMatcher(Matcher[Any]):

@@ -68,7 +68,10 @@ class LABenchmark(BaseBenchmark):
         )
 
     def log_grader(
-        self, model_format_config: dict[str, Any], recompute_stats: bool = False
+        self,
+        *,
+        model_format_config: dict[str, Any] | None = None,
+        recompute_stats: bool = False,
     ) -> LogGrader:
         """Fetch a log grader for this benchmark."""
         op_cfg = self._config["output_processing"]

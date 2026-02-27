@@ -12,7 +12,7 @@ from typing import Any
 from tqdm import tqdm
 
 from faith._internal.config.model_response import model_response_format_config
-from faith._internal.io.json import read_json_file, write_as_json
+from faith._internal.io.json import read_json_file, read_json_logs, write_as_json
 from faith._internal.io.logging import LoggingTransform
 from faith._internal.iter.transform import IdentityTransform
 from faith._internal.metrics.aggregations import (
@@ -21,7 +21,7 @@ from faith._internal.metrics.aggregations import (
     is_breakdown_dict,
 )
 from faith._internal.records.types import Record
-from faith.benchmark.benchmark import BenchmarkSpec
+from faith.benchmark.benchmark import Benchmark, BenchmarkSpec
 from faith.benchmark.load import load_benchmark
 
 
@@ -67,54 +67,65 @@ def _agg_trials(tms: ValuesView[dict[str, Any]]) -> dict[str, Any]:
     )
 
 
+def evaluate_experiment_logs(
+    benchmark: Benchmark,
+    trial_logs: dict[str, Path],
+    *,
+    annotate_prediction_stats: bool = False,
+    **kwargs: Any,
+) -> dict[str, Any]:
+    """Evaluate an experiment from trial logs using a log grader and grade aggregator."""
+    per_trial_metrics = {
+        trial_key: trial_metrics
+        for trial_key, trial_log_filepath in tqdm(
+            trial_logs.items(), desc="Processing trials", unit="trial", leave=False
+        )
+        if (
+            trial_metrics := read_json_logs(trial_log_filepath)
+            >> benchmark.log_grader(**kwargs)
+            >> (
+                LoggingTransform(trial_log_filepath)
+                if annotate_prediction_stats
+                else IdentityTransform[Record]()
+            )
+            >> benchmark.grade_aggregator()
+        ).get("query_count", 0)
+        > 0
+    }
+    return {
+        "per_trial_metrics": per_trial_metrics,
+        "stats": _agg_trials(per_trial_metrics.values()),
+    }
+
+
 def compute_experiment_metrics(
     experiment_path: Path,
     record_params: RecordHandlingParams,
 ) -> dict[str, Any]:
     """Compute metrics for the experiment at the given path."""
     experiment_summary = read_json_file(experiment_path)
-    benchmark_spec = BenchmarkSpec.from_dict(
-        experiment_summary["experiment_params"]["benchmark"]
-    )
-    benchmark = load_benchmark(benchmark_spec, experiment_summary["benchmark_config"])
-    model_format_config = model_response_format_config(
-        experiment_summary["experiment_params"]["model"].get("response_pattern", None)
-    )
-
-    log_grader = benchmark.log_grader(
-        model_format_config, recompute_stats=record_params.recompute_stats
-    )
-    grade_aggregator = benchmark.grade_aggregator()
-
-    experiment_metrics: dict[str, Any] = {
-        "per_trial_metrics": {
-            trial_key: trial_metrics
-            for trial_key, trial_metadata in tqdm(
-                experiment_summary["trial_records"].items(),
-                desc="Processing trials",
-                unit="trial",
-                leave=False,
-            )
+    experiment_metrics = evaluate_experiment_logs(
+        load_benchmark(
+            BenchmarkSpec.from_dict(
+                experiment_summary["experiment_params"]["benchmark"]
+            ),
+            experiment_summary["benchmark_config"],
+        ),
+        {
+            trial_key: trial_log_filepath
+            for trial_key, trial_metadata in experiment_summary["trial_records"].items()
             if (
                 trial_log_filepath := experiment_path.parent
                 / trial_metadata["trial_log_path"]
             ).exists()
-            and (
-                trial_metrics := read_json_file(trial_log_filepath)
-                >> log_grader
-                >> (
-                    LoggingTransform(trial_log_filepath)
-                    if record_params.annotate_prediction_stats
-                    else IdentityTransform[Record]()
-                )
-                >> grade_aggregator
-            ).get("query_count", 0)
-            > 0
-        }
-    }
-    experiment_metrics["stats"] = _agg_trials(
-        experiment_metrics["per_trial_metrics"].values()
+        },
+        annotate_prediction_stats=record_params.annotate_prediction_stats,
+        model_format_config=model_response_format_config(
+            experiment_summary["experiment_params"]["model"].get(
+                "response_pattern", None
+            )
+        ),
+        recompute_stats=record_params.recompute_stats,
     )
-
     write_as_json(experiment_path.parent / "metrics.json", experiment_metrics)
     return experiment_metrics

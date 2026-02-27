@@ -110,8 +110,8 @@ class MCBenchmark(BaseBenchmark):
             symbol: self.formatter.render_answer(symbol) for symbol in self.answer_set
         }
         tokenizations = {
-            symbol: tokenizer.encode(ans, add_special_tokens=False)
-            for symbol, ans in answers.items()
+            symbol: tokenizer.encode(answer, add_special_tokens=False)
+            for symbol, answer in answers.items()
         }
         assert (
             len(set(map(len, tokenizations.values()))) == 1
@@ -158,7 +158,10 @@ class MCBenchmark(BaseBenchmark):
         )
 
     def log_grader(
-        self, model_format_config: dict[str, Any], recompute_stats: bool = False
+        self,
+        *,
+        model_format_config: dict[str, Any] | None = None,
+        recompute_stats: bool = False,
     ) -> LogGrader:
         """Fetch a log grader for this benchmark."""
         op_cfg = self._config["output_processing"]

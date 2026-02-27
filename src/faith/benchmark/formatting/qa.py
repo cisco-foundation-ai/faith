@@ -58,6 +58,11 @@ class QARecord(DataClassJsonMixin):
         return dict_sha256(self.to_dict())
 
 
+def _opt_template(template_str: str | None) -> Template | None:
+    """Helper function to convert a template string to a Jinja2 Template or None."""
+    return Template(template_str) if template_str is not None else None
+
+
 class QAFormatter:
     """A configurable formatter that constructs question-answer pairs for a benchmark."""
 
@@ -66,19 +71,20 @@ class QAFormatter:
         self._prompt_format = prompt_format
         inst_cfg = format_cfg.get("instructions", {})
         prompt_cfg = format_cfg.get("prompt", {})
-        sp_tmpl = inst_cfg.get("system_prompt_template", None)
-        self._system_prompt_template = (
-            Template(sp_tmpl) if sp_tmpl is not None else None
+        self._system_prompt_template = _opt_template(
+            inst_cfg.get("system_prompt_template", None)
         )
         inst_tmpl: str | None = None
         if prompt_format == PromptFormatter.BASE:
             inst_tmpl = inst_cfg.get("base_inst_template", None)
         elif prompt_format == PromptFormatter.CHAT:
             inst_tmpl = inst_cfg.get("chat_inst_template", None)
-        self._inst_template = Template(inst_tmpl) if inst_tmpl is not None else None
-        self._question_template = Template(prompt_cfg["question_template"])
-        self._answer_template = Template(prompt_cfg["answer_template"])
-        self._prompt_template = Template(prompt_cfg["prompt_template"])
+        self._inst_template = _opt_template(inst_tmpl)
+        self._question_template = _opt_template(
+            prompt_cfg.get("question_template", None)
+        )
+        self._answer_template = _opt_template(prompt_cfg.get("answer_template", None))
+        self._prompt_template = _opt_template(prompt_cfg.get("prompt_template", None))
 
     def _render_system_prompt(self, subject: str | None = None) -> str | None:
         if self._system_prompt_template is None:
@@ -97,6 +103,9 @@ class QAFormatter:
         self, instruction: str | None, examples: Sequence[QARecord], question: str
     ) -> str:
         """Renders the prompt using the prompt template with parameters instruction, examples, and question."""
+        assert (
+            self._prompt_template is not None
+        ), "Prompt template is not defined for this formatter."
         return self._prompt_template.render(
             instruction=instruction,
             examples=[
@@ -110,10 +119,16 @@ class QAFormatter:
         self, question: str, choice_map: dict[str, str] | None = None
     ) -> str:
         """Renders the question using the question template and choice map."""
+        assert (
+            self._question_template is not None
+        ), "Question template is not defined for this formatter."
         return self._question_template.render(question=question, choice_map=choice_map)
 
     def render_answer(self, answer: str | None) -> str | None:
         """Renders the answer using the answer template."""
+        assert (
+            self._answer_template is not None
+        ), "Answer template is not defined for this formatter."
         if answer is None:
             return None
         return self._answer_template.render(answer=answer)

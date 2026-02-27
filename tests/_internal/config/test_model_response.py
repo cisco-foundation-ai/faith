@@ -6,11 +6,7 @@ from faith._internal.config.model_response import model_response_format_config
 
 
 def test_model_response_format_config() -> None:
-    assert model_response_format_config() == {
-        "pattern": r"(?s).*",
-        "match_disambiguation": "match_all",
-        "format_type": "proper",
-    }
+    assert model_response_format_config() is None
 
     custom_pattern = r"\d+"
     assert model_response_format_config(custom_pattern) == {

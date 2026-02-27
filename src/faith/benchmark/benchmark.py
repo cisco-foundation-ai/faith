@@ -50,7 +50,9 @@ class Benchmark(ABC):
         self._generation_mode = spec.generation_mode
         self._n_shot = spec.n_shot
         self._config = config
-        self._formatter = QAFormatter(spec.prompt_format, self._config["format"])
+        self._formatter = QAFormatter(
+            spec.prompt_format, self._config.get("format", None) or {}
+        )
         self._seed = seed
         self._path = path
 
@@ -99,7 +101,10 @@ class Benchmark(ABC):
 
     @abstractmethod
     def log_grader(
-        self, model_format_config: dict[str, Any], recompute_stats: bool = False
+        self,
+        *,
+        model_format_config: dict[str, Any] | None = None,
+        recompute_stats: bool = False,
     ) -> LogGrader:
         """Fetch a log grader for this benchmark."""
 

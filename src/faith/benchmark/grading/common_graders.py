@@ -8,6 +8,7 @@ import re
 from typing import Any
 
 from faith._internal.algo.matching import (
+    AllMatcher,
     AnswerFormat,
     Matcher,
     SequentialMatcher,
@@ -133,12 +134,16 @@ class ChatCompletionLogGrader(LogGrader):
     def __init__(
         self,
         output_processing_config: dict[str, Any],
-        model_format_config: dict[str, Any],
+        model_format_config: dict[str, Any] | None,
         recompute_stats: bool,
     ):
         """Initialize the chat completion log grader."""
         super().__init__(output_processing_config, recompute_stats)
-        self._answer_matcher: Matcher[Any] = SimpleMatcher(model_format_config)
+        self._answer_matcher: Matcher[Any] = (
+            SimpleMatcher(model_format_config)
+            if model_format_config is not None
+            else AllMatcher()
+        )
         if answer_formats := output_processing_config.get("answer_formats", None):
             self._answer_matcher |= SequentialMatcher(*answer_formats)
 

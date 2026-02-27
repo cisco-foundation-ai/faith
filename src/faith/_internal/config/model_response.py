@@ -7,10 +7,16 @@
 from typing import Any
 
 
-def model_response_format_config(format_pattern: str | None = None) -> dict[str, Any]:
+def model_response_format_config(
+    format_pattern: str | None = None,
+) -> dict[str, Any] | None:
     """Get the configuration for model response formatting."""
-    return {
-        "pattern": format_pattern or r"(?s).*",
-        "match_disambiguation": "match_all",
-        "format_type": "proper",
-    }
+    return (
+        {
+            "pattern": format_pattern or r"(?s).*",
+            "match_disambiguation": "match_all",
+            "format_type": "proper",
+        }
+        if format_pattern is not None
+        else None
+    )

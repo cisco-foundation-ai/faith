@@ -53,7 +53,10 @@ class FakeBenchmark(Benchmark):
         return FakeDataset(self.formatter, np.random.default_rng())
 
     def log_grader(
-        self, model_format_config: dict[str, Any], recompute_stats: bool = False
+        self,
+        *,
+        model_format_config: dict[str, Any] | None = None,
+        recompute_stats: bool = False,
     ) -> LogGrader:
         raise NotImplementedError("This method should not be called.")
 

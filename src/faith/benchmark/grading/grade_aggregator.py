@@ -17,7 +17,7 @@ from faith.benchmark.scores.domain_specific import DomainSpecificScore
 from faith.benchmark.scores.types import Score
 
 
-class GradeAggregator(Reducer[Record, dict[str, Any] | None]):
+class GradeAggregator(Reducer[Record, dict[str, Any]]):
     """Base class for aggregating benchmark grades from benchmark logs."""
 
     def __init__(self, output_processing_config: dict[str, Any]) -> None:
@@ -27,7 +27,7 @@ class GradeAggregator(Reducer[Record, dict[str, Any] | None]):
             **output_processing_config.get("score_fns", {})
         )
 
-    def __call__(self, logs: Iterable[Record]) -> dict[str, Any] | None:
+    def __call__(self, logs: Iterable[Record]) -> dict[str, Any]:
         """Reduce the collected statistics to their overall benchmark metrics."""
         test_stats = GradeAggregator._stats_transpose(logs)
         logit_stats = (
