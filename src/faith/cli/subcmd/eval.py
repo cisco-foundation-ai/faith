@@ -68,14 +68,14 @@ def _agg_trials(tms: ValuesView[dict[str, Any]]) -> dict[str, Any]:
     )
 
 
-def evaluate_experiment_logs(
+def compute_experiment_metrics(
     benchmark: Benchmark,
     trial_logs: dict[str, Path],
     *,
     annotate_prediction_stats: bool = False,
     **kwargs: Any,
 ) -> dict[str, Any]:
-    """Evaluate an experiment from trial logs using a log grader and grade aggregator."""
+    """Compute a benchmark experiment's metrics from its trial logs."""
     per_trial_metrics = {
         trial_key: trial_metrics
         for trial_key, trial_log_filepath in tqdm(
@@ -99,13 +99,15 @@ def evaluate_experiment_logs(
     }
 
 
-def compute_experiment_metrics(
+def evaluate_experiment(
     experiment_path: Path,
     record_params: RecordHandlingParams,
+    *,
+    metrics_output_path: Path | None = None,
 ) -> dict[str, Any]:
-    """Compute metrics for the experiment at the given path."""
+    """Evaluate an experiment from trial logs at the given path."""
     experiment_summary = read_json_file(experiment_path)
-    experiment_metrics = evaluate_experiment_logs(
+    metrics = compute_experiment_metrics(
         load_benchmark(
             BenchmarkSpec.from_dict(
                 experiment_summary["experiment_params"]["benchmark"]
@@ -128,5 +130,6 @@ def compute_experiment_metrics(
         ),
         recompute_stats=record_params.recompute_stats,
     )
-    write_as_json(experiment_path.parent / "metrics.json", experiment_metrics)
-    return experiment_metrics
+    if metrics_output_path is not None:
+        write_as_json(metrics_output_path, metrics)
+    return metrics

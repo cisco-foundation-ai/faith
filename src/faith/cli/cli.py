@@ -336,19 +336,24 @@ def _eval_main(args: argparse.Namespace) -> None:
     # pylint: disable=import-outside-toplevel
     from tqdm import tqdm
 
-    from faith.cli.subcmd.eval import RecordHandlingParams, compute_experiment_metrics
+    from faith.cli.subcmd.eval import RecordHandlingParams, evaluate_experiment
 
-    filepaths = [args.experiment_path]
-    if args.experiment_path.is_dir():
-        filepaths = list(args.experiment_path.glob("**/experiment.json"))
+    experiment_paths = (
+        args.experiment_path.glob("**/experiment.json")
+        if args.experiment_path.is_dir()
+        else [args.experiment_path]
+    )
 
-    for filepath in tqdm(filepaths, desc="Processing experiments", unit="experiment"):
-        compute_experiment_metrics(
-            filepath,
+    for experiment_path in tqdm(
+        experiment_paths, desc="Processing experiments", unit="experiment"
+    ):
+        evaluate_experiment(
+            experiment_path,
             RecordHandlingParams(
                 annotate_prediction_stats=args.cache_prediction_stats,
                 recompute_stats=args.force_compute_stats,
             ),
+            metrics_output_path=experiment_path.parent / "metrics.json",
         )
 
 
@@ -449,7 +454,7 @@ def _run_all_main(args: argparse.Namespace) -> None:
     # sub-command has different dependencies and importing them as part of the
     # main CLI script makes autocompletion slow.
     # pylint: disable=import-outside-toplevel
-    from faith.cli.subcmd.eval import RecordHandlingParams, compute_experiment_metrics
+    from faith.cli.subcmd.eval import RecordHandlingParams, evaluate_experiment
     from faith.cli.subcmd.summarize import summarize_experiments
 
     with DatastoreContext.from_path(args.datastore_location) as datastore:
@@ -457,12 +462,13 @@ def _run_all_main(args: argparse.Namespace) -> None:
             partial(datastore.push, raise_on_error=False), interval=150
         ):
             for experiment_path in _cli_query(args, datastore):
-                compute_experiment_metrics(
+                evaluate_experiment(
                     experiment_path,
                     RecordHandlingParams(
                         annotate_prediction_stats=args.cache_prediction_stats,
                         recompute_stats=args.force_compute_stats,
                     ),
+                    metrics_output_path=experiment_path.parent / "metrics.json",
                 )
             summarize_experiments(datastore.path, args.stats, args.summary_filepath)
 
@@ -486,7 +492,7 @@ _cli_args = _cli_parser.parse_args()
 def _cli_main() -> None:
     """Main entry point for the benchmarking commands."""
 
-    # Suppress the transformers logger's ouptut.
+    # Suppress the transformers logger's output.
     logging.getLogger("transformers").setLevel(logging.ERROR)
 
     # Suppress the vLLM logger's output.
