@@ -7,7 +7,6 @@
 import logging
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -15,6 +14,7 @@ from transformers import PreTrainedTokenizerBase
 
 from faith import __version__
 from faith._internal.algo.sampling import NShotSampler
+from faith._internal.types.configs import Configuration
 from faith._internal.types.flags import GenerationMode
 from faith.benchmark.dataset.dataset import BenchmarkDataset
 from faith.benchmark.dataset.load import load_data, sample_datasets
@@ -32,7 +32,7 @@ class Benchmark(ABC):
     def __init__(
         self,
         spec: BenchmarkSpec,
-        config: dict[str, Any],
+        config: Configuration,
         path: Path | None = None,
         seed: int | None = None,
     ):
@@ -40,7 +40,7 @@ class Benchmark(ABC):
 
         Args:
             spec (BenchmarkSpec): The specification for the benchmark.
-            config (dict[str, Any]): The configuration dictionary for the benchmark.
+            config (Configuration): The configuration dictionary for the benchmark.
             formatter (QAFormatter): The formatter used to create prompts.
             path (Path | None): The path to the benchmark data directory used when
                 loading data.
@@ -103,7 +103,7 @@ class Benchmark(ABC):
     def log_grader(
         self,
         *,
-        model_format_config: dict[str, Any] | None = None,
+        model_format_config: Configuration | None = None,
         recompute_stats: bool = False,
     ) -> LogGrader:
         """Fetch a log grader for this benchmark."""

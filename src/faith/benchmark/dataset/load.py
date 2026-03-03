@@ -7,7 +7,7 @@
 import tempfile
 from enum import Enum
 from pathlib import Path
-from typing import Any, Iterable, Sequence
+from typing import Iterable, Sequence
 
 import git
 import numpy as np
@@ -16,6 +16,7 @@ from datasets import load_dataset
 
 from faith._internal.algo.sampling import sample_partition
 from faith._internal.parsing.expr import evaluate_expr
+from faith._internal.types.configs import Configuration
 from faith._internal.types.flags import SampleRatio
 
 # The maximum comprehension length to allow for data transforms.
@@ -61,7 +62,7 @@ def _load_data_files(
     # If specified, filter the DataFrame to only include selected columns.
     #
     # TODO(https://github.com/RobustIntelligence/faith/issues/195): The inner
-    # normalization for JSON files is a workaround for the unusual stucture of
+    # normalization for JSON files is a workaround for the unusual structure of
     # Cybermetric's JSON files, which have nested dictionaries;
     # we should consider a more robust solution in the future.
     if selected_columns is not None:
@@ -99,7 +100,7 @@ def _load_data_from_local_paths(
 
 
 def _load_local_data_source(
-    base_path: Path, files_cfg: dict[str, Any]
+    base_path: Path, files_cfg: Configuration
 ) -> tuple[pd.DataFrame, pd.DataFrame | None]:
     """Load the benchmark datasets from local files."""
     file_type = _DataFileType.from_string(files_cfg["type"])
@@ -125,7 +126,7 @@ def _load_local_data_source(
 
 
 def _load_git_data_source(
-    git_repo_cfg: dict[str, Any],
+    git_repo_cfg: Configuration,
 ) -> tuple[pd.DataFrame, pd.DataFrame | None]:
     """Load the benchmark datasets from a git repository."""
     with tempfile.TemporaryDirectory() as tmpdirname:
@@ -147,7 +148,7 @@ def _load_git_data_source(
 def _load_data_source(
     benchmark_name: str,
     benchmark_path: Path | None,
-    source_cfg: dict[str, Any],
+    source_cfg: Configuration,
 ) -> tuple[pd.DataFrame, pd.DataFrame | None]:
     """Load the benchmark datasets from the specified source configuration."""
     if "huggingface" in source_cfg:
@@ -173,9 +174,7 @@ def _load_data_source(
 
 
 def load_data(
-    benchmark_name: str,
-    benchmark_path: Path | None,
-    source_cfg: dict[str, Any],
+    benchmark_name: str, benchmark_path: Path | None, source_cfg: Configuration
 ) -> tuple[pd.DataFrame, pd.DataFrame | None]:
     """Load the benchmark dataset and transform it into a standard format."""
     df, dev_df = _load_data_source(

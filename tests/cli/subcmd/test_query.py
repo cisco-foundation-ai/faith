@@ -14,6 +14,8 @@ from transformers import AutoTokenizer, PreTrainedTokenizerBase
 
 from faith._internal.algo.sampling import NShotSampler
 from faith._internal.io.json import write_as_json
+from faith._internal.records.types import Record
+from faith._internal.types.configs import Configuration
 from faith._internal.types.flags import GenerationMode, SampleRatio
 from faith.benchmark.benchmark import Benchmark, BenchmarkDataset
 from faith.benchmark.formatting.prompt import PromptFormatter
@@ -35,7 +37,7 @@ from faith.model.params import GenParams
 class FakeBenchmark(Benchmark):
     """A fake benchmark for testing purposes."""
 
-    def __init__(self, spec: BenchmarkSpec, config: dict[str, Any], **kwargs: Any):
+    def __init__(self, spec: BenchmarkSpec, config: Configuration, **kwargs: Any):
         super().__init__(spec, config, **kwargs)
 
     def answer_leadin(self, tokenizer: PreTrainedTokenizerBase) -> str:
@@ -55,7 +57,7 @@ class FakeBenchmark(Benchmark):
     def log_grader(
         self,
         *,
-        model_format_config: dict[str, Any] | None = None,
+        model_format_config: Configuration | None = None,
         recompute_stats: bool = False,
     ) -> LogGrader:
         raise NotImplementedError("This method should not be called.")
@@ -210,7 +212,7 @@ class FakeModel(BaseModel):
         ]
 
 
-_FAKE_BENCHMARK_CONFIG: dict[str, Any] = {
+_FAKE_BENCHMARK_CONFIG: Configuration = {
     "format": {
         "instructions": {
             "system": "You are a fake assistant.",
@@ -225,7 +227,7 @@ _FAKE_BENCHMARK_CONFIG: dict[str, Any] = {
     },
 }
 
-_DATA_RECORD_0: dict[str, Any] = {
+_DATA_RECORD_0: Record = {
     "benchmark_sample_index": 0,
     "benchmark_sample_hash": "f0",
     "subject": "apiculture",
@@ -240,7 +242,7 @@ _DATA_RECORD_0: dict[str, Any] = {
     "ancillary_data": {"other_data": "foo"},
 }
 
-_DATA_RECORD_1: dict[str, Any] = {
+_DATA_RECORD_1: Record = {
     "benchmark_sample_index": 1,
     "benchmark_sample_hash": "f1",
     "subject": "apiculture",
@@ -347,17 +349,18 @@ _ANSWER_TOKEN_MAP: dict[str, int] = {"A": 87, "B": 31, "C": 7, "D": 9, "E": 5}
     ],
 )
 def test_benchmark_record_transform(
-    spec: BenchmarkSpec, expected_records: list[dict[str, Any]]
+    spec: BenchmarkSpec, expected_records: list[Record]
 ) -> None:
     model = FakeModel(model_name="fake-model")
     benchmark = FakeBenchmark(spec, config=_FAKE_BENCHMARK_CONFIG, seed=147)
 
-    records = list(
-        benchmark.build_dataset().iter_data()
-        >> BenchmarkRecordTransform(benchmark, model.tokenizer)
+    assert (
+        list(
+            benchmark.build_dataset().iter_data()
+            >> BenchmarkRecordTransform(benchmark, model.tokenizer)
+        )
+        == expected_records
     )
-
-    assert records == expected_records
 
 
 @pytest.mark.parametrize(
@@ -556,12 +559,10 @@ def test_benchmark_record_transform(
 def test_model_querier(
     generation_mode: GenerationMode,
     gen_params: GenParams,
-    input_records: list[dict[str, Any]],
-    expected_records: list[dict[str, Any]],
+    input_records: list[Record],
+    expected_records: list[Record],
 ) -> None:
     model = FakeModel(model_name="fake-model")
     transform = model_querier(model, generation_mode, gen_params)
 
-    results = list(transform(input_records))
-
-    assert results == expected_records
+    assert list(transform(input_records)) == expected_records

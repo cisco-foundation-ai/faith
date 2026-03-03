@@ -16,6 +16,7 @@ from jinja2 import Template
 from faith._internal.algo.graph import wcc_dict
 from faith._internal.algo.matching import AnswerFormat, SequentialMatcher
 from faith._internal.parsing.expr import evaluate_expr
+from faith._internal.types.configs import Configuration
 from faith.benchmark.formatting.prompt import PromptFormatter
 from faith.benchmark.scores.types import Score, ScoreFn
 from faith.model.base import GenerationError
@@ -196,7 +197,7 @@ class LLMJudgeScore(ScoreFn[str]):
     def __init__(
         self,
         judge_prompt_template: str,
-        judge_model: dict[str, Any],
+        judge_model: Configuration,
         verdict_formats: list[dict[str, Any]],
         llm_score_range: dict[str, float] | None = None,
         attributes: dict[str, Any] | None = None,
@@ -402,7 +403,7 @@ class DomainSpecificScore(Enum):
         return self._scoring_cls(**kwargs)
 
     @staticmethod
-    def from_configs(**score_fn_kwargs: dict[str, Any]) -> dict[str, ScoreFn]:
+    def from_configs(**score_fn_kwargs: Configuration) -> dict[str, ScoreFn]:
         """Load custom score functions using the config supplied by each key-word argument."""
         return {
             name: DomainSpecificScore.from_string(score_cfg["type"]).get_score_fn(

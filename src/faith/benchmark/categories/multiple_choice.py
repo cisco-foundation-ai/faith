@@ -20,6 +20,7 @@ from faith._internal.algo.matching import AnswerFormat
 from faith._internal.algo.sampling import NShotSampler
 from faith._internal.metrics.llm import llm_metadata_metrics, llm_prediction_metrics
 from faith._internal.metrics.types import SingleLabelSeq
+from faith._internal.types.configs import Configuration
 from faith._internal.types.flags import GenerationMode
 from faith.benchmark.benchmark import BaseBenchmark
 from faith.benchmark.dataset.dataset import BenchmarkDataset
@@ -35,7 +36,7 @@ from faith.benchmark.scores.types import Score
 from faith.benchmark.types import BenchmarkSpec
 
 
-def _load_answer_set(config: dict[str, Any]) -> frozenset[str]:
+def _load_answer_set(config: Configuration) -> frozenset[str]:
     """Get the space of all answer symbols from the benchmark's config.
 
     Args:
@@ -70,10 +71,9 @@ def _load_answer_set(config: dict[str, Any]) -> frozenset[str]:
 class MCBenchmark(BaseBenchmark):
     """A benchmark for multiple choice question-answering tasks."""
 
-    def __init__(self, spec: BenchmarkSpec, config: dict[str, Any], **kwargs: Any):
+    def __init__(self, spec: BenchmarkSpec, config: Configuration, **kwargs: Any):
         """Initializes the multiple choice benchmark with the given specification."""
-        super().__init__(spec=spec, config=config, **kwargs)
-
+        super().__init__(spec, config, **kwargs)
         self._answer_symbols = _load_answer_set(self._config)
 
     @property
@@ -160,7 +160,7 @@ class MCBenchmark(BaseBenchmark):
     def log_grader(
         self,
         *,
-        model_format_config: dict[str, Any] | None = None,
+        model_format_config: Configuration | None = None,
         recompute_stats: bool = False,
     ) -> LogGrader:
         """Fetch a log grader for this benchmark."""
@@ -270,7 +270,7 @@ class MCMetricsAggregator(GradeAggregator):
 
     def __init__(
         self,
-        output_processing_config: dict[str, Any],
+        output_processing_config: Configuration,
         answer_set: frozenset[str],
     ):
         """Initialize the metrics aggregator for multiple choice benchmarks."""

@@ -24,6 +24,7 @@ from faith._internal.metrics.llm import (
     llm_prediction_metrics,
 )
 from faith._internal.metrics.types import SingleLabelSeq
+from faith._internal.types.configs import Configuration
 from faith._internal.types.flags import GenerationMode
 from faith.benchmark.benchmark import BaseBenchmark
 from faith.benchmark.dataset.dataset import BenchmarkDataset
@@ -53,9 +54,9 @@ class SABenchmark(BaseBenchmark):
     # there is no current reason to implement an answer lead-in, which is
     # difficult to implement since short answer benchmarks do not have answer sets.
 
-    def __init__(self, spec: BenchmarkSpec, config: dict[str, Any], **kwargs: Any):
+    def __init__(self, spec: BenchmarkSpec, config: Configuration, **kwargs: Any):
         """Initializes the SABenchmark with the given specification and configuration."""
-        super().__init__(spec=spec, config=config, **kwargs)
+        super().__init__(spec, config, **kwargs)
         assert spec.generation_mode not in [
             GenerationMode.LOGITS,
             GenerationMode.NEXT_TOKEN,
@@ -86,7 +87,7 @@ class SABenchmark(BaseBenchmark):
     def log_grader(
         self,
         *,
-        model_format_config: dict[str, Any] | None = None,
+        model_format_config: Configuration | None = None,
         recompute_stats: bool = False,
     ) -> LogGrader:
         """Fetch a log grader for this benchmark."""
@@ -144,7 +145,7 @@ class SAMetricsAggregator(GradeAggregator):
     """The `GradeAggregator` for short answer benchmarks."""
 
     def __init__(
-        self, output_processing_config: dict[str, Any], answer_type: ShortAnswerType
+        self, output_processing_config: Configuration, answer_type: ShortAnswerType
     ):
         """Initializes the SAMetricsAggregator with the given score function definitions."""
         super().__init__(output_processing_config)

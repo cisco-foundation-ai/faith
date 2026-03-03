@@ -5,12 +5,12 @@
 """Utility functions to load benchmark configurations from paths or names."""
 
 from pathlib import Path
-from typing import Any
 
 from faith._internal.io.yaml import read_extended_yaml_file
+from faith._internal.types.configs import Configuration
 
 
-def load_config_from_path(benchmark_path: Path) -> dict[str, Any]:
+def load_config_from_path(benchmark_path: Path) -> Configuration:
     """Load a benchmark configuration from a benchmark path."""
     assert (
         benchmark_path.exists() and benchmark_path.is_dir()

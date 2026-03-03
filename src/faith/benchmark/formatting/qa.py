@@ -11,6 +11,7 @@ from dataclasses_json import DataClassJsonMixin
 from jinja2 import Template
 
 from faith._internal.algo.hash import dict_sha256
+from faith._internal.types.configs import Configuration
 from faith.benchmark.formatting.prompt import ChatConversation, PromptFormatter
 
 
@@ -66,7 +67,9 @@ def _opt_template(template_str: str | None) -> Template | None:
 class QAFormatter:
     """A configurable formatter that constructs question-answer pairs for a benchmark."""
 
-    def __init__(self, prompt_format: PromptFormatter, format_cfg: dict[str, Any]):
+    def __init__(
+        self, prompt_format: PromptFormatter, format_cfg: Configuration
+    ) -> None:
         """Configures the formatter according to the given configs."""
         self._prompt_format = prompt_format
         inst_cfg = format_cfg.get("instructions", {})

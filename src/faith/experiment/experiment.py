@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, Iterator
 
 from faith._internal.io.datastore import Datastore
+from faith._internal.types.configs import Configuration
 from faith._internal.types.flags import GenerationMode, SampleRatio
 from faith.benchmark.benchmark import Benchmark
 from faith.benchmark.config import load_config_from_path
@@ -61,7 +62,7 @@ class BenchmarkExperiment:
         )
         self._benchmark_kwargs = kwargs
 
-        # State that specifes the model.
+        # State that specifies the model.
         self._model_name = model_name
         self._gen_params = gen_params
 
@@ -81,7 +82,7 @@ class BenchmarkExperiment:
         self._trial = 0
 
     @property
-    def benchmark_config(self) -> dict[str, Any]:
+    def benchmark_config(self) -> Configuration:
         """Returns the benchmark configuration loaded from its directory."""
         return self._benchmark_config
 

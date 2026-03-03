@@ -12,6 +12,7 @@ import numpy as np
 
 from faith._internal.iter.transform import Reducer
 from faith._internal.records.types import Record
+from faith._internal.types.configs import Configuration
 from faith._internal.types.validation import assert_same_length
 from faith.benchmark.scores.domain_specific import DomainSpecificScore
 from faith.benchmark.scores.types import Score
@@ -20,7 +21,7 @@ from faith.benchmark.scores.types import Score
 class GradeAggregator(Reducer[Record, dict[str, Any]]):
     """Base class for aggregating benchmark grades from benchmark logs."""
 
-    def __init__(self, output_processing_config: dict[str, Any]) -> None:
+    def __init__(self, output_processing_config: Configuration) -> None:
         """Initialize the GradeAggregator."""
         super().__init__()
         self._score_fns = DomainSpecificScore.from_configs(

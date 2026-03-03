@@ -16,6 +16,7 @@ from faith._internal.algo.matching import (
 )
 from faith._internal.metrics.types import Labeling
 from faith._internal.records.types import Record
+from faith._internal.types.configs import Configuration
 from faith.benchmark.grading.log_grader import LogGrader
 
 
@@ -89,7 +90,7 @@ class NextTokenLogGrader(LogGrader):
 
     def __init__(
         self,
-        output_processing_config: dict[str, Any],
+        output_processing_config: Configuration,
         recompute_stats: bool,
         answer_set: frozenset[str],
     ):
@@ -133,8 +134,8 @@ class ChatCompletionLogGrader(LogGrader):
 
     def __init__(
         self,
-        output_processing_config: dict[str, Any],
-        model_format_config: dict[str, Any] | None,
+        output_processing_config: Configuration,
+        model_format_config: Configuration | None,
         recompute_stats: bool,
     ):
         """Initialize the chat completion log grader."""

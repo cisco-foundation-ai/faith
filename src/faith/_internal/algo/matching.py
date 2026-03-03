@@ -12,6 +12,7 @@ from enum import Enum
 from typing import Any, Generic, TypeVar, cast
 
 from faith._internal.parsing.expr import evaluate_expr
+from faith._internal.types.configs import Configuration
 
 
 class AnswerFormat(Enum):
@@ -60,7 +61,7 @@ class MatchDisambiguation(Enum):
 class _FormatPattern:
     """Base class for pattern matching and processing."""
 
-    def __init__(self, pattern_def: dict[str, Any]):
+    def __init__(self, pattern_def: Configuration):
         self._format_type = AnswerFormat.from_string(pattern_def["format_type"])
         self._match_disambiguation = MatchDisambiguation.from_string(
             pattern_def.get("match_disambiguation", "match_if_singular"),
@@ -197,7 +198,7 @@ class _StringMatcher(Matcher[str]):
 class SimpleMatcher(_StringMatcher):
     """Reduce a string to a subselection using a regex pattern."""
 
-    def __init__(self, pattern_def: dict[str, Any]):
+    def __init__(self, pattern_def: Configuration):
         """Initialize with a single pattern definition."""
         self._pattern = _FormatPattern(pattern_def)
 
@@ -221,7 +222,7 @@ class AllMatcher(_StringMatcher):
 class SequentialMatcher(Matcher[Any]):
     """Match a string against multiple patterns in sequence, returning the first match."""
 
-    def __init__(self, *pattern_defs: dict[str, Any]):
+    def __init__(self, *pattern_defs: Configuration):
         """Initialize with a list of pattern definitions to be matched in order."""
         self._patterns = [_FormatPattern(pattern_def) for pattern_def in pattern_defs]
         assert len(self._patterns) > 0, "At least one pattern must be provided."
