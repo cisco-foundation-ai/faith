@@ -5,10 +5,11 @@
 import logging
 import os
 import subprocess
+from collections.abc import Iterable
 from concurrent.futures import FIRST_COMPLETED, Future, ProcessPoolExecutor, wait
 from dataclasses import dataclass, field
 from functools import partial
-from typing import Callable, Generic, Iterable, TypeVar
+from typing import Callable, Generic, TypeVar
 
 logger = logging.getLogger(__name__)
 

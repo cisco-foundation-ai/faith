@@ -5,8 +5,9 @@
 """Set of functions for aggregating statistics over a set of trials of a benchmark."""
 
 from collections import defaultdict
+from collections.abc import Sequence
 from numbers import Number
-from typing import Any, NoReturn, Sequence, TypeAlias, TypeVar, cast
+from typing import Any, NoReturn, TypeAlias, TypeVar, cast
 
 import numpy as np
 

@@ -4,7 +4,8 @@
 
 """Utilities for validating objects in Python."""
 
-from typing import Any, Sequence
+from collections.abc import Sequence
+from typing import Any
 
 
 def assert_same_length(

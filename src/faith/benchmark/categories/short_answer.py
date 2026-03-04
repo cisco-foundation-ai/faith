@@ -8,8 +8,9 @@ This module provides the `SABenchmark` class for short answer benchmarks, which
 extends the `Benchmark` class to handle short answer question-answering tasks.
 """
 
+from collections.abc import Sequence
 from enum import Enum
-from typing import Any, Sequence
+from typing import Any
 
 import numpy as np
 import pandas as pd

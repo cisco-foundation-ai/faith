@@ -4,8 +4,9 @@
 
 """This module defines the QA example formatter, which constructs question-answer pairs."""
 
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Any, Sequence
+from typing import Any
 
 from dataclasses_json import DataClassJsonMixin
 from jinja2 import Template

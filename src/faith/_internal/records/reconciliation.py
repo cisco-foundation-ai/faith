@@ -2,8 +2,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+from collections.abc import Iterable
 from enum import StrEnum, auto
-from typing import Iterable
 
 from faith._internal.iter.join import LeftJoinTransform
 from faith._internal.iter.transform import Mapping, Transform

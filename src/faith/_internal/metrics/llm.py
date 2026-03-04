@@ -4,7 +4,8 @@
 
 """This module provides functions to compute common metrics for scoring LLMs."""
 
-from typing import Any, Iterator, Sequence
+from collections.abc import Iterator, Sequence
+from typing import Any
 
 import numpy as np
 

@@ -5,8 +5,8 @@
 """Provides a join transform for combining two iterables by key."""
 
 from collections import defaultdict
-from collections.abc import Hashable
-from typing import Callable, Generic, Iterable, TypeVar
+from collections.abc import Hashable, Iterable
+from typing import Callable, Generic, TypeVar
 
 from faith._internal.iter.transform import Transform
 

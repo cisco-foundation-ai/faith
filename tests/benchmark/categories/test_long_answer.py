@@ -3,7 +3,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import math
-from typing import Any, Iterable, cast
+from collections.abc import Iterable
+from typing import Any, cast
 from unittest.mock import ANY, patch
 
 import pytest

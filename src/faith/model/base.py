@@ -5,8 +5,9 @@
 """Base model class for the model inference engines."""
 
 from abc import ABC, abstractmethod
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
-from typing import Any, Iterable, Sequence, cast
+from typing import Any, cast
 
 from dataclasses_json import DataClassJsonMixin
 from transformers import PreTrainedTokenizerBase

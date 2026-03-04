@@ -4,8 +4,9 @@
 
 """Defines the `BenchmarkExperiment`, which manages an experiment for a benchmark."""
 
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
 
 from faith._internal.io.datastore import Datastore
 from faith._internal.types.configs import Configuration

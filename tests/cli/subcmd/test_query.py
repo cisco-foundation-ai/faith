@@ -3,8 +3,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import tempfile
+from collections.abc import Iterable, Sequence
 from pathlib import Path
-from typing import Any, Iterable, Sequence, cast
+from typing import Any, cast
 from unittest.mock import ANY
 
 import numpy as np

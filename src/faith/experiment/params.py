@@ -4,9 +4,9 @@
 
 """Types used to configure experiments."""
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Sequence
 
 from dataclasses_json import DataClassJsonMixin
 

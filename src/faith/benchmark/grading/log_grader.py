@@ -6,7 +6,8 @@
 
 import logging
 from abc import abstractmethod
-from typing import Any, Iterable
+from collections.abc import Iterable
+from typing import Any
 
 from tqdm import tqdm
 

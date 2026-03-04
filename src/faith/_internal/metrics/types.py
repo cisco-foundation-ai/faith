@@ -4,7 +4,7 @@
 
 """Common types for labels and predictions in evaluation metrics."""
 
-from typing import Sequence
+from collections.abc import Sequence
 
 Labeling = str | Sequence[str]
 SingleLabelSeq = Sequence[str | None]

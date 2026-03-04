@@ -6,7 +6,8 @@
 
 from abc import abstractmethod
 from collections import defaultdict
-from typing import Any, Iterable, Sequence
+from collections.abc import Iterable, Sequence
+from typing import Any
 
 import numpy as np
 

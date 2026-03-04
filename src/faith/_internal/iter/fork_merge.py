@@ -4,8 +4,9 @@
 
 """A module for executing functions in separate threads."""
 
+from collections.abc import Iterable
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Callable, Generic, Iterable, TypeVar
+from typing import Callable, Generic, TypeVar
 
 from faith._internal.iter.transform import Transform
 from faith._internal.types.collections import SequencedBuffer

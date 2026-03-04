@@ -5,7 +5,8 @@
 """Base class `BenchmarkDataset` for all benchmark datasets."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Iterator, Sequence
+from collections.abc import Iterator, Sequence
+from typing import Any
 
 import numpy as np
 import pandas as pd

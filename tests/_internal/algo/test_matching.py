@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import re
-from typing import Sequence
+from collections.abc import Sequence
 
 import pytest
 

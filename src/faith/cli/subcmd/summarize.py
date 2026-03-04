@@ -4,8 +4,8 @@
 
 """Implementation of the subcommand `summarize` to summarize experiment metrics."""
 
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Sequence
 
 from faith._internal.io.pandas import safe_df_to_csv
 from faith.experiment.summarize import build_summary

@@ -5,7 +5,8 @@
 """Provides an abstract base class for transformations on iterators."""
 
 from abc import ABC, abstractmethod
-from typing import Generic, Iterable, TypeVar
+from collections.abc import Iterable
+from typing import Generic, TypeVar
 
 # Generic I/O TypeVars for a Transform.
 _IN = TypeVar("_IN")

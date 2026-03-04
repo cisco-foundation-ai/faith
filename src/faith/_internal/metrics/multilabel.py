@@ -4,7 +4,7 @@
 
 """Multi-label classification metrics."""
 
-from typing import Sequence
+from collections.abc import Sequence
 
 import numpy as np
 from sklearn.metrics import f1_score

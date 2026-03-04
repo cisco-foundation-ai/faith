@@ -7,8 +7,9 @@
 import contextlib
 import gc
 import logging
+from collections.abc import Iterable
 from functools import partial
-from typing import Any, Iterable, cast
+from typing import Any, cast
 
 import torch
 from tqdm import tqdm

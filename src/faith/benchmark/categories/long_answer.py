@@ -2,8 +2,9 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+from collections.abc import Sequence
 from enum import Enum
-from typing import Any, Sequence
+from typing import Any
 
 import numpy as np
 import pandas as pd

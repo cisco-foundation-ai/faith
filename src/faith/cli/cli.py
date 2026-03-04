@@ -16,9 +16,9 @@ import ast
 import dataclasses
 import logging
 import os
+from collections.abc import Iterator
 from functools import partial
 from pathlib import Path
-from typing import Iterator
 
 import argcomplete
 import colorlog

@@ -5,9 +5,9 @@
 """Load benchmark datasets from various sources and transform them into a standard schema."""
 
 import tempfile
+from collections.abc import Iterable, Sequence
 from enum import Enum
 from pathlib import Path
-from typing import Iterable, Sequence
 
 import git
 import numpy as np

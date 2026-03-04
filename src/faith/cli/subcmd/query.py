@@ -10,11 +10,12 @@ import os
 import subprocess
 import sys
 import time
+from collections.abc import Iterable, Iterator, Sequence
 from datetime import datetime
 from enum import Enum
 from functools import partial
 from pathlib import Path
-from typing import Iterable, Iterator, Sequence, Type
+from typing import Type
 from zoneinfo import ZoneInfo
 
 from tqdm import tqdm

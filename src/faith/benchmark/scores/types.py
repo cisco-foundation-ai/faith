@@ -5,7 +5,8 @@
 """Defines types and base classes for scoring functions used in benchmarks."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Generic, NotRequired, Sequence, TypedDict, TypeVar
+from collections.abc import Sequence
+from typing import Any, Generic, NotRequired, TypedDict, TypeVar
 
 from faith._internal.metrics.types import Labeling
 

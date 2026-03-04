@@ -6,8 +6,9 @@
 
 import logging
 import math
+from collections.abc import Sequence
 from enum import Enum
-from typing import Any, NotRequired, Sequence, Type, TypedDict
+from typing import Any, NotRequired, Type, TypedDict
 
 import numpy as np
 from cvss import CVSS3, CVSSError

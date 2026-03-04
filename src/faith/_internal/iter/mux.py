@@ -3,8 +3,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from collections import defaultdict
+from collections.abc import Iterable
 from enum import Enum
-from typing import Generic, Iterable, TypeVar
+from typing import Generic, TypeVar
 
 from faith._internal.iter.transform import Transform
 
