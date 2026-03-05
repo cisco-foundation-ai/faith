@@ -18,6 +18,7 @@ from faith._internal.algo.graph import wcc_dict
 from faith._internal.algo.matching import AnswerFormat, SequentialMatcher
 from faith._internal.parsing.expr import evaluate_expr
 from faith._internal.types.configs import Configuration
+from faith._internal.types.stats import MetricSummary
 from faith.benchmark.formatting.prompt import PromptFormatter
 from faith.benchmark.scores.types import Score, ScoreFn
 from faith.model.base import GenerationError
@@ -111,7 +112,7 @@ class LogScaledScore(ScoreFn[str]):
         self,
         tolerance: float,
         scaling: float = 10.0,
-        attributes: dict[str, Any] | None = None,
+        attributes: Configuration | None = None,
         score_range: dict[str, float] | None = None,
     ) -> None:
         """Initialize the LogScaledScore with a given tolerance."""
@@ -149,7 +150,7 @@ class AliasAccuracyScore(ScoreFn[str]):
     def __init__(
         self,
         alias_map: dict[str, list[str]],
-        attributes: dict[str, Any] | None = None,
+        attributes: Configuration | None = None,
         score_range: dict[str, float] | None = None,
     ) -> None:
         """Initialize the AliasAccuracyScore with a dictionary of aliases."""
@@ -182,7 +183,7 @@ class _ParsedVerdict(TypedDict):
     """
 
     awarded_points: float
-    details: NotRequired[dict[str, Any]]
+    details: NotRequired[MetricSummary]
 
 
 class LLMJudgeVerdict(Score):
@@ -199,9 +200,9 @@ class LLMJudgeScore(ScoreFn[str]):
         self,
         judge_prompt_template: str,
         judge_model: Configuration,
-        verdict_formats: list[dict[str, Any]],
+        verdict_formats: list[Configuration],
         llm_score_range: dict[str, float] | None = None,
-        attributes: dict[str, Any] | None = None,
+        attributes: Configuration | None = None,
         score_range: dict[str, float] | None = None,
     ) -> None:
         """Initialize the LLM-based judge."""
@@ -307,9 +308,9 @@ class CompositeScore(ScoreFn[Any]):
     def __init__(
         self,
         aggregation: str,
-        attributes: dict[str, Any] | None = None,
+        attributes: Configuration | None = None,
         score_range: dict[str, float] | None = None,
-        sub_scores: dict[str, Any] | None = None,
+        sub_scores: Configuration | None = None,
     ) -> None:
         """Initialize the CompositeScore with a dictionary of scoring functions."""
         super().__init__(attributes=attributes, score_range=score_range)

@@ -6,16 +6,16 @@
 
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Any
 
 import pandas as pd
 
 from faith._internal.io.json import read_json_file
+from faith._internal.types.stats import MetricSummary
 
 
 def _build_experiment_record(
     exp_path: Path, metric_path: Path, selected_stats: Sequence[str]
-) -> dict[str, Any]:
+) -> MetricSummary:
     """Build a record for a single benchmark experiment."""
     assert (
         exp_path.parent == metric_path.parent

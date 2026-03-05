@@ -22,6 +22,7 @@ from faith._internal.metrics.aggregations import (
 )
 from faith._internal.records.io import load_records_from_json
 from faith._internal.records.types import Record
+from faith._internal.types.stats import MetricSummary
 from faith.benchmark.benchmark import Benchmark, BenchmarkSpec
 from faith.benchmark.load import load_benchmark
 
@@ -34,7 +35,7 @@ class RecordHandlingParams:
     recompute_stats: bool
 
 
-def _agg_trials(tms: ValuesView[dict[str, Any]]) -> dict[str, Any]:
+def _agg_trials(tms: ValuesView[MetricSummary]) -> MetricSummary:
     """Aggregate statistics from a collection of trial metrics dictionaries `tms`."""
     num_trials = len(tms)
     total_queries = sum(tm.get("query_count", 0) for tm in tms)
@@ -74,7 +75,7 @@ def compute_experiment_metrics(
     *,
     annotate_prediction_stats: bool = False,
     **kwargs: Any,
-) -> dict[str, Any]:
+) -> MetricSummary:
     """Compute a benchmark experiment's metrics from its trial logs."""
     per_trial_metrics = {
         trial_key: trial_metrics
@@ -104,7 +105,7 @@ def evaluate_experiment(
     record_params: RecordHandlingParams,
     *,
     metrics_output_path: Path | None = None,
-) -> dict[str, Any]:
+) -> MetricSummary:
     """Evaluate an experiment from trial logs at the given path."""
     experiment_summary = read_json_file(experiment_path)
     metrics = compute_experiment_metrics(

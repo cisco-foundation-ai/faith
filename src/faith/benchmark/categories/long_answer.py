@@ -15,6 +15,7 @@ from faith._internal.algo.sampling import NShotSampler
 from faith._internal.metrics.llm import llm_basic_metrics, llm_metadata_metrics
 from faith._internal.types.configs import Configuration
 from faith._internal.types.flags import GenerationMode
+from faith._internal.types.stats import MetricSummary
 from faith.benchmark.benchmark import BaseBenchmark
 from faith.benchmark.dataset.dataset import BenchmarkDataset
 from faith.benchmark.formatting.qa import QAFormatter, QARecord
@@ -132,7 +133,7 @@ class LABenchmarkDataset(BenchmarkDataset):
 class LAMetricsAggregator(GradeAggregator):
     """The `GradeAggregator` for long answer benchmarks."""
 
-    def _aggregate(self, **kwargs: Sequence[Any]) -> dict[str, Any]:
+    def _aggregate(self, **kwargs: Sequence[Any]) -> MetricSummary:
         """Computes the metrics for this benchmark for its collected sufficient statistics.
 
         Args:

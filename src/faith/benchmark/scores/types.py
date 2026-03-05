@@ -9,6 +9,7 @@ from collections.abc import Sequence
 from typing import Any, Generic, NotRequired, TypedDict, TypeVar
 
 from faith._internal.metrics.types import Labeling
+from faith._internal.types.configs import Configuration
 
 _LABELING = TypeVar("_LABELING", bound=Labeling)
 
@@ -26,7 +27,7 @@ class ScoreFn(ABC, Generic[_LABELING]):
 
     def __init__(
         self,
-        attributes: dict[str, Any] | None = None,
+        attributes: Configuration | None = None,
         score_range: dict[str, float] | None = None,
     ) -> None:
         """Initialize the ScoreFn."""
@@ -44,7 +45,7 @@ class ScoreFn(ABC, Generic[_LABELING]):
         return (0.0, 1.0)
 
     @property
-    def attributes(self) -> dict[str, Any]:
+    def attributes(self) -> Configuration:
         """Get the attributes associated with this scoring function."""
         return self._attributes
 

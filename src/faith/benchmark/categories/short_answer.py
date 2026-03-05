@@ -27,6 +27,7 @@ from faith._internal.metrics.llm import (
 from faith._internal.metrics.types import SingleLabelSeq
 from faith._internal.types.configs import Configuration
 from faith._internal.types.flags import GenerationMode
+from faith._internal.types.stats import MetricSummary
 from faith.benchmark.benchmark import BaseBenchmark
 from faith.benchmark.dataset.dataset import BenchmarkDataset
 from faith.benchmark.formatting.qa import QAFormatter, QARecord
@@ -152,7 +153,7 @@ class SAMetricsAggregator(GradeAggregator):
         super().__init__(output_processing_config)
         self._answer_type = answer_type
 
-    def _aggregate(self, **kwargs: Sequence[Any]) -> dict[str, Any]:
+    def _aggregate(self, **kwargs: Sequence[Any]) -> MetricSummary:
         """Computes the metrics for this benchmark for its collected sufficient statistics.
 
         Args:

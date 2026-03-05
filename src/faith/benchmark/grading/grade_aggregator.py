@@ -14,12 +14,13 @@ import numpy as np
 from faith._internal.iter.transform import Reducer
 from faith._internal.records.types import Record
 from faith._internal.types.configs import Configuration
+from faith._internal.types.stats import MetricSummary
 from faith._internal.types.validation import assert_same_length
 from faith.benchmark.scores.domain_specific import DomainSpecificScore
 from faith.benchmark.scores.types import Score
 
 
-class GradeAggregator(Reducer[Record, dict[str, Any]]):
+class GradeAggregator(Reducer[Record, MetricSummary]):
     """Base class for aggregating benchmark grades from benchmark logs."""
 
     def __init__(self, output_processing_config: Configuration) -> None:
@@ -29,7 +30,7 @@ class GradeAggregator(Reducer[Record, dict[str, Any]]):
             **output_processing_config.get("score_fns", {})
         )
 
-    def __call__(self, logs: Iterable[Record]) -> dict[str, Any]:
+    def __call__(self, logs: Iterable[Record]) -> MetricSummary:
         """Reduce the collected statistics to their overall benchmark metrics."""
         test_stats = GradeAggregator._stats_transpose(logs)
         logit_stats = (
@@ -40,7 +41,7 @@ class GradeAggregator(Reducer[Record, dict[str, Any]]):
         return logit_stats | self._aggregate(**test_stats)
 
     @staticmethod
-    def _stats_transpose(logs: Iterable[Record]) -> dict[str, Any]:
+    def _stats_transpose(logs: Iterable[Record]) -> dict[str, Sequence[Any]]:
         """Transpose the 'stats' dictionary in `logs` to a dictionary of lists."""
         transposed_stats = defaultdict(list)
         for log_entry in logs:
@@ -51,7 +52,7 @@ class GradeAggregator(Reducer[Record, dict[str, Any]]):
     @staticmethod
     def _logits_stats(
         log_prob_stats: Sequence[dict[str, float | None]],
-    ) -> dict[str, Any]:
+    ) -> MetricSummary:
         # Aggregate log probabilities for each label.
         stats_vectors = defaultdict(list)
         for log_prob in log_prob_stats:
@@ -104,5 +105,5 @@ class GradeAggregator(Reducer[Record, dict[str, Any]]):
         }
 
     @abstractmethod
-    def _aggregate(self, **kwargs: Sequence[Any]) -> dict[str, Any]:
+    def _aggregate(self, **kwargs: Sequence[Any]) -> MetricSummary:
         """Aggregate the overall benchmark metrics from the collected statistics."""
