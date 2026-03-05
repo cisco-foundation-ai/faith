@@ -7,17 +7,16 @@
 from collections.abc import Iterable
 from pathlib import Path
 from types import TracebackType
-from typing import Any, Generic, Type, TypeVar
+from typing import Any, Generic, Type, TypeVar, cast
 
 from faith._internal.io.json import write_as_json
 from faith._internal.iter.transform import IsoTransform
-from faith._internal.records.types import Record
 
 # TypeVar constrained for LoggingWrapper, items to be logged must be dicts
-_LOGGING_ITEM_TYPE = TypeVar("_LOGGING_ITEM_TYPE", bound=Record)
+_LOGGABLE = TypeVar("_LOGGABLE", bound=dict[str, Any])
 
 
-class LogCollector:
+class LogCollector(Generic[_LOGGABLE]):
     """A context manager for collecting records over a benchmark run."""
 
     def __init__(self, log_filename: Path, log_on_exception: bool = False) -> None:
@@ -31,7 +30,7 @@ class LogCollector:
         """
         self._log_filename = log_filename
         self._log_on_exception = log_on_exception
-        self._logs: list[Record] = []
+        self._logs: list[_LOGGABLE] = []
 
     def __enter__(self) -> "LogCollector":
         """Enter the runtime context related to this object."""
@@ -47,12 +46,12 @@ class LogCollector:
         if (exc_type is None or self._log_on_exception) and len(self._logs) > 0:
             write_as_json(self._log_filename, self._logs)
 
-    def log(self, entry: Record) -> None:
+    def log(self, entry: _LOGGABLE) -> None:
         """Log the `entry` to the log file."""
         self._logs.append(entry)
 
 
-class LoggingTransform(IsoTransform[_LOGGING_ITEM_TYPE], Generic[_LOGGING_ITEM_TYPE]):
+class LoggingTransform(IsoTransform[_LOGGABLE], Generic[_LOGGABLE]):
     """A transform that logs items from an iterator to a specified log file."""
 
     def __init__(self, log_file: Path, **logger_kwargs: Any) -> None:
@@ -60,24 +59,25 @@ class LoggingTransform(IsoTransform[_LOGGING_ITEM_TYPE], Generic[_LOGGING_ITEM_T
         self._log_file = log_file
         self._logger_kwargs = logger_kwargs
 
-    def __call__(
-        self, src: Iterable[_LOGGING_ITEM_TYPE]
-    ) -> Iterable[_LOGGING_ITEM_TYPE]:
+    def __call__(self, src: Iterable[_LOGGABLE]) -> Iterable[_LOGGABLE]:
         """Log the items from the `src` iterator and yield them."""
-        last_item = None
+        # Construct a one-item cache to delay yielding until the next item arrives.
+        # It is initialized to a placeholder value but will be overwritten before use.
+        last_item: _LOGGABLE = cast(_LOGGABLE, {})  # Placeholder value.
+        items_cached = False
         with LogCollector(self._log_file, **self._logger_kwargs) as logger:
             # Iterate through the source but delay yielding until the next item arrives.
             for item in src:
-                assert item is not None, "LoggingTransform requires non-None items."
                 logger.log(item)
-                if last_item is not None:
+                if items_cached:
                     yield last_item
                 last_item = item
+                items_cached = True
         # Yield the last item after the loop completes and the logger is closed.
         # This ensures that the logging file is written before yielding the last item,
         # which is critical for ensuring that there are no races if multiple
         # LoggingTransforms are used in sequence.
         # Note: this only works because the LogCollector opens the file and writes
         # the logs only at exit.
-        if last_item is not None:
+        if items_cached:
             yield last_item

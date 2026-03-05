@@ -86,7 +86,7 @@ def compute_experiment_metrics(
             trial_metrics := load_records_from_json(trial_log_filepath)
             >> benchmark.log_grader(**kwargs)
             >> (
-                LoggingTransform(trial_log_filepath)
+                LoggingTransform[Record](trial_log_filepath)
                 if annotate_prediction_stats
                 else IdentityTransform[Record]()
             )
