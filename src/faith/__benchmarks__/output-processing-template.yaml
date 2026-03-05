@@ -7,4 +7,4 @@ output_processing:
   # A list of possible answer formats supported by the benchmark.
   answer_formats: null
   score_fns: {}
-  primary_metric: null  # Primary metric for analytics (e.g., "accuracy.mean")
+  primary_metric: null # Primary metric for analytics (e.g., "accuracy.mean")
