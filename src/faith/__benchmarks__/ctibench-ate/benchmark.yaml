@@ -16,7 +16,6 @@ benchmark:
         - https://github.com/xashru/cti-bench
         - https://huggingface.co/datasets/AI4Sec/cti-bench
       categories: ["security"]
-      primary_metric: "accuracy.mean"
   source:
     huggingface: !from
       '$BENCHMARKS_ROOT/sources-template.yaml["sources"]["huggingface"]':
@@ -614,6 +613,7 @@ benchmark:
           **Text**
   output_processing: !from
     '$BENCHMARKS_ROOT/output-processing-template.yaml["output_processing"]':
+      primary_metric: "accuracy.mean"
       answer_formats:
         - pattern: '(?i)\banswer\s*:\s*((?:t\d+,\s*)*t\d+)\b'
           capture_transform:

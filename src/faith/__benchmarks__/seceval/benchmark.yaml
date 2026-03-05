@@ -22,6 +22,8 @@ benchmark: !from
           - https://xuanwuai.github.io/SecEval/
           - https://github.com/XuanwuAI/SecEval
         categories: ["security"]
+    output_processing: !from
+      '$BENCHMARKS_ROOT/output-processing-template.yaml["output_processing"]':
         primary_metric: "accuracy.mean"
     source:
       huggingface: !from

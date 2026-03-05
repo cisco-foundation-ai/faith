@@ -16,7 +16,6 @@ benchmark:
         - https://github.com/xashru/cti-bench
         - https://huggingface.co/datasets/AI4Sec/cti-bench
       categories: ["security"]
-      primary_metric: "accuracy.mean"
   source:
     huggingface: !from
       '$BENCHMARKS_ROOT/sources-template.yaml["sources"]["huggingface"]':
@@ -62,6 +61,7 @@ benchmark:
       prompt_template: !from '$BENCHMARKS_ROOT/prompting-template.yaml["prompting"]["prompt_template"]'
   output_processing: !from
     '$BENCHMARKS_ROOT/output-processing-template.yaml["output_processing"]':
+      primary_metric: "accuracy.mean"
       answer_formats:
         # Note: We accept two different '-' characters because GPT-OSS is so
         # prone to using a unicode `\u2011` hyphen instead of the ASCII `-`.

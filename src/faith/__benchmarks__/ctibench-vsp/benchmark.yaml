@@ -19,7 +19,6 @@ benchmark:
         - https://github.com/xashru/cti-bench
         - https://huggingface.co/datasets/AI4Sec/cti-bench
       categories: ["security"]
-      primary_metric: "mean_cvss_score.mean"
   source:
     huggingface: !from
       '$BENCHMARKS_ROOT/sources-template.yaml["sources"]["huggingface"]':
@@ -68,6 +67,7 @@ benchmark:
       prompt_template: !from '$BENCHMARKS_ROOT/prompting-template.yaml["prompting"]["prompt_template"]'
   output_processing: !from
     '$BENCHMARKS_ROOT/output-processing-template.yaml["output_processing"]':
+      primary_metric: "mean_cvss_score.mean"
       answer_formats:
         - pattern: '(?i)(cvss:3\.\d(?:/\w+:\w+)+)\b'
           capture_transform:

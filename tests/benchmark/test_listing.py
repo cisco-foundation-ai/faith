@@ -180,7 +180,7 @@ def test_all_benchmarks_have_primary_metric() -> None:
     core_benchmarks = find_benchmarks(benchmarks_root())
     for benchmark_path in core_benchmarks:
         config = load_config_from_path(benchmark_path)
-        primary_metric = config.get("metadata", {}).get("primary_metric")
+        primary_metric = config.get("output_processing", {}).get("primary_metric")
 
         assert primary_metric is not None, (
             f"Benchmark {benchmark_path.name} missing primary_metric. "

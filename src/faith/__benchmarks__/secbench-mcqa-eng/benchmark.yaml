@@ -23,8 +23,10 @@ benchmark: !from
           - https://arxiv.org/abs/2412.20787
           - https://secbench.org/
           - https://github.com/secbench-git/SecBench
-        primary_metric: "accuracy.mean"
         categories: ["security"]
+    output_processing: !from
+      '$BENCHMARKS_ROOT/output-processing-template.yaml["output_processing"]':
+        primary_metric: "accuracy.mean"
     source:
       git_repo: !from
         '$BENCHMARKS_ROOT/sources-template.yaml["sources"]["git_repo"]':
