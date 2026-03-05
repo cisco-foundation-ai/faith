@@ -27,8 +27,10 @@ class TestParseExperimentConfig:
             "benchmark_config": {
                 "metadata": {
                     "name": "ctibench-mcqa",
+                },
+                "output_processing": {
                     "primary_metric": "accuracy.mean",
-                }
+                },
             },
             "experiment_params": {
                 "benchmark": {
@@ -140,10 +142,10 @@ class TestParseExperimentConfig:
         assert config.num_shots_pool_size == 5
 
     def test_parse_primary_metric_from_config(self):
-        """Test reading primary_metric from benchmark config metadata."""
+        """Test reading primary_metric from benchmark config output_processing."""
         data = {
             "benchmark_config": {
-                "metadata": {
+                "output_processing": {
                     "primary_metric": "custom_metric.mean",
                 }
             },

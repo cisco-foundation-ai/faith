@@ -103,10 +103,10 @@ def _extract_n_shot_values(
 
 
 def _extract_primary_metric(experiment_data: Dict[str, Any]) -> Optional[str]:
-    """Extract primary_metric from benchmark_config metadata."""
+    """Extract primary_metric from benchmark_config output_processing."""
     benchmark_config = experiment_data.get("benchmark_config", {})
-    benchmark_metadata = benchmark_config.get("metadata", {})
-    return benchmark_metadata.get("primary_metric")
+    output_processing = benchmark_config.get("output_processing", {})
+    return output_processing.get("primary_metric")
 
 
 def parse_experiment_config(
