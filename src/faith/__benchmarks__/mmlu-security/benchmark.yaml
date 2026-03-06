@@ -19,9 +19,6 @@ benchmark: !from
           - https://en.wikipedia.org/wiki/MMLU
           - https://huggingface.co/datasets/cais/mmlu
         categories: ["security"]
-    output_processing: !from
-      '$BENCHMARKS_ROOT/output-processing-template.yaml["output_processing"]':
-        primary_metric: "accuracy.mean"
     source:
       huggingface: !from
         '$BENCHMARKS_ROOT/sources-template.yaml["sources"]["huggingface"]':

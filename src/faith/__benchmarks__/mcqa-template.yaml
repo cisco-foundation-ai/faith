@@ -38,6 +38,7 @@ instructions: !from &mcqa_instructions
       {%- endfor %}.
 output_processing: !from &mcqa_output_processing
   '$BENCHMARKS_ROOT/output-processing-template.yaml["output_processing"]':
+    primary_metric: "accuracy.mean"
     # These answer formats are designed to capture the answer in various common formats.
     # They include proper and improper formats, with different patterns to match.
     answer_formats:

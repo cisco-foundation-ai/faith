@@ -11,6 +11,3 @@ benchmark: !from
         name: "for-unit-test-only"
         description: "A simple benchmark config for unit testing benchmarks."
         state: test_only
-    output_processing: !from
-      '$BENCHMARKS_ROOT/output-processing-template.yaml["output_processing"]':
-        primary_metric: "accuracy.mean"
