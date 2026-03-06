@@ -156,4 +156,8 @@ def test_ensure_table_creates_table():
         _ = BigQueryClient(project_id="test-project", dataset_id="test_dataset")
 
         mock_client.create_table.assert_called_once()
-        assert mock_client.create_table.call_args[0][0].clustering_fields == ["benchmark", "model_key", "metric_name"]
+        assert mock_client.create_table.call_args[0][0].clustering_fields == [
+            "benchmark",
+            "model_key",
+            "metric_name",
+        ]

@@ -7,7 +7,7 @@
 import logging
 from typing import Any
 
-from google.api_core.exceptions import GoogleAPIError, NotFound
+from google.api_core.exceptions import NotFound
 from google.cloud import bigquery
 from google.cloud.bigquery import SchemaField
 
