@@ -7,7 +7,7 @@
 from enum import Enum
 from typing import Callable
 
-ChatConversation = list[dict[str, str]]
+from faith._internal.records.types import ChatConversation
 
 
 def _format_base_input(

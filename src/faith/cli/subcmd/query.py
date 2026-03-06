@@ -118,19 +118,19 @@ class BenchmarkRecordTransform(Mapping[QARecord, Record]):
 
     def _map_fn(self, element: QARecord) -> Record:
         """Map a `QARecord` into a log record containing the data and metadata for querying."""
-        return {
-            "metadata": {
+        return Record(
+            metadata={
                 "version": self._bench_version,
                 "data_hash": element.sha256(),
             },
-            "data": element.to_dict(),
-            "model_data": {
+            data=element.to_dict(),
+            model_data={
                 "prompt": self._bench_formatter.render_conversation(
                     element, self._answer_leadin
                 ),
                 "answer_symbol_ids": self._answer_symbol_ids,
             },
-        }
+        )
 
 
 def model_querier(

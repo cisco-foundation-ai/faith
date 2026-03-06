@@ -25,8 +25,8 @@ class LogitsLogGrader(LogGrader):
 
     def _markup_entry_impl(self, log_entry: Record) -> Record:
         """Markup a single log entry with the computed statistics / scores."""
-        label: Labeling = log_entry["data"]["label"]
-        extracted_pred: Labeling | None = None
+        label: str = log_entry["data"]["label"]
+        extracted_pred: str | None = None
         answer_format = AnswerFormat.INVALID
         log_probs_stats = {}
         if logits := log_entry["model_data"].get("logits", None):

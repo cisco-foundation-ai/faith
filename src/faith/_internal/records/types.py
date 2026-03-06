@@ -3,10 +3,44 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from enum import StrEnum, auto
-from typing import Any, TypeAlias
+from typing import Any, NotRequired, TypeAlias, TypedDict
 
-# Defines a record as a dictionary with string keys and any type of values.
-Record: TypeAlias = dict[str, Any]
+ChatConversation: TypeAlias = list[dict[str, str]]
+
+
+class _Metadata(TypedDict):
+    """Represents the metadata associated with a log record."""
+
+    data_hash: str
+    version: str
+
+
+class _ModelError(TypedDict):
+    """Represents an error that occurred during model inference."""
+
+    title: str
+    details: str | None
+
+
+class _ModelData(TypedDict):
+    """Represents the model data associated with a log record."""
+
+    prompt: str | ChatConversation
+    answer_symbol_ids: dict[str, int]
+
+    chat_comp: NotRequired[dict[str, Any]]
+    logits: NotRequired[list[list[dict[str, Any]]]]
+    next_token: NotRequired[dict[str, Any]]
+    error: NotRequired[_ModelError]
+
+
+class Record(TypedDict):
+    """Represents a log record used to track individual queries to a model."""
+
+    metadata: _Metadata
+    data: dict[str, Any]
+    model_data: _ModelData
+    stats: NotRequired[dict[str, Any]]
 
 
 class RecordStatus(StrEnum):

@@ -12,8 +12,9 @@ from dataclasses_json import DataClassJsonMixin
 from jinja2 import Template
 
 from faith._internal.algo.hash import dict_sha256
+from faith._internal.records.types import ChatConversation
 from faith._internal.types.configs import Configuration
-from faith.benchmark.formatting.prompt import ChatConversation, PromptFormatter
+from faith.benchmark.formatting.prompt import PromptFormatter
 
 
 @dataclass
