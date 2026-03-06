@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """Unit tests for the compose function."""
+
 import pytest
 
 from faith._internal.functools.compose import compose

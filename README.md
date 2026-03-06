@@ -155,7 +155,7 @@ from which you can install the package.
 
 #### For Development
 
-When installing for devolopment purposes, you can install the package in
+When installing for development purposes, you can install the package in
 editable mode from source. Installing in this way allows you to make alterations
 and re-run faith without re-installing.
 This may require altering SCM's versioning:
@@ -277,7 +277,7 @@ which need to be processed by subsequent commands.
 #### Model Engine Flags
 
 Each framework (OpenAI, vLLM, etc.) use a number of custom key-word-args
-when instatiating their clients. We support (limited) ability to set these
+when instantiating their clients. We support (limited) ability to set these
 key-word-args from the command-line through the flag `--engine-kwargs`
 followed by a list of key-value pairs of the form:
 
@@ -443,7 +443,7 @@ model:
 - `--prompt-format` [`base`, `chat`]: the prompt format to use for the model.
   [Required]
 - `--n-shot` [list[int]]: the number of in-context examples per question.
-  [Defalut: 0]
+  [Default: 0]
 - `--num-trials` [int]: the number of trials to run for the benchmark.
   [Default: 1]
 - `--seed` [int]: the random seed for reproducibility. [Default: 373,363]
@@ -488,7 +488,7 @@ The `eval` subcommand computes metrics over a set of benchmark's logs.
 
 ### The `summarize` subcommand
 
-The `summarize` (or `digest`) subcommand coallates all benchmark metrics
+The `summarize` (or `digest`) subcommand collates all benchmark metrics
 in a given directory into a summary table.
 
 <details>
@@ -576,8 +576,8 @@ Files in the benchmark directory:
 - **metrics.json** - A file with metrics summarizing all trials as well as
   aggregate statistics for the entire run.
 
-The `trials` sub-folder contains a record of all benchmark query/reponses in the
-course of the run. Its subfolder structure contains a `trial-seed` and
+The `trials` sub-folder contains a record of all benchmark query/responses in
+the course of the run. Its subfolder structure contains a `trial-seed` and
 `benchmark-trial-hash` both of which are identifiers for the trial -- the seed
 allows you to compare similar trials (exactly the same base questions) across
 runs, whereas the hash is useful when you want to compare exactly the same LLM
@@ -589,7 +589,7 @@ The file for each trial is:
 - **benchmark-log.json**: a list of records for every query-response executed
   from the benchmark on the model.
 
-### Dowloading Metrics Only
+### Downloading Metrics Only
 
 For the purposes of examining a benchmark,
 you only need the metrics files from that benchmark.
@@ -628,7 +628,7 @@ faith query --custom-benchmarks ${HOME}/my-custom-benchmark@name=my-bench \
 
 This will query the `fdtn-ai/Foundation-Sec-8B-Instruct` model
 over a sample of 25 questions from this custom benchmark
-and save resuts to the local folder `out/`.
+and save results to the local folder `out/`.
 
 ### Structure of a Benchmark Config
 

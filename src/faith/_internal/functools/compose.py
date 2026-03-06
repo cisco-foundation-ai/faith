@@ -8,6 +8,7 @@ This module provides functionality to compose multiple functions into a single c
 implemented using a class-based approach to make function composition pickleable;
 this is particularly useful in multiprocessing contexts.
 """
+
 from functools import reduce
 from typing import Any, Callable, Generic, TypeVar
 
