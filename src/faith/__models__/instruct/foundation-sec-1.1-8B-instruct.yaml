@@ -1,0 +1,14 @@
+# Copyright 2025 Cisco Systems, Inc. and its affiliates
+#
+# SPDX-License-Identifier: Apache-2.0
+
+---
+model:
+  path: fdtn-ai/Foundation-Sec-1.1-8B-Instruct
+  name: foundation-sec-8B-instruct
+  engine:
+    engine_type: vllm
+    context_length: 8192
+  generation:
+    temperature: 0.3
+    max_completion_tokens: 5000

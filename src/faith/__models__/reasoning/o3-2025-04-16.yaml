@@ -1,0 +1,16 @@
+# Copyright 2025 Cisco Systems, Inc. and its affiliates
+#
+# SPDX-License-Identifier: Apache-2.0
+
+---
+model:
+  path: o3-2025-04-16
+  name: o3-2025-04-16
+  engine:
+    engine_type: openai
+    context_length: 8192
+    kwargs:
+      api_num_threads: 50
+  generation:
+    temperature: 1.0
+    max_completion_tokens: -1

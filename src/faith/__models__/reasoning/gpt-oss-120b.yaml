@@ -1,0 +1,17 @@
+# Copyright 2025 Cisco Systems, Inc. and its affiliates
+#
+# SPDX-License-Identifier: Apache-2.0
+
+---
+model:
+  path: openai/gpt-oss-120b
+  name: gpt-oss-120b
+  reasoning:
+    start_delimiter: [200006, 173781, 200005, 35644, 200008]
+    end_delimiter: [200007, 200006, 173781, 200005, 17196, 200008]
+  engine:
+    engine_type: vllm
+    context_length: 8192
+  generation:
+    temperature: 0.6
+    max_completion_tokens: 10000
