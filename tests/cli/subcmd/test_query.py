@@ -228,7 +228,7 @@ _FAKE_BENCHMARK_CONFIG: Configuration = {
     },
 }
 
-_DATA_RECORD_0: Record = {
+_DATA_RECORD_0: dict[str, Any] = {
     "benchmark_sample_index": 0,
     "benchmark_sample_hash": "f0",
     "subject": "apiculture",
@@ -243,7 +243,7 @@ _DATA_RECORD_0: Record = {
     "ancillary_data": {"other_data": "foo"},
 }
 
-_DATA_RECORD_1: Record = {
+_DATA_RECORD_1: dict[str, Any] = {
     "benchmark_sample_index": 1,
     "benchmark_sample_hash": "f1",
     "subject": "apiculture",
@@ -284,6 +284,7 @@ _ANSWER_TOKEN_MAP: dict[str, int] = {"A": 87, "B": 31, "C": 7, "D": 9, "E": 5}
                         "prompt": _PROMPT_NO_LEADIN_0,
                     },
                     "metadata": ANY,
+                    "stats": None,
                 },
                 {
                     "data": _DATA_RECORD_1,
@@ -292,6 +293,7 @@ _ANSWER_TOKEN_MAP: dict[str, int] = {"A": 87, "B": 31, "C": 7, "D": 9, "E": 5}
                         "prompt": _PROMPT_NO_LEADIN_1,
                     },
                     "metadata": ANY,
+                    "stats": None,
                 },
             ],
         ),
@@ -310,6 +312,7 @@ _ANSWER_TOKEN_MAP: dict[str, int] = {"A": 87, "B": 31, "C": 7, "D": 9, "E": 5}
                         "prompt": _PROMPT_WITH_LEADIN_0,
                     },
                     "metadata": ANY,
+                    "stats": None,
                 },
                 {
                     "data": _DATA_RECORD_1,
@@ -318,6 +321,7 @@ _ANSWER_TOKEN_MAP: dict[str, int] = {"A": 87, "B": 31, "C": 7, "D": 9, "E": 5}
                         "prompt": _PROMPT_WITH_LEADIN_1,
                     },
                     "metadata": ANY,
+                    "stats": None,
                 },
             ],
         ),
@@ -336,6 +340,7 @@ _ANSWER_TOKEN_MAP: dict[str, int] = {"A": 87, "B": 31, "C": 7, "D": 9, "E": 5}
                         "prompt": _PROMPT_WITH_LEADIN_0,
                     },
                     "metadata": ANY,
+                    "stats": None,
                 },
                 {
                     "data": _DATA_RECORD_1,
@@ -344,6 +349,7 @@ _ANSWER_TOKEN_MAP: dict[str, int] = {"A": 87, "B": 31, "C": 7, "D": 9, "E": 5}
                         "prompt": _PROMPT_WITH_LEADIN_1,
                     },
                     "metadata": ANY,
+                    "stats": None,
                 },
             ],
         ),

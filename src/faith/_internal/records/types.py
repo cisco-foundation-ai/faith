@@ -40,7 +40,7 @@ class Record(TypedDict):
     metadata: _Metadata
     data: dict[str, Any]
     model_data: _ModelData
-    stats: NotRequired[dict[str, Any]]
+    stats: dict[str, Any] | None
 
 
 class RecordStatus(StrEnum):

@@ -50,7 +50,7 @@ class LogGrader(IsoTransform[Record]):
 
     def _markup_entry(self, log_entry: Record) -> Record:
         """Markup a single log entry with the computed statistics / scores."""
-        if "stats" not in log_entry or self._recompute_stats:
+        if not log_entry.get("stats") or self._recompute_stats:
             return self._markup_entry_impl(log_entry)
         return self._normalize_entry(log_entry)
 
@@ -69,9 +69,12 @@ class LogGrader(IsoTransform[Record]):
 
     def _normalize_entry(self, log_entry: Record) -> Record:
         """Normalize the log entry to ensure consistent typing."""
-        if "answer_format" in log_entry["stats"] and isinstance(
-            log_entry["stats"]["answer_format"], str
+        if (
+            (stats := log_entry.get("stats"))
+            and "answer_format" in stats
+            and isinstance(stats["answer_format"], str)
         ):
+            assert log_entry["stats"] is not None  # for type checker
             log_entry["stats"]["answer_format"] = AnswerFormat.from_string(
                 log_entry["stats"]["answer_format"]
             )

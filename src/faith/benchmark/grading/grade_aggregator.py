@@ -45,7 +45,7 @@ class GradeAggregator(Reducer[Record, MetricSummary]):
         """Transpose the 'stats' dictionary in `logs` to a dictionary of lists."""
         transposed_stats = defaultdict(list)
         for log_entry in logs:
-            for key, value in log_entry["stats"].items():
+            for key, value in (log_entry.get("stats") or {}).items():
                 transposed_stats[key].append(value)
         return dict(transposed_stats)
 

@@ -130,6 +130,7 @@ class BenchmarkRecordTransform(Mapping[QARecord, Record]):
                 ),
                 "answer_symbol_ids": self._answer_symbol_ids,
             },
+            stats=None,
         )
 
 

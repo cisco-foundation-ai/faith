@@ -4,7 +4,7 @@
 
 """Logger provided as a context manager for collecting records over a benchmark run."""
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from pathlib import Path
 from types import TracebackType
 from typing import Any, Generic, Type, TypeVar, cast
@@ -13,7 +13,7 @@ from faith._internal.io.json import write_as_json
 from faith._internal.iter.transform import IsoTransform
 
 # TypeVar constrained for LoggingWrapper, items to be logged must be dicts
-_LOGGABLE = TypeVar("_LOGGABLE", bound=dict[str, Any])
+_LOGGABLE = TypeVar("_LOGGABLE", bound=Mapping[str, Any])
 
 
 class LogCollector(Generic[_LOGGABLE]):
