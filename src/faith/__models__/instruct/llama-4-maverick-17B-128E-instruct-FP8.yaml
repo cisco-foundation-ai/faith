@@ -9,6 +9,4 @@ model:
   engine:
     engine_type: vllm
     context_length: 65536
-  generation:
-    temperature: 0.3
-    max_completion_tokens: 5000
+  generation: !from '$MODELS_ROOT/default_generation.yaml["instruct"]'

@@ -14,3 +14,9 @@ def benchmarks_root() -> Path:
         resources.files("faith") / "__benchmarks__"
     ) as benchmarks_path:
         return benchmarks_path
+
+
+def models_root() -> Path:
+    """Return the root path of the models directory."""
+    with resources.as_file(resources.files("faith") / "__models__") as models_path:
+        return models_path

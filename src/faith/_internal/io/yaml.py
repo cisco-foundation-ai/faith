@@ -12,7 +12,7 @@ from typing import IO, Any
 
 import yaml
 
-from faith._internal.io.benchmarks import benchmarks_root
+from faith._internal.io.resources import benchmarks_root, models_root
 
 _INDEXED_PATH_RE = re.compile(r'([^\[]+)((?:\[(?:\d+|(?:\'[^\']+\')|(?:"[^"]+"))\])*)')
 _INDEX_RE = re.compile(r'\[(\d+|\'[^\']+\'|"[^"]+")\]')
@@ -21,6 +21,8 @@ _INDEX_RE = re.compile(r'\[(\d+|\'[^\']+\'|"[^"]+")\]')
 def _resolve_path(path: str) -> Path:
     if path.startswith("$BENCHMARKS_ROOT/"):
         return benchmarks_root() / path.replace("$BENCHMARKS_ROOT/", "")
+    if path.startswith("$MODELS_ROOT/"):
+        return models_root() / path.replace("$MODELS_ROOT/", "")
     return Path(path)
 
 

@@ -6,11 +6,5 @@
 model:
   path: gpt-4o-mini-2024-07-18
   name: gpt-4o-mini-2024-07-18
-  engine:
-    engine_type: openai
-    context_length: 8192
-    kwargs:
-      api_num_threads: 50
-  generation:
-    temperature: 0.3
-    max_completion_tokens: 5000
+  engine: !from '$MODELS_ROOT/default_engines.yaml["openai-engine"]'
+  generation: !from '$MODELS_ROOT/default_generation.yaml["instruct"]'

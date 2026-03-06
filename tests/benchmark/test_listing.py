@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from faith._internal.io.benchmarks import benchmarks_root
+from faith._internal.io.resources import benchmarks_root
 from faith.benchmark.listing import (
     BenchmarkState,
     benchmark_choices,

@@ -6,8 +6,8 @@ from pathlib import Path
 
 import pytest
 
-from faith._internal.io.benchmarks import benchmarks_root
 from faith._internal.io.datastore import Datastore
+from faith._internal.io.resources import benchmarks_root
 from faith._internal.types.flags import GenerationMode, SampleRatio
 from faith.benchmark.formatting.prompt import PromptFormatter
 from faith.benchmark.types import BenchmarkSpec

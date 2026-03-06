@@ -6,11 +6,7 @@
 model:
   path: gpt-5-nano-2025-08-07
   name: gpt-5-nano-2025-08-07
-  engine:
-    engine_type: openai
-    context_length: 8192
-    kwargs:
-      api_num_threads: 50
+  engine: !from '$MODELS_ROOT/default_engines.yaml["openai-engine"]'
   generation:
-    temperature: 1.0
-    max_completion_tokens: 10000
+    !from '$MODELS_ROOT/default_generation.yaml["reasoning"]':
+      temperature: 1.0

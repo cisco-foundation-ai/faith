@@ -8,7 +8,7 @@ from collections.abc import Sequence
 from enum import Enum
 from pathlib import Path
 
-from faith._internal.io.benchmarks import benchmarks_root
+from faith._internal.io.resources import benchmarks_root
 from faith.benchmark.config import load_config_from_path
 
 

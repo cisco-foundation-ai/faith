@@ -6,9 +6,5 @@
 model:
   path: Qwen/Qwen2.5-7B-Instruct
   name: Qwen2.5-7B-Instruct
-  engine:
-    engine_type: vllm
-    context_length: 8192
-  generation:
-    temperature: 0.3
-    max_completion_tokens: 5000
+  engine: !from '$MODELS_ROOT/default_engines.yaml["vllm-engine"]'
+  generation: !from '$MODELS_ROOT/default_generation.yaml["instruct"]'

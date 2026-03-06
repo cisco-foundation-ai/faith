@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 write_to = "src/faith/_version.py"
 
 [tool.setuptools.package-data]
-benchmarks = ["__benchmarks__/**/*.csv", "__benchmarks__/**/*.yaml"]
+benchmarks = ["__benchmarks__/**/*.csv", "__benchmarks__/**/*.yaml", "__models__/**/*.yaml"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]

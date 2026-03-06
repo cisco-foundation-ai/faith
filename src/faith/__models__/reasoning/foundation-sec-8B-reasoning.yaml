@@ -6,9 +6,5 @@
 model:
   path: fdtn-ai/Foundation-Sec-8B-Reasoning
   name: foundation-sec-8B-reasoning
-  engine:
-    engine_type: vllm
-    context_length: 8192
-  generation:
-    temperature: 0.6
-    max_completion_tokens: 10000
+  engine: !from '$MODELS_ROOT/default_engines.yaml["vllm-engine"]'
+  generation: !from '$MODELS_ROOT/default_generation.yaml["reasoning"]'

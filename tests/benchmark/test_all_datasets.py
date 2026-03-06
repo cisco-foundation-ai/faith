@@ -7,7 +7,7 @@ import pandas as pd
 import pytest
 
 from faith._internal.algo.hash import dict_sha256
-from faith._internal.io.benchmarks import benchmarks_root
+from faith._internal.io.resources import benchmarks_root
 from faith._internal.types.flags import GenerationMode, SampleRatio
 from faith.benchmark.benchmark import Benchmark
 from faith.benchmark.config import load_config_from_path

@@ -9,9 +9,5 @@ model:
   reasoning:
     start_delimiter: [200006, 173781, 200005, 35644, 200008]
     end_delimiter: [200007, 200006, 173781, 200005, 17196, 200008]
-  engine:
-    engine_type: vllm
-    context_length: 8192
-  generation:
-    temperature: 0.6
-    max_completion_tokens: 10000
+  engine: !from '$MODELS_ROOT/default_engines.yaml["vllm-engine"]'
+  generation: !from '$MODELS_ROOT/default_generation.yaml["reasoning"]'
