@@ -5,8 +5,9 @@
 """BigQuery storage backend for FAITH metrics ingestion."""
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
+from google.api_core.exceptions import GoogleAPIError, NotFound
 from google.cloud import bigquery
 from google.cloud.bigquery import SchemaField
 
@@ -22,10 +23,10 @@ METRICS_SCHEMA = [
         description="Model name (from @name annotation or path)",
     ),
     SchemaField(
-        "model_path",
+        "source_uri",
         "STRING",
         mode="NULLABLE",
-        description="Full model path from experiment.json",
+        description="Full model path/URI from experiment.json",
     ),
     SchemaField("benchmark", "STRING", mode="REQUIRED", description="Benchmark name"),
     SchemaField(
@@ -35,12 +36,6 @@ METRICS_SCHEMA = [
         description="Metric name (e.g., accuracy.mean)",
     ),
     SchemaField("metric_value", "FLOAT64", mode="REQUIRED", description="Metric value"),
-    SchemaField(
-        "metric_unit",
-        "STRING",
-        mode="NULLABLE",
-        description="Unit (ratio, percent, etc.)",
-    ),
     SchemaField(
         "is_primary",
         "BOOL",
@@ -73,7 +68,10 @@ METRICS_SCHEMA = [
         "temperature", "FLOAT64", mode="NULLABLE", description="Generation temperature"
     ),
     SchemaField(
-        "top_p", "FLOAT64", mode="NULLABLE", description="Nucleus sampling parameter"
+        "top_p",
+        "FLOAT64",
+        mode="NULLABLE",
+        description="Probability mass threshold for nucleus sampling (0.0-1.0)",
     ),
     SchemaField(
         "max_completion_tokens",
@@ -112,8 +110,7 @@ METRICS_SCHEMA = [
 
 
 class BigQueryClient:
-    """
-    Client for inserting FAITH metrics into BigQuery.
+    """Client for inserting FAITH metrics into BigQuery.
 
     Handles table creation, schema management, and metric insertion with
     idempotency checks to prevent duplicate ingestion.
@@ -124,41 +121,37 @@ class BigQueryClient:
         project_id: str,
         dataset_id: str,
         table_id: str = "metrics",
-        client: Optional[bigquery.Client] = None,
     ):
-        """
-        Initialize BigQuery client.
+        """Initialize BigQuery client.
 
         Args:
             project_id: GCP project ID
             dataset_id: BigQuery dataset name
             table_id: BigQuery table name (default: "metrics")
-            client: Optional BigQuery client (creates new one if not provided)
         """
-        self.project_id = project_id
-        self.dataset_id = dataset_id
-        self.table_id = table_id
-        self.client = client or bigquery.Client(project=project_id)
-        self.table_ref = f"{project_id}.{dataset_id}.{table_id}"
+        self.client = bigquery.Client(project=project_id)
+        self._table_ref = f"{project_id}.{dataset_id}.{table_id}"
+        self._ensure_table_exists()
 
-    def ensure_table_exists(self) -> None:
-        """
-        Create the metrics table if it doesn't exist.
+    @property
+    def table_ref(self) -> str:
+        """Get the full table reference."""
+        return self._table_ref
+
+    def _ensure_table_exists(self) -> None:
+        """Create the metrics table if it doesn't exist.
 
         The table is created with:
         - Partitioning by ingest_time (daily)
         - Clustering by benchmark, model_key, metric_name
 
         Raises:
-            google.api_core.exceptions.GoogleAPIError: If table creation fails
+            GoogleAPIError: If table creation fails
         """
-        # pylint: disable=import-outside-toplevel
-        from google.api_core import exceptions as google_exceptions
-
         try:
             self.client.get_table(self.table_ref)
             return
-        except google_exceptions.NotFound:
+        except NotFound:
             pass
 
         # Create table with schema
@@ -175,8 +168,7 @@ class BigQueryClient:
         table = self.client.create_table(table)
 
     def check_metrics_file_exists(self, metrics_file_uri: str) -> bool:
-        """
-        Check if metrics from a given file URI have already been ingested.
+        """Check if metrics from a given file URI have already been ingested.
 
         This provides simple idempotency protection to prevent duplicate ingestion.
 
@@ -190,30 +182,27 @@ class BigQueryClient:
             metrics_file_uri uniquely identifies each experiment run
             (model + benchmark + generation parameters).
         """
-        query = f"""
-            SELECT COUNT(*) as count
-            FROM `{self.table_ref}`
-            WHERE metrics_file_uri = @metrics_file_uri
-            LIMIT 1
-        """
-
-        job_config = bigquery.QueryJobConfig(
-            query_parameters=[
-                bigquery.ScalarQueryParameter(
-                    "metrics_file_uri", "STRING", metrics_file_uri
-                )
-            ]
-        )
-
-        result = self.client.query(query, job_config=job_config).result()
-        row = next(iter(result))
-        return row.count > 0
+        result = self.client.query(
+            f"""
+                SELECT 1
+                FROM `{self.table_ref}`
+                WHERE metrics_file_uri = @metrics_file_uri
+                LIMIT 1
+            """,
+            job_config=bigquery.QueryJobConfig(
+                query_parameters=[
+                    bigquery.ScalarQueryParameter(
+                        "metrics_file_uri", "STRING", metrics_file_uri
+                    )
+                ]
+            ),
+        ).result()
+        return result.total_rows > 0
 
     def insert_metrics(
-        self, metrics: List[Dict[str, Any]], check_duplicates: bool = True
+        self, metrics: list[dict[str, Any]], check_duplicates: bool = True
     ) -> int:
-        """
-        Insert metric records into BigQuery.
+        """Insert metric records into BigQuery using Load Jobs.
 
         Args:
             metrics: List of metric records (output from parse_metrics_file)
@@ -224,13 +213,10 @@ class BigQueryClient:
 
         Raises:
             ValueError: If metrics_file_uri already exists and check_duplicates=True
-            google.api_core.exceptions.GoogleAPIError: If insertion fails
+            GoogleAPIError: If load job fails
         """
         if not metrics:
             return 0
-
-        # Ensure table exists
-        self.ensure_table_exists()
 
         # Check for duplicates if requested
         if check_duplicates and metrics:
@@ -241,13 +227,8 @@ class BigQueryClient:
                     "Delete existing rows or use check_duplicates=False."
                 )
 
-        # Insert rows
-        # Note: BigQuery streaming inserts are best-effort and do not provide
-        # transactional guarantees. Partial inserts are possible but rare.
-        # For stricter ACID guarantees, consider using Load Jobs in the future.
-        errors = self.client.insert_rows_json(self.table_ref, metrics)
-
-        if errors:
-            raise RuntimeError(f"Failed to insert {len(errors)} rows: {errors}")
+        # Load data using Load Jobs (atomic, all-or-nothing)
+        # If job fails, GoogleAPIError is raised and no rows are inserted
+        self.client.load_table_from_json(metrics, self.table_ref).result()
 
         return len(metrics)
