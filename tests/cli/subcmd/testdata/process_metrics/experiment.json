@@ -1,0 +1,19 @@
+{
+  "experiment_params": {
+    "benchmark": {
+      "name": "test-bench",
+      "generation_mode": "chat_comp",
+      "prompt_format": "chat",
+      "n_shot": "0"
+    },
+    "model": {
+      "path": "test/model"
+    }
+  },
+  "benchmark_config": {
+    "output_processing": {
+      "primary_metric": "accuracy.mean"
+    }
+  },
+  "metadata": {}
+}

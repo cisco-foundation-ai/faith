@@ -7,7 +7,7 @@
 import logging
 import os
 from pathlib import Path
-from typing import Optional, Sequence
+from typing import Sequence
 
 from faith._internal.io.datastore import DatastoreContext
 from faith._internal.io.json import read_json_file
@@ -23,12 +23,11 @@ def summarize_experiments(
     selected_stats: Sequence[str],
     summary_filepath: Path | None,
     output_format: str = "table",
-    bigquery_project: Optional[str] = None,
-    bigquery_dataset: Optional[str] = None,
-    bigquery_table: Optional[str] = None,
+    bigquery_project: str | None = None,
+    bigquery_dataset: str | None = None,
+    bigquery_table: str | None = None,
 ) -> None:
-    """
-    Summarize the experiments in the given path.
+    """Summarize the experiments in the given path.
 
     Args:
         experiment_path: Path to experiment results
@@ -71,9 +70,9 @@ def _summarize_to_table_or_csv(
 
 
 def _resolve_bigquery_config(
-    bigquery_project: Optional[str],
-    bigquery_dataset: Optional[str],
-    bigquery_table: Optional[str],
+    bigquery_project: str | None,
+    bigquery_dataset: str | None,
+    bigquery_table: str | None,
 ) -> tuple[str, str, str]:
     """Resolve BigQuery configuration from arguments and environment variables."""
     project = bigquery_project or os.getenv("FAITH_BIGQUERY_PROJECT")
@@ -96,34 +95,30 @@ def _resolve_bigquery_config(
 
 def _find_metrics_files(experiment_path: Path) -> list[Path]:
     """Find all metrics.json files in the experiment directory."""
-    metrics_paths = list(experiment_path.glob("**/metrics.json"))
-    if not metrics_paths:
+    if not (metrics_paths := list(experiment_path.glob("**/metrics.json"))):
         raise FileNotFoundError(f"No metrics.json files found in {experiment_path}")
     return metrics_paths
 
 
 def _process_metrics_file(metrics_path: Path):
     """Parse a single metrics file and return the metrics records."""
-    experiment_path_for_file = metrics_path.parent / "experiment.json"
+    experiment_json = metrics_path.parent / "experiment.json"
+    if not experiment_json.exists():
+        raise FileNotFoundError(
+            f"Missing experiment.json for {metrics_path}. Expected: {experiment_json}"
+        )
 
-    if not experiment_path_for_file.exists():
-        logger.warning("Skipping %s: no experiment.json found", metrics_path)
-        return []
-
-    # Load and parse experiment config using FAITH's internal utilities
-    with DatastoreContext.from_path(str(experiment_path_for_file)) as ds:
+    with DatastoreContext.from_path(str(experiment_json)) as ds:
         experiment_data = read_json_file(ds.pull())
-    experiment_config = parse_experiment_config(experiment_data)
-
-    # Parse metrics
-    return parse_metrics_file(metrics_path, experiment_config)
+    experiment_config, primary_metric_name = parse_experiment_config(experiment_data)
+    return parse_metrics_file(metrics_path, experiment_config, primary_metric_name)
 
 
 def _summarize_to_bigquery(
     experiment_path: Path,
-    bigquery_project: Optional[str],
-    bigquery_dataset: Optional[str],
-    bigquery_table: Optional[str],
+    bigquery_project: str | None,
+    bigquery_dataset: str | None,
+    bigquery_table: str | None,
 ) -> None:
     """Summarize experiments to BigQuery."""
     # We disable the import-outside-toplevel pylint rule here because BigQuery
@@ -145,12 +140,11 @@ def _summarize_to_bigquery(
 
     # Find and parse all metrics files first (fail fast before any DB writes)
     metrics_paths = _find_metrics_files(experiment_path)
-
-    all_metrics = []
-    for metrics_path in metrics_paths:
-        metrics = _process_metrics_file(metrics_path)
-        all_metrics.extend(metrics)
+    all_metrics = [
+        metric
+        for metrics_path in metrics_paths
+        for metric in _process_metrics_file(metrics_path)
+    ]
 
     # Insert all metrics in one batch (all or nothing)
-    bq_client = BigQueryClient(*config)
-    bq_client.insert_metrics(all_metrics, check_duplicates=False)
+    BigQueryClient(*config).insert_metrics(all_metrics, check_duplicates=False)
