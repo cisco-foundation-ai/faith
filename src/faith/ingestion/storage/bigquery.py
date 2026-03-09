@@ -54,16 +54,6 @@ METRICS_SCHEMA = [
         mode="NULLABLE",
         description="Pool size for resampling (1=fixed examples)",
     ),
-    SchemaField("num_trials", "INT64", mode="NULLABLE", description="Number of trials"),
-    SchemaField(
-        "seed", "INT64", mode="NULLABLE", description="Random seed for reproducibility"
-    ),
-    SchemaField(
-        "sample_size",
-        "INT64",
-        mode="NULLABLE",
-        description="Dataset sample size (null=full benchmark)",
-    ),
     SchemaField(
         "temperature", "FLOAT64", mode="NULLABLE", description="Generation temperature"
     ),

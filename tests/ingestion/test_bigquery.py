@@ -42,15 +42,12 @@ def test_schema_structure():
         "top_p",
         "num_shots",
         "num_shots_pool_size",
-        "seed",
-        "sample_size",
         "is_primary",
         "source_uri",
         "max_completion_tokens",
         "context_length",
         "generation_mode",
         "prompt_format",
-        "num_trials",
     }
 
 
