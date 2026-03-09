@@ -36,9 +36,6 @@ class ExperimentConfig(DataClassJsonMixin):
     prompt_format: str | None = None
     num_shots: int | None = None
     num_shots_pool_size: int | None = None
-    num_trials: int | None = None
-    seed: int | None = None
-    sample_size: int | None = None
 
 
 def _extract_model_info(model_config: dict[str, Any]) -> tuple[str, str]:
@@ -58,34 +55,6 @@ def _extract_generation_params(model_config: dict[str, Any]) -> dict:
         "max_completion_tokens": generation.get("max_completion_tokens"),
         "context_length": engine.get("context_length"),
     }
-
-
-def _extract_cli_arg(run_args: list, flag: str) -> int | None:
-    """Extract an integer CLI argument value from run_args."""
-    if flag not in run_args:
-        return None
-
-    idx = run_args.index(flag)
-    if idx + 1 >= len(run_args):
-        return None
-
-    try:
-        return int(run_args[idx + 1])
-    except (ValueError, TypeError):
-        return None
-
-
-def _extract_metadata_args(
-    experiment_data: dict[str, Any],
-) -> tuple[int | None, int | None, int | None]:
-    """Extract CLI arguments from metadata."""
-    metadata = experiment_data.get("metadata") or {}
-    run_args = metadata.get("run_args") or []
-    return (
-        _extract_cli_arg(run_args, "--num-trials"),
-        _extract_cli_arg(run_args, "--seed"),
-        _extract_cli_arg(run_args, "--sample-size"),
-    )
 
 
 def _extract_n_shot_values(
@@ -130,7 +99,6 @@ def parse_experiment_config(
     model_key, source_uri = _extract_model_info(model_config)
     benchmark_spec = BenchmarkSpec.from_dict(bench_config)
     gen_params = _extract_generation_params(model_config)
-    num_trials, seed, sample_size = _extract_metadata_args(experiment_data)
     num_shots, num_shots_pool_size = _extract_n_shot_values(benchmark_spec)
     primary_metric_name = _extract_primary_metric(experiment_data)
 
@@ -147,9 +115,6 @@ def parse_experiment_config(
             prompt_format=str(benchmark_spec.prompt_format),
             num_shots=num_shots,
             num_shots_pool_size=num_shots_pool_size,
-            num_trials=num_trials,
-            seed=seed,
-            sample_size=sample_size,
         ),
         primary_metric_name,
     )
