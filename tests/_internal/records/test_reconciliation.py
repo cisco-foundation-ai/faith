@@ -19,8 +19,10 @@ DIRTY = RecordStatus.DIRTY
 def _rec(sample_hash: str, data_hash: str, **extra: Any) -> Record:
     """Build a minimal record for testing."""
     return {
-        "metadata": {"data_hash": data_hash},
+        "metadata": {"data_hash": data_hash, "version": "v0.0.7"},
         "data": {"benchmark_sample_hash": sample_hash, **extra},
+        "model_data": {"prompt": "The quick brown", "answer_symbol_ids": {}},
+        "stats": None,
     }
 
 
