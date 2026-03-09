@@ -147,4 +147,4 @@ def _summarize_to_bigquery(
     ]
 
     # Insert all metrics in one batch (all or nothing)
-    BigQueryClient(*config).insert_metrics(all_metrics, check_duplicates=False)
+    BigQueryClient(*config).insert_metrics(all_metrics, check_duplicates=True)
