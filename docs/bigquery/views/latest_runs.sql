@@ -23,9 +23,6 @@ SELECT
     top_p,
     num_shots,
     num_shots_pool_size,
-    num_trials,
-    seed,
-    sample_size,
     generation_mode,
     prompt_format,
     ingest_time

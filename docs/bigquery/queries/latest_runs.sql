@@ -17,8 +17,7 @@ SELECT
     metric_name,
     metric_value,
     temperature,
-    num_shots,
-    seed
+    num_shots
 FROM `YOUR_PROJECT.YOUR_DATASET.metrics`
 WHERE is_primary = TRUE
 ORDER BY ingest_time DESC

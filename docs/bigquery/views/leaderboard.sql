@@ -20,7 +20,6 @@ SELECT
     temperature,
     num_shots,
     num_shots_pool_size,
-    seed,
     ingest_time
 FROM (
     SELECT
