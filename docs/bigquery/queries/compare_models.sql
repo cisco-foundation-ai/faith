@@ -14,17 +14,18 @@
 --   - Update the model_key list to your models of interest
 --   - Update the benchmark filter if needed
 
-SELECT 
-  model_key,
-  benchmark,
-  metric_name,
-  metric_value,
-  temperature,
-  num_shots,
-  ingest_time
+SELECT
+    model_key,
+    benchmark,
+    metric_name,
+    metric_value,
+    temperature,
+    num_shots,
+    ingest_time
 FROM `YOUR_PROJECT.YOUR_DATASET.metrics`
-WHERE model_key IN ('model-a', 'model-b', 'model-c')
-  AND is_primary = true
-  AND temperature = 0.0
-  AND num_shots = 0
-ORDER BY benchmark, metric_value DESC;
+WHERE
+    model_key IN ('model-a', 'model-b', 'model-c')
+    AND is_primary = TRUE
+    AND temperature = 0.0
+    AND num_shots = 0
+ORDER BY benchmark ASC, metric_value DESC;

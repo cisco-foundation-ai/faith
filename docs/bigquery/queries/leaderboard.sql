@@ -10,15 +10,15 @@
 -- Usage:
 --   bq query --use_legacy_sql=false < queries/leaderboard.sql
 
-SELECT 
-  benchmark,
-  model_key,
-  metric_name,
-  metric_value,
-  temperature,
-  num_shots,
-  ingest_time
+SELECT
+    benchmark,
+    model_key,
+    metric_name,
+    metric_value,
+    temperature,
+    num_shots,
+    ingest_time
 FROM `YOUR_PROJECT.YOUR_DATASET.metrics`
-WHERE is_primary = true
-ORDER BY benchmark, metric_value DESC
+WHERE is_primary = TRUE
+ORDER BY benchmark ASC, metric_value DESC
 LIMIT 100;

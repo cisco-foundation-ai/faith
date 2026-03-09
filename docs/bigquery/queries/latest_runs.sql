@@ -10,16 +10,16 @@
 -- Usage:
 --   bq query --use_legacy_sql=false < queries/latest_runs.sql
 
-SELECT 
-  ingest_time,
-  model_key,
-  benchmark,
-  metric_name,
-  metric_value,
-  temperature,
-  num_shots,
-  seed
+SELECT
+    ingest_time,
+    model_key,
+    benchmark,
+    metric_name,
+    metric_value,
+    temperature,
+    num_shots,
+    seed
 FROM `YOUR_PROJECT.YOUR_DATASET.metrics`
-WHERE is_primary = true
+WHERE is_primary = TRUE
 ORDER BY ingest_time DESC
 LIMIT 20;
