@@ -13,7 +13,11 @@ from faith._internal.io.datastore import DatastoreContext
 from faith._internal.io.json import read_json_file
 from faith._internal.io.pandas import safe_df_to_csv
 from faith.experiment.summarize import build_summary
-from faith.ingestion.parser import parse_experiment_config, parse_metrics_file
+from faith.ingestion.parser import (
+    parse_experiment_config,
+    parse_metrics_file,
+    parse_primary_metric,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -110,7 +114,8 @@ def _process_metrics_file(metrics_path: Path):
 
     with DatastoreContext.from_path(str(experiment_json)) as ds:
         experiment_data = read_json_file(ds.pull())
-    experiment_config, primary_metric_name = parse_experiment_config(experiment_data)
+    experiment_config = parse_experiment_config(experiment_data)
+    primary_metric_name = parse_primary_metric(experiment_data)
     return parse_metrics_file(metrics_path, experiment_config, primary_metric_name)
 
 

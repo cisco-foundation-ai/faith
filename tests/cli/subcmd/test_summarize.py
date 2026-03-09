@@ -188,10 +188,7 @@ def test_process_metrics_file_success():
             "context_length": None,
             "generation_mode": "chat_comp",
             "prompt_format": "chat",
-            "num_trials": None,
             "num_shots": 0,
             "num_shots_pool_size": 1,
-            "seed": None,
-            "sample_size": None,
         }
     ]
