@@ -216,10 +216,10 @@ class LLMJudgeScore(ScoreFn[str]):
         ), "Invalid score range for judge: min {self._llm_min_score} >= max {self._llm_max_score}."
         model_engine = ModelEngine.from_string(judge_model["model_engine"])
         self._judge_model = model_engine.create_model(
-            judge_model["model_path"], **judge_model.get("engine_kwargs", {})
+            judge_model["model_path"], **(judge_model.get("engine_kwargs") or {})
         )
         self._judge_model_formatter = PromptFormatter.CHAT
-        self._judge_generation_kwargs = judge_model.get("generation_kwargs", {})
+        self._judge_generation_kwargs = judge_model.get("generation_kwargs") or {}
         self._verdict_matcher = SequentialMatcher(*verdict_formats)
 
     @property
@@ -280,7 +280,7 @@ class LLMJudgeScore(ScoreFn[str]):
         parsed_verdict: _ParsedVerdict = verdict_dict
         return LLMJudgeVerdict(
             raw_value=parsed_verdict["awarded_points"],
-            summary_details=parsed_verdict.get("details", {}),
+            summary_details=parsed_verdict.get("details") or {},
             full_response=verdict,
         )
 

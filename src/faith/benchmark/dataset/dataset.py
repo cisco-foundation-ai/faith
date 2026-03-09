@@ -48,7 +48,7 @@ class BenchmarkDataset(ABC):
         """Get the ancillary columns for the benchmark dataset."""
         if not self._ancillary_columns:
             return None
-        return {col: sample.get(col, None) for col in self._ancillary_columns}
+        return {col: sample.get(col) for col in self._ancillary_columns}
 
     def _get_nshot_examples(self) -> Sequence[QARecord]:
         """Get the n-shot examples for the prompt."""

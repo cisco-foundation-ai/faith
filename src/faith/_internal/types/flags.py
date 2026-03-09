@@ -158,7 +158,7 @@ class AnnotatedPath:
             self._arg_parsers.keys()
         ), f"Unknown annotation keys: {set(overrides.keys()) - set(self._arg_parsers.keys())}"
         parsed_annotations = {
-            name: parser(overrides.get(name, None))
+            name: parser(overrides.get(name))
             for name, parser in self._arg_parsers.items()
         }
         return PathWithAnnotations(raw_path, **parsed_annotations)

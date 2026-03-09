@@ -51,7 +51,7 @@ class Benchmark(ABC):
         self._n_shot = spec.n_shot
         self._config = config
         self._formatter = QAFormatter(
-            spec.prompt_format, self._config.get("format", None) or {}
+            spec.prompt_format, self._config.get("format") or {}
         )
         self._seed = seed
         self._path = path
@@ -127,7 +127,7 @@ class BaseBenchmark(Benchmark):
             logger.warning("No seed provided for benchmark; using default seed.")
         rng = np.random.default_rng(self._seed)
         ancillary_columns = frozenset(
-            self._config["source"].get("ancillary_columns", None) or []
+            self._config["source"].get("ancillary_columns") or []
         )
         benchdata, holdout = load_data(self.name, self._path, self._config["source"])
         benchdata, holdout = sample_datasets(

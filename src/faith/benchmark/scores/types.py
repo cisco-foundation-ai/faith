@@ -33,8 +33,8 @@ class ScoreFn(ABC, Generic[_LABELING]):
         """Initialize the ScoreFn."""
         self._attributes = attributes or {}
         score_range = score_range or {}
-        self._min_score = score_range.get("min", 0.0)
-        self._max_score = score_range.get("max", 1.0)
+        self._min_score = score_range.get("min") or 0.0
+        self._max_score = score_range.get("max") or 1.0
         assert (
             self._min_score < self._max_score
         ), "Invalid score range for judge: min {self._min_score} >= max {self._max_score}."

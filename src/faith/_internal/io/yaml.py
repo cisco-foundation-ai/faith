@@ -65,7 +65,7 @@ def _import_config(base_path: Path, config_path: str) -> dict:
         if isinstance(imported_config, list) and isinstance(index, int):
             imported_config = imported_config[index]
         elif isinstance(imported_config, dict) and isinstance(index, str):
-            imported_config = imported_config.get(index, None)
+            imported_config = imported_config.get(index)
         else:
             raise yaml.YAMLError(
                 f"Invalid index {index} for included config: {str(file_path)}"

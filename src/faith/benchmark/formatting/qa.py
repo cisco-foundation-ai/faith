@@ -74,22 +74,20 @@ class QAFormatter:
     ) -> None:
         """Configures the formatter according to the given configs."""
         self._prompt_format = prompt_format
-        inst_cfg = format_cfg.get("instructions", {})
-        prompt_cfg = format_cfg.get("prompt", {})
+        inst_cfg = format_cfg.get("instructions") or {}
+        prompt_cfg = format_cfg.get("prompt") or {}
         self._system_prompt_template = _opt_template(
-            inst_cfg.get("system_prompt_template", None)
+            inst_cfg.get("system_prompt_template")
         )
         inst_tmpl: str | None = None
         if prompt_format == PromptFormatter.BASE:
-            inst_tmpl = inst_cfg.get("base_inst_template", None)
+            inst_tmpl = inst_cfg.get("base_inst_template")
         elif prompt_format == PromptFormatter.CHAT:
-            inst_tmpl = inst_cfg.get("chat_inst_template", None)
+            inst_tmpl = inst_cfg.get("chat_inst_template")
         self._inst_template = _opt_template(inst_tmpl)
-        self._question_template = _opt_template(
-            prompt_cfg.get("question_template", None)
-        )
-        self._answer_template = _opt_template(prompt_cfg.get("answer_template", None))
-        self._prompt_template = _opt_template(prompt_cfg.get("prompt_template", None))
+        self._question_template = _opt_template(prompt_cfg.get("question_template"))
+        self._answer_template = _opt_template(prompt_cfg.get("answer_template"))
+        self._prompt_template = _opt_template(prompt_cfg.get("prompt_template"))
 
     def _render_system_prompt(self, subject: str | None = None) -> str | None:
         if self._system_prompt_template is None:

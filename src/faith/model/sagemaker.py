@@ -34,7 +34,7 @@ _DEFAULT_RESPONSE_PARSING_EXPR = """
     "num_prompt_tokens": response_body["usage"]["prompt_tokens"],
     "output_text": response_body["choices"][0]["message"]["content"],
     "num_output_tokens": response_body["usage"]["completion_tokens"],
-    "max_token_halt": response_body["choices"][0].get("finish_reason", None) == "length",
+    "max_token_halt": response_body["choices"][0].get("finish_reason") == "length",
 }
 """
 
@@ -130,21 +130,21 @@ class SageMakerModel(APIBasedModel):
 
         return ChatResponse(
             prompt_token_ids=None,  # Currently not specified in the response.
-            num_prompt_tokens=response.get("num_prompt_tokens", None),
+            num_prompt_tokens=response.get("num_prompt_tokens"),
             prompt_text=None,  # Currently not specified in the response.
             output_token_ids=None,  # Currently not specified in the response.
-            num_output_tokens=response.get("num_output_tokens", None),
-            output_text=response.get("output_text", ""),
+            num_output_tokens=response.get("num_output_tokens"),
+            output_text=response.get("output_text") or "",
             request_token_ids=None,  # Currently not specified in the response.
             num_request_tokens=None,
             request_text=None,  # Currently not specified in the response.
             response_token_ids=None,  # Currently not specified in the response.
             num_response_tokens=None,
-            response_text=response.get("output_text", ""),
+            response_text=response.get("output_text") or "",
             answer_token_ids=None,  # Currently not specified in the response.
             num_answer_tokens=None,
-            answer_text=response.get("output_text", ""),
-            max_token_halt=response.get("max_token_halt", False),
+            answer_text=response.get("output_text") or "",
+            max_token_halt=response.get("max_token_halt") or False,
         )
 
     @staticmethod

@@ -242,7 +242,7 @@ def test_format_pattern_answer_format() -> None:
                 "pattern": r"(?is)\s*(\{.*\})\s*",
                 "capture_transform": {
                     "params": ["dict_str"],
-                    "expr": "from_json(dict_str).get('height', None)",
+                    "expr": "from_json(dict_str).get('height')",
                 },
             },
             [

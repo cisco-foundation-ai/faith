@@ -27,7 +27,7 @@ class GradeAggregator(Reducer[Record, MetricSummary]):
         """Initialize the GradeAggregator."""
         super().__init__()
         self._score_fns = DomainSpecificScore.from_configs(
-            **output_processing_config.get("score_fns", {})
+            **(output_processing_config.get("score_fns") or {})
         )
 
     def __call__(self, logs: Iterable[Record]) -> MetricSummary:
@@ -58,9 +58,9 @@ class GradeAggregator(Reducer[Record, MetricSummary]):
         for log_prob in log_prob_stats:
             for stat, value in log_prob.items():
                 stats_vectors[stat].append(value)
-        label_lp = np.array(stats_vectors.get("label", []), dtype=float)
-        mos_lp = np.array(stats_vectors.get("max_other_symbol", []), dtype=float)
-        mot_lp = np.array(stats_vectors.get("max_other_token", []), dtype=float)
+        label_lp = np.array(stats_vectors.get("label") or [], dtype=float)
+        mos_lp = np.array(stats_vectors.get("max_other_symbol") or [], dtype=float)
+        mot_lp = np.array(stats_vectors.get("max_other_token") or [], dtype=float)
 
         os_is_finite = np.isfinite(mos_lp) & np.isfinite(label_lp)
         exceeds_os = (label_lp > mos_lp) & os_is_finite

@@ -66,7 +66,8 @@ class SABenchmark(BaseBenchmark):
         self._answer_type = ShortAnswerType(self._config["saqa_config"]["type"])
         if self._answer_type == ShortAnswerType.DOMAIN_SPECIFIC:
             assert (
-                len(self._config.get("output_processing", {}).get("score_fns", {})) > 0
+                len(self._config.get("output_processing", {}).get("score_fns") or {})
+                > 0
             ), "Domain-specific short answer benchmarks must have at least one score function defined."
 
     def _build_dataset(
@@ -138,7 +139,7 @@ class SABenchmarkDataset(BenchmarkDataset):
             raw_answer=sample["answer"],
             examples=examples,
             choice_map=None,  # Short answer benchmarks are not enumerable.
-            subject=sample.get("subject", None),
+            subject=sample.get("subject"),
             ancillary_data=self._extract_ancillary_data(sample),
         )
 
@@ -163,13 +164,13 @@ class SAMetricsAggregator(GradeAggregator):
         Returns:
             Dictionary containing computed metrics.
         """
-        label: Sequence[Any] = kwargs.get("label", [])
-        prediction: Sequence[Any] = kwargs.get("prediction", [])
-        answer_format: Sequence[AnswerFormat] = kwargs.get("answer_format", [])
-        scores: Sequence[dict[str, Score]] = kwargs.get("scores", [])
-        subject: SingleLabelSeq | None = kwargs.get("subject", None)
-        num_output_tokens: Sequence[int] | None = kwargs.get("num_output_tokens", None)
-        max_token_halt: Sequence[bool] | None = kwargs.get("max_token_halt", None)
+        label: Sequence[Any] = kwargs.get("label") or []
+        prediction: Sequence[Any] = kwargs.get("prediction") or []
+        answer_format: Sequence[AnswerFormat] = kwargs.get("answer_format") or []
+        scores: Sequence[dict[str, Score]] = kwargs.get("scores") or []
+        subject: SingleLabelSeq | None = kwargs.get("subject")
+        num_output_tokens: Sequence[int] | None = kwargs.get("num_output_tokens")
+        max_token_halt: Sequence[bool] | None = kwargs.get("max_token_halt")
 
         agg_scores = self._aggregate_scores(scores)  # Compute aggregate custom scores.
         llm_metadata = (

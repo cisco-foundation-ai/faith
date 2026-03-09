@@ -104,12 +104,12 @@ def _load_local_data_source(
 ) -> tuple[pd.DataFrame, pd.DataFrame | None]:
     """Load the benchmark datasets from local files."""
     file_type = _DataFileType.from_string(files_cfg["type"])
-    selected_columns = files_cfg.get("selected_columns", None)
+    selected_columns = files_cfg.get("selected_columns")
 
     benchmark_df = _load_data_from_local_paths(
         base_path,
-        files_cfg.get("benchmark_data_paths", None)
-        or [glob for glob in [files_cfg.get("path_glob", None)] if glob is not None],
+        files_cfg.get("benchmark_data_paths")
+        or [glob for glob in [files_cfg.get("path_glob")] if glob is not None],
         file_type,
         selected_columns,
     )
@@ -117,7 +117,7 @@ def _load_local_data_source(
 
     holdout_df = _load_data_from_local_paths(
         base_path,
-        files_cfg.get("holdout_data_paths", None) or [],
+        files_cfg.get("holdout_data_paths") or [],
         file_type,
         selected_columns,
     )
@@ -135,9 +135,9 @@ def _load_git_data_source(
         repo = git.Repo.clone_from(
             git_repo_cfg["repo_url"],
             tmp_path,
-            branch=git_repo_cfg.get("branch", None) or "main",
+            branch=git_repo_cfg.get("branch") or "main",
         )
-        if git_repo_cfg.get("commit", None) is not None:
+        if git_repo_cfg.get("commit") is not None:
             repo.git.checkout(git_repo_cfg["commit"])
         assert (
             len(repo.heads) == 1
@@ -153,14 +153,14 @@ def _load_data_source(
     """Load the benchmark datasets from the specified source configuration."""
     if "huggingface" in source_cfg:
         hf_config = source_cfg["huggingface"]
-        ds = load_dataset(hf_config["path"], hf_config.get("subset_name", None))
+        ds = load_dataset(hf_config["path"], hf_config.get("subset_name"))
         split = ds
-        if hf_config.get("test_split", None) is not None:
+        if hf_config.get("test_split") is not None:
             split = ds[hf_config["test_split"]]
         df = split.to_pandas()
 
         # Use the dev split, if specified, for few-shot prompting.
-        if hf_config.get("dev_split", None) is not None:
+        if hf_config.get("dev_split") is not None:
             return df, ds[hf_config["dev_split"]].to_pandas()
         return df, None
     if "files" in source_cfg:
@@ -185,7 +185,7 @@ def load_data(
 
     # The benchmark-specific transform function is either loaded from the registry
     # or specified in the source configuration options.
-    if dt_expr := source_cfg.get("options", {}).get("dataframe_transform_expr", None):
+    if dt_expr := source_cfg.get("options", {}).get("dataframe_transform_expr"):
         df = evaluate_expr(
             dt_expr, names={"df": df}, max_comprehension_length=MCL_FOR_TRANSFORMS
         )

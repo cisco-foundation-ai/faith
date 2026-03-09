@@ -77,12 +77,15 @@ class LABenchmark(BaseBenchmark):
         recompute_stats: bool = False,
     ) -> LogGrader:
         """Fetch a log grader for this benchmark."""
-        op_cfg = self._config["output_processing"]
         if (
             self.generation_mode == GenerationMode.CHAT_COMPLETION
             and self._answer_type == LongAnswerType.FREE_FORM
         ):
-            return ChatCompletionLogGrader(op_cfg, model_format_config, recompute_stats)
+            return ChatCompletionLogGrader(
+                self._config.get("output_processing") or {},
+                model_format_config,
+                recompute_stats,
+            )
         raise ValueError(
             f"Unsupported generation mode: {self.generation_mode} for long answer log grading."
         )
@@ -122,10 +125,10 @@ class LABenchmarkDataset(BenchmarkDataset):
             index=index,
             sample_hash=dict_sha256(sample.to_dict()),
             raw_question=sample["question"],
-            raw_answer=sample.get("answer", None),
+            raw_answer=sample.get("answer"),
             examples=examples,
             choice_map=None,  # Long answer benchmarks are not enumerable.
-            subject=sample.get("subject", None),
+            subject=sample.get("subject"),
             ancillary_data=self._extract_ancillary_data(sample),
         )
 
@@ -144,12 +147,12 @@ class LAMetricsAggregator(GradeAggregator):
         Returns:
             Dictionary containing computed metrics.
         """
-        label: Sequence[Any] = kwargs.get("label", [])
-        prediction: Sequence[Any] = kwargs.get("prediction", [])
-        answer_format: Sequence[AnswerFormat] = kwargs.get("answer_format", [])
-        scores: Sequence[dict[str, Score]] = kwargs.get("scores", [])
-        num_output_tokens: Sequence[int] | None = kwargs.get("num_output_tokens", None)
-        max_token_halt: Sequence[bool] | None = kwargs.get("max_token_halt", None)
+        label: Sequence[Any] = kwargs.get("label") or []
+        prediction: Sequence[Any] = kwargs.get("prediction") or []
+        answer_format: Sequence[AnswerFormat] = kwargs.get("answer_format") or []
+        scores: Sequence[dict[str, Score]] = kwargs.get("scores") or []
+        num_output_tokens: Sequence[int] | None = kwargs.get("num_output_tokens")
+        max_token_halt: Sequence[bool] | None = kwargs.get("max_token_halt")
 
         return (
             self._aggregate_scores(scores)  # Compute aggregate custom scores.

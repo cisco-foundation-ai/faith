@@ -262,7 +262,7 @@ class MCBenchmarkDataset(BenchmarkDataset):
             raw_answer=correct_symbol,
             examples=examples,
             choice_map=choice_map,
-            subject=sample.get("subject", None),
+            subject=sample.get("subject"),
             ancillary_data=self._extract_ancillary_data(sample),
         )
 
@@ -289,13 +289,13 @@ class MCMetricsAggregator(GradeAggregator):
         Returns:
             Dictionary containing computed metrics.
         """
-        label: SingleLabelSeq = kwargs.get("label", [])
-        prediction: SingleLabelSeq = kwargs.get("prediction", [])
-        answer_format: Sequence[AnswerFormat] = kwargs.get("answer_format", [])
-        scores: Sequence[dict[str, Score]] = kwargs.get("scores", [])
-        subject: SingleLabelSeq | None = kwargs.get("subject", None)
-        num_output_tokens: Sequence[int] | None = kwargs.get("num_output_tokens", None)
-        max_token_halt: Sequence[bool] | None = kwargs.get("max_token_halt", None)
+        label: SingleLabelSeq = kwargs.get("label") or []
+        prediction: SingleLabelSeq = kwargs.get("prediction") or []
+        answer_format: Sequence[AnswerFormat] = kwargs.get("answer_format") or []
+        scores: Sequence[dict[str, Score]] = kwargs.get("scores") or []
+        subject: SingleLabelSeq | None = kwargs.get("subject")
+        num_output_tokens: Sequence[int] | None = kwargs.get("num_output_tokens")
+        max_token_halt: Sequence[bool] | None = kwargs.get("max_token_halt")
 
         stringified_preds = [p if p is not None else "" for p in prediction]
         extended_answers = self._answer_list + [""]

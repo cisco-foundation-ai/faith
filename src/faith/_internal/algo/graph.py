@@ -15,7 +15,7 @@ def all_reachable_nodes(start_node: str, graph: dict[str, list[str]]) -> list[st
 
     while queue:
         node = queue.popleft()
-        for neighbor in graph.get(node, []):
+        for neighbor in graph.get(node) or []:
             if neighbor not in visited:
                 queue.append(neighbor)
                 visited.add(neighbor)

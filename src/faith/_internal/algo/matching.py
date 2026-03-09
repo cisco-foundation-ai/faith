@@ -64,14 +64,14 @@ class _FormatPattern:
     def __init__(self, pattern_def: Configuration):
         self._format_type = AnswerFormat.from_string(pattern_def["format_type"])
         self._match_disambiguation = MatchDisambiguation.from_string(
-            pattern_def.get("match_disambiguation", "match_if_singular"),
+            pattern_def.get("match_disambiguation") or "match_if_singular",
         )
-        self._pattern = re.compile(pattern_def.get("pattern", ""))
+        self._pattern = re.compile(pattern_def.get("pattern") or "")
         self._num_captures = self._pattern.groups if self._pattern.groups > 0 else 1
 
-        ct = pattern_def.get("capture_transform", {})
-        self._transform_params = ct.get("params", [])
-        self._transform_expr = ct.get("expr", None)
+        ct = pattern_def.get("capture_transform") or {}
+        self._transform_params = ct.get("params") or []
+        self._transform_expr = ct.get("expr")
         if self._transform_expr is not None:
             assert (
                 len(self._transform_params) == self._num_captures

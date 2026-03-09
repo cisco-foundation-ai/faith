@@ -34,7 +34,7 @@ def _build_experiment_record(
     } | {
         f"{stat}_{substat}": value
         for stat in selected_stats
-        for substat, value in metrics["stats"].get(stat, {}).items()
+        for substat, value in (metrics["stats"].get(stat) or {}).items()
     }
 
 

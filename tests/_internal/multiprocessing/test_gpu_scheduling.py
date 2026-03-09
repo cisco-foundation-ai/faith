@@ -213,7 +213,7 @@ def test_run_gpu_jobs_in_parallel_no_gpus() -> None:
 def _tracking_job(shared_log: ListProxy) -> str:
     """A job that tracks resource usage by reading CUDA_VISIBLE_DEVICES."""
     # Fetch the allocated resources from environment.
-    cuda_devices = os.environ.get("CUDA_VISIBLE_DEVICES", "")
+    cuda_devices = os.environ.get("CUDA_VISIBLE_DEVICES") or ""
     allocated_resources = set(cuda_devices.split(",") if cuda_devices else [])
 
     # Log the start and end of this job with its allocated resources.

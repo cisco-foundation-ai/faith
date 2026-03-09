@@ -42,7 +42,7 @@ class ModelSpec(DataClassJsonMixin):
     @staticmethod
     def from_file(config_path: Path) -> "ModelSpec":
         """Load a ModelSpec from a YAML configuration file."""
-        model_spec_dict = read_extended_yaml_file(config_path).get("model", {})
+        model_spec_dict = read_extended_yaml_file(config_path).get("model") or {}
         assert isinstance(
             model_spec_dict, dict
         ), f"Model config '{config_path}' must be a YAML mapping."

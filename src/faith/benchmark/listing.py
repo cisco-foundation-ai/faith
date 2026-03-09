@@ -39,12 +39,12 @@ def _get_benchmark_paths(
         [
             str(f.parent.relative_to(root_dir))
             for f in root_dir.glob("**/benchmark.yaml")
-            if (metadata := load_config_from_path(f.parent)["metadata"])
-            and BenchmarkState.from_string(metadata.get("state", "enabled"))
+            if (metadata := load_config_from_path(f.parent).get("metadata") or {})
+            and BenchmarkState.from_string(metadata.get("state") or "enabled")
             in allowed_states
             and (
                 not allowed_categories
-                or allowed_categories.intersection(metadata.get("categories", []))
+                or allowed_categories.intersection(metadata.get("categories") or [])
             )
         ]
     )

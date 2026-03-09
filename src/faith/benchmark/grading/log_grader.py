@@ -34,7 +34,7 @@ class LogGrader(IsoTransform[Record]):
         super().__init__()
         self._recompute_stats = recompute_stats
         self._score_fns = DomainSpecificScore.from_configs(
-            **(output_processing_config.get("score_fns", None) or {})
+            **(output_processing_config.get("score_fns") or {})
         )
 
     def __call__(self, logs: Iterable[Record]) -> Iterable[Record]:

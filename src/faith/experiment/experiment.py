@@ -53,7 +53,7 @@ class BenchmarkExperiment:
 
         # State that specifies and configures the benchmark.
         self._benchmark_config = load_config_from_path(self._benchmark_dir)
-        benchmark_name = self._benchmark_config.get("metadata", {}).get("name", None)
+        benchmark_name = self._benchmark_config.get("metadata", {}).get("name")
         assert benchmark_name, "Benchmark config missing field `metadata.name`."
         self._benchmark_spec = BenchmarkSpec(
             name=benchmark_name,
