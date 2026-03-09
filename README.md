@@ -136,8 +136,8 @@ clone the repository and checkout the desired commit/branch.
 You can then install directly from your local repository:
 
 ```shell
-python -m venv .venv && source .venv/bin/activate && pip install --upgrade pip
-pip install -e '.[<EXTRAS>]'
+uv venv .venv && source .venv/bin/activate
+uv pip install -e '.[<EXTRAS>]'
 ```
 
 See above for the `<EXTRAS>` packages.
@@ -145,9 +145,8 @@ See above for the `<EXTRAS>` packages.
 #### Package for a Remote Computer
 
 ```shell
-python -m venv .venv && source .venv/bin/activate && pip install --upgrade pip
-pip install build
-python -m build . --sdist
+uv venv .venv && source .venv/bin/activate
+uv build --sdist
 ```
 
 This will create a distribution in the folder `dist/`
@@ -161,8 +160,8 @@ and re-run faith without re-installing.
 This may require altering SCM's versioning:
 
 ```shell
-python -m venv .venv && source .venv/bin/activate && pip install --upgrade pip
-SETUPTOOLS_SCM_PRETEND_VERSION=0.0.0 pip install -e '.[<EXTRAS>]'
+uv venv .venv && source .venv/bin/activate
+SETUPTOOLS_SCM_PRETEND_VERSION=0.0.0 uv pip install -e '.[<EXTRAS>]'
 ```
 
 See above for the `<EXTRAS>` packages.
@@ -233,7 +232,7 @@ See the commands below for how to run each of these commands.
 ## Command Summary
 
 The primary way to run FAITH's benchmarks is through the `faith` command,
-which is installed in your `venv` through **pip**.
+which is installed in your `venv`.
 This command has the following subcommands and flags:
 
 ### The `query` subcommand
