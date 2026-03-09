@@ -44,13 +44,13 @@ class ExperimentConfig(DataClassJsonMixin):
 def _extract_model_info(model_config: dict[str, Any]) -> tuple[str, str]:
     """Extract model key and source URI from model config."""
     source_uri = model_config["path"]
-    return model_config.get("name", None) or source_uri, source_uri
+    return model_config.get("name") or source_uri, source_uri
 
 
 def _extract_generation_params(model_config: dict[str, Any]) -> dict:
     """Extract generation parameters from model config."""
-    generation = model_config.get("generation", {})
-    engine = model_config.get("engine", {})
+    generation = model_config.get("generation") or {}
+    engine = model_config.get("engine") or {}
 
     return {
         "temperature": generation.get("temperature"),
@@ -79,8 +79,8 @@ def _extract_metadata_args(
     experiment_data: dict[str, Any],
 ) -> tuple[int | None, int | None, int | None]:
     """Extract CLI arguments from metadata."""
-    metadata = experiment_data.get("metadata", {})
-    run_args = metadata.get("run_args", [])
+    metadata = experiment_data.get("metadata") or {}
+    run_args = metadata.get("run_args") or []
     return (
         _extract_cli_arg(run_args, "--num-trials"),
         _extract_cli_arg(run_args, "--seed"),
@@ -101,9 +101,9 @@ def _extract_n_shot_values(
 
 def _extract_primary_metric(experiment_data: dict[str, Any]) -> str | None:
     """Extract primary_metric from benchmark_config output_processing."""
-    benchmark_config = experiment_data.get("benchmark_config", {})
-    output_processing = benchmark_config.get("output_processing", {})
-    return output_processing.get("primary_metric", None)
+    benchmark_config = experiment_data.get("benchmark_config") or {}
+    output_processing = benchmark_config.get("output_processing") or {}
+    return output_processing.get("primary_metric")
 
 
 def parse_experiment_config(
@@ -123,9 +123,9 @@ def parse_experiment_config(
     Raises:
         AssertionError: If required fields (model.path, benchmark.name) are missing
     """
-    exp_params = experiment_data.get("experiment_params", {})
-    model_config = exp_params.get("model", {})
-    bench_config = exp_params.get("benchmark", {})
+    exp_params = experiment_data.get("experiment_params") or {}
+    model_config = exp_params.get("model") or {}
+    bench_config = exp_params.get("benchmark") or {}
 
     model_key, source_uri = _extract_model_info(model_config)
     benchmark_spec = BenchmarkSpec.from_dict(bench_config)

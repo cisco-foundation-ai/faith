@@ -95,7 +95,7 @@ def test_parse_missing_benchmark():
 
     # BenchmarkSpec.from_dict() will raise KeyError for missing required fields
     with pytest.raises(KeyError):
-        _ = parse_experiment_config(data)
+        parse_experiment_config(data)
 
 
 def test_parse_num_shots_fractional():
