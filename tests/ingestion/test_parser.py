@@ -14,6 +14,7 @@ from faith.ingestion.parser import (
     ExperimentConfig,
     parse_experiment_config,
     parse_metrics_file,
+    parse_primary_metric,
 )
 
 _TESTDATA_DIR = Path(__file__).parent / "testdata"
@@ -35,8 +36,8 @@ _EXPERIMENT_DATA = {
             "prompt_format": "chat",
         },
         "model": {
-            "name": "Llama-3.1-8B-Instruct",
-            "path": "meta-llama/Llama-3.1-8B-Instruct",
+            "name": "test-model-8b",
+            "path": "org/test-model-8b",
             "engine": {
                 "context_length": 3500,
                 "engine_type": "vllm",
@@ -62,11 +63,11 @@ _EXPERIMENT_DATA = {
 
 def test_parse_config():
     """Test parsing experiment config."""
-    config, primary_metric = parse_experiment_config(_EXPERIMENT_DATA)
+    config = parse_experiment_config(_EXPERIMENT_DATA)
 
     assert config == ExperimentConfig(
-        model_key="Llama-3.1-8B-Instruct",  # gitleaks:allow
-        source_uri="meta-llama/Llama-3.1-8B-Instruct",
+        model_key="test-model-8b",
+        source_uri="org/test-model-8b",
         benchmark="ctibench-mcqa",
         temperature=0.3,
         top_p=1.0,
@@ -77,6 +78,11 @@ def test_parse_config():
         num_shots=0,
         num_shots_pool_size=1,
     )
+
+
+def test_parse_primary_metric():
+    """Test parsing primary metric from experiment data."""
+    primary_metric = parse_primary_metric(_EXPERIMENT_DATA)
     assert primary_metric == "accuracy.mean"
 
 
@@ -104,7 +110,7 @@ def test_parse_num_shots_fractional():
         "metadata": {},
     }
 
-    config, _ = parse_experiment_config(data)
+    config = parse_experiment_config(data)
     assert config == ExperimentConfig(
         model_key="test/model",
         source_uri="test/model",
@@ -140,7 +146,7 @@ def test_parse_primary_metric_from_config():
         "metadata": {},
     }
 
-    _, primary_metric = parse_experiment_config(data)
+    primary_metric = parse_primary_metric(data)
     assert primary_metric == "custom_metric.mean"
 
 
@@ -159,13 +165,13 @@ def test_parse_missing_primary_metric():
         "metadata": {},
     }
 
-    _, primary_metric = parse_experiment_config(data)
+    primary_metric = parse_primary_metric(data)
     assert primary_metric is None
 
 
 _EXPERIMENT_CONFIG = ExperimentConfig(
-    model_key="Llama-3.1-8B-Instruct",  # gitleaks:allow
-    source_uri="meta-llama/Llama-3.1-8B-Instruct",
+    model_key="test-model-8b",
+    source_uri="org/test-model-8b",
     benchmark="ctibench-mcqa",
     temperature=0.3,
     top_p=1.0,
@@ -190,8 +196,8 @@ def test_parse_simple_metrics():
             "metrics_file_uri": ANY,
             "faith_version": ANY,
             "ingest_time": ANY,
-            "model_key": "Llama-3.1-8B-Instruct",  # gitleaks:allow
-            "source_uri": "meta-llama/Llama-3.1-8B-Instruct",
+            "model_key": "test-model-8b",
+            "source_uri": "org/test-model-8b",
             "benchmark": "ctibench-mcqa",
             "temperature": 0.3,
             "top_p": 1.0,
@@ -209,8 +215,8 @@ def test_parse_simple_metrics():
             "metrics_file_uri": ANY,
             "faith_version": ANY,
             "ingest_time": ANY,
-            "model_key": "Llama-3.1-8B-Instruct",  # gitleaks:allow
-            "source_uri": "meta-llama/Llama-3.1-8B-Instruct",
+            "model_key": "test-model-8b",
+            "source_uri": "org/test-model-8b",
             "benchmark": "ctibench-mcqa",
             "temperature": 0.3,
             "top_p": 1.0,
@@ -228,8 +234,8 @@ def test_parse_simple_metrics():
             "metrics_file_uri": ANY,
             "faith_version": ANY,
             "ingest_time": ANY,
-            "model_key": "Llama-3.1-8B-Instruct",  # gitleaks:allow
-            "source_uri": "meta-llama/Llama-3.1-8B-Instruct",
+            "model_key": "test-model-8b",
+            "source_uri": "org/test-model-8b",
             "benchmark": "ctibench-mcqa",
             "temperature": 0.3,
             "top_p": 1.0,
@@ -247,8 +253,8 @@ def test_parse_simple_metrics():
             "metrics_file_uri": ANY,
             "faith_version": ANY,
             "ingest_time": ANY,
-            "model_key": "Llama-3.1-8B-Instruct",  # gitleaks:allow
-            "source_uri": "meta-llama/Llama-3.1-8B-Instruct",
+            "model_key": "test-model-8b",
+            "source_uri": "org/test-model-8b",
             "benchmark": "ctibench-mcqa",
             "temperature": 0.3,
             "top_p": 1.0,
@@ -266,8 +272,8 @@ def test_parse_simple_metrics():
             "metrics_file_uri": ANY,
             "faith_version": ANY,
             "ingest_time": ANY,
-            "model_key": "Llama-3.1-8B-Instruct",  # gitleaks:allow
-            "source_uri": "meta-llama/Llama-3.1-8B-Instruct",
+            "model_key": "test-model-8b",
+            "source_uri": "org/test-model-8b",
             "benchmark": "ctibench-mcqa",
             "temperature": 0.3,
             "top_p": 1.0,
@@ -285,8 +291,8 @@ def test_parse_simple_metrics():
             "metrics_file_uri": ANY,
             "faith_version": ANY,
             "ingest_time": ANY,
-            "model_key": "Llama-3.1-8B-Instruct",  # gitleaks:allow
-            "source_uri": "meta-llama/Llama-3.1-8B-Instruct",
+            "model_key": "test-model-8b",
+            "source_uri": "org/test-model-8b",
             "benchmark": "ctibench-mcqa",
             "temperature": 0.3,
             "top_p": 1.0,
@@ -316,8 +322,8 @@ def test_parse_nested_metrics():
             "metrics_file_uri": ANY,
             "faith_version": ANY,
             "ingest_time": ANY,
-            "model_key": "Llama-3.1-8B-Instruct",  # gitleaks:allow
-            "source_uri": "meta-llama/Llama-3.1-8B-Instruct",
+            "model_key": "test-model-8b",
+            "source_uri": "org/test-model-8b",
             "benchmark": "ctibench-mcqa",
             "temperature": 0.3,
             "top_p": 1.0,
@@ -335,8 +341,8 @@ def test_parse_nested_metrics():
             "metrics_file_uri": ANY,
             "faith_version": ANY,
             "ingest_time": ANY,
-            "model_key": "Llama-3.1-8B-Instruct",  # gitleaks:allow
-            "source_uri": "meta-llama/Llama-3.1-8B-Instruct",
+            "model_key": "test-model-8b",
+            "source_uri": "org/test-model-8b",
             "benchmark": "ctibench-mcqa",
             "temperature": 0.3,
             "top_p": 1.0,
@@ -354,8 +360,8 @@ def test_parse_nested_metrics():
             "metrics_file_uri": ANY,
             "faith_version": ANY,
             "ingest_time": ANY,
-            "model_key": "Llama-3.1-8B-Instruct",  # gitleaks:allow
-            "source_uri": "meta-llama/Llama-3.1-8B-Instruct",
+            "model_key": "test-model-8b",
+            "source_uri": "org/test-model-8b",
             "benchmark": "ctibench-mcqa",
             "temperature": 0.3,
             "top_p": 1.0,
@@ -373,8 +379,8 @@ def test_parse_nested_metrics():
             "metrics_file_uri": ANY,
             "faith_version": ANY,
             "ingest_time": ANY,
-            "model_key": "Llama-3.1-8B-Instruct",  # gitleaks:allow
-            "source_uri": "meta-llama/Llama-3.1-8B-Instruct",
+            "model_key": "test-model-8b",
+            "source_uri": "org/test-model-8b",
             "benchmark": "ctibench-mcqa",
             "temperature": 0.3,
             "top_p": 1.0,
@@ -392,8 +398,8 @@ def test_parse_nested_metrics():
             "metrics_file_uri": ANY,
             "faith_version": ANY,
             "ingest_time": ANY,
-            "model_key": "Llama-3.1-8B-Instruct",  # gitleaks:allow
-            "source_uri": "meta-llama/Llama-3.1-8B-Instruct",
+            "model_key": "test-model-8b",
+            "source_uri": "org/test-model-8b",
             "benchmark": "ctibench-mcqa",
             "temperature": 0.3,
             "top_p": 1.0,
@@ -411,8 +417,8 @@ def test_parse_nested_metrics():
             "metrics_file_uri": ANY,
             "faith_version": ANY,
             "ingest_time": ANY,
-            "model_key": "Llama-3.1-8B-Instruct",  # gitleaks:allow
-            "source_uri": "meta-llama/Llama-3.1-8B-Instruct",
+            "model_key": "test-model-8b",
+            "source_uri": "org/test-model-8b",
             "benchmark": "ctibench-mcqa",
             "temperature": 0.3,
             "top_p": 1.0,
@@ -430,8 +436,8 @@ def test_parse_nested_metrics():
             "metrics_file_uri": ANY,
             "faith_version": ANY,
             "ingest_time": ANY,
-            "model_key": "Llama-3.1-8B-Instruct",  # gitleaks:allow
-            "source_uri": "meta-llama/Llama-3.1-8B-Instruct",
+            "model_key": "test-model-8b",
+            "source_uri": "org/test-model-8b",
             "benchmark": "ctibench-mcqa",
             "temperature": 0.3,
             "top_p": 1.0,
@@ -449,8 +455,8 @@ def test_parse_nested_metrics():
             "metrics_file_uri": ANY,
             "faith_version": ANY,
             "ingest_time": ANY,
-            "model_key": "Llama-3.1-8B-Instruct",  # gitleaks:allow
-            "source_uri": "meta-llama/Llama-3.1-8B-Instruct",
+            "model_key": "test-model-8b",
+            "source_uri": "org/test-model-8b",
             "benchmark": "ctibench-mcqa",
             "temperature": 0.3,
             "top_p": 1.0,
@@ -468,8 +474,8 @@ def test_parse_nested_metrics():
             "metrics_file_uri": ANY,
             "faith_version": ANY,
             "ingest_time": ANY,
-            "model_key": "Llama-3.1-8B-Instruct",  # gitleaks:allow
-            "source_uri": "meta-llama/Llama-3.1-8B-Instruct",
+            "model_key": "test-model-8b",
+            "source_uri": "org/test-model-8b",
             "benchmark": "ctibench-mcqa",
             "temperature": 0.3,
             "top_p": 1.0,
@@ -487,8 +493,8 @@ def test_parse_nested_metrics():
             "metrics_file_uri": ANY,
             "faith_version": ANY,
             "ingest_time": ANY,
-            "model_key": "Llama-3.1-8B-Instruct",  # gitleaks:allow
-            "source_uri": "meta-llama/Llama-3.1-8B-Instruct",
+            "model_key": "test-model-8b",
+            "source_uri": "org/test-model-8b",
             "benchmark": "ctibench-mcqa",
             "temperature": 0.3,
             "top_p": 1.0,

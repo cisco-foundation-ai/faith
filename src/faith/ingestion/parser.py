@@ -68,16 +68,7 @@ def _extract_n_shot_values(
     return None, None
 
 
-def _extract_primary_metric(experiment_data: dict[str, Any]) -> str | None:
-    """Extract primary_metric from benchmark_config output_processing."""
-    benchmark_config = experiment_data.get("benchmark_config") or {}
-    output_processing = benchmark_config.get("output_processing") or {}
-    return output_processing.get("primary_metric")
-
-
-def parse_experiment_config(
-    experiment_data: dict[str, Any],
-) -> tuple[ExperimentConfig, str | None]:
+def parse_experiment_config(experiment_data: dict[str, Any]) -> ExperimentConfig:
     """Parse experiment.json data into a structured configuration object.
 
     Extracts key configuration parameters from FAITH's experiment.json
@@ -87,7 +78,7 @@ def parse_experiment_config(
         experiment_data: Raw dictionary from experiment.json
 
     Returns:
-        Tuple of (ExperimentConfig, primary_metric_name)
+        ExperimentConfig with parsed configuration
 
     Raises:
         AssertionError: If required fields (model.path, benchmark.name) are missing
@@ -100,27 +91,37 @@ def parse_experiment_config(
     benchmark_spec = BenchmarkSpec.from_dict(bench_config)
     gen_params = _extract_generation_params(model_config)
     num_shots, num_shots_pool_size = _extract_n_shot_values(benchmark_spec)
-    primary_metric_name = _extract_primary_metric(experiment_data)
 
-    return (
-        ExperimentConfig(
-            model_key=model_key,
-            source_uri=source_uri,
-            benchmark=benchmark_spec.name,
-            temperature=gen_params["temperature"],
-            top_p=gen_params["top_p"],
-            max_completion_tokens=gen_params["max_completion_tokens"],
-            context_length=gen_params["context_length"],
-            generation_mode=str(benchmark_spec.generation_mode),
-            prompt_format=str(benchmark_spec.prompt_format),
-            num_shots=num_shots,
-            num_shots_pool_size=num_shots_pool_size,
-        ),
-        primary_metric_name,
+    return ExperimentConfig(
+        model_key=model_key,
+        source_uri=source_uri,
+        benchmark=benchmark_spec.name,
+        temperature=gen_params["temperature"],
+        top_p=gen_params["top_p"],
+        max_completion_tokens=gen_params["max_completion_tokens"],
+        context_length=gen_params["context_length"],
+        generation_mode=str(benchmark_spec.generation_mode),
+        prompt_format=str(benchmark_spec.prompt_format),
+        num_shots=num_shots,
+        num_shots_pool_size=num_shots_pool_size,
     )
 
 
-def _flatten_metrics(obj: dict, prefix: str = "") -> list[tuple[str, float]]:
+def parse_primary_metric(experiment_data: dict[str, Any]) -> str | None:
+    """Extract primary metric name from experiment.json.
+
+    Args:
+        experiment_data: Raw dictionary from experiment.json
+
+    Returns:
+        Primary metric name (e.g., "accuracy.mean") or None if not defined
+    """
+    benchmark_config = experiment_data.get("benchmark_config") or {}
+    output_processing = benchmark_config.get("output_processing") or {}
+    return output_processing.get("primary_metric")
+
+
+def _flatten_metrics(obj: dict, prefix: str = "") -> dict[str, float]:
     """Recursively flatten nested metrics dictionary.
 
     Args:
@@ -128,18 +129,16 @@ def _flatten_metrics(obj: dict, prefix: str = "") -> list[tuple[str, float]]:
         prefix: Current key prefix for nested keys
 
     Returns:
-        List of (metric_name, metric_value) tuples
+        Dictionary of flattened metric_name -> metric_value
     """
-    return [
-        metric_tup
-        for key, value in obj.items()
-        if (new_key := f"{prefix}.{key}" if prefix else key) is not None
-        for metric_tup in (
-            _flatten_metrics(value, new_key)
-            if isinstance(value, dict)
-            else [(new_key, value)]
-        )
-    ]
+    result = {}
+    for key, value in obj.items():
+        new_key = f"{prefix}.{key}" if prefix else key
+        if isinstance(value, dict):
+            result.update(_flatten_metrics(value, new_key))
+        else:
+            result[new_key] = value
+    return result
 
 
 def _derive_file_uri(path: str | Path) -> str:
@@ -209,7 +208,7 @@ def parse_metrics_data(
             primary_metric_name,
             datetime.utcnow().isoformat() + "Z",
         )
-        for metric_name, metric_value in _flatten_metrics(stats_dict)
+        for metric_name, metric_value in _flatten_metrics(stats_dict).items()
     ]
 
 
