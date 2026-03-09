@@ -10,6 +10,7 @@ import pytest
 from transformers import AutoTokenizer
 
 from faith._internal.algo.matching import AnswerFormat
+from faith._internal.records.types import Record
 from faith._internal.types.flags import GenerationMode, SampleRatio
 from faith.benchmark.benchmark import BenchmarkSpec
 from faith.benchmark.categories.multiple_choice import MCBenchmark
@@ -493,21 +494,24 @@ Choices:
     assert [log["stats"] for log in [] >> logits_log_grader] == []
     assert [
         log["stats"]
-        for log in [
-            {
-                "data": {"label": "A"},
-                "model_data": {
-                    "logits": [
-                        [
-                            {"token_id": 1, "logprob": -2.0},
-                            {"token_id": 0, "logprob": -1.5},
-                            {"token_id": 27, "logprob": -1.0},
-                        ]
-                    ],
-                    "answer_symbol_ids": {"A": 1, "B": 0},
+        for log in cast(
+            list[Record],
+            [
+                {
+                    "data": {"label": "A"},
+                    "model_data": {
+                        "logits": [
+                            [
+                                {"token_id": 1, "logprob": -2.0},
+                                {"token_id": 0, "logprob": -1.5},
+                                {"token_id": 27, "logprob": -1.0},
+                            ]
+                        ],
+                        "answer_symbol_ids": {"A": 1, "B": 0},
+                    },
                 },
-            },
-        ]
+            ],
+        )
         >> logits_log_grader
     ] == [
         {
@@ -524,49 +528,52 @@ Choices:
     ]
     assert [
         log["stats"]
-        for log in [
-            {
-                "data": {"label": "A", "subject": "frankenfood"},
-                "model_data": {
-                    "logits": [
-                        [
-                            {"token_id": 1, "logprob": -0.5},
-                            {"token_id": 0, "logprob": -1.5},
-                            {"token_id": 27, "logprob": -2.5},
-                        ]
-                    ],
-                    "answer_symbol_ids": {"A": 1, "B": 0},
+        for log in cast(
+            list[Record],
+            [
+                {
+                    "data": {"label": "A", "subject": "frankenfood"},
+                    "model_data": {
+                        "logits": [
+                            [
+                                {"token_id": 1, "logprob": -0.5},
+                                {"token_id": 0, "logprob": -1.5},
+                                {"token_id": 27, "logprob": -2.5},
+                            ]
+                        ],
+                        "answer_symbol_ids": {"A": 1, "B": 0},
+                    },
                 },
-            },
-            {
-                "data": {"label": "B"},
-                "model_data": {
-                    "logits": [
-                        [
-                            {"token_id": 3, "logprob": -1.0},
-                            {"token_id": 0, "logprob": -1.5},
-                        ]
-                    ],
-                    "answer_symbol_ids": {"A": 1, "B": 0},
+                {
+                    "data": {"label": "B"},
+                    "model_data": {
+                        "logits": [
+                            [
+                                {"token_id": 3, "logprob": -1.0},
+                                {"token_id": 0, "logprob": -1.5},
+                            ]
+                        ],
+                        "answer_symbol_ids": {"A": 1, "B": 0},
+                    },
                 },
-            },
-            {
-                "data": {"label": "A"},
-                "model_data": {
-                    "logits": [
-                        [
-                            {"token_id": 7, "logprob": -2.0},
-                            {"token_id": 11, "logprob": -3.25},
-                        ]
-                    ],
-                    "answer_symbol_ids": {"A": 1, "B": 0},
+                {
+                    "data": {"label": "A"},
+                    "model_data": {
+                        "logits": [
+                            [
+                                {"token_id": 7, "logprob": -2.0},
+                                {"token_id": 11, "logprob": -3.25},
+                            ]
+                        ],
+                        "answer_symbol_ids": {"A": 1, "B": 0},
+                    },
                 },
-            },
-            {
-                "data": {"label": "A"},
-                "model_data": {"error": {"title": "Oopsy"}},
-            },
-        ]
+                {
+                    "data": {"label": "A"},
+                    "model_data": {"error": {"title": "Oopsy"}},
+                },
+            ],
+        )
         >> logits_log_grader
     ] == [
         {
@@ -632,12 +639,15 @@ Choices:
     assert [log["stats"] for log in [] >> next_token_log_grader] == []
     assert [
         log["stats"]
-        for log in [
-            {
-                "data": {"label": "A"},
-                "model_data": {"next_token": {"output_text": " A"}},
-            },
-        ]
+        for log in cast(
+            list[Record],
+            [
+                {
+                    "data": {"label": "A"},
+                    "model_data": {"next_token": {"output_text": " A"}},
+                },
+            ],
+        )
         >> next_token_log_grader
     ] == [
         {
@@ -650,7 +660,7 @@ Choices:
     assert [
         log["stats"]
         for log in cast(
-            list[dict],
+            list[Record],
             [
                 {
                     "data": {"label": "B", "subject": "octothorpes"},
@@ -735,7 +745,7 @@ Choices:
     assert [
         log["stats"]
         for log in cast(
-            list[dict],
+            list[Record],
             [
                 {
                     "data": {"label": "A"},
@@ -794,45 +804,48 @@ Choices:
     ]
     assert [
         log["stats"]
-        for log in [
-            {
-                "data": {"label": "A"},
-                "model_data": {
-                    "chat_comp": {
-                        "answer_text": "Antwort--> A",
-                        "output_text": "Antwort--> A",
-                        "num_output_tokens": 4,
-                        "max_token_halt": False,
-                    }
-                },
-            },
-            {
-                "data": {"label": "B"},
-                "model_data": {
-                    "chat_comp": {
-                        "answer_text": ":think-on:I think the answer is B or A.:think-off:Guessing...\n\nAnswer: A",
-                        "output_text": ":think-on:I think the answer is B or A.:think-off:Guessing...\n\nAnswer: A",
-                        "num_output_tokens": 17,
-                        "max_token_halt": True,
-                    }
-                },
-            },
-            {
-                "data": {"label": "A"},
-                "model_data": {
-                    "chat_comp": {
-                        "answer_text": "If I had to guess, I would say A",
-                        "output_text": "If I had to guess, I would say A",
-                        "num_output_tokens": 10,
-                        "max_token_halt": False,
+        for log in cast(
+            list[Record],
+            [
+                {
+                    "data": {"label": "A"},
+                    "model_data": {
+                        "chat_comp": {
+                            "answer_text": "Antwort--> A",
+                            "output_text": "Antwort--> A",
+                            "num_output_tokens": 4,
+                            "max_token_halt": False,
+                        }
                     },
                 },
-            },
-            {
-                "data": {"label": "A"},
-                "model_data": {"error": {"title": "Oops"}},
-            },
-        ]
+                {
+                    "data": {"label": "B"},
+                    "model_data": {
+                        "chat_comp": {
+                            "answer_text": ":think-on:I think the answer is B or A.:think-off:Guessing...\n\nAnswer: A",
+                            "output_text": ":think-on:I think the answer is B or A.:think-off:Guessing...\n\nAnswer: A",
+                            "num_output_tokens": 17,
+                            "max_token_halt": True,
+                        }
+                    },
+                },
+                {
+                    "data": {"label": "A"},
+                    "model_data": {
+                        "chat_comp": {
+                            "answer_text": "If I had to guess, I would say A",
+                            "output_text": "If I had to guess, I would say A",
+                            "num_output_tokens": 10,
+                            "max_token_halt": False,
+                        },
+                    },
+                },
+                {
+                    "data": {"label": "A"},
+                    "model_data": {"error": {"title": "Oops"}},
+                },
+            ],
+        )
         >> chat_log_grader
     ] == [
         {
@@ -952,7 +965,7 @@ Choices:
     }
 
     assert cast(
-        list[dict],
+        list[Record],
         [
             {
                 "stats": {
@@ -1137,38 +1150,41 @@ Choices:
         "weighted_avg_f1": pytest.approx(float("nan"), nan_ok=True),
     }
 
-    assert [
-        {
-            "stats": {
-                "label": "A",
-                "max_token_halt": False,
-                "num_output_tokens": 3,
-                "prediction": "B",
-                "answer_format": AnswerFormat.PROPER,
-                "subject": "bumbershoots",
-            }
-        },
-        {
-            "stats": {
-                "label": "B",
-                "max_token_halt": False,
-                "num_output_tokens": 41,
-                "prediction": "B",
-                "answer_format": AnswerFormat.PROPER,
-                "subject": "bumbershoots",
-            }
-        },
-        {
-            "stats": {
-                "label": "B",
-                "max_token_halt": False,
-                "num_output_tokens": 4,
-                "prediction": "A",
-                "answer_format": AnswerFormat.IMPROPER,
-                "subject": "blabberdash",
-            }
-        },
-    ] >> metric_aggregator == {
+    assert cast(
+        list[Record],
+        [
+            {
+                "stats": {
+                    "label": "A",
+                    "max_token_halt": False,
+                    "num_output_tokens": 3,
+                    "prediction": "B",
+                    "answer_format": AnswerFormat.PROPER,
+                    "subject": "bumbershoots",
+                }
+            },
+            {
+                "stats": {
+                    "label": "B",
+                    "max_token_halt": False,
+                    "num_output_tokens": 41,
+                    "prediction": "B",
+                    "answer_format": AnswerFormat.PROPER,
+                    "subject": "bumbershoots",
+                }
+            },
+            {
+                "stats": {
+                    "label": "B",
+                    "max_token_halt": False,
+                    "num_output_tokens": 4,
+                    "prediction": "A",
+                    "answer_format": AnswerFormat.IMPROPER,
+                    "subject": "blabberdash",
+                }
+            },
+        ],
+    ) >> metric_aggregator == {
         "accuracy": pytest.approx(1 / 3),
         "accuracy_per_subject": {
             "bumbershoots": pytest.approx(1 / 2),

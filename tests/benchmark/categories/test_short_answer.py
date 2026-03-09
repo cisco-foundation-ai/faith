@@ -10,6 +10,7 @@ from datasets import Dataset, DatasetDict, Features, Value
 
 from faith import __version__
 from faith._internal.algo.matching import AnswerFormat
+from faith._internal.records.types import Record
 from faith._internal.types.flags import GenerationMode, SampleRatio
 from faith.benchmark.benchmark import BenchmarkSpec
 from faith.benchmark.categories.short_answer import SABenchmark
@@ -358,7 +359,7 @@ def test_short_answer_benchmark_process_logs_chat() -> None:
     assert [
         log["stats"]
         for log in cast(
-            list[dict],
+            list[Record],
             [
                 {
                     "data": {"label": "foo", "subject": "bar"},
@@ -550,38 +551,41 @@ def test_short_answer_benchmark_grade_aggregator_string_match() -> None:
         "query_count": 0,
     }
 
-    assert [
-        {
-            "stats": {
-                "label": "A",
-                "max_token_halt": True,
-                "num_output_tokens": 10,
-                "prediction": "A",
-                "answer_format": AnswerFormat.PROPER,
-                "subject": "esperanto",
-            }
-        },
-        {
-            "stats": {
-                "label": "B",
-                "max_token_halt": True,
-                "num_output_tokens": 10,
-                "prediction": "C",
-                "answer_format": AnswerFormat.PROPER,
-                "subject": "esperanto",
-            }
-        },
-        {
-            "stats": {
-                "label": "B",
-                "max_token_halt": False,
-                "num_output_tokens": 1,
-                "prediction": "B",
-                "answer_format": AnswerFormat.IMPROPER,
-                "subject": "esperanto",
-            }
-        },
-    ] >> metric_aggregator == {
+    assert cast(
+        list[Record],
+        [
+            {
+                "stats": {
+                    "label": "A",
+                    "max_token_halt": True,
+                    "num_output_tokens": 10,
+                    "prediction": "A",
+                    "answer_format": AnswerFormat.PROPER,
+                    "subject": "esperanto",
+                }
+            },
+            {
+                "stats": {
+                    "label": "B",
+                    "max_token_halt": True,
+                    "num_output_tokens": 10,
+                    "prediction": "C",
+                    "answer_format": AnswerFormat.PROPER,
+                    "subject": "esperanto",
+                }
+            },
+            {
+                "stats": {
+                    "label": "B",
+                    "max_token_halt": False,
+                    "num_output_tokens": 1,
+                    "prediction": "B",
+                    "answer_format": AnswerFormat.IMPROPER,
+                    "subject": "esperanto",
+                }
+            },
+        ],
+    ) >> metric_aggregator == {
         "accuracy": pytest.approx(1 / 3),
         "format_breakdown_count": {
             "improper": {
@@ -706,38 +710,41 @@ def test_short_answer_benchmark_grade_aggregator_label_set() -> None:
         "query_count": 0,
     }
 
-    assert [
-        {
-            "stats": {
-                "label": ["A", "B"],
-                "max_token_halt": False,
-                "num_output_tokens": 13,
-                "prediction": ["B", "C"],
-                "answer_format": AnswerFormat.PROPER,
-                "scores": {"jaccard_index": {"value": 1 / 3}},
-            }
-        },
-        {
-            "stats": {
-                "label": ["B"],
-                "max_token_halt": True,
-                "num_output_tokens": 17,
-                "prediction": ["B"],
-                "answer_format": AnswerFormat.PROPER,
-                "scores": {"jaccard_index": {"value": 1 / 2}},
-            }
-        },
-        {
-            "stats": {
-                "label": ["B", "C"],
-                "max_token_halt": False,
-                "num_output_tokens": 9,
-                "prediction": ["A"],
-                "answer_format": AnswerFormat.IMPROPER,
-                "scores": {"jaccard_index": {"value": 0}},
-            }
-        },
-    ] >> metric_aggregator == {
+    assert cast(
+        list[Record],
+        [
+            {
+                "stats": {
+                    "label": ["A", "B"],
+                    "max_token_halt": False,
+                    "num_output_tokens": 13,
+                    "prediction": ["B", "C"],
+                    "answer_format": AnswerFormat.PROPER,
+                    "scores": {"jaccard_index": {"value": 1 / 3}},
+                }
+            },
+            {
+                "stats": {
+                    "label": ["B"],
+                    "max_token_halt": True,
+                    "num_output_tokens": 17,
+                    "prediction": ["B"],
+                    "answer_format": AnswerFormat.PROPER,
+                    "scores": {"jaccard_index": {"value": 1 / 2}},
+                }
+            },
+            {
+                "stats": {
+                    "label": ["B", "C"],
+                    "max_token_halt": False,
+                    "num_output_tokens": 9,
+                    "prediction": ["A"],
+                    "answer_format": AnswerFormat.IMPROPER,
+                    "scores": {"jaccard_index": {"value": 0}},
+                }
+            },
+        ],
+    ) >> metric_aggregator == {
         "accuracy": pytest.approx(1 / 3),
         "format_breakdown_count": {
             "improper": {
@@ -844,38 +851,41 @@ def test_short_answer_benchmark_grade_aggregator_domain_specific() -> None:
         "query_count": 0,
     }
 
-    assert [
-        {
-            "stats": {
-                "label": "AV:A",
-                "max_token_halt": False,
-                "num_output_tokens": 4,
-                "prediction": "AV:L",
-                "answer_format": AnswerFormat.PROPER,
-                "scores": {"cvss_score": {"value": 1 / 2}},
-            }
-        },
-        {
-            "stats": {
-                "label": "AV:N",
-                "max_token_halt": False,
-                "num_output_tokens": 8,
-                "prediction": "AV:N",
-                "answer_format": AnswerFormat.PROPER,
-                "scores": {"cvss_score": {"value": 1 / 8}},
-            }
-        },
-        {
-            "stats": {
-                "label": "AV:P",
-                "max_token_halt": True,
-                "num_output_tokens": 12,
-                "prediction": "AV:N",
-                "answer_format": AnswerFormat.IMPROPER,
-                "scores": {"cvss_score": {"value": 1 / 4}},
-            }
-        },
-    ] >> metric_aggregator == {
+    assert cast(
+        list[Record],
+        [
+            {
+                "stats": {
+                    "label": "AV:A",
+                    "max_token_halt": False,
+                    "num_output_tokens": 4,
+                    "prediction": "AV:L",
+                    "answer_format": AnswerFormat.PROPER,
+                    "scores": {"cvss_score": {"value": 1 / 2}},
+                }
+            },
+            {
+                "stats": {
+                    "label": "AV:N",
+                    "max_token_halt": False,
+                    "num_output_tokens": 8,
+                    "prediction": "AV:N",
+                    "answer_format": AnswerFormat.PROPER,
+                    "scores": {"cvss_score": {"value": 1 / 8}},
+                }
+            },
+            {
+                "stats": {
+                    "label": "AV:P",
+                    "max_token_halt": True,
+                    "num_output_tokens": 12,
+                    "prediction": "AV:N",
+                    "answer_format": AnswerFormat.IMPROPER,
+                    "scores": {"cvss_score": {"value": 1 / 4}},
+                }
+            },
+        ],
+    ) >> metric_aggregator == {
         "format_count": {
             "improper": 1,
             "inferred": 0,

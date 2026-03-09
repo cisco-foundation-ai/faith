@@ -12,6 +12,7 @@ from datasets import Dataset, DatasetDict, Features, Value
 
 from faith import __version__
 from faith._internal.algo.matching import AnswerFormat
+from faith._internal.records.types import Record
 from faith._internal.types.flags import GenerationMode, SampleRatio
 from faith.benchmark.benchmark import BenchmarkSpec
 from faith.benchmark.categories.long_answer import LABenchmark
@@ -623,7 +624,7 @@ SUMMARY: [your summary text]""",
     assert [
         log["stats"]
         for log in cast(
-            list[dict],
+            list[Record],
             [
                 {
                     "data": {
@@ -814,59 +815,62 @@ SUMMARY: [your summary text]""",
         "query_count": 0,
     }
 
-    assert [
-        {
-            "stats": {
-                "label": "foo bar",
-                "max_token_halt": False,
-                "num_output_tokens": 4,
-                "prediction": "foo bar baz",
-                "answer_format": AnswerFormat.PROPER,
-                "scores": {
-                    "llm_grade": {
-                        "value": 0.8,
-                        "raw_value": 8.0,
-                        "min_value": 0.0,
-                        "max_value": 10.0,
+    assert cast(
+        list[Record],
+        [
+            {
+                "stats": {
+                    "label": "foo bar",
+                    "max_token_halt": False,
+                    "num_output_tokens": 4,
+                    "prediction": "foo bar baz",
+                    "answer_format": AnswerFormat.PROPER,
+                    "scores": {
+                        "llm_grade": {
+                            "value": 0.8,
+                            "raw_value": 8.0,
+                            "min_value": 0.0,
+                            "max_value": 10.0,
+                        },
                     },
-                },
-            }
-        },
-        {
-            "stats": {
-                "label": "a b c d",
-                "max_token_halt": False,
-                "num_output_tokens": 5,
-                "prediction": "a b c d e",
-                "answer_format": AnswerFormat.PROPER,
-                "scores": {
-                    "llm_grade": {
-                        "value": 1.0,
-                        "raw_value": 5.0,
-                        "min_value": 1.0,
-                        "max_value": 5.0,
+                }
+            },
+            {
+                "stats": {
+                    "label": "a b c d",
+                    "max_token_halt": False,
+                    "num_output_tokens": 5,
+                    "prediction": "a b c d e",
+                    "answer_format": AnswerFormat.PROPER,
+                    "scores": {
+                        "llm_grade": {
+                            "value": 1.0,
+                            "raw_value": 5.0,
+                            "min_value": 1.0,
+                            "max_value": 5.0,
+                        },
                     },
-                },
-            }
-        },
-        {
-            "stats": {
-                "label": "one two three",
-                "max_token_halt": False,
-                "num_output_tokens": 6,
-                "prediction": "ooops",
-                "answer_format": AnswerFormat.PROPER,
-                "scores": {
-                    "llm_grade": {
-                        "value": 0.1,
-                        "raw_value": 2.0,
-                        "min_value": 1.0,
-                        "max_value": 11.0,
+                }
+            },
+            {
+                "stats": {
+                    "label": "one two three",
+                    "max_token_halt": False,
+                    "num_output_tokens": 6,
+                    "prediction": "ooops",
+                    "answer_format": AnswerFormat.PROPER,
+                    "scores": {
+                        "llm_grade": {
+                            "value": 0.1,
+                            "raw_value": 2.0,
+                            "min_value": 1.0,
+                            "max_value": 11.0,
+                        },
                     },
-                },
-            }
-        },
-    ] >> aggregator == {
+                }
+            },
+        ],
+    ) >> aggregator == {
         "format_count": {
             "improper": 0,
             "inferred": 0,
