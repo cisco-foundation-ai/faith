@@ -4,7 +4,6 @@
 
 import contextlib
 import io
-import json
 import tempfile
 from pathlib import Path
 from unittest.mock import ANY, patch
@@ -112,7 +111,9 @@ def test_resolve_flags_override_env():
             "FAITH_BIGQUERY_DATASET": "env-dataset",
         },
     ):
-        assert _resolve_bigquery_config("flag-project", "flag-dataset", "flag-table") == (
+        assert _resolve_bigquery_config(
+            "flag-project", "flag-dataset", "flag-table"
+        ) == (
             "flag-project",
             "flag-dataset",
             "flag-table",
