@@ -24,9 +24,10 @@ from faith._internal.metrics.types import SingleLabelSeq
 from faith._internal.types.configs import Configuration
 from faith._internal.types.flags import GenerationMode
 from faith._internal.types.stats import MetricSummary
+from faith._types.records.prompt_record import PromptRecord
 from faith.benchmark.benchmark import BaseBenchmark
 from faith.benchmark.dataset.dataset import BenchmarkDataset
-from faith.benchmark.formatting.qa import QAFormatter, QARecord
+from faith.benchmark.formatting.qa import QAFormatter
 from faith.benchmark.grading.common_graders import (
     ChatCompletionLogGrader,
     LogitsLogGrader,
@@ -251,8 +252,11 @@ class MCBenchmarkDataset(BenchmarkDataset):
         return permuted_choices, permuted_symbol
 
     def _format_qa(
-        self, index: int, sample: pd.Series, examples: Sequence[QARecord] | None = None
-    ) -> QARecord:
+        self,
+        index: int,
+        sample: pd.Series,
+        examples: Sequence[PromptRecord] | None = None,
+    ) -> PromptRecord:
         """Format a sample into a question-answer pair."""
         choice_map, correct_symbol = self._map_choices(sample)
         return self._formatter.render_qa_record(

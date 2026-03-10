@@ -281,7 +281,7 @@ def test_long_answer_benchmark_build_dataset() -> None:
         mock_load_dataset.assert_called_once_with("foo/baz-bar", "qux")
 
         # Compare the questions as dictionaries.
-        assert [q.to_dict() for q in dataset_1shot.iter_data()] == [
+        assert list(dataset_1shot.iter_data()) == [
             {
                 "benchmark_sample_index": 0,
                 "benchmark_sample_hash": ANY,
@@ -380,7 +380,7 @@ def test_long_answer_benchmark_build_dataset() -> None:
         mock_load_dataset.assert_called_once_with("foo/baz-bar", "qux")
 
         # Compare the questions as dictionaries.
-        assert [q.to_dict() for q in dataset_1shot_no_dev.iter_data()] == [
+        assert list(dataset_1shot_no_dev.iter_data()) == [
             {
                 "benchmark_sample_index": 0,
                 "benchmark_sample_hash": ANY,
@@ -483,7 +483,7 @@ def test_long_answer_benchmark_build_dataset() -> None:
         mock_load_dataset.assert_called_once_with("foo/baz-bar", None)
 
         # Compare the questions as dictionaries.
-        assert [q.to_dict() for q in dataset_0shot.iter_data()] == [
+        assert list(dataset_0shot.iter_data()) == [
             {
                 "benchmark_sample_index": 1,
                 "benchmark_sample_hash": ANY,

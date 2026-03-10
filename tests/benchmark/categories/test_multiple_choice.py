@@ -235,7 +235,7 @@ Choices:
     dataset_1shot = benchmark_1shot.build_dataset()
 
     # Compare the questions as dictionaries.
-    assert [q.to_dict() for q in dataset_1shot.iter_data()] == [
+    assert list(dataset_1shot.iter_data()) == [
         {
             "benchmark_sample_index": 0,
             "benchmark_sample_hash": ANY,
@@ -318,7 +318,7 @@ Choices:
     dataset_0shot = benchmark_0shot.build_dataset(randomize_choices=True, sample_size=1)
 
     # Compare the questions as dictionaries.
-    assert [q.to_dict() for q in dataset_0shot.iter_data()] == [
+    assert list(dataset_0shot.iter_data()) == [
         {
             "benchmark_sample_index": 0,
             "benchmark_sample_hash": ANY,
@@ -397,7 +397,7 @@ Choices:
     dataset_0shot = benchmark_0shot.build_dataset(randomize_choices=True, sample_size=1)
 
     # Compare the questions as dictionaries.
-    assert [q.to_dict() for q in dataset_0shot.iter_data()] == [
+    assert list(dataset_0shot.iter_data()) == [
         {
             "benchmark_sample_index": 1,
             "benchmark_sample_hash": ANY,

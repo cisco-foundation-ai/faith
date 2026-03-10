@@ -16,9 +16,10 @@ from faith._internal.metrics.llm import llm_basic_metrics, llm_metadata_metrics
 from faith._internal.types.configs import Configuration
 from faith._internal.types.flags import GenerationMode
 from faith._internal.types.stats import MetricSummary
+from faith._types.records.prompt_record import PromptRecord
 from faith.benchmark.benchmark import BaseBenchmark
 from faith.benchmark.dataset.dataset import BenchmarkDataset
-from faith.benchmark.formatting.qa import QAFormatter, QARecord
+from faith.benchmark.formatting.qa import QAFormatter
 from faith.benchmark.grading.common_graders import ChatCompletionLogGrader
 from faith.benchmark.grading.grade_aggregator import GradeAggregator
 from faith.benchmark.grading.log_grader import LogGrader
@@ -118,8 +119,11 @@ class LABenchmarkDataset(BenchmarkDataset):
         )
 
     def _format_qa(
-        self, index: int, sample: pd.Series, examples: Sequence[QARecord] | None = None
-    ) -> QARecord:
+        self,
+        index: int,
+        sample: pd.Series,
+        examples: Sequence[PromptRecord] | None = None,
+    ) -> PromptRecord:
         """Format a sample into a question-answer record."""
         return self._formatter.render_qa_record(
             index=index,

@@ -25,11 +25,11 @@ class LogitsLogGrader(LogGrader):
 
     def _markup_entry_impl(self, log_entry: Record) -> Record:
         """Markup a single log entry with the computed statistics / scores."""
-        label: str = log_entry["data"]["label"]
+        label: str | None = log_entry["data"]["label"]
         extracted_pred: str | None = None
         answer_format = AnswerFormat.INVALID
         log_probs_stats = {}
-        if logits := log_entry["model_data"].get("logits"):
+        if label is not None and (logits := log_entry["model_data"].get("logits")):
             # TODO(https://github.com/cisco-foundation-ai/faith/issues/26):
             # Handle multiple logits entries; currently assumes only one entry.
             first_token_logits = logits[0] if len(logits) > 0 else []
@@ -103,7 +103,7 @@ class NextTokenLogGrader(LogGrader):
 
     def _markup_entry_impl(self, log_entry: Record) -> Record:
         """Markup a single log entry with the computed statistics / scores."""
-        label: Labeling = log_entry["data"]["label"]
+        label: Labeling | None = log_entry["data"]["label"]
         extracted_pred: Labeling | None = None
         answer_format = AnswerFormat.INVALID
         if (
@@ -150,7 +150,7 @@ class ChatCompletionLogGrader(LogGrader):
 
     def _markup_entry_impl(self, log_entry: Record) -> Record:
         """Markup a single log entry with the computed statistics / scores."""
-        label: Labeling = log_entry["data"]["label"]
+        label: Labeling | None = log_entry["data"]["label"]
         extracted_answer: Labeling | None = None
         answer_format = AnswerFormat.INVALID
 

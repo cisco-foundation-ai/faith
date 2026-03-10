@@ -8,12 +8,11 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any
 
-from dataclasses_json import DataClassJsonMixin
 from jinja2 import Template
 
-from faith._internal.algo.hash import dict_sha256
 from faith._internal.records.types import ChatConversation
 from faith._internal.types.configs import Configuration
+from faith._types.records.prompt_record import PromptRecord
 from faith.benchmark.formatting.prompt import PromptFormatter
 
 
@@ -27,38 +26,6 @@ class _QA:
 
     question: str
     answer: str | None
-
-
-@dataclass(frozen=True)
-class QARecord(DataClassJsonMixin):
-    """Base class for benchmark examples."""
-
-    # Metadata about the benchmark sample.
-    benchmark_sample_index: int
-    benchmark_sample_hash: str
-    subject: str | None
-
-    # Components that make up the question.
-    system_prompt: str | None
-    instruction: str | None
-    question: str
-    choices: dict[str, str] | None  # Maps symbols (e.g., 'A', 'B') to their choice.
-    label: str | None  # aka the "answer" or "ground truth".
-
-    # Formatted question and answer.
-    formatted_question: str
-    formatted_answer: str | None
-
-    # The full question that is passed to the model.
-    question_prompt: str
-
-    # Any additional data associated with this example that is stored alongside it
-    # for context or as part of subsequent metric computations.
-    ancillary_data: dict[str, Any] | None
-
-    def sha256(self) -> str:
-        """Compute the SHA-256 hash of this example."""
-        return dict_sha256(self.to_dict())
 
 
 def _opt_template(template_str: str | None) -> Template | None:
@@ -103,7 +70,7 @@ class QAFormatter:
         return self._inst_template.render(choices=choices, subject=subject)
 
     def _render_prompt(
-        self, instruction: str | None, examples: Sequence[QARecord], question: str
+        self, instruction: str | None, examples: Sequence[PromptRecord], question: str
     ) -> str:
         """Renders the prompt using the prompt template with parameters instruction, examples, and question."""
         assert (
@@ -112,7 +79,7 @@ class QAFormatter:
         return self._prompt_template.render(
             instruction=instruction,
             examples=[
-                _QA(question=ex.formatted_question, answer=ex.formatted_answer)
+                _QA(question=ex["formatted_question"], answer=ex["formatted_answer"])
                 for ex in examples
             ],
             question=question,
@@ -142,11 +109,11 @@ class QAFormatter:
         sample_hash: str,
         raw_question: str,
         raw_answer: str | None,
-        examples: Sequence[QARecord] | None = None,
+        examples: Sequence[PromptRecord] | None = None,
         choice_map: dict[str, str] | None = None,
         subject: str | None = None,
         ancillary_data: dict[str, Any] | None = None,
-    ) -> QARecord:
+    ) -> PromptRecord:
         """Renders an example question-answer pair."""
         formatted_question = self._render_question(raw_question, choice_map)
         formatted_answer = self.render_answer(raw_answer)
@@ -157,7 +124,7 @@ class QAFormatter:
             examples=examples or [],
             question=formatted_question,
         )
-        return QARecord(
+        return PromptRecord(
             benchmark_sample_index=index,
             benchmark_sample_hash=sample_hash,
             subject=subject,
@@ -173,11 +140,11 @@ class QAFormatter:
         )
 
     def render_conversation(
-        self, record: QARecord, answer_leadin: str | None
+        self, record: PromptRecord, answer_leadin: str | None
     ) -> str | ChatConversation:
-        """Format the prompt for the given QARecord."""
+        """Format the prompt for the given PromptRecord."""
         return self._prompt_format.format(
-            system_prompt=record.system_prompt,
-            prompt=record.question_prompt,
+            system_prompt=record.get("system_prompt"),
+            prompt=record["question_prompt"],
             response_leadin=answer_leadin,
         )

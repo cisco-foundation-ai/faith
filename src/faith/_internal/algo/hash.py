@@ -5,12 +5,12 @@
 """Utility functions for hashing dictionaries."""
 
 import hashlib
-from typing import Any
+from typing import Any, Mapping
 
 import orjson
 
 
-def dict_sha256(d: dict[Any, Any]) -> str:
+def dict_sha256(d: Mapping[str, Any]) -> str:
     """Compute the SHA-256 hash of a dictionary."""
     json_bytes = orjson.dumps(
         d,

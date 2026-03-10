@@ -12,7 +12,8 @@ import numpy as np
 import pandas as pd
 
 from faith._internal.algo.sampling import NShotSampler
-from faith.benchmark.formatting.qa import QAFormatter, QARecord
+from faith._types.records.prompt_record import PromptRecord
+from faith.benchmark.formatting.qa import QAFormatter
 
 
 class BenchmarkDataset(ABC):
@@ -50,19 +51,22 @@ class BenchmarkDataset(ABC):
             return None
         return {col: sample.get(col) for col in self._ancillary_columns}
 
-    def _get_nshot_examples(self) -> Sequence[QARecord]:
+    def _get_nshot_examples(self) -> Sequence[PromptRecord]:
         """Get the n-shot examples for the prompt."""
         if (nshot_data := self._nshot_sampler.get_nshot_examples()) is not None:
             return [self._format_qa(i, sample) for i, sample in nshot_data.iterrows()]
         return []
 
-    def iter_data(self) -> Iterator[QARecord]:
-        """Iterates over the benchmark dataset, yielding each example as an QARecord object."""
+    def iter_data(self) -> Iterator[PromptRecord]:
+        """Iterates over the benchmark dataset, yielding each example as a PromptRecord."""
         for index, sample in self._benchmark_data.iterrows():
             yield self._format_qa(index, sample, self._get_nshot_examples())
 
     @abstractmethod
     def _format_qa(
-        self, index: int, sample: pd.Series, examples: Sequence[QARecord] | None = None
-    ) -> QARecord:
+        self,
+        index: int,
+        sample: pd.Series,
+        examples: Sequence[PromptRecord] | None = None,
+    ) -> PromptRecord:
         """Format an indexed sample (with examples) into a question-answer record."""

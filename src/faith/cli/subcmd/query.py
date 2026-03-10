@@ -22,6 +22,7 @@ from tqdm import tqdm
 from transformers import PreTrainedTokenizerBase
 
 from faith import __version__
+from faith._internal.algo.hash import dict_sha256
 from faith._internal.functools.compose import compose
 from faith._internal.io.datastore import Datastore, DatastoreContext
 from faith._internal.io.json import write_as_json
@@ -44,8 +45,8 @@ from faith._internal.records.reconciliation import (
 )
 from faith._internal.records.types import Record, RecordStatus
 from faith._internal.types.flags import GenerationMode
+from faith._types.records.prompt_record import PromptRecord
 from faith.benchmark.benchmark import Benchmark
-from faith.benchmark.formatting.qa import QARecord
 from faith.benchmark.listing import choices_to_benchmarks, find_benchmarks
 from faith.experiment.experiment import BenchmarkExperiment
 from faith.experiment.params import DataSamplingParams, ExperimentParams
@@ -87,8 +88,8 @@ def read_trial_log(trial_log_path: Path) -> Iterable[Record]:
     return []  # No records if the log file doesn't exist yet.
 
 
-class BenchmarkRecordTransform(Mapping[QARecord, Record]):
-    """Transform that converts `QARecord`s into log records for querying the model."""
+class BenchmarkRecordTransform(Mapping[PromptRecord, Record]):
+    """Transform that converts PromptRecords into log records for querying the model."""
 
     def __init__(self, benchmark: Benchmark, tokenizer: PreTrainedTokenizerBase | None):
         self._bench_formatter = benchmark.formatter
@@ -116,14 +117,14 @@ class BenchmarkRecordTransform(Mapping[QARecord, Record]):
             ), "Model tokenizer is required for logits generation."
             self._answer_symbol_ids = benchmark.answer_token_map(tokenizer)
 
-    def _map_fn(self, element: QARecord) -> Record:
-        """Map a `QARecord` into a log record containing the data and metadata for querying."""
+    def _map_fn(self, element: PromptRecord) -> Record:
+        """Map a PromptRecord into a log record containing the data and metadata for querying."""
         return Record(
             metadata={
                 "version": self._bench_version,
-                "data_hash": element.sha256(),
+                "data_hash": dict_sha256(element),
             },
-            data=element.to_dict(),
+            data=element,
             model_data={
                 "prompt": self._bench_formatter.render_conversation(
                     element, self._answer_leadin

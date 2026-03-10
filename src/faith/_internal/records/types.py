@@ -5,6 +5,8 @@
 from enum import StrEnum, auto
 from typing import Any, NotRequired, TypeAlias, TypedDict
 
+from faith._types.records.prompt_record import PromptRecord
+
 ChatConversation: TypeAlias = list[dict[str, str]]
 
 
@@ -38,7 +40,7 @@ class Record(TypedDict):
     """Represents a log record used to track individual queries to a model."""
 
     metadata: _Metadata
-    data: dict[str, Any]
+    data: PromptRecord
     model_data: _ModelData
     stats: dict[str, Any] | None
 

@@ -55,7 +55,7 @@ class LogGrader(IsoTransform[Record]):
         return self._normalize_entry(log_entry)
 
     def _custom_scores(
-        self, label: Labeling, pred: Labeling | None, **kwargs: Any
+        self, label: Labeling | None, pred: Labeling | None, **kwargs: Any
     ) -> dict[str, dict[str, Score]]:
         """Return the custom scores defined in the output processing config."""
         if len(self._score_fns) == 0:

@@ -18,9 +18,10 @@ from faith._internal.io.json import write_as_json
 from faith._internal.records.types import Record
 from faith._internal.types.configs import Configuration
 from faith._internal.types.flags import GenerationMode, SampleRatio
+from faith._types.records.prompt_record import PromptRecord
 from faith.benchmark.benchmark import Benchmark, BenchmarkDataset
 from faith.benchmark.formatting.prompt import PromptFormatter
-from faith.benchmark.formatting.qa import QAFormatter, QARecord
+from faith.benchmark.formatting.qa import QAFormatter
 from faith.benchmark.grading.grade_aggregator import GradeAggregator
 from faith.benchmark.grading.log_grader import LogGrader
 from faith.benchmark.types import BenchmarkSpec
@@ -88,8 +89,11 @@ class FakeDataset(BenchmarkDataset):
         )
 
     def _format_qa(
-        self, index: int, sample: pd.Series, examples: Sequence[QARecord] | None = None
-    ) -> QARecord:
+        self,
+        index: int,
+        sample: pd.Series,
+        examples: Sequence[PromptRecord] | None = None,
+    ) -> PromptRecord:
         return self._formatter.render_qa_record(
             index=index,
             sample_hash=f"f{index}",
