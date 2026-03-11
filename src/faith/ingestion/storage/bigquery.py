@@ -139,7 +139,7 @@ class BigQueryClient:
             GoogleAPIError: If table creation fails
         """
         try:
-            self.client.get_table(self.table_ref)
+            self._client.get_table(self.table_ref)
             return
         except NotFound:
             pass
@@ -150,7 +150,7 @@ class BigQueryClient:
             type_=bigquery.TimePartitioningType.DAY, field="ingest_time"
         )
         table.clustering_fields = ["benchmark", "model_key", "metric_name"]
-        self.client.create_table(table)
+        self._client.create_table(table)
 
     def check_metrics_file_exists(self, metrics_file_uri: str) -> bool:
         """Check if metrics from a given file URI have already been ingested.
@@ -165,7 +165,7 @@ class BigQueryClient:
         Returns:
             True if file has been ingested, False otherwise
         """
-        result = self.client.query(
+        result = self._client.query(
             f"""
                 SELECT 1
                 FROM `{self.table_ref}`
@@ -211,6 +211,6 @@ class BigQueryClient:
 
         # Atomically load the metrics into the bigquery table and wait for completion.
         # If job fails, GoogleAPIError is raised and no rows are inserted
-        self.client.load_table_from_json(metrics, self.table_ref).result()
+        self._client.load_table_from_json(metrics, self.table_ref).result()
 
         return len(metrics)
