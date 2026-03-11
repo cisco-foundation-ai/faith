@@ -28,7 +28,7 @@ def test_sagemaker_model(mock_boto3_client: Mock) -> None:
         "usage": {"prompt_tokens": 2, "completion_tokens": 5},
         "choices": [
             {
-                "message": {"role": "assistant", "content": "Bin dabei!"},
+                "message": {"role": "assistant", "content": "ನಾನು ಅಲ್ಲಿದ್ದೇನೆ!"},
                 "finish_reason": "stop",
             }
         ],
@@ -45,16 +45,16 @@ def test_sagemaker_model(mock_boto3_client: Mock) -> None:
             prompt_text=None,
             output_token_ids=None,
             num_output_tokens=5,
-            output_text="Bin dabei!",
+            output_text="ನಾನು ಅಲ್ಲಿದ್ದೇನೆ!",
             request_token_ids=None,
             num_request_tokens=None,
             request_text=None,
             response_token_ids=None,
             num_response_tokens=None,
-            response_text="Bin dabei!",
+            response_text="ನಾನು ಅಲ್ಲಿದ್ದೇನೆ!",
             answer_token_ids=None,
             num_answer_tokens=None,
-            answer_text="Bin dabei!",
+            answer_text="ನಾನು ಅಲ್ಲಿದ್ದೇನೆ!",
             max_token_halt=False,
         )
     ]
@@ -77,7 +77,7 @@ def test_sagemaker_model_retry(mock_boto3_client: Mock) -> None:
         "usage": {"prompt_tokens": 2, "completion_tokens": 5},
         "choices": [
             {
-                "message": {"role": "assistant", "content": "Bin dabei!"},
+                "message": {"role": "assistant", "content": "ನಾನು ಅಲ್ಲಿದ್ದೇನೆ!"},
                 "finish_reason": "stop",
             }
         ],
@@ -96,16 +96,16 @@ def test_sagemaker_model_retry(mock_boto3_client: Mock) -> None:
             prompt_text=None,
             output_token_ids=None,
             num_output_tokens=5,
-            output_text="Bin dabei!",
+            output_text="ನಾನು ಅಲ್ಲಿದ್ದೇನೆ!",
             request_token_ids=None,
             num_request_tokens=None,
             request_text=None,
             response_token_ids=None,
             num_response_tokens=None,
-            response_text="Bin dabei!",
+            response_text="ನಾನು ಅಲ್ಲಿದ್ದೇನೆ!",
             answer_token_ids=None,
             num_answer_tokens=None,
-            answer_text="Bin dabei!",
+            answer_text="ನಾನು ಅಲ್ಲಿದ್ದೇನೆ!",
             max_token_halt=False,
         )
     ]

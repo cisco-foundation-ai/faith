@@ -22,7 +22,7 @@ def test_open_router_model(mock_openrouter_client_class: Mock) -> None:
     # Test a simple generation call (mocked).
     mock_openrouter_instance = mock_openrouter_client_class.return_value
     mock_openrouter_instance.chat.send.return_value = Mock(
-        choices=[Mock(message=Mock(content="Bin dabei!"), finish_reason="stop")],
+        choices=[Mock(message=Mock(content="ibi sum!"), finish_reason="stop")],
         usage=Mock(prompt_tokens=2, completion_tokens=5),
     )
     response = model.query(inputs=[[{"role": "user", "content": "Hallo?"}]])
@@ -33,16 +33,16 @@ def test_open_router_model(mock_openrouter_client_class: Mock) -> None:
             prompt_text=None,
             output_token_ids=None,
             num_output_tokens=5,
-            output_text="Bin dabei!",
+            output_text="ibi sum!",
             request_token_ids=None,
             num_request_tokens=2,
             request_text=None,
             response_token_ids=None,
             num_response_tokens=5,
-            response_text="Bin dabei!",
+            response_text="ibi sum!",
             answer_token_ids=None,
             num_answer_tokens=5,
-            answer_text="Bin dabei!",
+            answer_text="ibi sum!",
             max_token_halt=False,
         )
     ]
@@ -63,7 +63,7 @@ def test_open_router_model_retry(mock_openrouter_client_class: Mock) -> None:
     mock_openrouter_instance.chat.send.side_effect = [
         Exception("API error"),
         Mock(
-            choices=[Mock(message=Mock(content="Bin dabei!"), finish_reason="stop")],
+            choices=[Mock(message=Mock(content="ibi sum!"), finish_reason="stop")],
             usage=Mock(prompt_tokens=2, completion_tokens=5),
         ),
     ]
@@ -77,16 +77,16 @@ def test_open_router_model_retry(mock_openrouter_client_class: Mock) -> None:
             prompt_text=None,
             output_token_ids=None,
             num_output_tokens=5,
-            output_text="Bin dabei!",
+            output_text="ibi sum!",
             request_token_ids=None,
             num_request_tokens=2,
             request_text=None,
             response_token_ids=None,
             num_response_tokens=5,
-            response_text="Bin dabei!",
+            response_text="ibi sum!",
             answer_token_ids=None,
             num_answer_tokens=5,
-            answer_text="Bin dabei!",
+            answer_text="ibi sum!",
             max_token_halt=False,
         )
     ]
