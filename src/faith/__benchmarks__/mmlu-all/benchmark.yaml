@@ -23,7 +23,7 @@ benchmark: !from
           - https://huggingface.co/datasets/cais/mmlu
         categories: ["general"]
     output_processing: !from
-      '$BENCHMARKS_ROOT/output-processing-template.yaml["output_processing"]':
+      '$BENCHMARKS_ROOT/mcqa-template.yaml["output_processing"]':
         primary_metric: "subject_weighted_accuracy.mean"
     source:
       huggingface: !from
