@@ -9,10 +9,10 @@ from typing import Any
 
 
 def assert_same_length(
-    expected_length: int | None = None, **kwargs: Sequence[Any]
+    expected_length: int | None = None, **kwargs: Sequence[Any] | None
 ) -> None:
     """Check if all provided sequences have the same length."""
-    lengths = {name: len(seq) for name, seq in kwargs.items()}
+    lengths = {name: len(seq) for name, seq in kwargs.items() if seq is not None}
     if expected_length is not None:
         assert all(
             length == expected_length for length in lengths.values()

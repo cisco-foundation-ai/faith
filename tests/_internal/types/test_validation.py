@@ -13,7 +13,7 @@ def test_assert_same_length() -> None:
     assert_same_length(a=[1, 2, 3])
     assert_same_length(a=[1, 2, 3], b=[4, 5, 6])
     assert_same_length(expected_length=5)
-    assert_same_length(expected_length=3, a=[1, 2, 3], b=[4, 5, 6])
+    assert_same_length(expected_length=3, a=[1, 2, 3], b=[4, 5, 6], c=None)
 
     # Test failure conditions.
     with pytest.raises(

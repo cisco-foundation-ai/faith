@@ -137,23 +137,18 @@ def llm_prediction_metrics(
     labelset: frozenset[str] | None,
 ) -> MetricSummary:
     """Helper function to compute core metrics an llm's sufficient statistics."""
-    if subject is None:
-        assert_same_length(
-            label=label, prediction=prediction, answer_format=answer_format
-        )
-    else:
-        assert_same_length(
-            label=label,
-            prediction=prediction,
-            answer_format=answer_format,
-            subject=subject,
-        )
+    assert_same_length(
+        label=label,
+        prediction=prediction,
+        answer_format=answer_format,
+        subject=subject,
+    )
     assert all(
         lab is None or isinstance(lab, str) for lab in label
-    ), "All labels must be strings."
+    ), "All labels must be string or None."
     assert all(
         pred is None or isinstance(pred, str) for pred in prediction
-    ), "All predictions must be strings."
+    ), "All predictions must be string or None."
 
     return (
         _label_metrics(label, labelset)
