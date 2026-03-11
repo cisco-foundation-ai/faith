@@ -5,12 +5,12 @@
 """Utility functions for reading and writing records."""
 
 from pathlib import Path
+from typing import Any
 
 from faith._internal.io.json import read_json_file
-from faith._internal.records.types import Record
 
 
-def load_records_from_json(file_path: Path) -> list[Record]:
+def load_records_from_json(file_path: Path) -> list[dict[str, Any]]:
     """Reads a JSONL file and returns a list of dictionaries."""
     logs = read_json_file(file_path)
     assert isinstance(logs, list), f"Expected a list, got {type(logs)}"

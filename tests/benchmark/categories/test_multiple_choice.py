@@ -3,18 +3,18 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from pathlib import Path
-from typing import cast
+from typing import Any, cast
 from unittest.mock import ANY
 
 import pytest
 from transformers import AutoTokenizer
 
 from faith._internal.algo.matching import AnswerFormat
-from faith._internal.records.types import Record
 from faith._internal.types.flags import GenerationMode, SampleRatio
 from faith.benchmark.benchmark import BenchmarkSpec
 from faith.benchmark.categories.multiple_choice import MCBenchmark
 from faith.benchmark.formatting.prompt import PromptFormatter
+from tests.benchmark.categories.fake_record_maker import make_fake_record
 
 TEST_ROOT_DIR = Path(__file__).parent.absolute()
 
@@ -235,7 +235,7 @@ Choices:
     dataset_1shot = benchmark_1shot.build_dataset()
 
     # Compare the questions as dictionaries.
-    assert list(dataset_1shot.iter_data()) == [
+    assert [rec.to_dict() for rec in dataset_1shot.iter_data()] == [
         {
             "benchmark_sample_index": 0,
             "benchmark_sample_hash": ANY,
@@ -318,7 +318,7 @@ Choices:
     dataset_0shot = benchmark_0shot.build_dataset(randomize_choices=True, sample_size=1)
 
     # Compare the questions as dictionaries.
-    assert list(dataset_0shot.iter_data()) == [
+    assert [rec.to_dict() for rec in dataset_0shot.iter_data()] == [
         {
             "benchmark_sample_index": 0,
             "benchmark_sample_hash": ANY,
@@ -397,7 +397,7 @@ Choices:
     dataset_0shot = benchmark_0shot.build_dataset(randomize_choices=True, sample_size=1)
 
     # Compare the questions as dictionaries.
-    assert list(dataset_0shot.iter_data()) == [
+    assert [rec.to_dict() for rec in dataset_0shot.iter_data()] == [
         {
             "benchmark_sample_index": 1,
             "benchmark_sample_hash": ANY,
@@ -491,27 +491,24 @@ Choices:
         }
     )
 
-    assert [log["stats"] for log in [] >> logits_log_grader] == []
+    assert [log.stats for log in [] >> logits_log_grader] == []
     assert [
-        log["stats"]
-        for log in cast(
-            list[Record],
-            [
-                {
-                    "data": {"label": "A"},
-                    "model_data": {
-                        "logits": [
-                            [
-                                {"token_id": 1, "logprob": -2.0},
-                                {"token_id": 0, "logprob": -1.5},
-                                {"token_id": 27, "logprob": -1.0},
-                            ]
-                        ],
-                        "answer_symbol_ids": {"A": 1, "B": 0},
-                    },
+        log.stats
+        for log in [
+            make_fake_record(
+                data={"label": "A"},
+                model_data={
+                    "logits": [
+                        [
+                            {"token_id": 1, "logprob": -2.0},
+                            {"token_id": 0, "logprob": -1.5},
+                            {"token_id": 27, "logprob": -1.0},
+                        ]
+                    ],
+                    "answer_symbol_ids": {"A": 1, "B": 0},
                 },
-            ],
-        )
+            ),
+        ]
         >> logits_log_grader
     ] == [
         {
@@ -527,53 +524,50 @@ Choices:
         }
     ]
     assert [
-        log["stats"]
-        for log in cast(
-            list[Record],
-            [
-                {
-                    "data": {"label": "A", "subject": "frankenfood"},
-                    "model_data": {
-                        "logits": [
-                            [
-                                {"token_id": 1, "logprob": -0.5},
-                                {"token_id": 0, "logprob": -1.5},
-                                {"token_id": 27, "logprob": -2.5},
-                            ]
-                        ],
-                        "answer_symbol_ids": {"A": 1, "B": 0},
-                    },
+        log.stats
+        for log in [
+            make_fake_record(
+                data={"label": "A", "subject": "frankenfood"},
+                model_data={
+                    "logits": [
+                        [
+                            {"token_id": 1, "logprob": -0.5},
+                            {"token_id": 0, "logprob": -1.5},
+                            {"token_id": 27, "logprob": -2.5},
+                        ]
+                    ],
+                    "answer_symbol_ids": {"A": 1, "B": 0},
                 },
-                {
-                    "data": {"label": "B"},
-                    "model_data": {
-                        "logits": [
-                            [
-                                {"token_id": 3, "logprob": -1.0},
-                                {"token_id": 0, "logprob": -1.5},
-                            ]
-                        ],
-                        "answer_symbol_ids": {"A": 1, "B": 0},
-                    },
+            ),
+            make_fake_record(
+                data={"label": "B"},
+                model_data={
+                    "logits": [
+                        [
+                            {"token_id": 3, "logprob": -1.0},
+                            {"token_id": 0, "logprob": -1.5},
+                        ]
+                    ],
+                    "answer_symbol_ids": {"A": 1, "B": 0},
                 },
-                {
-                    "data": {"label": "A"},
-                    "model_data": {
-                        "logits": [
-                            [
-                                {"token_id": 7, "logprob": -2.0},
-                                {"token_id": 11, "logprob": -3.25},
-                            ]
-                        ],
-                        "answer_symbol_ids": {"A": 1, "B": 0},
-                    },
+            ),
+            make_fake_record(
+                data={"label": "A"},
+                model_data={
+                    "logits": [
+                        [
+                            {"token_id": 7, "logprob": -2.0},
+                            {"token_id": 11, "logprob": -3.25},
+                        ]
+                    ],
+                    "answer_symbol_ids": {"A": 1, "B": 0},
                 },
-                {
-                    "data": {"label": "A"},
-                    "model_data": {"error": {"title": "Oopsy"}},
-                },
-            ],
-        )
+            ),
+            make_fake_record(
+                data={"label": "A"},
+                model_data={"error": {"title": "Oopsy"}},
+            ),
+        ]
         >> logits_log_grader
     ] == [
         {
@@ -636,18 +630,15 @@ Choices:
         recompute_stats=True,
     )
 
-    assert [log["stats"] for log in [] >> next_token_log_grader] == []
+    assert [log.stats for log in [] >> next_token_log_grader] == []
     assert [
-        log["stats"]
-        for log in cast(
-            list[Record],
-            [
-                {
-                    "data": {"label": "A"},
-                    "model_data": {"next_token": {"output_text": " A"}},
-                },
-            ],
-        )
+        log.stats
+        for log in [
+            make_fake_record(
+                data={"label": "A"},
+                model_data={"next_token": {"output_text": " A"}},
+            ),
+        ]
         >> next_token_log_grader
     ] == [
         {
@@ -658,37 +649,34 @@ Choices:
         }
     ]
     assert [
-        log["stats"]
-        for log in cast(
-            list[Record],
-            [
-                {
-                    "data": {"label": "B", "subject": "octothorpes"},
-                    "model_data": {"next_token": {"output_text": "B"}},
-                    "stats": {
-                        "label": "B",
-                        "prediction": "C",
-                        "answer_format": AnswerFormat.IMPROPER,
-                    },
+        log.stats
+        for log in [
+            make_fake_record(
+                data={"label": "B", "subject": "octothorpes"},
+                model_data={"next_token": {"output_text": "B"}},
+                stats={
+                    "label": "B",
+                    "prediction": "C",
+                    "answer_format": AnswerFormat.IMPROPER,
                 },
-                {
-                    "data": {"label": "A"},
-                    "model_data": {"next_token": {"output_text": " B"}},
-                },
-                {
-                    "data": {"label": "B"},
-                    "model_data": {"next_token": {"output_text": "B or A"}},
-                },
-                {
-                    "data": {"label": "A", "subject": "octothorpes"},
-                    "model_data": {"next_token": {"output_text": "I don't know"}},
-                },
-                {
-                    "data": {"label": "A", "subject": "octothorpes"},
-                    "model_data": {"error": {"title": "Oopie"}},
-                },
-            ],
-        )
+            ),
+            make_fake_record(
+                data={"label": "A"},
+                model_data={"next_token": {"output_text": " B"}},
+            ),
+            make_fake_record(
+                data={"label": "B"},
+                model_data={"next_token": {"output_text": "B or A"}},
+            ),
+            make_fake_record(
+                data={"label": "A", "subject": "octothorpes"},
+                model_data={"next_token": {"output_text": "I don't know"}},
+            ),
+            make_fake_record(
+                data={"label": "A", "subject": "octothorpes"},
+                model_data={"error": {"title": "Oopie"}},
+            ),
+        ]
         >> next_token_log_grader
     ] == [
         {
@@ -741,43 +729,40 @@ Choices:
         }
     )
 
-    assert [log["stats"] for log in [] >> chat_log_grader] == []
+    assert [log.stats for log in [] >> chat_log_grader] == []
     assert [
-        log["stats"]
-        for log in cast(
-            list[Record],
-            [
-                {
-                    "data": {"label": "A"},
-                    "model_data": {
-                        "chat_comp": {
-                            "answer_text": "Antwort--> A",
-                            "output_text": "Antwort--> A",
-                            "num_output_tokens": 3,
-                            "max_token_halt": False,
-                        }
-                    },
-                },
-                {
-                    "stats": {
-                        "answer_format": "improper",
-                        "label": "B",
-                        "prediction": "C",
+        log.stats
+        for log in [
+            make_fake_record(
+                data={"label": "A"},
+                model_data={
+                    "chat_comp": {
+                        "answer_text": "Antwort--> A",
+                        "output_text": "Antwort--> A",
+                        "num_output_tokens": 3,
+                        "max_token_halt": False,
                     }
                 },
-                {
-                    "data": {"label": "B"},
-                    "model_data": {
-                        "chat_comp": {
-                            "answer_text": "uhm... I have no earthly idea",
-                            "output_text": "uhm... I have no earthly idea",
-                            "num_output_tokens": 7,
-                            "max_token_halt": True,
-                        },
+            ),
+            make_fake_record(
+                stats={
+                    "answer_format": "improper",
+                    "label": "B",
+                    "prediction": "C",
+                }
+            ),
+            make_fake_record(
+                data={"label": "B"},
+                model_data={
+                    "chat_comp": {
+                        "answer_text": "uhm... I have no earthly idea",
+                        "output_text": "uhm... I have no earthly idea",
+                        "num_output_tokens": 7,
+                        "max_token_halt": True,
                     },
                 },
-            ],
-        )
+            ),
+        ]
         >> chat_log_grader
     ] == [
         {
@@ -803,49 +788,46 @@ Choices:
         },
     ]
     assert [
-        log["stats"]
-        for log in cast(
-            list[Record],
-            [
-                {
-                    "data": {"label": "A"},
-                    "model_data": {
-                        "chat_comp": {
-                            "answer_text": "Antwort--> A",
-                            "output_text": "Antwort--> A",
-                            "num_output_tokens": 4,
-                            "max_token_halt": False,
-                        }
+        log.stats
+        for log in [
+            make_fake_record(
+                data={"label": "A"},
+                model_data={
+                    "chat_comp": {
+                        "answer_text": "Antwort--> A",
+                        "output_text": "Antwort--> A",
+                        "num_output_tokens": 4,
+                        "max_token_halt": False,
+                    }
+                },
+            ),
+            make_fake_record(
+                data={"label": "B"},
+                model_data={
+                    "chat_comp": {
+                        "answer_text": ":think-on:I think the answer is B or A.:think-off:Guessing...\n\nAnswer: A",
+                        "output_text": ":think-on:I think the answer is B or A.:think-off:Guessing...\n\nAnswer: A",
+                        "num_output_tokens": 17,
+                        "max_token_halt": True,
+                    }
+                },
+            ),
+            make_fake_record(
+                data={"label": "A"},
+                model_data={
+                    "chat_comp": {
+                        "answer_text": "If I had to guess, I would say A",
+                        "output_text": "If I had to guess, I would say A",
+                        "num_output_tokens": 10,
+                        "max_token_halt": False,
                     },
                 },
-                {
-                    "data": {"label": "B"},
-                    "model_data": {
-                        "chat_comp": {
-                            "answer_text": ":think-on:I think the answer is B or A.:think-off:Guessing...\n\nAnswer: A",
-                            "output_text": ":think-on:I think the answer is B or A.:think-off:Guessing...\n\nAnswer: A",
-                            "num_output_tokens": 17,
-                            "max_token_halt": True,
-                        }
-                    },
-                },
-                {
-                    "data": {"label": "A"},
-                    "model_data": {
-                        "chat_comp": {
-                            "answer_text": "If I had to guess, I would say A",
-                            "output_text": "If I had to guess, I would say A",
-                            "num_output_tokens": 10,
-                            "max_token_halt": False,
-                        },
-                    },
-                },
-                {
-                    "data": {"label": "A"},
-                    "model_data": {"error": {"title": "Oops"}},
-                },
-            ],
-        )
+            ),
+            make_fake_record(
+                data={"label": "A"},
+                model_data={"error": {"title": "Oops"}},
+            ),
+        ]
         >> chat_log_grader
     ] == [
         {
@@ -965,59 +947,51 @@ Choices:
     }
 
     assert cast(
-        list[Record],
+        list[dict[str, Any]],
         [
             {
-                "stats": {
-                    "label": "A",
-                    "log_probs": {
-                        "label": -2.0,
-                        "max_other_symbol": -1.5,
-                        "max_other_token": -1.0,
-                    },
-                    "prediction": "B",
-                    "answer_format": AnswerFormat.PROPER,
-                    "subject": "bumbershoots",
-                }
+                "label": "A",
+                "log_probs": {
+                    "label": -2.0,
+                    "max_other_symbol": -1.5,
+                    "max_other_token": -1.0,
+                },
+                "prediction": "B",
+                "answer_format": AnswerFormat.PROPER,
+                "subject": "bumbershoots",
             },
             {
-                "stats": {
-                    "label": "B",
-                    "log_probs": {
-                        "label": -0.5,
-                        "max_other_symbol": -1.5,
-                        "max_other_token": -1.0,
-                    },
-                    "prediction": "B",
-                    "answer_format": AnswerFormat.PROPER,
-                    "subject": "bumbershoots",
-                }
+                "label": "B",
+                "log_probs": {
+                    "label": -0.5,
+                    "max_other_symbol": -1.5,
+                    "max_other_token": -1.0,
+                },
+                "prediction": "B",
+                "answer_format": AnswerFormat.PROPER,
+                "subject": "bumbershoots",
             },
             {
-                "stats": {
-                    "label": "B",
-                    "log_probs": {
-                        "label": -1.5,
-                        "max_other_symbol": -1.0,
-                        "max_other_token": float("-inf"),
-                    },
-                    "prediction": "A",
-                    "answer_format": AnswerFormat.IMPROPER,
-                    "subject": "blabberdash",
-                }
+                "label": "B",
+                "log_probs": {
+                    "label": -1.5,
+                    "max_other_symbol": -1.0,
+                    "max_other_token": float("-inf"),
+                },
+                "prediction": "A",
+                "answer_format": AnswerFormat.IMPROPER,
+                "subject": "blabberdash",
             },
             {
-                "stats": {
-                    "label": "A",
-                    "log_probs": {
-                        "label": float("-inf"),
-                        "max_other_symbol": float("-inf"),
-                        "max_other_token": -0.25,
-                    },
-                    "prediction": None,
-                    "answer_format": AnswerFormat.INVALID,
-                    "subject": "blabberdash",
-                }
+                "label": "A",
+                "log_probs": {
+                    "label": float("-inf"),
+                    "max_other_symbol": float("-inf"),
+                    "max_other_token": -0.25,
+                },
+                "prediction": None,
+                "answer_format": AnswerFormat.INVALID,
+                "subject": "blabberdash",
             },
         ],
     ) >> metric_aggregator == {
@@ -1150,41 +1124,32 @@ Choices:
         "weighted_avg_f1": pytest.approx(float("nan"), nan_ok=True),
     }
 
-    assert cast(
-        list[Record],
-        [
-            {
-                "stats": {
-                    "label": "A",
-                    "max_token_halt": False,
-                    "num_output_tokens": 3,
-                    "prediction": "B",
-                    "answer_format": AnswerFormat.PROPER,
-                    "subject": "bumbershoots",
-                }
-            },
-            {
-                "stats": {
-                    "label": "B",
-                    "max_token_halt": False,
-                    "num_output_tokens": 41,
-                    "prediction": "B",
-                    "answer_format": AnswerFormat.PROPER,
-                    "subject": "bumbershoots",
-                }
-            },
-            {
-                "stats": {
-                    "label": "B",
-                    "max_token_halt": False,
-                    "num_output_tokens": 4,
-                    "prediction": "A",
-                    "answer_format": AnswerFormat.IMPROPER,
-                    "subject": "blabberdash",
-                }
-            },
-        ],
-    ) >> metric_aggregator == {
+    assert [
+        {
+            "label": "A",
+            "max_token_halt": False,
+            "num_output_tokens": 3,
+            "prediction": "B",
+            "answer_format": AnswerFormat.PROPER,
+            "subject": "bumbershoots",
+        },
+        {
+            "label": "B",
+            "max_token_halt": False,
+            "num_output_tokens": 41,
+            "prediction": "B",
+            "answer_format": AnswerFormat.PROPER,
+            "subject": "bumbershoots",
+        },
+        {
+            "label": "B",
+            "max_token_halt": False,
+            "num_output_tokens": 4,
+            "prediction": "A",
+            "answer_format": AnswerFormat.IMPROPER,
+            "subject": "blabberdash",
+        },
+    ] >> metric_aggregator == {
         "accuracy": pytest.approx(1 / 3),
         "accuracy_per_subject": {
             "bumbershoots": pytest.approx(1 / 2),

@@ -2,8 +2,11 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+from dataclasses import dataclass
 from enum import StrEnum, auto
 from typing import Any, NotRequired, TypeAlias, TypedDict
+
+from dataclasses_json import DataClassJsonMixin
 
 from faith._types.records.prompt_record import PromptRecord
 
@@ -36,13 +39,14 @@ class _ModelData(TypedDict):
     error: NotRequired[_ModelError]
 
 
-class Record(TypedDict):
+@dataclass
+class Record(DataClassJsonMixin):
     """Represents a log record used to track individual queries to a model."""
 
     metadata: _Metadata
     data: PromptRecord
     model_data: _ModelData
-    stats: dict[str, Any] | None
+    stats: dict[str, Any] | None = None
 
 
 class RecordStatus(StrEnum):

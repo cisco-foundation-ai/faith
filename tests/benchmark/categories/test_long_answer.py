@@ -4,7 +4,7 @@
 
 import math
 from collections.abc import Iterable
-from typing import Any, cast
+from typing import Any
 from unittest.mock import ANY, patch
 
 import pytest
@@ -12,12 +12,12 @@ from datasets import Dataset, DatasetDict, Features, Value
 
 from faith import __version__
 from faith._internal.algo.matching import AnswerFormat
-from faith._internal.records.types import Record
 from faith._internal.types.flags import GenerationMode, SampleRatio
 from faith.benchmark.benchmark import BenchmarkSpec
 from faith.benchmark.categories.long_answer import LABenchmark
 from faith.benchmark.formatting.prompt import PromptFormatter
 from faith.model.base import BaseModel, ChatResponse, GenerationError, PromptList
+from tests.benchmark.categories.fake_record_maker import make_fake_record
 
 
 def test_long_answer_benchmark_logits() -> None:
@@ -281,7 +281,7 @@ def test_long_answer_benchmark_build_dataset() -> None:
         mock_load_dataset.assert_called_once_with("foo/baz-bar", "qux")
 
         # Compare the questions as dictionaries.
-        assert list(dataset_1shot.iter_data()) == [
+        assert [rec.to_dict() for rec in dataset_1shot.iter_data()] == [
             {
                 "benchmark_sample_index": 0,
                 "benchmark_sample_hash": ANY,
@@ -380,7 +380,7 @@ def test_long_answer_benchmark_build_dataset() -> None:
         mock_load_dataset.assert_called_once_with("foo/baz-bar", "qux")
 
         # Compare the questions as dictionaries.
-        assert list(dataset_1shot_no_dev.iter_data()) == [
+        assert [rec.to_dict() for rec in dataset_1shot_no_dev.iter_data()] == [
             {
                 "benchmark_sample_index": 0,
                 "benchmark_sample_hash": ANY,
@@ -483,7 +483,7 @@ def test_long_answer_benchmark_build_dataset() -> None:
         mock_load_dataset.assert_called_once_with("foo/baz-bar", None)
 
         # Compare the questions as dictionaries.
-        assert list(dataset_0shot.iter_data()) == [
+        assert [rec.to_dict() for rec in dataset_0shot.iter_data()] == [
             {
                 "benchmark_sample_index": 1,
                 "benchmark_sample_hash": ANY,
@@ -620,55 +620,52 @@ SUMMARY: [your summary text]""",
         )
         mock_create_model.assert_called_once_with("gpt-4o", api_num_threads=1)
 
-    assert [log["stats"] for log in [] >> log_grader] == []
+    assert [log.stats for log in [] >> log_grader] == []
     assert [
-        log["stats"]
-        for log in cast(
-            list[Record],
-            [
-                {
-                    "data": {
-                        "label": "foo",
-                        "subject": "bar",
-                        "question_prompt": "Question: baz",
-                    },
-                    "model_data": {
-                        "chat_comp": {
-                            "answer_text": "<t>Maybe </t>Answer: bar</t>Answer: foo",
-                            "output_text": "<t>Maybe </t>Answer: bar</t>Answer: foo",
-                            "num_output_tokens": 3,
-                            "max_token_halt": False,
-                        }
-                    },
+        log.stats
+        for log in [
+            make_fake_record(
+                data={
+                    "label": "foo",
+                    "subject": "bar",
+                    "question_prompt": "Question: baz",
                 },
-                {
-                    "data": {
-                        "label": "foo",
-                        "subject": "bar",
-                        "question_prompt": "Question: baz",
-                    },
-                    "model_data": {
-                        "chat_comp": {
-                            "answer_text": "<t>Maybe Answer: foo",
-                            "output_text": "<t>Maybe Answer: foo",
-                            "num_output_tokens": 3,
-                            "max_token_halt": True,
-                        }
-                    },
+                model_data={
+                    "chat_comp": {
+                        "answer_text": "<t>Maybe </t>Answer: bar</t>Answer: foo",
+                        "output_text": "<t>Maybe </t>Answer: bar</t>Answer: foo",
+                        "num_output_tokens": 3,
+                        "max_token_halt": False,
+                    }
                 },
-                {
-                    "data": {"label": "bar", "question_prompt": "Question: baz"},
-                    "model_data": {
-                        "chat_comp": {
-                            "answer_text": "<answer>BaZ</answer>",
-                            "output_text": "<answer>BaZ</answer>",
-                            "num_output_tokens": 5,
-                            "max_token_halt": False,
-                        }
-                    },
+            ),
+            make_fake_record(
+                data={
+                    "label": "foo",
+                    "subject": "bar",
+                    "question_prompt": "Question: baz",
                 },
-            ],
-        )
+                model_data={
+                    "chat_comp": {
+                        "answer_text": "<t>Maybe Answer: foo",
+                        "output_text": "<t>Maybe Answer: foo",
+                        "num_output_tokens": 3,
+                        "max_token_halt": True,
+                    }
+                },
+            ),
+            make_fake_record(
+                data={"label": "bar", "question_prompt": "Question: baz"},
+                model_data={
+                    "chat_comp": {
+                        "answer_text": "<answer>BaZ</answer>",
+                        "output_text": "<answer>BaZ</answer>",
+                        "num_output_tokens": 5,
+                        "max_token_halt": False,
+                    }
+                },
+            ),
+        ]
         >> log_grader
     ] == [
         {
@@ -815,62 +812,53 @@ SUMMARY: [your summary text]""",
         "query_count": 0,
     }
 
-    assert cast(
-        list[Record],
-        [
-            {
-                "stats": {
-                    "label": "foo bar",
-                    "max_token_halt": False,
-                    "num_output_tokens": 4,
-                    "prediction": "foo bar baz",
-                    "answer_format": AnswerFormat.PROPER,
-                    "scores": {
-                        "llm_grade": {
-                            "value": 0.8,
-                            "raw_value": 8.0,
-                            "min_value": 0.0,
-                            "max_value": 10.0,
-                        },
-                    },
-                }
+    assert [
+        {
+            "label": "foo bar",
+            "max_token_halt": False,
+            "num_output_tokens": 4,
+            "prediction": "foo bar baz",
+            "answer_format": AnswerFormat.PROPER,
+            "scores": {
+                "llm_grade": {
+                    "value": 0.8,
+                    "raw_value": 8.0,
+                    "min_value": 0.0,
+                    "max_value": 10.0,
+                },
             },
-            {
-                "stats": {
-                    "label": "a b c d",
-                    "max_token_halt": False,
-                    "num_output_tokens": 5,
-                    "prediction": "a b c d e",
-                    "answer_format": AnswerFormat.PROPER,
-                    "scores": {
-                        "llm_grade": {
-                            "value": 1.0,
-                            "raw_value": 5.0,
-                            "min_value": 1.0,
-                            "max_value": 5.0,
-                        },
-                    },
-                }
+        },
+        {
+            "label": "a b c d",
+            "max_token_halt": False,
+            "num_output_tokens": 5,
+            "prediction": "a b c d e",
+            "answer_format": AnswerFormat.PROPER,
+            "scores": {
+                "llm_grade": {
+                    "value": 1.0,
+                    "raw_value": 5.0,
+                    "min_value": 1.0,
+                    "max_value": 5.0,
+                },
             },
-            {
-                "stats": {
-                    "label": "one two three",
-                    "max_token_halt": False,
-                    "num_output_tokens": 6,
-                    "prediction": "ooops",
-                    "answer_format": AnswerFormat.PROPER,
-                    "scores": {
-                        "llm_grade": {
-                            "value": 0.1,
-                            "raw_value": 2.0,
-                            "min_value": 1.0,
-                            "max_value": 11.0,
-                        },
-                    },
-                }
+        },
+        {
+            "label": "one two three",
+            "max_token_halt": False,
+            "num_output_tokens": 6,
+            "prediction": "ooops",
+            "answer_format": AnswerFormat.PROPER,
+            "scores": {
+                "llm_grade": {
+                    "value": 0.1,
+                    "raw_value": 2.0,
+                    "min_value": 1.0,
+                    "max_value": 11.0,
+                },
             },
-        ],
-    ) >> aggregator == {
+        },
+    ] >> aggregator == {
         "format_count": {
             "improper": 0,
             "inferred": 0,

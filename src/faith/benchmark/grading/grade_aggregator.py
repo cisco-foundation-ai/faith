@@ -12,7 +12,6 @@ from typing import Any
 import numpy as np
 
 from faith._internal.iter.transform import Reducer
-from faith._internal.records.types import Record
 from faith._internal.types.configs import Configuration
 from faith._internal.types.stats import MetricSummary
 from faith._internal.types.validation import assert_same_length
@@ -20,7 +19,7 @@ from faith.benchmark.scores.domain_specific import DomainSpecificScore
 from faith.benchmark.scores.types import Score
 
 
-class GradeAggregator(Reducer[Record, MetricSummary]):
+class GradeAggregator(Reducer[dict[str, Any] | None, MetricSummary]):
     """Base class for aggregating benchmark grades from benchmark logs."""
 
     def __init__(self, output_processing_config: Configuration) -> None:
@@ -30,9 +29,9 @@ class GradeAggregator(Reducer[Record, MetricSummary]):
             **(output_processing_config.get("score_fns") or {})
         )
 
-    def __call__(self, logs: Iterable[Record]) -> MetricSummary:
+    def __call__(self, stats_logs: Iterable[dict[str, Any] | None]) -> MetricSummary:
         """Reduce the collected statistics to their overall benchmark metrics."""
-        test_stats = GradeAggregator._stats_transpose(logs)
+        test_stats = GradeAggregator._stats_transpose(stats_logs)
         logit_stats = (
             GradeAggregator._logits_stats(test_stats["log_probs"])
             if "log_probs" in test_stats
@@ -41,11 +40,13 @@ class GradeAggregator(Reducer[Record, MetricSummary]):
         return logit_stats | self._aggregate(**test_stats)
 
     @staticmethod
-    def _stats_transpose(logs: Iterable[Record]) -> dict[str, Sequence[Any]]:
+    def _stats_transpose(
+        stats_logs: Iterable[dict[str, Any] | None],
+    ) -> dict[str, Sequence[Any]]:
         """Transpose the 'stats' dictionary in `logs` to a dictionary of lists."""
         transposed_stats = defaultdict(list)
-        for log_entry in logs:
-            for key, value in (log_entry.get("stats") or {}).items():
+        for stats in stats_logs:
+            for key, value in (stats or {}).items():
                 transposed_stats[key].append(value)
         return dict(transposed_stats)
 

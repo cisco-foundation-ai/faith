@@ -1,5 +1,6 @@
 [
   {
+    "metadata": {},
     "data": {
       "benchmark_sample_hash": "90e6950630e77869a3f9ebf122f901300d4942e8822b5228e0d33b2e6700be68",
       "benchmark_sample_index": 0,
@@ -38,6 +39,7 @@
     }
   },
   {
+    "metadata": {},
     "data": {
       "benchmark_sample_hash": "f858962903141e723e5d50859527facacd90fee122243e91fbd8d80504cad895",
       "benchmark_sample_index": 1,
@@ -68,6 +70,7 @@
     }
   },
   {
+    "metadata": {},
     "data": {
       "benchmark_sample_hash": "49f2e4b28ca28f97e97dceb8caa56077fe6cba7a82d2aa69981f03c09ea3f70f",
       "benchmark_sample_index": 2,
@@ -98,6 +101,7 @@
     }
   },
   {
+    "metadata": {},
     "data": {
       "benchmark_sample_hash": "76fe97746bbf87dd35fd579c67f7ffb0aa742ab19d317b657ac66b11302e2ef2",
       "benchmark_sample_index": 3,
@@ -128,6 +132,7 @@
     }
   },
   {
+    "metadata": {},
     "data": {
       "benchmark_sample_hash": "20350eef9bd3849f8ca48e1ef05ead9839a738cb55323cc5bace5515b3cd007a",
       "benchmark_sample_index": 4,
@@ -158,6 +163,7 @@
     }
   },
   {
+    "metadata": {},
     "data": {
       "benchmark_sample_hash": "e210eb07165c4c021600540749977a699b8db553682943ce377cda4acfefd137",
       "benchmark_sample_index": 5,
@@ -196,6 +202,7 @@
     }
   },
   {
+    "metadata": {},
     "data": {
       "benchmark_sample_hash": "7cfb5544fabfb0ded7a589d3f73547579be5b1aa26f263c674af34d9c017367f",
       "benchmark_sample_index": 6,

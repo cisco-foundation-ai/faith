@@ -25,16 +25,16 @@ class LogitsLogGrader(LogGrader):
 
     def _markup_entry_impl(self, log_entry: Record) -> Record:
         """Markup a single log entry with the computed statistics / scores."""
-        label: str | None = log_entry["data"]["label"]
+        label: str | None = log_entry.data.label
         extracted_pred: str | None = None
         answer_format = AnswerFormat.INVALID
         log_probs_stats = {}
-        if label is not None and (logits := log_entry["model_data"].get("logits")):
+        if label is not None and (logits := log_entry.model_data.get("logits")):
             # TODO(https://github.com/cisco-foundation-ai/faith/issues/26):
             # Handle multiple logits entries; currently assumes only one entry.
             first_token_logits = logits[0] if len(logits) > 0 else []
             id_to_logit = {log["token_id"]: log for log in first_token_logits}
-            answer_symbol_ids = log_entry["model_data"]["answer_symbol_ids"]
+            answer_symbol_ids = log_entry.model_data["answer_symbol_ids"]
             symbol_to_logit = {
                 symbol: id_to_logit[symbol_id]
                 for symbol, symbol_id in answer_symbol_ids.items()
@@ -68,18 +68,18 @@ class LogitsLogGrader(LogGrader):
                     ),
                 }
             }
-        log_entry["stats"] = (
+        log_entry.stats = (
             log_probs_stats
             | {
                 "label": label,
                 "prediction": extracted_pred,
                 "answer_format": answer_format,
-                "subject": log_entry["data"].get("subject"),
+                "subject": log_entry.data.subject,
             }
             | self._custom_scores(
                 label,
                 extracted_pred,
-                ancillary_data=log_entry["data"].get("ancillary_data"),
+                ancillary_data=log_entry.data.ancillary_data,
             )
         )
         return log_entry
@@ -103,28 +103,24 @@ class NextTokenLogGrader(LogGrader):
 
     def _markup_entry_impl(self, log_entry: Record) -> Record:
         """Markup a single log entry with the computed statistics / scores."""
-        label: Labeling | None = log_entry["data"]["label"]
+        label: Labeling | None = log_entry.data.label
         extracted_pred: Labeling | None = None
         answer_format = AnswerFormat.INVALID
-        if (
-            next_token := log_entry["model_data"]
-            .get("next_token", {})
-            .get("output_text")
-        ):
+        if next_token := log_entry.model_data.get("next_token", {}).get("output_text"):
             match = re.findall(
                 rf"\b({'|'.join(sorted(list(self._answer_set)))})\b", next_token
             )
             if len(match) > 0:
                 extracted_pred, answer_format = match[0], AnswerFormat.PROPER
-        log_entry["stats"] = {
+        log_entry.stats = {
             "label": label,
             "prediction": extracted_pred,
             "answer_format": answer_format,
-            "subject": log_entry["data"].get("subject"),
+            "subject": log_entry.data.subject,
         } | self._custom_scores(
             label,
             extracted_pred,
-            ancillary_data=log_entry["data"].get("ancillary_data"),
+            ancillary_data=log_entry.data.ancillary_data,
         )
         return log_entry
 
@@ -150,24 +146,24 @@ class ChatCompletionLogGrader(LogGrader):
 
     def _markup_entry_impl(self, log_entry: Record) -> Record:
         """Markup a single log entry with the computed statistics / scores."""
-        label: Labeling | None = log_entry["data"]["label"]
+        label: Labeling | None = log_entry.data.label
         extracted_answer: Labeling | None = None
         answer_format = AnswerFormat.INVALID
 
-        chat_comp = log_entry["model_data"].get("chat_comp") or {}
+        chat_comp = log_entry.model_data.get("chat_comp") or {}
         if (answer_text := chat_comp.get("answer_text")) is not None:
             extracted_answer, answer_format = self._answer_matcher(answer_text)
 
-        log_entry["stats"] = {
+        log_entry.stats = {
             "label": label,
             "prediction": extracted_answer,
             "answer_format": answer_format,
-            "subject": log_entry["data"].get("subject"),
+            "subject": log_entry.data.subject,
             "num_output_tokens": chat_comp.get("num_output_tokens") or 0,
             "max_token_halt": chat_comp.get("max_token_halt") or False,
         } | self._custom_scores(
             label,
             extracted_answer,
-            ancillary_data=log_entry["data"].get("ancillary_data"),
+            ancillary_data=log_entry.data.ancillary_data,
         )
         return log_entry

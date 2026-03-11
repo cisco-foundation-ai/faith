@@ -79,7 +79,7 @@ class QAFormatter:
         return self._prompt_template.render(
             instruction=instruction,
             examples=[
-                _QA(question=ex["formatted_question"], answer=ex["formatted_answer"])
+                _QA(question=ex.formatted_question, answer=ex.formatted_answer)
                 for ex in examples
             ],
             question=question,
@@ -144,7 +144,7 @@ class QAFormatter:
     ) -> str | ChatConversation:
         """Format the prompt for the given PromptRecord."""
         return self._prompt_format.format(
-            system_prompt=record.get("system_prompt"),
-            prompt=record["question_prompt"],
+            system_prompt=record.system_prompt,
+            prompt=record.question_prompt,
             response_leadin=answer_leadin,
         )

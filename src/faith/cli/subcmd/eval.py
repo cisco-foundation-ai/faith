@@ -14,6 +14,7 @@ from tqdm import tqdm
 from faith._internal.config.model_response import model_response_format_config
 from faith._internal.io.json import read_json_file, write_as_json
 from faith._internal.io.logging import LoggingTransform
+from faith._internal.iter.common import GetAttrTransform
 from faith._internal.iter.transform import IdentityTransform
 from faith._internal.metrics.aggregations import (
     agg_breakdown_counts,
@@ -83,13 +84,16 @@ def compute_experiment_metrics(
             trial_logs.items(), desc="Processing trials", unit="trial", leave=False
         )
         if (
-            trial_metrics := load_records_from_json(trial_log_filepath)
+            trial_metrics := [
+                Record.from_dict(d) for d in load_records_from_json(trial_log_filepath)
+            ]
             >> benchmark.log_grader(**kwargs)
             >> (
                 LoggingTransform[Record](trial_log_filepath)
                 if annotate_prediction_stats
                 else IdentityTransform[Record]()
             )
+            >> GetAttrTransform[Record, dict[str, Any]]("stats")
             >> benchmark.grade_aggregator()
         ).get("query_count", 0)
         > 0

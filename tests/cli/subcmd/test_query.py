@@ -34,6 +34,7 @@ from faith.model.base import (
     TokenPred,
 )
 from faith.model.params import GenParams
+from tests.benchmark.categories.fake_record_maker import make_fake_record
 
 
 class FakeBenchmark(Benchmark):
@@ -360,18 +361,16 @@ _ANSWER_TOKEN_MAP: dict[str, int] = {"A": 87, "B": 31, "C": 7, "D": 9, "E": 5}
     ],
 )
 def test_benchmark_record_transform(
-    spec: BenchmarkSpec, expected_records: list[Record]
+    spec: BenchmarkSpec, expected_records: list[dict[str, Any]]
 ) -> None:
     model = FakeModel(model_name="fake-model")
     benchmark = FakeBenchmark(spec, config=_FAKE_BENCHMARK_CONFIG, seed=147)
 
-    assert (
-        list(
-            benchmark.build_dataset().iter_data()
-            >> BenchmarkRecordTransform(benchmark, model.tokenizer)
-        )
-        == expected_records
-    )
+    assert [
+        rec.to_dict()
+        for rec in benchmark.build_dataset().iter_data()
+        >> BenchmarkRecordTransform(benchmark, model.tokenizer)
+    ] == expected_records
 
 
 @pytest.mark.parametrize(
@@ -381,22 +380,22 @@ def test_benchmark_record_transform(
             GenerationMode.CHAT_COMPLETION,
             GenParams(temperature=0.5, top_p=1.0, max_completion_tokens=100, kwargs={}),
             [
-                {
-                    "model_data": {
+                make_fake_record(
+                    model_data={
                         "prompt": _PROMPT_NO_LEADIN_0,
                         "answer_symbol_ids": {},
                     }
-                },
-                {
-                    "model_data": {
+                ),
+                make_fake_record(
+                    model_data={
                         "prompt": _PROMPT_NO_LEADIN_1,
                         "answer_symbol_ids": {},
                     }
-                },
+                ),
             ],
             [
-                {
-                    "model_data": {
+                make_fake_record(
+                    model_data={
                         "prompt": _PROMPT_NO_LEADIN_0,
                         "answer_symbol_ids": {},
                         "chat_comp": {
@@ -418,9 +417,9 @@ def test_benchmark_record_transform(
                             "answer_text": f"\nFake response to: {_PROMPT_NO_LEADIN_0}",
                         },
                     },
-                },
-                {
-                    "model_data": {
+                ),
+                make_fake_record(
+                    model_data={
                         "prompt": _PROMPT_NO_LEADIN_1,
                         "answer_symbol_ids": {},
                         "chat_comp": {
@@ -442,29 +441,29 @@ def test_benchmark_record_transform(
                             "answer_text": f"\nFake response to: {_PROMPT_NO_LEADIN_1}",
                         },
                     },
-                },
+                ),
             ],
         ),
         (
             GenerationMode.NEXT_TOKEN,
             GenParams(temperature=0.5, top_p=1.0, max_completion_tokens=100, kwargs={}),
             [
-                {
-                    "model_data": {
+                make_fake_record(
+                    model_data={
                         "prompt": _PROMPT_WITH_LEADIN_0,
                         "answer_symbol_ids": {},
                     }
-                },
-                {
-                    "model_data": {
+                ),
+                make_fake_record(
+                    model_data={
                         "prompt": _PROMPT_WITH_LEADIN_1,
                         "answer_symbol_ids": {},
                     }
-                },
+                ),
             ],
             [
-                {
-                    "model_data": {
+                make_fake_record(
+                    model_data={
                         "prompt": _PROMPT_WITH_LEADIN_0,
                         "answer_symbol_ids": {},
                         "next_token": {
@@ -486,9 +485,9 @@ def test_benchmark_record_transform(
                             "answer_text": " Token 0",
                         },
                     },
-                },
-                {
-                    "model_data": {
+                ),
+                make_fake_record(
+                    model_data={
                         "prompt": _PROMPT_WITH_LEADIN_1,
                         "answer_symbol_ids": {},
                         "next_token": {
@@ -510,29 +509,29 @@ def test_benchmark_record_transform(
                             "answer_text": " Token 1",
                         },
                     },
-                },
+                ),
             ],
         ),
         (
             GenerationMode.LOGITS,
             GenParams(temperature=0.5, top_p=1.0, max_completion_tokens=100, kwargs={}),
             [
-                {
-                    "model_data": {
+                make_fake_record(
+                    model_data={
                         "prompt": _PROMPT_WITH_LEADIN_0,
                         "answer_symbol_ids": _ANSWER_TOKEN_MAP,
                     }
-                },
-                {
-                    "model_data": {
+                ),
+                make_fake_record(
+                    model_data={
                         "prompt": _PROMPT_WITH_LEADIN_1,
                         "answer_symbol_ids": _ANSWER_TOKEN_MAP,
                     }
-                },
+                ),
             ],
             [
-                {
-                    "model_data": {
+                make_fake_record(
+                    model_data={
                         "prompt": _PROMPT_WITH_LEADIN_0,
                         "answer_symbol_ids": _ANSWER_TOKEN_MAP,
                         "logits": [
@@ -546,9 +545,9 @@ def test_benchmark_record_transform(
                             ]
                         ],
                     },
-                },
-                {
-                    "model_data": {
+                ),
+                make_fake_record(
+                    model_data={
                         "prompt": _PROMPT_WITH_LEADIN_1,
                         "answer_symbol_ids": _ANSWER_TOKEN_MAP,
                         "logits": [
@@ -562,7 +561,7 @@ def test_benchmark_record_transform(
                             ]
                         ],
                     },
-                },
+                ),
             ],
         ),
     ],

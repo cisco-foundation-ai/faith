@@ -40,7 +40,7 @@ class _RecordReconciliation(
             return (RecordStatus.DIRTY, new)
         if (
             self._strategy == ReplacementStrategy.IF_DATA_HASH_DIFFERS
-            and existing["metadata"]["data_hash"] != new["metadata"]["data_hash"]
+            and existing.metadata["data_hash"] != new.metadata["data_hash"]
         ):
             return (RecordStatus.DIRTY, new)
         return (RecordStatus.CLEAN, existing)
@@ -51,5 +51,5 @@ def reconcile_records(
 ) -> Transform[Record, tuple[RecordStatus, Record]]:
     """Creates a transform that reconciles a new record stream with existing records."""
     return LeftJoinTransform(
-        existing, on_key=lambda record: record["data"]["benchmark_sample_hash"]
+        existing, on_key=lambda record: record.data.benchmark_sample_hash
     ) | _RecordReconciliation(strategy)

@@ -22,7 +22,6 @@ from tqdm import tqdm
 from transformers import PreTrainedTokenizerBase
 
 from faith import __version__
-from faith._internal.algo.hash import dict_sha256
 from faith._internal.functools.compose import compose
 from faith._internal.io.datastore import Datastore, DatastoreContext
 from faith._internal.io.json import write_as_json
@@ -84,7 +83,7 @@ def current_timestamp() -> str:
 def read_trial_log(trial_log_path: Path) -> Iterable[Record]:
     """Read the trial log records from the given path."""
     if trial_log_path.exists():
-        return load_records_from_json(trial_log_path)
+        return [Record.from_dict(d) for d in load_records_from_json(trial_log_path)]
     return []  # No records if the log file doesn't exist yet.
 
 
@@ -122,7 +121,7 @@ class BenchmarkRecordTransform(Mapping[PromptRecord, Record]):
         return Record(
             metadata={
                 "version": self._bench_version,
-                "data_hash": dict_sha256(element),
+                "data_hash": element.sha256(),
             },
             data=element,
             model_data={
@@ -166,18 +165,18 @@ class _LogitsTransform(_PredictionTransform):
         """Generate the next-token logits for each input in `records`."""
         inputs = list(records)
         logit_responses = self._model.logits(
-            inputs=[example["model_data"]["prompt"] for example in inputs],
+            inputs=[example.model_data["prompt"] for example in inputs],
             temperature=self._gen_params.temperature,
             top_p=self._gen_params.top_p,
             **self._gen_params.kwargs,
         )
         for record, logit_response in zip(inputs, logit_responses):
             if isinstance(logit_response, list):
-                record["model_data"]["logits"] = [
+                record.model_data["logits"] = [
                     [tp.to_dict() for tp in tok_dist] for tok_dist in logit_response
                 ]
             elif isinstance(logit_response, GenerationError):
-                record["model_data"]["error"] = logit_response.to_dict()
+                record.model_data["error"] = logit_response.to_dict()
             yield record
 
 
@@ -188,16 +187,16 @@ class _NextTokenTransform(_PredictionTransform):
         """Generate next token predictions for each input in `records`."""
         inputs = list(records)
         responses = self._model.next_token(
-            inputs=[example["model_data"]["prompt"] for example in inputs],
+            inputs=[example.model_data["prompt"] for example in inputs],
             temperature=self._gen_params.temperature,
             top_p=self._gen_params.top_p,
             **self._gen_params.kwargs,
         )
         for record, response in zip(inputs, responses):
             if isinstance(response, ChatResponse):
-                record["model_data"]["next_token"] = response.to_dict()
+                record.model_data["next_token"] = response.to_dict()
             elif isinstance(response, GenerationError):
-                record["model_data"]["error"] = response.to_dict()
+                record.model_data["error"] = response.to_dict()
             yield record
 
 
@@ -208,7 +207,7 @@ class _GenerationTransform(_PredictionTransform):
         """Generate chat completion responses for each input in `records`."""
         inputs = list(records)
         responses = self._model.query(
-            inputs=[example["model_data"]["prompt"] for example in inputs],
+            inputs=[example.model_data["prompt"] for example in inputs],
             temperature=self._gen_params.temperature,
             max_completion_tokens=self._gen_params.max_completion_tokens,
             top_p=self._gen_params.top_p,
@@ -216,9 +215,9 @@ class _GenerationTransform(_PredictionTransform):
         )
         for record, response in zip(inputs, responses):
             if isinstance(response, ChatResponse):
-                record["model_data"]["chat_comp"] = response.to_dict()
+                record.model_data["chat_comp"] = response.to_dict()
             elif isinstance(response, GenerationError):
-                record["model_data"]["error"] = response.to_dict()
+                record.model_data["error"] = response.to_dict()
             yield record
 
 

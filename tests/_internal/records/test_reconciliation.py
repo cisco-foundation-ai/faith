@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from typing import Any
 
 import pytest
 
@@ -11,19 +10,19 @@ from faith._internal.records.reconciliation import (
     reconcile_records,
 )
 from faith._internal.records.types import Record, RecordStatus
+from tests.benchmark.categories.fake_record_maker import make_fake_record
 
 CLEAN = RecordStatus.CLEAN
 DIRTY = RecordStatus.DIRTY
 
 
-def _rec(sample_hash: str, data_hash: str, **extra: Any) -> Record:
+def _rec(sample_hash: str, data_hash: str, *, question: str = "") -> Record:
     """Build a minimal record for testing."""
-    return {
-        "metadata": {"data_hash": data_hash, "version": "v0.0.7"},
-        "data": {"benchmark_sample_hash": sample_hash, **extra},
-        "model_data": {"prompt": "The quick brown", "answer_symbol_ids": {}},
-        "stats": None,
-    }
+    return make_fake_record(
+        metadata={"data_hash": data_hash, "version": "v0.0.7"},
+        data={"benchmark_sample_hash": sample_hash, "question": question},
+        model_data={"prompt": "The quick brown", "answer_symbol_ids": {}},
+    )
 
 
 @pytest.mark.parametrize(
@@ -33,14 +32,14 @@ def _rec(sample_hash: str, data_hash: str, **extra: Any) -> Record:
         ([], [_rec("a", "h1")], [(DIRTY, _rec("a", "h1"))]),
         ([_rec("a", "h1")], [], []),
         (
-            [_rec("a", "h1", v="old")],
-            [_rec("a", "h1", v="new")],
-            [(CLEAN, _rec("a", "h1", v="old"))],
+            [_rec("a", "h1", question="old")],
+            [_rec("a", "h1", question="new")],
+            [(CLEAN, _rec("a", "h1", question="old"))],
         ),
         (
-            [_rec("a", "h_old", v="old")],
-            [_rec("a", "h_new", v="new")],
-            [(CLEAN, _rec("a", "h_old", v="old"))],
+            [_rec("a", "h_old", question="old")],
+            [_rec("a", "h_new", question="new")],
+            [(CLEAN, _rec("a", "h_old", question="old"))],
         ),
         (
             [_rec("a", "h1")],
@@ -85,19 +84,19 @@ def test_strategy_never(
         ([], [_rec("a", "h1")], [(DIRTY, _rec("a", "h1"))]),
         ([_rec("a", "h1")], [], []),
         (
-            [_rec("a", "h1", v="old")],
-            [_rec("a", "h1", v="new")],
-            [(DIRTY, _rec("a", "h1", v="new"))],
+            [_rec("a", "h1", question="old")],
+            [_rec("a", "h1", question="new")],
+            [(DIRTY, _rec("a", "h1", question="new"))],
         ),
         (
-            [_rec("a", "h_old", v="old")],
-            [_rec("a", "h_new", v="new")],
-            [(DIRTY, _rec("a", "h_new", v="new"))],
+            [_rec("a", "h_old", question="old")],
+            [_rec("a", "h_new", question="new")],
+            [(DIRTY, _rec("a", "h_new", question="new"))],
         ),
         (
-            [_rec("a", "h1", v="old")],
-            [_rec("a", "h1", v="new"), _rec("b", "h2")],
-            [(DIRTY, _rec("a", "h1", v="new")), (DIRTY, _rec("b", "h2"))],
+            [_rec("a", "h1", question="old")],
+            [_rec("a", "h1", question="new"), _rec("b", "h2")],
+            [(DIRTY, _rec("a", "h1", question="new")), (DIRTY, _rec("b", "h2"))],
         ),
     ],
     ids=[
@@ -127,14 +126,14 @@ def test_strategy_always(
         ([], [_rec("a", "h1")], [(DIRTY, _rec("a", "h1"))]),
         ([_rec("a", "h1")], [], []),
         (
-            [_rec("a", "h1", v="old")],
-            [_rec("a", "h1", v="new")],
-            [(CLEAN, _rec("a", "h1", v="old"))],
+            [_rec("a", "h1", question="old")],
+            [_rec("a", "h1", question="new")],
+            [(CLEAN, _rec("a", "h1", question="old"))],
         ),
         (
-            [_rec("a", "h_old", v="old")],
-            [_rec("a", "h_new", v="new")],
-            [(DIRTY, _rec("a", "h_new", v="new"))],
+            [_rec("a", "h_old", question="old")],
+            [_rec("a", "h_new", question="new")],
+            [(DIRTY, _rec("a", "h_new", question="new"))],
         ),
         (
             [_rec("a", "h1"), _rec("b", "h_old")],

@@ -2,10 +2,16 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from typing import Any, TypedDict
+from dataclasses import dataclass
+from typing import Any
+
+from dataclasses_json import DataClassJsonMixin
+
+from faith._internal.algo.hash import dict_sha256
 
 
-class PromptRecord(TypedDict):
+@dataclass
+class PromptRecord(DataClassJsonMixin):
     """Base class for benchmark examples."""
 
     # Metadata about the benchmark sample.
@@ -29,4 +35,8 @@ class PromptRecord(TypedDict):
 
     # Any additional data associated with this example that is stored alongside it
     # for context or as part of subsequent metric computations.
-    ancillary_data: dict[str, Any] | None
+    ancillary_data: dict[str, Any] | None = None
+
+    def sha256(self) -> str:
+        """Compute the SHA-256 hash of this example."""
+        return dict_sha256(self.to_dict())
