@@ -119,7 +119,7 @@ class BigQueryClient:
             dataset_id: BigQuery dataset name
             table_id: BigQuery table name (default: "metrics")
         """
-        self.client = bigquery.Client(project=project_id)
+        self._client = bigquery.Client(project=project_id)
         self._table_ref = f"{project_id}.{dataset_id}.{table_id}"
         self._ensure_table_exists()
 
@@ -144,33 +144,26 @@ class BigQueryClient:
         except NotFound:
             pass
 
-        # Create table with schema
+        # Configure and create the table.
         table = bigquery.Table(self.table_ref, schema=METRICS_SCHEMA)
-
-        # Partition by ingest_time (daily partitions)
         table.time_partitioning = bigquery.TimePartitioning(
             type_=bigquery.TimePartitioningType.DAY, field="ingest_time"
         )
-
-        # Cluster by commonly queried columns
         table.clustering_fields = ["benchmark", "model_key", "metric_name"]
-
-        table = self.client.create_table(table)
+        self.client.create_table(table)
 
     def check_metrics_file_exists(self, metrics_file_uri: str) -> bool:
         """Check if metrics from a given file URI have already been ingested.
 
         This provides simple idempotency protection to prevent duplicate ingestion.
+        metrics_file_uri uniquely identifies each experiment run
+        (model + benchmark + generation parameters).
 
         Args:
             metrics_file_uri: Metrics file URI to check
 
         Returns:
             True if file has been ingested, False otherwise
-
-        Note:
-            metrics_file_uri uniquely identifies each experiment run
-            (model + benchmark + generation parameters).
         """
         result = self.client.query(
             f"""
@@ -208,7 +201,6 @@ class BigQueryClient:
         if not metrics:
             return 0
 
-        # Check for duplicates if requested
         if check_duplicates and metrics:
             metrics_file_uri = metrics[0].get("metrics_file_uri")
             if metrics_file_uri and self.check_metrics_file_exists(metrics_file_uri):
@@ -217,7 +209,7 @@ class BigQueryClient:
                     "Delete existing rows or use check_duplicates=False."
                 )
 
-        # Load data using Load Jobs (atomic, all-or-nothing)
+        # Atomically load the metrics into the bigquery table and wait for completion.
         # If job fails, GoogleAPIError is raised and no rows are inserted
         self.client.load_table_from_json(metrics, self.table_ref).result()
 
