@@ -6,7 +6,5 @@
 model:
   path: meta-llama/Llama-4-Scout-17B-16E-Instruct
   name: Llama-4-Scout-17B-16E-Instruct
-  engine:
-    engine_type: vllm
-    context_length: 65536
+  engine: !from '$MODELS_ROOT/default_engines.yaml["vllm-engine"]'
   generation: !from '$MODELS_ROOT/default_generation.yaml["instruct"]'

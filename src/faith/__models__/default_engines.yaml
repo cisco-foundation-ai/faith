@@ -5,10 +5,10 @@
 ---
 openai-engine:
   engine_type: openai
-  context_length: 8192
+  context_length: 65536
   kwargs:
     api_num_threads: 50
 
 vllm-engine:
   engine_type: vllm
-  context_length: 8192
+  context_length: 65536
