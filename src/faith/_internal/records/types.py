@@ -2,12 +2,14 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import StrEnum, auto
 from typing import Any, NotRequired, TypeAlias, TypedDict
 
-from dataclasses_json import DataClassJsonMixin
+from dataclasses_json import DataClassJsonMixin, config
 
+from faith._internal.algo.matching import AnswerFormat
+from faith._internal.metrics.types import Labeling
 from faith._types.records.prompt_record import PromptRecord
 
 ChatConversation: TypeAlias = list[dict[str, str]]
@@ -40,13 +42,29 @@ class _ModelData(TypedDict):
 
 
 @dataclass
+class RecordStats(DataClassJsonMixin):
+    """Statistics computed for a single record by a log grader."""
+
+    label: Labeling | None
+    prediction: Labeling | None
+    answer_format: AnswerFormat = field(
+        metadata=config(decoder=AnswerFormat.from_string, encoder=str)
+    )
+    subject: str | None = None
+    log_probs: dict[str, float] | None = None
+    num_output_tokens: int | None = None
+    max_token_halt: bool | None = None
+    scores: dict[str, Any] | None = None
+
+
+@dataclass
 class Record(DataClassJsonMixin):
     """Represents a log record used to track individual queries to a model."""
 
     metadata: _Metadata
     data: PromptRecord
     model_data: _ModelData
-    stats: dict[str, Any] | None = None
+    stats: RecordStats | None = None
 
 
 class RecordStatus(StrEnum):

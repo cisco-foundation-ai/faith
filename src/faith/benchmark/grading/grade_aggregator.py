@@ -7,11 +7,13 @@
 from abc import abstractmethod
 from collections import defaultdict
 from collections.abc import Iterable, Sequence
+from dataclasses import fields
 from typing import Any
 
 import numpy as np
 
 from faith._internal.iter.transform import Reducer
+from faith._internal.records.types import RecordStats
 from faith._internal.types.configs import Configuration
 from faith._internal.types.stats import MetricSummary
 from faith._internal.types.validation import assert_same_length
@@ -19,7 +21,7 @@ from faith.benchmark.scores.domain_specific import DomainSpecificScore
 from faith.benchmark.scores.types import Score
 
 
-class GradeAggregator(Reducer[dict[str, Any] | None, MetricSummary]):
+class GradeAggregator(Reducer[RecordStats | None, MetricSummary]):
     """Base class for aggregating benchmark grades from benchmark logs."""
 
     def __init__(self, output_processing_config: Configuration) -> None:
@@ -29,7 +31,7 @@ class GradeAggregator(Reducer[dict[str, Any] | None, MetricSummary]):
             **(output_processing_config.get("score_fns") or {})
         )
 
-    def __call__(self, stats_logs: Iterable[dict[str, Any] | None]) -> MetricSummary:
+    def __call__(self, stats_logs: Iterable[RecordStats | None]) -> MetricSummary:
         """Reduce the collected statistics to their overall benchmark metrics."""
         test_stats = GradeAggregator._stats_transpose(stats_logs)
         logit_stats = (
@@ -41,14 +43,16 @@ class GradeAggregator(Reducer[dict[str, Any] | None, MetricSummary]):
 
     @staticmethod
     def _stats_transpose(
-        stats_logs: Iterable[dict[str, Any] | None],
+        stats_logs: Iterable[RecordStats | None],
     ) -> dict[str, Sequence[Any]]:
-        """Transpose the 'stats' dictionary in `logs` to a dictionary of lists."""
-        transposed_stats = defaultdict(list)
+        """Transpose the 'stats' dataclass fields in `logs` to a dictionary of lists."""
+        transposed_stats: dict[str, list[Any]] = defaultdict(list)
         for stats in stats_logs:
-            for key, value in (stats or {}).items():
-                transposed_stats[key].append(value)
-        return dict(transposed_stats)
+            for key in ({f.name for f in fields(stats)} if stats else set()):
+                transposed_stats[key].append(getattr(stats, key))
+        return {
+            k: v for k, v in transposed_stats.items() if any(x is not None for x in v)
+        }
 
     @staticmethod
     def _logits_stats(

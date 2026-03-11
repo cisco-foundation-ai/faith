@@ -22,7 +22,7 @@ from faith._internal.metrics.aggregations import (
     is_breakdown_dict,
 )
 from faith._internal.records.io import load_records_from_json
-from faith._internal.records.types import Record
+from faith._internal.records.types import Record, RecordStats
 from faith._internal.types.stats import MetricSummary
 from faith.benchmark.benchmark import Benchmark, BenchmarkSpec
 from faith.benchmark.load import load_benchmark
@@ -93,7 +93,7 @@ def compute_experiment_metrics(
                 if annotate_prediction_stats
                 else IdentityTransform[Record]()
             )
-            >> GetAttrTransform[Record, dict[str, Any]]("stats")
+            >> GetAttrTransform[Record, RecordStats | None]("stats")
             >> benchmark.grade_aggregator()
         ).get("query_count", 0)
         > 0

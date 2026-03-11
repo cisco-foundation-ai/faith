@@ -12,6 +12,7 @@ from datasets import Dataset, DatasetDict, Features, Value
 
 from faith import __version__
 from faith._internal.algo.matching import AnswerFormat
+from faith._internal.records.types import RecordStats
 from faith._internal.types.flags import GenerationMode, SampleRatio
 from faith.benchmark.benchmark import BenchmarkSpec
 from faith.benchmark.categories.long_answer import LABenchmark
@@ -668,13 +669,14 @@ SUMMARY: [your summary text]""",
         ]
         >> log_grader
     ] == [
-        {
-            "answer_format": AnswerFormat.PROPER,
-            "label": "foo",
-            "max_token_halt": False,
-            "num_output_tokens": 3,
-            "prediction": "Answer: foo",
-            "scores": {
+        RecordStats(
+            label="foo",
+            prediction="Answer: foo",
+            answer_format=AnswerFormat.PROPER,
+            subject="bar",
+            num_output_tokens=3,
+            max_token_halt=False,
+            scores={
                 "llm_grade": {
                     "value": pytest.approx(7 / 9),
                     "raw_value": 8.0,
@@ -682,15 +684,15 @@ SUMMARY: [your summary text]""",
                     "full_response": "SCORE: 8\n\nSUMMARY: fake response",
                 },
             },
-            "subject": "bar",
-        },
-        {
-            "answer_format": AnswerFormat.PROPER,
-            "label": "foo",
-            "max_token_halt": True,
-            "num_output_tokens": 3,
-            "prediction": "",
-            "scores": {
+        ),
+        RecordStats(
+            label="foo",
+            prediction="",
+            answer_format=AnswerFormat.PROPER,
+            subject="bar",
+            num_output_tokens=3,
+            max_token_halt=True,
+            scores={
                 "llm_grade": {
                     "value": pytest.approx(7 / 9),
                     "raw_value": 8.0,
@@ -698,15 +700,14 @@ SUMMARY: [your summary text]""",
                     "full_response": "SCORE: 8\n\nSUMMARY: fake response",
                 },
             },
-            "subject": "bar",
-        },
-        {
-            "answer_format": AnswerFormat.PROPER,
-            "label": "bar",
-            "max_token_halt": False,
-            "num_output_tokens": 5,
-            "prediction": "<answer>BaZ</answer>",
-            "scores": {
+        ),
+        RecordStats(
+            label="bar",
+            prediction="<answer>BaZ</answer>",
+            answer_format=AnswerFormat.PROPER,
+            num_output_tokens=5,
+            max_token_halt=False,
+            scores={
                 "llm_grade": {
                     "value": pytest.approx(7 / 9),
                     "raw_value": 8.0,
@@ -714,8 +715,7 @@ SUMMARY: [your summary text]""",
                     "full_response": "SCORE: 8\n\nSUMMARY: fake response",
                 },
             },
-            "subject": None,
-        },
+        ),
     ]
 
 
@@ -813,13 +813,13 @@ SUMMARY: [your summary text]""",
     }
 
     assert [
-        {
-            "label": "foo bar",
-            "max_token_halt": False,
-            "num_output_tokens": 4,
-            "prediction": "foo bar baz",
-            "answer_format": AnswerFormat.PROPER,
-            "scores": {
+        RecordStats(
+            label="foo bar",
+            prediction="foo bar baz",
+            answer_format=AnswerFormat.PROPER,
+            num_output_tokens=4,
+            max_token_halt=False,
+            scores={
                 "llm_grade": {
                     "value": 0.8,
                     "raw_value": 8.0,
@@ -827,14 +827,14 @@ SUMMARY: [your summary text]""",
                     "max_value": 10.0,
                 },
             },
-        },
-        {
-            "label": "a b c d",
-            "max_token_halt": False,
-            "num_output_tokens": 5,
-            "prediction": "a b c d e",
-            "answer_format": AnswerFormat.PROPER,
-            "scores": {
+        ),
+        RecordStats(
+            label="a b c d",
+            prediction="a b c d e",
+            answer_format=AnswerFormat.PROPER,
+            num_output_tokens=5,
+            max_token_halt=False,
+            scores={
                 "llm_grade": {
                     "value": 1.0,
                     "raw_value": 5.0,
@@ -842,14 +842,14 @@ SUMMARY: [your summary text]""",
                     "max_value": 5.0,
                 },
             },
-        },
-        {
-            "label": "one two three",
-            "max_token_halt": False,
-            "num_output_tokens": 6,
-            "prediction": "ooops",
-            "answer_format": AnswerFormat.PROPER,
-            "scores": {
+        ),
+        RecordStats(
+            label="one two three",
+            prediction="ooops",
+            answer_format=AnswerFormat.PROPER,
+            num_output_tokens=6,
+            max_token_halt=False,
+            scores={
                 "llm_grade": {
                     "value": 0.1,
                     "raw_value": 2.0,
@@ -857,7 +857,7 @@ SUMMARY: [your summary text]""",
                     "max_value": 11.0,
                 },
             },
-        },
+        ),
     ] >> aggregator == {
         "format_count": {
             "improper": 0,

@@ -3,13 +3,13 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from pathlib import Path
-from typing import Any, cast
 from unittest.mock import ANY
 
 import pytest
 from transformers import AutoTokenizer
 
 from faith._internal.algo.matching import AnswerFormat
+from faith._internal.records.types import RecordStats
 from faith._internal.types.flags import GenerationMode, SampleRatio
 from faith.benchmark.benchmark import BenchmarkSpec
 from faith.benchmark.categories.multiple_choice import MCBenchmark
@@ -511,17 +511,16 @@ Choices:
         ]
         >> logits_log_grader
     ] == [
-        {
-            "answer_format": AnswerFormat.PROPER,
-            "label": "A",
-            "log_probs": {
+        RecordStats(
+            label="A",
+            prediction="B",
+            answer_format=AnswerFormat.PROPER,
+            log_probs={
                 "label": pytest.approx(-2.0),
                 "max_other_symbol": pytest.approx(-1.5),
                 "max_other_token": pytest.approx(-1.0),
             },
-            "prediction": "B",
-            "subject": None,
-        }
+        ),
     ]
     assert [
         log.stats
@@ -570,45 +569,42 @@ Choices:
         ]
         >> logits_log_grader
     ] == [
-        {
-            "answer_format": AnswerFormat.PROPER,
-            "label": "A",
-            "log_probs": {
+        RecordStats(
+            label="A",
+            prediction="A",
+            answer_format=AnswerFormat.PROPER,
+            subject="frankenfood",
+            log_probs={
                 "label": pytest.approx(-0.5),
                 "max_other_symbol": pytest.approx(-1.5),
                 "max_other_token": pytest.approx(-1.5),
             },
-            "prediction": "A",
-            "subject": "frankenfood",
-        },
-        {
-            "answer_format": AnswerFormat.PROPER,
-            "label": "B",
-            "log_probs": {
+        ),
+        RecordStats(
+            label="B",
+            prediction="B",
+            answer_format=AnswerFormat.PROPER,
+            log_probs={
                 "label": pytest.approx(-1.5),
                 "max_other_symbol": pytest.approx(float("-inf")),
                 "max_other_token": pytest.approx(-1.0),
             },
-            "prediction": "B",
-            "subject": None,
-        },
-        {
-            "answer_format": AnswerFormat.INVALID,
-            "label": "A",
-            "log_probs": {
+        ),
+        RecordStats(
+            label="A",
+            prediction=None,
+            answer_format=AnswerFormat.INVALID,
+            log_probs={
                 "label": pytest.approx(float("-inf")),
                 "max_other_symbol": pytest.approx(float("-inf")),
                 "max_other_token": pytest.approx(-2.0),
             },
-            "prediction": None,
-            "subject": None,
-        },
-        {
-            "answer_format": AnswerFormat.INVALID,
-            "label": "A",
-            "prediction": None,
-            "subject": None,
-        },
+        ),
+        RecordStats(
+            label="A",
+            prediction=None,
+            answer_format=AnswerFormat.INVALID,
+        ),
     ]
 
     # Test for a benchmark with next token generation mode.
@@ -641,12 +637,11 @@ Choices:
         ]
         >> next_token_log_grader
     ] == [
-        {
-            "answer_format": AnswerFormat.PROPER,
-            "label": "A",
-            "prediction": "A",
-            "subject": None,
-        }
+        RecordStats(
+            label="A",
+            prediction="A",
+            answer_format=AnswerFormat.PROPER,
+        ),
     ]
     assert [
         log.stats
@@ -654,11 +649,11 @@ Choices:
             make_fake_record(
                 data={"label": "B", "subject": "octothorpes"},
                 model_data={"next_token": {"output_text": "B"}},
-                stats={
-                    "label": "B",
-                    "prediction": "C",
-                    "answer_format": AnswerFormat.IMPROPER,
-                },
+                stats=RecordStats(
+                    label="B",
+                    prediction="C",
+                    answer_format=AnswerFormat.IMPROPER,
+                ),
             ),
             make_fake_record(
                 data={"label": "A"},
@@ -679,36 +674,34 @@ Choices:
         ]
         >> next_token_log_grader
     ] == [
-        {
-            "answer_format": AnswerFormat.PROPER,
-            "label": "B",
-            "prediction": "B",
-            "subject": "octothorpes",
-        },
-        {
-            "answer_format": AnswerFormat.PROPER,
-            "label": "A",
-            "prediction": "B",
-            "subject": None,
-        },
-        {
-            "answer_format": AnswerFormat.PROPER,
-            "label": "B",
-            "prediction": "B",
-            "subject": None,
-        },
-        {
-            "answer_format": AnswerFormat.INVALID,
-            "label": "A",
-            "prediction": None,
-            "subject": "octothorpes",
-        },
-        {
-            "answer_format": AnswerFormat.INVALID,
-            "label": "A",
-            "prediction": None,
-            "subject": "octothorpes",
-        },
+        RecordStats(
+            label="B",
+            prediction="B",
+            answer_format=AnswerFormat.PROPER,
+            subject="octothorpes",
+        ),
+        RecordStats(
+            label="A",
+            prediction="B",
+            answer_format=AnswerFormat.PROPER,
+        ),
+        RecordStats(
+            label="B",
+            prediction="B",
+            answer_format=AnswerFormat.PROPER,
+        ),
+        RecordStats(
+            label="A",
+            prediction=None,
+            answer_format=AnswerFormat.INVALID,
+            subject="octothorpes",
+        ),
+        RecordStats(
+            label="A",
+            prediction=None,
+            answer_format=AnswerFormat.INVALID,
+            subject="octothorpes",
+        ),
     ]
 
     # Test for a benchmark with chat-completion generation mode.
@@ -745,11 +738,11 @@ Choices:
                 },
             ),
             make_fake_record(
-                stats={
-                    "answer_format": "improper",
-                    "label": "B",
-                    "prediction": "C",
-                }
+                stats=RecordStats(
+                    label="B",
+                    prediction="C",
+                    answer_format=AnswerFormat.IMPROPER,
+                ),
             ),
             make_fake_record(
                 data={"label": "B"},
@@ -765,27 +758,25 @@ Choices:
         ]
         >> chat_log_grader
     ] == [
-        {
-            "answer_format": AnswerFormat.PROPER,
-            "label": "A",
-            "max_token_halt": False,
-            "num_output_tokens": 3,
-            "prediction": "A",
-            "subject": None,
-        },
-        {
-            "answer_format": AnswerFormat.IMPROPER,
-            "label": "B",
-            "prediction": "C",
-        },
-        {
-            "answer_format": AnswerFormat.INVALID,
-            "label": "B",
-            "max_token_halt": True,
-            "num_output_tokens": 7,
-            "prediction": None,
-            "subject": None,
-        },
+        RecordStats(
+            label="A",
+            prediction="A",
+            answer_format=AnswerFormat.PROPER,
+            num_output_tokens=3,
+            max_token_halt=False,
+        ),
+        RecordStats(
+            label="B",
+            prediction="C",
+            answer_format=AnswerFormat.IMPROPER,
+        ),
+        RecordStats(
+            label="B",
+            prediction=None,
+            answer_format=AnswerFormat.INVALID,
+            num_output_tokens=7,
+            max_token_halt=True,
+        ),
     ]
     assert [
         log.stats
@@ -830,38 +821,34 @@ Choices:
         ]
         >> chat_log_grader
     ] == [
-        {
-            "answer_format": AnswerFormat.PROPER,
-            "label": "A",
-            "max_token_halt": False,
-            "num_output_tokens": 4,
-            "prediction": "A",
-            "subject": None,
-        },
-        {
-            "answer_format": AnswerFormat.IMPROPER,
-            "label": "B",
-            "max_token_halt": True,
-            "num_output_tokens": 17,
-            "prediction": "A",
-            "subject": None,
-        },
-        {
-            "answer_format": AnswerFormat.INVALID,
-            "label": "A",
-            "max_token_halt": False,
-            "num_output_tokens": 10,
-            "prediction": None,
-            "subject": None,
-        },
-        {
-            "answer_format": AnswerFormat.INVALID,
-            "label": "A",
-            "max_token_halt": False,
-            "num_output_tokens": 0,
-            "prediction": None,
-            "subject": None,
-        },
+        RecordStats(
+            label="A",
+            prediction="A",
+            answer_format=AnswerFormat.PROPER,
+            num_output_tokens=4,
+            max_token_halt=False,
+        ),
+        RecordStats(
+            label="B",
+            prediction="A",
+            answer_format=AnswerFormat.IMPROPER,
+            num_output_tokens=17,
+            max_token_halt=True,
+        ),
+        RecordStats(
+            label="A",
+            prediction=None,
+            answer_format=AnswerFormat.INVALID,
+            num_output_tokens=10,
+            max_token_halt=False,
+        ),
+        RecordStats(
+            label="A",
+            prediction=None,
+            answer_format=AnswerFormat.INVALID,
+            num_output_tokens=0,
+            max_token_halt=False,
+        ),
     ]
 
 
@@ -946,55 +933,52 @@ Choices:
         "weighted_avg_f1": pytest.approx(float("nan"), nan_ok=True),
     }
 
-    assert cast(
-        list[dict[str, Any]],
-        [
-            {
-                "label": "A",
-                "log_probs": {
-                    "label": -2.0,
-                    "max_other_symbol": -1.5,
-                    "max_other_token": -1.0,
-                },
-                "prediction": "B",
-                "answer_format": AnswerFormat.PROPER,
-                "subject": "bumbershoots",
+    assert [
+        RecordStats(
+            label="A",
+            log_probs={
+                "label": -2.0,
+                "max_other_symbol": -1.5,
+                "max_other_token": -1.0,
             },
-            {
-                "label": "B",
-                "log_probs": {
-                    "label": -0.5,
-                    "max_other_symbol": -1.5,
-                    "max_other_token": -1.0,
-                },
-                "prediction": "B",
-                "answer_format": AnswerFormat.PROPER,
-                "subject": "bumbershoots",
+            prediction="B",
+            answer_format=AnswerFormat.PROPER,
+            subject="bumbershoots",
+        ),
+        RecordStats(
+            label="B",
+            log_probs={
+                "label": -0.5,
+                "max_other_symbol": -1.5,
+                "max_other_token": -1.0,
             },
-            {
-                "label": "B",
-                "log_probs": {
-                    "label": -1.5,
-                    "max_other_symbol": -1.0,
-                    "max_other_token": float("-inf"),
-                },
-                "prediction": "A",
-                "answer_format": AnswerFormat.IMPROPER,
-                "subject": "blabberdash",
+            prediction="B",
+            answer_format=AnswerFormat.PROPER,
+            subject="bumbershoots",
+        ),
+        RecordStats(
+            label="B",
+            log_probs={
+                "label": -1.5,
+                "max_other_symbol": -1.0,
+                "max_other_token": float("-inf"),
             },
-            {
-                "label": "A",
-                "log_probs": {
-                    "label": float("-inf"),
-                    "max_other_symbol": float("-inf"),
-                    "max_other_token": -0.25,
-                },
-                "prediction": None,
-                "answer_format": AnswerFormat.INVALID,
-                "subject": "blabberdash",
+            prediction="A",
+            answer_format=AnswerFormat.IMPROPER,
+            subject="blabberdash",
+        ),
+        RecordStats(
+            label="A",
+            log_probs={
+                "label": float("-inf"),
+                "max_other_symbol": float("-inf"),
+                "max_other_token": -0.25,
             },
-        ],
-    ) >> metric_aggregator == {
+            prediction=None,
+            answer_format=AnswerFormat.INVALID,
+            subject="blabberdash",
+        ),
+    ] >> metric_aggregator == {
         "accuracy": pytest.approx(1 / 4),
         "accuracy_per_subject": {
             "bumbershoots": pytest.approx(1 / 2),
@@ -1125,30 +1109,30 @@ Choices:
     }
 
     assert [
-        {
-            "label": "A",
-            "max_token_halt": False,
-            "num_output_tokens": 3,
-            "prediction": "B",
-            "answer_format": AnswerFormat.PROPER,
-            "subject": "bumbershoots",
-        },
-        {
-            "label": "B",
-            "max_token_halt": False,
-            "num_output_tokens": 41,
-            "prediction": "B",
-            "answer_format": AnswerFormat.PROPER,
-            "subject": "bumbershoots",
-        },
-        {
-            "label": "B",
-            "max_token_halt": False,
-            "num_output_tokens": 4,
-            "prediction": "A",
-            "answer_format": AnswerFormat.IMPROPER,
-            "subject": "blabberdash",
-        },
+        RecordStats(
+            label="A",
+            max_token_halt=False,
+            num_output_tokens=3,
+            prediction="B",
+            answer_format=AnswerFormat.PROPER,
+            subject="bumbershoots",
+        ),
+        RecordStats(
+            label="B",
+            max_token_halt=False,
+            num_output_tokens=41,
+            prediction="B",
+            answer_format=AnswerFormat.PROPER,
+            subject="bumbershoots",
+        ),
+        RecordStats(
+            label="B",
+            max_token_halt=False,
+            num_output_tokens=4,
+            prediction="A",
+            answer_format=AnswerFormat.IMPROPER,
+            subject="blabberdash",
+        ),
     ] >> metric_aggregator == {
         "accuracy": pytest.approx(1 / 3),
         "accuracy_per_subject": {

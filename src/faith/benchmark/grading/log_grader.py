@@ -11,7 +11,6 @@ from typing import Any
 
 from tqdm import tqdm
 
-from faith._internal.algo.matching import AnswerFormat
 from faith._internal.iter.transform import IsoTransform
 from faith._internal.metrics.types import Labeling
 from faith._internal.records.types import Record
@@ -52,32 +51,18 @@ class LogGrader(IsoTransform[Record]):
         """Markup a single log entry with the computed statistics / scores."""
         if not log_entry.stats or self._recompute_stats:
             return self._markup_entry_impl(log_entry)
-        return self._normalize_entry(log_entry)
+        return log_entry
 
     def _custom_scores(
         self, label: Labeling | None, pred: Labeling | None, **kwargs: Any
-    ) -> dict[str, dict[str, Score]]:
+    ) -> dict[str, Score] | None:
         """Return the custom scores defined in the output processing config."""
         if len(self._score_fns) == 0:
-            return {}
+            return None
         return {
-            "scores": {
-                name: score_fn(label, pred, **kwargs)
-                for name, score_fn in self._score_fns.items()
-            },
+            name: score_fn(label, pred, **kwargs)
+            for name, score_fn in self._score_fns.items()
         }
-
-    def _normalize_entry(self, log_entry: Record) -> Record:
-        """Normalize the log entry to ensure consistent typing."""
-        if (
-            log_entry.stats is not None
-            and "answer_format" in log_entry.stats
-            and isinstance(log_entry.stats["answer_format"], str)
-        ):
-            log_entry.stats["answer_format"] = AnswerFormat.from_string(
-                log_entry.stats["answer_format"]
-            )
-        return log_entry
 
     @abstractmethod
     def _markup_entry_impl(self, log_entry: Record) -> Record:
