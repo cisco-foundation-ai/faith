@@ -29,12 +29,12 @@ class LogitsLogGrader(LogGrader):
         extracted_pred: str | None = None
         answer_format = AnswerFormat.INVALID
         log_probs: dict[str, float] | None = None
-        if label is not None and (logits := log_entry.model_data.get("logits")):
+        if label is not None and (logits := log_entry.model_data.logits):
             # TODO(https://github.com/cisco-foundation-ai/faith/issues/26):
             # Handle multiple logits entries; currently assumes only one entry.
             first_token_logits = logits[0] if len(logits) > 0 else []
             id_to_logit = {log["token_id"]: log for log in first_token_logits}
-            answer_symbol_ids = log_entry.model_data["answer_symbol_ids"]
+            answer_symbol_ids = log_entry.model_data.answer_symbol_ids
             symbol_to_logit = {
                 symbol: id_to_logit[symbol_id]
                 for symbol, symbol_id in answer_symbol_ids.items()
@@ -100,7 +100,7 @@ class NextTokenLogGrader(LogGrader):
         label: Labeling | None = log_entry.data.label
         extracted_pred: Labeling | None = None
         answer_format = AnswerFormat.INVALID
-        if next_token := log_entry.model_data.get("next_token", {}).get("output_text"):
+        if next_token := (log_entry.model_data.next_token or {}).get("output_text"):
             match = re.findall(
                 rf"\b({'|'.join(sorted(list(self._answer_set)))})\b", next_token
             )
@@ -145,7 +145,7 @@ class ChatCompletionLogGrader(LogGrader):
         extracted_answer: Labeling | None = None
         answer_format = AnswerFormat.INVALID
 
-        chat_comp = log_entry.model_data.get("chat_comp") or {}
+        chat_comp = log_entry.model_data.chat_comp or {}
         if (answer_text := chat_comp.get("answer_text")) is not None:
             extracted_answer, answer_format = self._answer_matcher(answer_text)
 

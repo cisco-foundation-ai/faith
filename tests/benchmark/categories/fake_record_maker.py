@@ -4,7 +4,7 @@
 
 from typing import Any, cast
 
-from faith._internal.records.types import Record, RecordStats, _Metadata, _ModelData
+from faith._internal.records.types import ModelRecord, Record, RecordStats, _Metadata
 from faith._types.records.prompt_record import PromptRecord
 
 
@@ -36,8 +36,7 @@ def make_fake_record(
             }
             | (data or {})
         ),
-        model_data=cast(
-            _ModelData,
+        model_data=ModelRecord.from_dict(
             {
                 "prompt": "What is 2 + 2?",
                 "answer_symbol_ids": {"A": 0, "B": 1, "C": 2, "D": 3},
