@@ -41,7 +41,7 @@ class _ModelData(TypedDict):
     error: NotRequired[_ModelError]
 
 
-@dataclass
+@dataclass(frozen=True)
 class RecordStats(DataClassJsonMixin):
     """Statistics computed for a single record by a log grader."""
 

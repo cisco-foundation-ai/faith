@@ -14,14 +14,14 @@ from faith._internal.types.flags import GenerationMode, SampleRatio
 from faith.benchmark.formatting.prompt import PromptFormatter
 
 
-@dataclass
+@dataclass(frozen=True)
 class DataSamplingParams(DataClassJsonMixin):
     """Parameters for dataset sampling."""
 
     sample_size: int | None = None
 
 
-@dataclass
+@dataclass(frozen=True)
 class ExperimentParams:
     """Parameters that define a set of benchmark experiments to run."""
 

@@ -10,7 +10,7 @@ from dataclasses_json import DataClassJsonMixin
 from faith._internal.algo.hash import dict_sha256
 
 
-@dataclass
+@dataclass(frozen=True)
 class PromptRecord(DataClassJsonMixin):
     """Base class for benchmark examples."""
 

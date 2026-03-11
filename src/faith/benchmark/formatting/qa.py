@@ -16,7 +16,7 @@ from faith._types.records.prompt_record import PromptRecord
 from faith.benchmark.formatting.prompt import PromptFormatter
 
 
-@dataclass
+@dataclass(frozen=True)
 class _QA:
     """Container for a question-answer pair.
 

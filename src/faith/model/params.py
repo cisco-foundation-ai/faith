@@ -13,7 +13,7 @@ from faith._internal.algo.hash import dict_sha256
 from faith.model.model_engine import ModelEngine
 
 
-@dataclass
+@dataclass(frozen=True)
 class EngineParams(DataClassJsonMixin):
     """Parameters for the model backend engine."""
 
@@ -25,7 +25,7 @@ class EngineParams(DataClassJsonMixin):
     kwargs: dict[str, Any] = field(default_factory=dict)
 
 
-@dataclass
+@dataclass(frozen=True)
 class GenParams(DataClassJsonMixin):
     """Parameters for generation."""
 

@@ -17,7 +17,7 @@ from faith.model.model_engine import ModelEngine
 from faith.model.params import EngineParams, GenParams
 
 
-@dataclass
+@dataclass(frozen=True)
 class ModelSpec(DataClassJsonMixin):
     """A complete model specification.
 
@@ -37,7 +37,8 @@ class ModelSpec(DataClassJsonMixin):
         """Validate the ModelSpec after initialization."""
         assert self.path, "Model path must be a non-empty string."
         if not self.name:
-            self.name = canonical_segment(self.path)
+            # Bypass frozen=True to set the name based on the path if not provided.
+            object.__setattr__(self, "name", canonical_segment(self.path))
 
     @staticmethod
     def from_file(config_path: Path) -> "ModelSpec":

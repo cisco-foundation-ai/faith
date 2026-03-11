@@ -38,7 +38,7 @@ def _is_string_list(inputs: PromptList) -> bool:
     return isinstance(inputs, list) and all(isinstance(i, str) for i in inputs)
 
 
-@dataclass
+@dataclass(frozen=True)
 class GenerationError(DataClassJsonMixin):
     """Record of an error that occurred during generation."""
 
@@ -46,7 +46,7 @@ class GenerationError(DataClassJsonMixin):
     details: str | None = None
 
 
-@dataclass
+@dataclass(frozen=True)
 class ChatResponse(DataClassJsonMixin):
     """Record of a model chat session divided into several parts.
 
@@ -96,7 +96,7 @@ class ChatResponse(DataClassJsonMixin):
     max_token_halt: bool
 
 
-@dataclass
+@dataclass(frozen=True)
 class TokenPred(DataClassJsonMixin):
     """Record of tokens and their corresponding IDs."""
 
@@ -106,7 +106,7 @@ class TokenPred(DataClassJsonMixin):
     rank: int | None
 
 
-@dataclass
+@dataclass(frozen=True)
 class ReasoningSpec(DataClassJsonMixin):
     """Delimiters used to denote reasoning steps in the model's output."""
 

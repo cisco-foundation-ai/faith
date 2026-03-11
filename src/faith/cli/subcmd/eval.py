@@ -28,7 +28,7 @@ from faith.benchmark.benchmark import Benchmark, BenchmarkSpec
 from faith.benchmark.load import load_benchmark
 
 
-@dataclass
+@dataclass(frozen=True)
 class RecordHandlingParams:
     """Parameters defining the behavior of metrics computation and logging."""
 
