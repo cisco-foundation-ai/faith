@@ -5,6 +5,6 @@
 ---
 model:
   path: meta-llama/Llama-4-Scout-17B-16E-Instruct
-  name: Llama-4-Scout-17B-16E-Instruct
+  name: llama-4-scout-17b-16e-instruct
   engine: !from '$MODELS_ROOT/default_engines.yaml["vllm-engine"]'
   generation: !from '$MODELS_ROOT/default_generation.yaml["instruct"]'

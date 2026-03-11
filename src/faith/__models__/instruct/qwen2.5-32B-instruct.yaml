@@ -5,6 +5,6 @@
 ---
 model:
   path: Qwen/Qwen2.5-32B-Instruct
-  name: Qwen2.5-32B-Instruct
+  name: qwen2.5-32b-instruct
   engine: !from '$MODELS_ROOT/default_engines.yaml["vllm-engine"]'
   generation: !from '$MODELS_ROOT/default_generation.yaml["instruct"]'

@@ -5,6 +5,6 @@
 ---
 model:
   path: fdtn-ai/Foundation-Sec-8B-Reasoning
-  name: foundation-sec-8B-reasoning
+  name: foundation-sec-8b-reasoning
   engine: !from '$MODELS_ROOT/default_engines.yaml["vllm-engine"]'
   generation: !from '$MODELS_ROOT/default_generation.yaml["reasoning"]'

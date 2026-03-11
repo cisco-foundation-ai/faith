@@ -5,6 +5,6 @@
 ---
 model:
   path: segolilylabs/Lily-Cybersecurity-7B-v0.2
-  name: Lily-Cybersecurity-7B-v0.2
+  name: lily-cybersecurity-7b-v0.2
   engine: !from '$MODELS_ROOT/default_engines.yaml["vllm-engine"]'
   generation: !from '$MODELS_ROOT/default_generation.yaml["instruct"]'

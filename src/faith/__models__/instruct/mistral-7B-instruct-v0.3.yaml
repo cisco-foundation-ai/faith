@@ -5,6 +5,6 @@
 ---
 model:
   path: mistralai/Mistral-7B-Instruct-v0.3
-  name: Mistral-7B-Instruct-v0.3
+  name: mistral-7b-instruct-v0.3
   engine: !from '$MODELS_ROOT/default_engines.yaml["vllm-engine"]'
   generation: !from '$MODELS_ROOT/default_generation.yaml["instruct"]'

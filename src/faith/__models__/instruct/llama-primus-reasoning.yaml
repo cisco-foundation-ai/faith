@@ -5,6 +5,6 @@
 ---
 model:
   path: trendmicro-ailab/Llama-Primus-Reasoning
-  name: Llama-Primus-Reasoning
+  name: llama-primus-reasoning
   engine: !from '$MODELS_ROOT/default_engines.yaml["vllm-engine"]'
   generation: !from '$MODELS_ROOT/default_generation.yaml["instruct"]'

@@ -5,6 +5,6 @@
 ---
 model:
   path: tiiuae/Falcon3-7B-Instruct
-  name: Falcon3-7B-Instruct
+  name: falcon3-7b-instruct
   engine: !from '$MODELS_ROOT/default_engines.yaml["vllm-engine"]'
   generation: !from '$MODELS_ROOT/default_generation.yaml["instruct"]'

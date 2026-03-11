@@ -5,6 +5,6 @@
 ---
 model:
   path: WhiteRabbitNeo/WhiteRabbitNeo-2.5-Qwen-2.5-Coder-7B
-  name: WhiteRabbitNeo-2.5-Qwen-2.5-Coder-7B
+  name: whiterabbitneo-2.5-qwen-2.5-coder-7b
   engine: !from '$MODELS_ROOT/default_engines.yaml["vllm-engine"]'
   generation: !from '$MODELS_ROOT/default_generation.yaml["instruct"]'
