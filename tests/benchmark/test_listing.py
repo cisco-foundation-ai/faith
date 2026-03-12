@@ -5,6 +5,7 @@
 from pathlib import Path
 
 import pytest
+from pytest_unordered import unordered
 
 from faith._internal.io.resources import benchmarks_root
 from faith.benchmark.config import load_config_from_path
@@ -145,8 +146,8 @@ def test_choices_to_benchmarks() -> None:
 
 
 def test_find_benchmarks() -> None:
-    core_benchmarks = find_benchmarks(benchmarks_root())
-    assert set(core_benchmarks) == set(
+    # Test that all of the built-in benchmarks are found.
+    assert find_benchmarks(benchmarks_root()) == unordered(
         benchmark_subpath(
             [
                 "ctibench-ate",
@@ -166,8 +167,8 @@ def test_find_benchmarks() -> None:
         )
     )
 
-    external_benchmarks = find_benchmarks(Path(__file__).parent / "testdata")
-    assert set(external_benchmarks) == set(
+    # Test that the correct external benchmarks are found.
+    assert find_benchmarks(Path(__file__).parent / "testdata") == unordered(
         [
             Path(__file__).parent / "testdata" / "bench-a",
             Path(__file__).parent / "testdata" / "sub" / "bench-c",

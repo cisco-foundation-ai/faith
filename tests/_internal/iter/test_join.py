@@ -5,6 +5,7 @@
 from operator import itemgetter
 
 import pytest
+from pytest_unordered import unordered
 
 from faith._internal.iter.join import (
     InnerJoinTransform,
@@ -20,24 +21,24 @@ _key = itemgetter(0)
 @pytest.mark.parametrize(
     "left, right, expected",
     [
-        ([], [], set()),
-        ([(1, "a")], [], set()),
-        ([], [(1, "x")], set()),
-        ([(1, "a"), (2, "b")], [(3, "x")], set()),
+        ([], [], []),
+        ([(1, "a")], [], []),
+        ([], [(1, "x")], []),
+        ([(1, "a"), (2, "b")], [(3, "x")], []),
         (
             [(1, "a"), (2, "b")],
             [(2, "x"), (3, "y")],
-            {((2, "b"), (2, "x"))},
+            [((2, "b"), (2, "x"))],
         ),
         (
             [(1, "a"), (1, "b")],
             [(1, "x"), (1, "y")],
-            {
+            [
                 ((1, "a"), (1, "x")),
                 ((1, "a"), (1, "y")),
                 ((1, "b"), (1, "x")),
                 ((1, "b"), (1, "y")),
-            },
+            ],
         ),
     ],
     ids=[
@@ -51,30 +52,30 @@ _key = itemgetter(0)
 )
 def test_inner_join(left, right, expected) -> None:
     """Test that inner join yields only pairs where the key exists in both sides."""
-    assert set(left >> InnerJoinTransform(right, on_key=_key)) == expected
+    assert list(left >> InnerJoinTransform(right, on_key=_key)) == unordered(expected)
 
 
 @pytest.mark.parametrize(
     "left, right, expected",
     [
-        ([], [], set()),
-        ([(1, "a")], [], {((1, "a"), None)}),
-        ([], [(1, "x")], set()),
-        ([(1, "a"), (2, "b")], [(3, "x")], {((1, "a"), None), ((2, "b"), None)}),
+        ([], [], []),
+        ([(1, "a")], [], [((1, "a"), None)]),
+        ([], [(1, "x")], []),
+        ([(1, "a"), (2, "b")], [(3, "x")], [((1, "a"), None), ((2, "b"), None)]),
         (
             [(1, "a"), (2, "b")],
             [(2, "x"), (3, "y")],
-            {((1, "a"), None), ((2, "b"), (2, "x"))},
+            [((1, "a"), None), ((2, "b"), (2, "x"))],
         ),
         (
             [(1, "a"), (1, "b")],
             [(1, "x"), (1, "y")],
-            {
+            [
                 ((1, "a"), (1, "x")),
                 ((1, "a"), (1, "y")),
                 ((1, "b"), (1, "x")),
                 ((1, "b"), (1, "y")),
-            },
+            ],
         ),
     ],
     ids=[
@@ -88,30 +89,30 @@ def test_inner_join(left, right, expected) -> None:
 )
 def test_left_join(left, right, expected) -> None:
     """Test that left join preserves all left items, with None for unmatched rights."""
-    assert set(left >> LeftJoinTransform(right, on_key=_key)) == expected
+    assert list(left >> LeftJoinTransform(right, on_key=_key)) == unordered(expected)
 
 
 @pytest.mark.parametrize(
     "left, right, expected",
     [
-        ([], [], set()),
-        ([(1, "a")], [], set()),
-        ([], [(1, "x")], {(None, (1, "x"))}),
-        ([(1, "a"), (2, "b")], [(3, "x")], {(None, (3, "x"))}),
+        ([], [], []),
+        ([(1, "a")], [], []),
+        ([], [(1, "x")], [(None, (1, "x"))]),
+        ([(1, "a"), (2, "b")], [(3, "x")], [(None, (3, "x"))]),
         (
             [(1, "a"), (2, "b")],
             [(2, "x"), (3, "y")],
-            {((2, "b"), (2, "x")), (None, (3, "y"))},
+            [((2, "b"), (2, "x")), (None, (3, "y"))],
         ),
         (
             [(1, "a"), (1, "b")],
             [(1, "x"), (1, "y")],
-            {
+            [
                 ((1, "a"), (1, "x")),
                 ((1, "a"), (1, "y")),
                 ((1, "b"), (1, "x")),
                 ((1, "b"), (1, "y")),
-            },
+            ],
         ),
     ],
     ids=[
@@ -125,34 +126,34 @@ def test_left_join(left, right, expected) -> None:
 )
 def test_right_join(left, right, expected) -> None:
     """Test that right join preserves all right items, with None for unmatched lefts."""
-    assert set(left >> RightJoinTransform(right, on_key=_key)) == expected
+    assert list(left >> RightJoinTransform(right, on_key=_key)) == unordered(expected)
 
 
 @pytest.mark.parametrize(
     "left, right, expected",
     [
-        ([], [], set()),
-        ([(1, "a")], [], {((1, "a"), None)}),
-        ([], [(1, "x")], {(None, (1, "x"))}),
+        ([], [], []),
+        ([(1, "a")], [], [((1, "a"), None)]),
+        ([], [(1, "x")], [(None, (1, "x"))]),
         (
             [(1, "a"), (2, "b")],
             [(3, "x")],
-            {((1, "a"), None), ((2, "b"), None), (None, (3, "x"))},
+            [((1, "a"), None), ((2, "b"), None), (None, (3, "x"))],
         ),
         (
             [(1, "a"), (2, "b")],
             [(2, "x"), (3, "y")],
-            {((1, "a"), None), ((2, "b"), (2, "x")), (None, (3, "y"))},
+            [((1, "a"), None), ((2, "b"), (2, "x")), (None, (3, "y"))],
         ),
         (
             [(1, "a"), (1, "b")],
             [(1, "x"), (1, "y")],
-            {
+            [
                 ((1, "a"), (1, "x")),
                 ((1, "a"), (1, "y")),
                 ((1, "b"), (1, "x")),
                 ((1, "b"), (1, "y")),
-            },
+            ],
         ),
     ],
     ids=[
@@ -166,4 +167,4 @@ def test_right_join(left, right, expected) -> None:
 )
 def test_outer_join(left, right, expected) -> None:
     """Test that outer join preserves all items from both sides."""
-    assert set(left >> OuterJoinTransform(right, on_key=_key)) == expected
+    assert list(left >> OuterJoinTransform(right, on_key=_key)) == unordered(expected)

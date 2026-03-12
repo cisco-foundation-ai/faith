@@ -8,6 +8,7 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
+from pytest_unordered import unordered
 
 from faith._internal.io.datastore import (
     DatastoreContext,
@@ -28,7 +29,7 @@ Kermode
 def assert_directory_contents(path: Path, expected_files: set[str]) -> None:
     """Assert the given path contains exactly the expected files (relative to the path)."""
     assert path.exists() and path.is_dir(), f"Expected {path} to be a directory"
-    assert set(path.rglob("*")) == {path / f for f in expected_files}
+    assert list(path.rglob("*")) == unordered(path / f for f in expected_files)
 
 
 def test_gcp_rsync_args() -> None:

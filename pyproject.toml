@@ -87,6 +87,7 @@ test = [
   "pytest==9.0.2",
   "pytest-cov==7.0.0",
   "pytest-custom_exit_code==0.3.0",
+  "pytest-unordered==0.7.0",
 ]
 
 [project.scripts]
