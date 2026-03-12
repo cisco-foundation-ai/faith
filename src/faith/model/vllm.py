@@ -21,14 +21,12 @@ from vllm.distributed.parallel_state import (
 )
 from vllm.outputs import RequestOutput
 
+from faith._internal.records.types import ChatResponse, GenerationError, TokenPred
 from faith.benchmark.formatting.prompt import PromptFormatter
 from faith.model.base import (
     BaseModel,
-    ChatResponse,
-    GenerationError,
     PromptList,
     ReasoningSpec,
-    TokenPred,
     _is_message_list,
     _is_string_list,
 )
@@ -235,35 +233,35 @@ class VLLMModel(_VLLMBackend):
 
         return (
             ChatResponse(
-                prompt_token_ids=tokenized_prompt if verbose_resps else None,
-                num_prompt_tokens=len(tokenized_prompt),
+                output_text=output.outputs[0].text,
+                output_token_ids=output.outputs[0].token_ids if verbose_resps else None,
+                num_output_tokens=len(output.outputs[0].token_ids),
                 prompt_text=(
                     self.tokenizer.decode(tokenized_prompt, skip_special_tokens=False)
                     if verbose_resps
                     else None
                 ),
-                output_token_ids=output.outputs[0].token_ids if verbose_resps else None,
-                num_output_tokens=len(output.outputs[0].token_ids),
-                output_text=output.outputs[0].text,
-                request_token_ids=tokenized_request if verbose_resps else None,
-                num_request_tokens=len(tokenized_request),
+                prompt_token_ids=tokenized_prompt if verbose_resps else None,
+                num_prompt_tokens=len(tokenized_prompt),
                 request_text=(
                     self.tokenizer.decode(tokenized_request, skip_special_tokens=False)
                     if verbose_resps
                     else None
                 ),
-                response_token_ids=tokenized_response if verbose_resps else None,
-                num_response_tokens=len(tokenized_response),
+                request_token_ids=tokenized_request if verbose_resps else None,
+                num_request_tokens=len(tokenized_request),
                 response_text=(
                     self.tokenizer.decode(tokenized_response, skip_special_tokens=False)
                     if verbose_resps
                     else None
                 ),
-                answer_token_ids=tokenized_answer if verbose_resps else None,
-                num_answer_tokens=len(tokenized_answer),
+                response_token_ids=tokenized_response if verbose_resps else None,
+                num_response_tokens=len(tokenized_response),
                 answer_text=self.tokenizer.decode(
                     tokenized_answer, skip_special_tokens=True
                 ),
+                answer_token_ids=tokenized_answer if verbose_resps else None,
+                num_answer_tokens=len(tokenized_answer),
                 max_token_halt=output.outputs[0].finish_reason == "length",
             )
             for tokenized_request, output in zip(

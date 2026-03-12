@@ -500,9 +500,9 @@ Choices:
                 model_data={
                     "logits": [
                         [
-                            {"token_id": 1, "logprob": -2.0},
-                            {"token_id": 0, "logprob": -1.5},
-                            {"token_id": 27, "logprob": -1.0},
+                            {"token": "A", "token_id": 1, "logprob": -2.0},
+                            {"token": "B", "token_id": 0, "logprob": -1.5},
+                            {"token": "XZ", "token_id": 27, "logprob": -1.0},
                         ]
                     ],
                     "answer_symbol_ids": {"A": 1, "B": 0},
@@ -530,9 +530,9 @@ Choices:
                 model_data={
                     "logits": [
                         [
-                            {"token_id": 1, "logprob": -0.5},
-                            {"token_id": 0, "logprob": -1.5},
-                            {"token_id": 27, "logprob": -2.5},
+                            {"token": "A", "token_id": 1, "logprob": -0.5},
+                            {"token": "B", "token_id": 0, "logprob": -1.5},
+                            {"token": "XZ", "token_id": 27, "logprob": -2.5},
                         ]
                     ],
                     "answer_symbol_ids": {"A": 1, "B": 0},
@@ -543,8 +543,8 @@ Choices:
                 model_data={
                     "logits": [
                         [
-                            {"token_id": 3, "logprob": -1.0},
-                            {"token_id": 0, "logprob": -1.5},
+                            {"token": "C", "token_id": 3, "logprob": -1.0},
+                            {"token": "B", "token_id": 0, "logprob": -1.5},
                         ]
                     ],
                     "answer_symbol_ids": {"A": 1, "B": 0},
@@ -555,8 +555,8 @@ Choices:
                 model_data={
                     "logits": [
                         [
-                            {"token_id": 7, "logprob": -2.0},
-                            {"token_id": 11, "logprob": -3.25},
+                            {"token": "TH", "token_id": 7, "logprob": -2.0},
+                            {"token": "CZ", "token_id": 11, "logprob": -3.25},
                         ]
                     ],
                     "answer_symbol_ids": {"A": 1, "B": 0},

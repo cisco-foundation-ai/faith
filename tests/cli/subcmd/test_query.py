@@ -15,7 +15,12 @@ from transformers import AutoTokenizer, PreTrainedTokenizerBase
 
 from faith._internal.algo.sampling import NShotSampler
 from faith._internal.io.json import write_as_json
-from faith._internal.records.types import Record
+from faith._internal.records.types import (
+    ChatResponse,
+    GenerationError,
+    Record,
+    TokenPred,
+)
 from faith._internal.types.configs import Configuration
 from faith._internal.types.flags import GenerationMode, SampleRatio
 from faith._types.records.prompt_record import PromptRecord
@@ -26,13 +31,7 @@ from faith.benchmark.grading.grade_aggregator import GradeAggregator
 from faith.benchmark.grading.log_grader import LogGrader
 from faith.benchmark.types import BenchmarkSpec
 from faith.cli.subcmd.query import BenchmarkRecordTransform, model_querier
-from faith.model.base import (
-    BaseModel,
-    ChatResponse,
-    GenerationError,
-    PromptList,
-    TokenPred,
-)
+from faith.model.base import BaseModel, PromptList
 from faith.model.params import GenParams
 from tests.benchmark.categories.fake_record_maker import make_fake_record
 
@@ -156,21 +155,16 @@ class FakeModel(BaseModel):
         # Simulate a fake response for testing purposes
         return [
             ChatResponse(
-                prompt_token_ids=None,
-                num_prompt_tokens=len(input_str),
-                prompt_text=input_str,
-                output_token_ids=None,
-                num_output_tokens=17,
                 output_text=f"Fake response to: {input_str}",
-                request_token_ids=None,
-                num_request_tokens=len(input_str) - 1,
+                num_output_tokens=17,
+                prompt_text=input_str,
+                num_prompt_tokens=len(input_str),
                 request_text=input_str[:-1],
-                response_token_ids=None,
-                num_response_tokens=18,
+                num_request_tokens=len(input_str) - 1,
                 response_text=input_str[-1] + f"Fake response to: {input_str}",
-                answer_token_ids=None,
-                num_answer_tokens=18,
+                num_response_tokens=18,
                 answer_text=input_str[-1] + f"Fake response to: {input_str}",
+                num_answer_tokens=18,
                 max_token_halt=False,
             )
             for input_ in inputs
@@ -185,21 +179,16 @@ class FakeModel(BaseModel):
         # Simulate a fake response for testing purposes
         return [
             ChatResponse(
-                prompt_token_ids=None,
-                num_prompt_tokens=len(input_str),
-                prompt_text=input_str,
-                output_token_ids=None,
-                num_output_tokens=17,
                 output_text=f"Token {i}",
-                request_token_ids=None,
-                num_request_tokens=len(input_str) - 1,
+                num_output_tokens=17,
+                prompt_text=input_str,
+                num_prompt_tokens=len(input_str),
                 request_text=input_str[:-1],
-                response_token_ids=None,
-                num_response_tokens=18,
+                num_request_tokens=len(input_str) - 1,
                 response_text=input_str[-1] + f"Token {i}",
-                answer_token_ids=None,
-                num_answer_tokens=18,
+                num_response_tokens=18,
                 answer_text=input_str[-1] + f"Token {i}",
+                num_answer_tokens=18,
                 max_token_halt=True,
             )
             for i, input_ in enumerate(inputs)

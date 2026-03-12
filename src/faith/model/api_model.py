@@ -12,15 +12,9 @@ from tqdm import tqdm
 
 from faith._internal.functools.retriable import RetryFunctionWrapper
 from faith._internal.iter.fork_merge import ForkAndMergeTransform
+from faith._internal.records.types import ChatResponse, GenerationError
 from faith.benchmark.formatting.prompt import PromptFormatter
-from faith.model.base import (
-    BaseModel,
-    ChatResponse,
-    GenerationError,
-    PromptList,
-    ReasoningSpec,
-    _is_message_list,
-)
+from faith.model.base import BaseModel, PromptList, ReasoningSpec, _is_message_list
 
 
 class APIBasedModel(BaseModel, ABC):

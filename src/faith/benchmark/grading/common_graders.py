@@ -33,7 +33,7 @@ class LogitsLogGrader(LogGrader):
             # TODO(https://github.com/cisco-foundation-ai/faith/issues/26):
             # Handle multiple logits entries; currently assumes only one entry.
             first_token_logits = logits[0] if len(logits) > 0 else []
-            id_to_logit = {log["token_id"]: log for log in first_token_logits}
+            id_to_logit = {tp.token_id: tp for tp in first_token_logits}
             answer_symbol_ids = log_entry.model_data.answer_symbol_ids
             symbol_to_logit = {
                 symbol: id_to_logit[symbol_id]
@@ -42,23 +42,20 @@ class LogitsLogGrader(LogGrader):
             }
             if len(symbol_to_logit) > 0:
                 extracted_pred = max(
-                    symbol_to_logit, key=lambda x: symbol_to_logit[x]["logprob"]
+                    symbol_to_logit, key=lambda x: symbol_to_logit[x].logprob
                 )
                 answer_format = AnswerFormat.PROPER
+            label_logit = symbol_to_logit.get(label)
             log_probs = {
-                "label": symbol_to_logit.get(label, {}).get("logprob", float("-inf")),
+                "label": label_logit.logprob if label_logit else float("-inf"),
                 "max_other_symbol": max(
-                    (
-                        logit["logprob"]
-                        for k, logit in symbol_to_logit.items()
-                        if k != label
-                    ),
+                    (tp.logprob for k, tp in symbol_to_logit.items() if k != label),
                     default=float("-inf"),
                 ),
                 "max_other_token": max(
                     (
-                        logit["logprob"]
-                        for k, logit in id_to_logit.items()
+                        tp.logprob
+                        for k, tp in id_to_logit.items()
                         if k != answer_symbol_ids[label]
                     ),
                     default=float("-inf"),
@@ -100,7 +97,7 @@ class NextTokenLogGrader(LogGrader):
         label: Labeling | None = log_entry.data.label
         extracted_pred: Labeling | None = None
         answer_format = AnswerFormat.INVALID
-        if next_token := (log_entry.model_data.next_token or {}).get("output_text"):
+        if (nt := log_entry.model_data.next_token) and (next_token := nt.output_text):
             match = re.findall(
                 rf"\b({'|'.join(sorted(list(self._answer_set)))})\b", next_token
             )
@@ -145,17 +142,19 @@ class ChatCompletionLogGrader(LogGrader):
         extracted_answer: Labeling | None = None
         answer_format = AnswerFormat.INVALID
 
-        chat_comp = log_entry.model_data.chat_comp or {}
-        if (answer_text := chat_comp.get("answer_text")) is not None:
-            extracted_answer, answer_format = self._answer_matcher(answer_text)
+        chat_comp = log_entry.model_data.chat_comp
+        if chat_comp is not None and chat_comp.answer_text is not None:
+            extracted_answer, answer_format = self._answer_matcher(
+                chat_comp.answer_text
+            )
 
         log_entry.stats = RecordStats(
             label=label,
             prediction=extracted_answer,
             answer_format=answer_format,
             subject=log_entry.data.subject,
-            num_output_tokens=chat_comp.get("num_output_tokens") or 0,
-            max_token_halt=chat_comp.get("max_token_halt") or False,
+            num_output_tokens=(chat_comp.num_output_tokens or 0) if chat_comp else 0,
+            max_token_halt=(chat_comp.max_token_halt or False) if chat_comp else False,
             scores=self._custom_scores(
                 label,
                 extracted_answer,

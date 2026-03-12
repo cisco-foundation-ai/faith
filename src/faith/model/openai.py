@@ -9,8 +9,9 @@ from typing import Any
 
 from openai import OpenAI
 
+from faith._internal.records.types import ChatResponse, GenerationError
 from faith.model.api_model import APIBasedModel
-from faith.model.base import ChatResponse, GenerationError, ReasoningSpec
+from faith.model.base import ReasoningSpec
 
 
 class OpenAIModel(APIBasedModel):
@@ -47,21 +48,14 @@ class OpenAIModel(APIBasedModel):
         # Note: output, response, and answer are the same for chat completions in OpenAI
         # since there is way to distinguish them in the response.
         return ChatResponse(
-            prompt_token_ids=None,  # OpenAI does not return token IDs
-            num_prompt_tokens=response.usage.prompt_tokens,
-            prompt_text=None,  # OpenAI does not return prompt text
-            output_token_ids=None,  # OpenAI does not return token IDs
-            num_output_tokens=response.usage.completion_tokens,
             output_text=response.choices[0].message.content,
-            request_token_ids=None,  # OpenAI does not return token IDs
+            num_output_tokens=response.usage.completion_tokens,
+            num_prompt_tokens=response.usage.prompt_tokens,
             num_request_tokens=response.usage.prompt_tokens,
-            request_text=None,  # OpenAI does not return prompt text
-            response_token_ids=None,  # OpenAI does not return token IDs
-            num_response_tokens=response.usage.completion_tokens,
             response_text=response.choices[0].message.content,
-            answer_token_ids=None,  # OpenAI does not return token IDs
-            num_answer_tokens=response.usage.completion_tokens,
+            num_response_tokens=response.usage.completion_tokens,
             answer_text=response.choices[0].message.content,
+            num_answer_tokens=response.usage.completion_tokens,
             max_token_halt=response.choices[0].finish_reason == "length",
         )
 

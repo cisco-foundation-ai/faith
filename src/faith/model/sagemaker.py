@@ -14,8 +14,9 @@ import orjson
 from botocore.config import Config
 
 from faith._internal.parsing.expr import evaluate_expr
+from faith._internal.records.types import ChatResponse, GenerationError
 from faith.model.api_model import APIBasedModel
-from faith.model.base import ChatResponse, GenerationError, ReasoningSpec
+from faith.model.base import ReasoningSpec
 
 logger = logging.getLogger(__name__)
 
@@ -129,20 +130,10 @@ class SageMakerModel(APIBasedModel):
         response = self._response_parsing_expr(names={"response_body": response_body})
 
         return ChatResponse(
-            prompt_token_ids=None,  # Currently not specified in the response.
-            num_prompt_tokens=response.get("num_prompt_tokens"),
-            prompt_text=None,  # Currently not specified in the response.
-            output_token_ids=None,  # Currently not specified in the response.
-            num_output_tokens=response.get("num_output_tokens"),
             output_text=response.get("output_text") or "",
-            request_token_ids=None,  # Currently not specified in the response.
-            num_request_tokens=None,
-            request_text=None,  # Currently not specified in the response.
-            response_token_ids=None,  # Currently not specified in the response.
-            num_response_tokens=None,
+            num_output_tokens=response.get("num_output_tokens"),
+            num_prompt_tokens=response.get("num_prompt_tokens"),
             response_text=response.get("output_text") or "",
-            answer_token_ids=None,  # Currently not specified in the response.
-            num_answer_tokens=None,
             answer_text=response.get("output_text") or "",
             max_token_halt=response.get("max_token_halt") or False,
         )

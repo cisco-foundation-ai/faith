@@ -4,7 +4,12 @@
 
 import pytest
 
-from faith._internal.records.types import ModelRecord
+from faith._internal.records.types import (
+    ChatResponse,
+    GenerationError,
+    ModelRecord,
+    TokenPred,
+)
 from faith._internal.types.flags import GenerationMode
 
 
@@ -14,17 +19,27 @@ def test_reset_to_mode_keeps_selected_field(mode: GenerationMode) -> None:
     record = ModelRecord(
         prompt="What is 2 + 2?",
         answer_symbol_ids={"A": 0, "B": 1},
-        logits=[[{"token_id": 0, "logprob": -1.0}]],
-        next_token={"output_text": "A"},
-        chat_comp={"answer_text": "The answer is A"},
-        error={"title": "Something went wrong", "details": None},
+        logits=[[TokenPred(token="A", token_id=0, logprob=-1.0)]],
+        next_token=ChatResponse(output_text="A"),
+        chat_comp=ChatResponse(output_text="The answer is A"),
+        error=GenerationError(title="Something went wrong"),
     )
     record.reset_to_mode(mode)
 
     assert record == ModelRecord(
         prompt="What is 2 + 2?",
         answer_symbol_ids={"A": 0, "B": 1},
-        logits=record.logits if mode == GenerationMode.LOGITS else None,
-        next_token=record.next_token if mode == GenerationMode.NEXT_TOKEN else None,
-        chat_comp=record.chat_comp if mode == GenerationMode.CHAT_COMPLETION else None,
+        logits=(
+            [[TokenPred(token="A", token_id=0, logprob=-1.0)]]
+            if mode == GenerationMode.LOGITS
+            else None
+        ),
+        next_token=(
+            ChatResponse(output_text="A") if mode == GenerationMode.NEXT_TOKEN else None
+        ),
+        chat_comp=(
+            ChatResponse(output_text="The answer is A")
+            if mode == GenerationMode.CHAT_COMPLETION
+            else None
+        ),
     )

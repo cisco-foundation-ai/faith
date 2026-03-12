@@ -42,14 +42,20 @@ from faith._internal.records.reconciliation import (
     ReplacementStrategy,
     reconcile_records,
 )
-from faith._internal.records.types import ModelRecord, Record, RecordStatus
+from faith._internal.records.types import (
+    ChatResponse,
+    GenerationError,
+    ModelRecord,
+    Record,
+    RecordStatus,
+)
 from faith._internal.types.flags import GenerationMode
 from faith._types.records.prompt_record import PromptRecord
 from faith.benchmark.benchmark import Benchmark
 from faith.benchmark.listing import choices_to_benchmarks, find_benchmarks
 from faith.experiment.experiment import BenchmarkExperiment
 from faith.experiment.params import DataSamplingParams, ExperimentParams
-from faith.model.base import BaseModel, ChatResponse, GenerationError
+from faith.model.base import BaseModel
 from faith.model.model_engine import ModelEngine
 from faith.model.params import GenParams
 from faith.model.spec import ModelSpec
@@ -172,11 +178,9 @@ class _LogitsTransform(_PredictionTransform):
         )
         for record, logit_response in zip(inputs, logit_responses):
             if isinstance(logit_response, list):
-                record.model_data.logits = [
-                    [tp.to_dict() for tp in tok_dist] for tok_dist in logit_response
-                ]
+                record.model_data.logits = logit_response
             elif isinstance(logit_response, GenerationError):
-                record.model_data.error = logit_response.to_dict()
+                record.model_data.error = logit_response
             yield record
 
 
@@ -194,9 +198,9 @@ class _NextTokenTransform(_PredictionTransform):
         )
         for record, response in zip(inputs, responses):
             if isinstance(response, ChatResponse):
-                record.model_data.next_token = response.to_dict()
+                record.model_data.next_token = response
             elif isinstance(response, GenerationError):
-                record.model_data.error = response.to_dict()
+                record.model_data.error = response
             yield record
 
 
@@ -215,9 +219,9 @@ class _GenerationTransform(_PredictionTransform):
         )
         for record, response in zip(inputs, responses):
             if isinstance(response, ChatResponse):
-                record.model_data.chat_comp = response.to_dict()
+                record.model_data.chat_comp = response
             elif isinstance(response, GenerationError):
-                record.model_data.error = response.to_dict()
+                record.model_data.error = response
             yield record
 
 

@@ -9,8 +9,9 @@ from typing import Any
 
 from openrouter import OpenRouter
 
+from faith._internal.records.types import ChatResponse, GenerationError
 from faith.model.api_model import APIBasedModel
-from faith.model.base import ChatResponse, GenerationError, ReasoningSpec
+from faith.model.base import ReasoningSpec
 
 
 class OpenRouterModel(APIBasedModel):
@@ -45,21 +46,14 @@ class OpenRouterModel(APIBasedModel):
             model=self.name_or_path, messages=messages, **gen_params
         )
         return ChatResponse(
-            prompt_token_ids=None,
-            num_prompt_tokens=int(response.usage.prompt_tokens),
-            prompt_text=None,
-            output_token_ids=None,
-            num_output_tokens=int(response.usage.completion_tokens),
             output_text=response.choices[0].message.content,
-            request_token_ids=None,
+            num_output_tokens=int(response.usage.completion_tokens),
+            num_prompt_tokens=int(response.usage.prompt_tokens),
             num_request_tokens=int(response.usage.prompt_tokens),
-            request_text=None,
-            response_token_ids=None,
-            num_response_tokens=int(response.usage.completion_tokens),
             response_text=response.choices[0].message.content,
-            answer_token_ids=None,
-            num_answer_tokens=int(response.usage.completion_tokens),
+            num_response_tokens=int(response.usage.completion_tokens),
             answer_text=response.choices[0].message.content,
+            num_answer_tokens=int(response.usage.completion_tokens),
             max_token_halt=response.choices[0].finish_reason == "length",
         )
 

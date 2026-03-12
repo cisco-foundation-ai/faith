@@ -17,11 +17,11 @@ from jinja2 import Template
 from faith._internal.algo.graph import wcc_dict
 from faith._internal.algo.matching import AnswerFormat, SequentialMatcher
 from faith._internal.parsing.expr import evaluate_expr
+from faith._internal.records.types import GenerationError
 from faith._internal.types.configs import Configuration
 from faith._internal.types.stats import MetricSummary
 from faith.benchmark.formatting.prompt import PromptFormatter
 from faith.benchmark.scores.types import Score, ScoreFn
-from faith.model.base import GenerationError
 from faith.model.model_engine import ModelEngine
 
 logger = logging.getLogger(__name__)

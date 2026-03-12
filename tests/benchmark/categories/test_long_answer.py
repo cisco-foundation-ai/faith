@@ -12,12 +12,12 @@ from datasets import Dataset, DatasetDict, Features, Value
 
 from faith import __version__
 from faith._internal.algo.matching import AnswerFormat
-from faith._internal.records.types import RecordStats
+from faith._internal.records.types import ChatResponse, GenerationError, RecordStats
 from faith._internal.types.flags import GenerationMode, SampleRatio
 from faith.benchmark.benchmark import BenchmarkSpec
 from faith.benchmark.categories.long_answer import LABenchmark
 from faith.benchmark.formatting.prompt import PromptFormatter
-from faith.model.base import BaseModel, ChatResponse, GenerationError, PromptList
+from faith.model.base import BaseModel, PromptList
 from tests.benchmark.categories.fake_record_maker import make_fake_record
 
 
@@ -523,21 +523,14 @@ class _FakeJudgeModel(BaseModel):
         """Simulates a judge model response for each input prompt."""
         assert len(inputs) == 1, "Expected each query call to have a single input"
         yield ChatResponse(
-            prompt_token_ids=None,
-            num_prompt_tokens=10,
-            prompt_text=None,
-            output_token_ids=None,
-            num_output_tokens=25,
             output_text="SCORE: 8\n\nSUMMARY: fake response",
-            request_token_ids=None,
+            num_output_tokens=25,
+            num_prompt_tokens=10,
             num_request_tokens=10,
-            request_text=None,
-            response_token_ids=None,
-            num_response_tokens=25,
             response_text="SCORE: 8\n\nSUMMARY: fake response",
-            answer_token_ids=None,
-            num_answer_tokens=25,
+            num_response_tokens=25,
             answer_text="SCORE: 8\n\nSUMMARY: fake response",
+            num_answer_tokens=25,
             max_token_halt=False,
         )
 

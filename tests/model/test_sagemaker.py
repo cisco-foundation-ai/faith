@@ -7,8 +7,8 @@ from unittest.mock import Mock, patch
 
 import orjson
 
+from faith._internal.records.types import ChatResponse, GenerationError
 from faith.benchmark.formatting.prompt import PromptFormatter
-from faith.model.base import ChatResponse, GenerationError
 from faith.model.sagemaker import SageMakerModel
 
 
@@ -40,20 +40,10 @@ def test_sagemaker_model(mock_boto3_client: Mock) -> None:
     response = model.query(inputs=[[{"role": "user", "content": "Hallo?"}]])
     assert list(response) == [
         ChatResponse(
-            prompt_token_ids=None,
-            num_prompt_tokens=2,
-            prompt_text=None,
-            output_token_ids=None,
-            num_output_tokens=5,
             output_text="ನಾನು ಅಲ್ಲಿದ್ದೇನೆ!",
-            request_token_ids=None,
-            num_request_tokens=None,
-            request_text=None,
-            response_token_ids=None,
-            num_response_tokens=None,
+            num_output_tokens=5,
+            num_prompt_tokens=2,
             response_text="ನಾನು ಅಲ್ಲಿದ್ದೇನೆ!",
-            answer_token_ids=None,
-            num_answer_tokens=None,
             answer_text="ನಾನು ಅಲ್ಲಿದ್ದೇನೆ!",
             max_token_halt=False,
         )
@@ -91,20 +81,10 @@ def test_sagemaker_model_retry(mock_boto3_client: Mock) -> None:
 
     assert list(response) == [
         ChatResponse(
-            prompt_token_ids=None,
-            num_prompt_tokens=2,
-            prompt_text=None,
-            output_token_ids=None,
-            num_output_tokens=5,
             output_text="ನಾನು ಅಲ್ಲಿದ್ದೇನೆ!",
-            request_token_ids=None,
-            num_request_tokens=None,
-            request_text=None,
-            response_token_ids=None,
-            num_response_tokens=None,
+            num_output_tokens=5,
+            num_prompt_tokens=2,
             response_text="ನಾನು ಅಲ್ಲಿದ್ದೇನೆ!",
-            answer_token_ids=None,
-            num_answer_tokens=None,
             answer_text="ನಾನು ಅಲ್ಲಿದ್ದೇನೆ!",
             max_token_halt=False,
         )

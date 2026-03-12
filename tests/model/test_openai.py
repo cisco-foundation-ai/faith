@@ -8,8 +8,8 @@ from openai.types import CompletionUsage
 from openai.types.chat import ChatCompletion, ChatCompletionMessage
 from openai.types.chat.chat_completion import Choice
 
+from faith._internal.records.types import ChatResponse, GenerationError
 from faith.benchmark.formatting.prompt import PromptFormatter
-from faith.model.base import ChatResponse, GenerationError
 from faith.model.openai import OpenAIModel
 
 
@@ -45,21 +45,14 @@ def test_openai_model(mock_openai_client_class: Mock) -> None:
     response = model.query(inputs=[[{"role": "user", "content": "Hallo?"}]])
     assert list(response) == [
         ChatResponse(
-            prompt_token_ids=None,
-            num_prompt_tokens=2,
-            prompt_text=None,
-            output_token_ids=None,
-            num_output_tokens=5,
             output_text="Bin dabei!",
-            request_token_ids=None,
+            num_output_tokens=5,
+            num_prompt_tokens=2,
             num_request_tokens=2,
-            request_text=None,
-            response_token_ids=None,
-            num_response_tokens=5,
             response_text="Bin dabei!",
-            answer_token_ids=None,
-            num_answer_tokens=5,
+            num_response_tokens=5,
             answer_text="Bin dabei!",
+            num_answer_tokens=5,
             max_token_halt=False,
         )
     ]
@@ -98,21 +91,14 @@ def test_openai_model_retry(mock_openai_client_class: Mock) -> None:
 
     assert list(response) == [
         ChatResponse(
-            prompt_token_ids=None,
-            num_prompt_tokens=2,
-            prompt_text=None,
-            output_token_ids=None,
-            num_output_tokens=5,
             output_text="Bin dabei!",
-            request_token_ids=None,
+            num_output_tokens=5,
+            num_prompt_tokens=2,
             num_request_tokens=2,
-            request_text=None,
-            response_token_ids=None,
-            num_response_tokens=5,
             response_text="Bin dabei!",
-            answer_token_ids=None,
-            num_answer_tokens=5,
+            num_response_tokens=5,
             answer_text="Bin dabei!",
+            num_answer_tokens=5,
             max_token_halt=False,
         )
     ]
