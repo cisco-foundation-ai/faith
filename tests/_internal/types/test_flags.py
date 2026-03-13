@@ -8,10 +8,13 @@ import pytest
 
 from faith._internal.types.flags import (
     AnnotatedPath,
+    DefaultValue,
     GenerationMode,
     PathWithAnnotations,
     SampleRatio,
     TypeWithDefault,
+    UserValue,
+    UserValueType,
 )
 
 
@@ -63,6 +66,42 @@ def test_sample_ratio_from_string() -> None:
     assert SampleRatio.from_string("5/1") == SampleRatio(5, 1)
     assert SampleRatio.from_string("5/5") == SampleRatio(5, 5)
     assert SampleRatio.from_string("5/10") == SampleRatio(5, 10)
+
+
+def test_default_value() -> None:
+    d = DefaultValue[float](0.0)
+    assert d.value == 0.0
+    assert d.is_default is True
+    assert repr(d) == "DefaultValue(0.0)"
+
+
+def test_user_value() -> None:
+    u = UserValue[float](3.14)
+    assert u.value == 3.14
+    assert u.is_default is False
+    assert repr(u) == "UserValue(3.14)"
+
+
+def test_arg_value_equality() -> None:
+    assert DefaultValue[int](1) == DefaultValue[int](1)
+    assert DefaultValue[int](1) == UserValue[int](1)
+    assert DefaultValue[int](1) != DefaultValue[int](2)
+    assert DefaultValue[int](1) != "not an ArgValue"
+
+
+def test_arg_value_hash() -> None:
+    assert hash(DefaultValue[int](1)) == hash(DefaultValue[int](1))
+    assert hash(DefaultValue[int](1)) != hash(DefaultValue[int](2))
+    assert hash(UserValue[int](5)) == hash(UserValue[int](5))
+    assert hash(UserValue[str]("5")) != hash(UserValue[int](5))
+    assert hash(DefaultValue[int](1)) == hash(UserValue[int](1))
+
+
+def test_user_value_type() -> None:
+    assert UserValueType(int)("10").value == 10
+    assert not UserValueType(int)("10").is_default
+    assert UserValueType(float)("3.14").value == 3.14
+    assert UserValueType(str)("hello").value == "hello"
 
 
 def test_type_with_default() -> None:

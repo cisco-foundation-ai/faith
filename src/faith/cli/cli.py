@@ -28,9 +28,11 @@ from faith._internal.iter.transform import DevNullReducer
 from faith._internal.threading.periodic import PeriodicTaskContext
 from faith._internal.types.flags import (
     AnnotatedPath,
+    DefaultValue,
     GenerationMode,
     SampleRatio,
     TypeWithDefault,
+    UserValueType,
 )
 from faith.benchmark.formatting.prompt import PromptFormatter
 from faith.benchmark.listing import benchmark_choices
@@ -65,8 +67,8 @@ def _cli_query(args: argparse.Namespace, datastore: Datastore) -> Iterator[Path]
     if args.model_paths:
         global_engine = EngineParams(
             engine_type=args.model_engine,
-            num_gpus=args.num_gpus,
-            context_length=args.model_context_len,
+            num_gpus=args.num_gpus.value,
+            context_length=args.model_context_len.value,
             kwargs=(
                 {
                     k: ast.literal_eval(v)
@@ -79,9 +81,9 @@ def _cli_query(args: argparse.Namespace, datastore: Datastore) -> Iterator[Path]
             ),
         )
         global_gen = GenParams(
-            temperature=args.temperature,
-            top_p=args.top_p,
-            max_completion_tokens=args.max_completion_tokens,
+            temperature=args.temperature.value,
+            top_p=args.top_p.value,
+            max_completion_tokens=args.max_completion_tokens.value,
             kwargs={
                 k: ast.literal_eval(v)
                 for k, _, v in [
@@ -121,7 +123,7 @@ def _cli_query(args: argparse.Namespace, datastore: Datastore) -> Iterator[Path]
                 if (spec := ModelSpec.from_file(annotated_config_path.path)) is not None
                 and (
                     num_gpus := annotated_config_path.get_value("num_gpus")
-                    or args.num_gpus
+                    or args.num_gpus.value
                 )
                 >= 0
             ]
@@ -257,32 +259,32 @@ def _add_model_args(parser: argparse.ArgumentParser) -> None:
     )
     group.add_argument(
         "--model-context-len",
-        type=int,
-        default=3500,
+        type=UserValueType(int),
+        default=DefaultValue(3500),
         help="The context length of the model. [Default: 3500]",
     )
     group.add_argument(
         "--max-completion-tokens",
-        default=500,
-        type=int,
+        type=UserValueType(int),
+        default=DefaultValue(500),
         help="Maximum number of new tokens for model to generate in its answer. [Default: 500]",
     )
     group.add_argument(
         "--temperature",
-        default=0.0,
-        type=float,
+        type=UserValueType(float),
+        default=DefaultValue(0.0),
         help="Temperature for sampling. [Default: 0.0 (deterministic)]",
     )
     group.add_argument(
         "--top-p",
-        default=1.0,
-        type=float,
+        type=UserValueType(float),
+        default=DefaultValue(1.0),
         help="Top-p for sampling. [Defaults: 1.0 (deterministic)]",
     )
     group.add_argument(
         "--num-gpus",
-        type=int,
-        default=1,
+        type=UserValueType(int),
+        default=DefaultValue(1),
         help="Number of GPUs to use for querying LLMs. [Default: 1]",
     )
     group.add_argument(
