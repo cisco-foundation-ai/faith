@@ -19,6 +19,7 @@ import os
 from collections.abc import Iterator
 from functools import partial
 from pathlib import Path
+from typing import Any
 
 import argcomplete
 import colorlog
@@ -64,32 +65,30 @@ def _cli_query(args: argparse.Namespace, datastore: Datastore) -> Iterator[Path]
     # Build the list of model specs from both --model-paths and --model-configs.
     model_specs: list[ModelSpec] = []
 
+    global_engine_kwargs = {
+        k: ast.literal_eval(v)
+        for k, _, v in [
+            arg_str.partition("=") for arg_str in (args.engine_kwargs or [])
+        ]
+    }
+    global_gen_kwargs = {
+        k: ast.literal_eval(v)
+        for k, _, v in [
+            arg_str.partition("=") for arg_str in (args.generation_kwargs or [])
+        ]
+    }
     if args.model_paths:
         global_engine = EngineParams(
             engine_type=args.model_engine,
             num_gpus=args.num_gpus.value,
             context_length=args.model_context_len.value,
-            kwargs=(
-                {
-                    k: ast.literal_eval(v)
-                    for k, _, v in [
-                        arg_str.partition("=") for arg_str in args.engine_kwargs
-                    ]
-                }
-                if args.engine_kwargs is not None
-                else {}
-            ),
+            kwargs=global_engine_kwargs,
         )
         global_gen = GenParams(
             temperature=args.temperature.value,
             top_p=args.top_p.value,
             max_completion_tokens=args.max_completion_tokens.value,
-            kwargs={
-                k: ast.literal_eval(v)
-                for k, _, v in [
-                    arg_str.partition("=") for arg_str in (args.generation_kwargs or [])
-                ]
-            },
+            kwargs=global_gen_kwargs,
         )
         model_specs.extend(
             [
@@ -113,19 +112,49 @@ def _cli_query(args: argparse.Namespace, datastore: Datastore) -> Iterator[Path]
         )
 
     if args.model_configs:
+        gen_overrides: dict[str, Any] = {}
+        if not args.temperature.is_default:
+            gen_overrides["temperature"] = args.temperature.value
+        if not args.top_p.is_default:
+            gen_overrides["top_p"] = args.top_p.value
+        if not args.max_completion_tokens.is_default:
+            gen_overrides["max_completion_tokens"] = args.max_completion_tokens.value
+
+        engine_overrides: dict[str, Any] = {}
+        if not args.model_context_len.is_default:
+            engine_overrides["context_length"] = args.model_context_len.value
+        if not args.num_gpus.is_default:
+            engine_overrides["num_gpus"] = args.num_gpus.value
+
         model_specs.extend(
             [
                 dataclasses.replace(
                     spec,
-                    engine=dataclasses.replace(spec.engine, num_gpus=num_gpus),
+                    engine=dataclasses.replace(
+                        spec.engine,
+                        kwargs=spec.engine.kwargs | global_engine_kwargs,
+                        **(
+                            engine_overrides
+                            | (
+                                {
+                                    "num_gpus": annotated_config_path.get_value(
+                                        "num_gpus"
+                                    )
+                                }
+                                if annotated_config_path.get_value("num_gpus")
+                                is not None
+                                else {}
+                            )
+                        ),
+                    ),
+                    generation=dataclasses.replace(
+                        spec.generation,
+                        kwargs=spec.generation.kwargs | global_gen_kwargs,
+                        **gen_overrides,
+                    ),
                 )
                 for annotated_config_path in args.model_configs
                 if (spec := ModelSpec.from_file(annotated_config_path.path)) is not None
-                and (
-                    num_gpus := annotated_config_path.get_value("num_gpus")
-                    or args.num_gpus.value
-                )
-                >= 0
             ]
         )
 
