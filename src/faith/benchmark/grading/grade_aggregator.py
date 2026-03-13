@@ -13,15 +13,15 @@ from typing import Any
 import numpy as np
 
 from faith._internal.iter.transform import Reducer
-from faith._internal.records.types import RecordStats
 from faith._internal.types.configs import Configuration
 from faith._internal.types.stats import MetricSummary
 from faith._internal.types.validation import assert_same_length
+from faith._types.records.stats_record import StatsRecord
 from faith.benchmark.scores.domain_specific import DomainSpecificScore
 from faith.benchmark.scores.types import Score
 
 
-class GradeAggregator(Reducer[RecordStats | None, MetricSummary]):
+class GradeAggregator(Reducer[StatsRecord | None, MetricSummary]):
     """Base class for aggregating benchmark grades from benchmark logs."""
 
     def __init__(self, output_processing_config: Configuration) -> None:
@@ -31,7 +31,7 @@ class GradeAggregator(Reducer[RecordStats | None, MetricSummary]):
             **(output_processing_config.get("score_fns") or {})
         )
 
-    def __call__(self, stats_logs: Iterable[RecordStats | None]) -> MetricSummary:
+    def __call__(self, stats_logs: Iterable[StatsRecord | None]) -> MetricSummary:
         """Reduce the collected statistics to their overall benchmark metrics."""
         test_stats = GradeAggregator._stats_transpose(stats_logs)
         logit_stats = (
@@ -43,7 +43,7 @@ class GradeAggregator(Reducer[RecordStats | None, MetricSummary]):
 
     @staticmethod
     def _stats_transpose(
-        stats_logs: Iterable[RecordStats | None],
+        stats_logs: Iterable[StatsRecord | None],
     ) -> dict[str, Sequence[Any]]:
         """Transpose the 'stats' dataclass fields in `logs` to a dictionary of lists."""
         transposed_stats: dict[str, list[Any]] = defaultdict(list)

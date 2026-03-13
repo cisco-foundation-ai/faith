@@ -22,8 +22,9 @@ from faith._internal.metrics.aggregations import (
     is_breakdown_dict,
 )
 from faith._internal.records.io import load_records_from_json
-from faith._internal.records.types import Record, RecordStats
 from faith._internal.types.stats import MetricSummary
+from faith._types.records.sample_record import SampleRecord
+from faith._types.records.stats_record import StatsRecord
 from faith.benchmark.benchmark import Benchmark, BenchmarkSpec
 from faith.benchmark.load import load_benchmark
 
@@ -85,15 +86,16 @@ def compute_experiment_metrics(
         )
         if (
             trial_metrics := [
-                Record.from_dict(d) for d in load_records_from_json(trial_log_filepath)
+                SampleRecord.from_dict(d)
+                for d in load_records_from_json(trial_log_filepath)
             ]
             >> benchmark.log_grader(**kwargs)
             >> (
-                LoggingTransform[Record](trial_log_filepath)
+                LoggingTransform[SampleRecord](trial_log_filepath)
                 if annotate_prediction_stats
-                else IdentityTransform[Record]()
+                else IdentityTransform[SampleRecord]()
             )
-            >> GetAttrTransform[Record, RecordStats | None]("stats")
+            >> GetAttrTransform[SampleRecord, StatsRecord | None]("stats")
             >> benchmark.grade_aggregator()
         ).get("query_count", 0)
         > 0

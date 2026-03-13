@@ -9,8 +9,8 @@ import pytest
 from transformers import AutoTokenizer
 
 from faith._internal.algo.matching import AnswerFormat
-from faith._internal.records.types import RecordStats
 from faith._internal.types.flags import GenerationMode, SampleRatio
+from faith._types.records.stats_record import StatsRecord
 from faith.benchmark.benchmark import BenchmarkSpec
 from faith.benchmark.categories.multiple_choice import MCBenchmark
 from faith.benchmark.formatting.prompt import PromptFormatter
@@ -511,7 +511,7 @@ Choices:
         ]
         >> logits_log_grader
     ] == [
-        RecordStats(
+        StatsRecord(
             label="A",
             prediction="B",
             answer_format=AnswerFormat.PROPER,
@@ -569,7 +569,7 @@ Choices:
         ]
         >> logits_log_grader
     ] == [
-        RecordStats(
+        StatsRecord(
             label="A",
             prediction="A",
             answer_format=AnswerFormat.PROPER,
@@ -580,7 +580,7 @@ Choices:
                 "max_other_token": pytest.approx(-1.5),
             },
         ),
-        RecordStats(
+        StatsRecord(
             label="B",
             prediction="B",
             answer_format=AnswerFormat.PROPER,
@@ -590,7 +590,7 @@ Choices:
                 "max_other_token": pytest.approx(-1.0),
             },
         ),
-        RecordStats(
+        StatsRecord(
             label="A",
             prediction=None,
             answer_format=AnswerFormat.INVALID,
@@ -600,7 +600,7 @@ Choices:
                 "max_other_token": pytest.approx(-2.0),
             },
         ),
-        RecordStats(
+        StatsRecord(
             label="A",
             prediction=None,
             answer_format=AnswerFormat.INVALID,
@@ -637,7 +637,7 @@ Choices:
         ]
         >> next_token_log_grader
     ] == [
-        RecordStats(
+        StatsRecord(
             label="A",
             prediction="A",
             answer_format=AnswerFormat.PROPER,
@@ -649,7 +649,7 @@ Choices:
             make_fake_record(
                 data={"label": "B", "subject": "octothorpes"},
                 model_data={"next_token": {"output_text": "B"}},
-                stats=RecordStats(
+                stats=StatsRecord(
                     label="B",
                     prediction="C",
                     answer_format=AnswerFormat.IMPROPER,
@@ -674,29 +674,29 @@ Choices:
         ]
         >> next_token_log_grader
     ] == [
-        RecordStats(
+        StatsRecord(
             label="B",
             prediction="B",
             answer_format=AnswerFormat.PROPER,
             subject="octothorpes",
         ),
-        RecordStats(
+        StatsRecord(
             label="A",
             prediction="B",
             answer_format=AnswerFormat.PROPER,
         ),
-        RecordStats(
+        StatsRecord(
             label="B",
             prediction="B",
             answer_format=AnswerFormat.PROPER,
         ),
-        RecordStats(
+        StatsRecord(
             label="A",
             prediction=None,
             answer_format=AnswerFormat.INVALID,
             subject="octothorpes",
         ),
-        RecordStats(
+        StatsRecord(
             label="A",
             prediction=None,
             answer_format=AnswerFormat.INVALID,
@@ -738,7 +738,7 @@ Choices:
                 },
             ),
             make_fake_record(
-                stats=RecordStats(
+                stats=StatsRecord(
                     label="B",
                     prediction="C",
                     answer_format=AnswerFormat.IMPROPER,
@@ -758,19 +758,19 @@ Choices:
         ]
         >> chat_log_grader
     ] == [
-        RecordStats(
+        StatsRecord(
             label="A",
             prediction="A",
             answer_format=AnswerFormat.PROPER,
             num_output_tokens=3,
             max_token_halt=False,
         ),
-        RecordStats(
+        StatsRecord(
             label="B",
             prediction="C",
             answer_format=AnswerFormat.IMPROPER,
         ),
-        RecordStats(
+        StatsRecord(
             label="B",
             prediction=None,
             answer_format=AnswerFormat.INVALID,
@@ -821,28 +821,28 @@ Choices:
         ]
         >> chat_log_grader
     ] == [
-        RecordStats(
+        StatsRecord(
             label="A",
             prediction="A",
             answer_format=AnswerFormat.PROPER,
             num_output_tokens=4,
             max_token_halt=False,
         ),
-        RecordStats(
+        StatsRecord(
             label="B",
             prediction="A",
             answer_format=AnswerFormat.IMPROPER,
             num_output_tokens=17,
             max_token_halt=True,
         ),
-        RecordStats(
+        StatsRecord(
             label="A",
             prediction=None,
             answer_format=AnswerFormat.INVALID,
             num_output_tokens=10,
             max_token_halt=False,
         ),
-        RecordStats(
+        StatsRecord(
             label="A",
             prediction=None,
             answer_format=AnswerFormat.INVALID,
@@ -934,7 +934,7 @@ Choices:
     }
 
     assert [
-        RecordStats(
+        StatsRecord(
             label="A",
             log_probs={
                 "label": -2.0,
@@ -945,7 +945,7 @@ Choices:
             answer_format=AnswerFormat.PROPER,
             subject="bumbershoots",
         ),
-        RecordStats(
+        StatsRecord(
             label="B",
             log_probs={
                 "label": -0.5,
@@ -956,7 +956,7 @@ Choices:
             answer_format=AnswerFormat.PROPER,
             subject="bumbershoots",
         ),
-        RecordStats(
+        StatsRecord(
             label="B",
             log_probs={
                 "label": -1.5,
@@ -967,7 +967,7 @@ Choices:
             answer_format=AnswerFormat.IMPROPER,
             subject="blabberdash",
         ),
-        RecordStats(
+        StatsRecord(
             label="A",
             log_probs={
                 "label": float("-inf"),
@@ -1109,7 +1109,7 @@ Choices:
     }
 
     assert [
-        RecordStats(
+        StatsRecord(
             label="A",
             max_token_halt=False,
             num_output_tokens=3,
@@ -1117,7 +1117,7 @@ Choices:
             answer_format=AnswerFormat.PROPER,
             subject="bumbershoots",
         ),
-        RecordStats(
+        StatsRecord(
             label="B",
             max_token_halt=False,
             num_output_tokens=41,
@@ -1125,7 +1125,7 @@ Choices:
             answer_format=AnswerFormat.PROPER,
             subject="bumbershoots",
         ),
-        RecordStats(
+        StatsRecord(
             label="B",
             max_token_halt=False,
             num_output_tokens=4,

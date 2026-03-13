@@ -12,7 +12,7 @@ from tqdm import tqdm
 
 from faith._internal.functools.retriable import RetryFunctionWrapper
 from faith._internal.iter.fork_merge import ForkAndMergeTransform
-from faith._internal.records.types import ChatResponse, GenerationError
+from faith._types.records.model_response import ChatResponse, GenerationError
 from faith.benchmark.formatting.prompt import PromptFormatter
 from faith.model.base import BaseModel, PromptList, ReasoningSpec, _is_message_list
 

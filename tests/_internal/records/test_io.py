@@ -9,7 +9,7 @@ import pytest
 
 from faith._internal.io.json import write_as_json
 from faith._internal.records.io import load_records_from_json
-from faith._internal.records.types import Record
+from faith._types.records.sample_record import SampleRecord
 
 
 @pytest.mark.parametrize(
@@ -19,7 +19,7 @@ from faith._internal.records.types import Record
         [{"name": "test_record_1", "value": 1}, {"name": "test_record_2", "value": 2}],
     ],
 )
-def test_load_records_from_json(test_data: list[Record]) -> None:
+def test_load_records_from_json(test_data: list[SampleRecord]) -> None:
     """Test loading a JSON log file of records."""
     with tempfile.NamedTemporaryFile(delete=True) as temp_file:
         temp_path = Path(temp_file.name)

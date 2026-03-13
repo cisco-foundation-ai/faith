@@ -9,8 +9,8 @@ from datasets import Dataset, DatasetDict, Features, Value
 
 from faith import __version__
 from faith._internal.algo.matching import AnswerFormat
-from faith._internal.records.types import RecordStats
 from faith._internal.types.flags import GenerationMode, SampleRatio
+from faith._types.records.stats_record import StatsRecord
 from faith.benchmark.benchmark import BenchmarkSpec
 from faith.benchmark.categories.short_answer import SABenchmark
 from faith.benchmark.formatting.prompt import PromptFormatter
@@ -408,7 +408,7 @@ def test_short_answer_benchmark_process_logs_chat() -> None:
                 model_data={"error": {"title": "No response from model"}},
             ),
             make_fake_record(
-                stats=RecordStats(
+                stats=StatsRecord(
                     label="aaa",
                     prediction="b",
                     answer_format=AnswerFormat.PROPER,
@@ -418,7 +418,7 @@ def test_short_answer_benchmark_process_logs_chat() -> None:
         ]
         >> log_grader
     ] == [
-        RecordStats(
+        StatsRecord(
             label="foo",
             prediction="foo",
             answer_format=AnswerFormat.PROPER,
@@ -426,7 +426,7 @@ def test_short_answer_benchmark_process_logs_chat() -> None:
             num_output_tokens=3,
             max_token_halt=False,
         ),
-        RecordStats(
+        StatsRecord(
             label="foo",
             prediction=None,
             answer_format=AnswerFormat.INVALID,
@@ -434,28 +434,28 @@ def test_short_answer_benchmark_process_logs_chat() -> None:
             num_output_tokens=3,
             max_token_halt=True,
         ),
-        RecordStats(
+        StatsRecord(
             label="bar",
             prediction="baz",
             answer_format=AnswerFormat.IMPROPER,
             num_output_tokens=5,
             max_token_halt=False,
         ),
-        RecordStats(
+        StatsRecord(
             label="baz",
             prediction=None,
             answer_format=AnswerFormat.INVALID,
             num_output_tokens=8,
             max_token_halt=True,
         ),
-        RecordStats(
+        StatsRecord(
             label="qux",
             prediction=None,
             answer_format=AnswerFormat.INVALID,
             num_output_tokens=0,
             max_token_halt=False,
         ),
-        RecordStats(
+        StatsRecord(
             label="aaa",
             prediction="b",
             answer_format=AnswerFormat.PROPER,
@@ -546,7 +546,7 @@ def test_short_answer_benchmark_grade_aggregator_string_match() -> None:
     }
 
     assert [
-        RecordStats(
+        StatsRecord(
             label="A",
             prediction="A",
             answer_format=AnswerFormat.PROPER,
@@ -554,7 +554,7 @@ def test_short_answer_benchmark_grade_aggregator_string_match() -> None:
             num_output_tokens=10,
             max_token_halt=True,
         ),
-        RecordStats(
+        StatsRecord(
             label="B",
             prediction="C",
             answer_format=AnswerFormat.PROPER,
@@ -562,7 +562,7 @@ def test_short_answer_benchmark_grade_aggregator_string_match() -> None:
             num_output_tokens=10,
             max_token_halt=True,
         ),
-        RecordStats(
+        StatsRecord(
             label="B",
             prediction="B",
             answer_format=AnswerFormat.IMPROPER,
@@ -696,7 +696,7 @@ def test_short_answer_benchmark_grade_aggregator_label_set() -> None:
     }
 
     assert [
-        RecordStats(
+        StatsRecord(
             label=["A", "B"],
             prediction=["B", "C"],
             answer_format=AnswerFormat.PROPER,
@@ -704,7 +704,7 @@ def test_short_answer_benchmark_grade_aggregator_label_set() -> None:
             max_token_halt=False,
             scores={"jaccard_index": {"value": 1 / 3}},
         ),
-        RecordStats(
+        StatsRecord(
             label=["B"],
             prediction=["B"],
             answer_format=AnswerFormat.PROPER,
@@ -712,7 +712,7 @@ def test_short_answer_benchmark_grade_aggregator_label_set() -> None:
             max_token_halt=True,
             scores={"jaccard_index": {"value": 1 / 2}},
         ),
-        RecordStats(
+        StatsRecord(
             label=["B", "C"],
             prediction=["A"],
             answer_format=AnswerFormat.IMPROPER,
@@ -828,7 +828,7 @@ def test_short_answer_benchmark_grade_aggregator_domain_specific() -> None:
     }
 
     assert [
-        RecordStats(
+        StatsRecord(
             label="AV:A",
             prediction="AV:L",
             answer_format=AnswerFormat.PROPER,
@@ -836,7 +836,7 @@ def test_short_answer_benchmark_grade_aggregator_domain_specific() -> None:
             max_token_halt=False,
             scores={"cvss_score": {"value": 1 / 2}},
         ),
-        RecordStats(
+        StatsRecord(
             label="AV:N",
             prediction="AV:N",
             answer_format=AnswerFormat.PROPER,
@@ -844,7 +844,7 @@ def test_short_answer_benchmark_grade_aggregator_domain_specific() -> None:
             max_token_halt=False,
             scores={"cvss_score": {"value": 1 / 8}},
         ),
-        RecordStats(
+        StatsRecord(
             label="AV:P",
             prediction="AV:N",
             answer_format=AnswerFormat.IMPROPER,

@@ -9,14 +9,14 @@ from faith._internal.records.reconciliation import (
     ReplacementStrategy,
     reconcile_records,
 )
-from faith._internal.records.types import Record, RecordStatus
+from faith._types.records.sample_record import RecordStatus, SampleRecord
 from tests.benchmark.categories.fake_record_maker import make_fake_record
 
 CLEAN = RecordStatus.CLEAN
 DIRTY = RecordStatus.DIRTY
 
 
-def _rec(sample_hash: str, data_hash: str, *, question: str = "") -> Record:
+def _rec(sample_hash: str, data_hash: str, *, question: str = "") -> SampleRecord:
     """Build a minimal record for testing."""
     return make_fake_record(
         metadata={"data_hash": data_hash, "version": "v0.0.7"},
@@ -67,9 +67,9 @@ def _rec(sample_hash: str, data_hash: str, *, question: str = "") -> Record:
     ],
 )
 def test_strategy_never(
-    existing: list[Record],
-    new: list[Record],
-    expected: list[tuple[RecordStatus, Record]],
+    existing: list[SampleRecord],
+    new: list[SampleRecord],
+    expected: list[tuple[RecordStatus, SampleRecord]],
 ) -> None:
     """NEVER: always keep the existing record when one matches."""
     assert (
@@ -109,9 +109,9 @@ def test_strategy_never(
     ],
 )
 def test_strategy_always(
-    existing: list[Record],
-    new: list[Record],
-    expected: list[tuple[RecordStatus, Record]],
+    existing: list[SampleRecord],
+    new: list[SampleRecord],
+    expected: list[tuple[RecordStatus, SampleRecord]],
 ) -> None:
     """ALWAYS: always take the new record, regardless of match."""
     assert (
@@ -155,9 +155,9 @@ def test_strategy_always(
     ],
 )
 def test_strategy_if_data_hash_differs(
-    existing: list[Record],
-    new: list[Record],
-    expected: list[tuple[RecordStatus, Record]],
+    existing: list[SampleRecord],
+    new: list[SampleRecord],
+    expected: list[tuple[RecordStatus, SampleRecord]],
 ) -> None:
     """IF_DATA_HASH_DIFFERS: take new only when the data_hash changed."""
     assert (

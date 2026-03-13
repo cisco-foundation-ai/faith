@@ -15,15 +15,11 @@ from transformers import AutoTokenizer, PreTrainedTokenizerBase
 
 from faith._internal.algo.sampling import NShotSampler
 from faith._internal.io.json import write_as_json
-from faith._internal.records.types import (
-    ChatResponse,
-    GenerationError,
-    Record,
-    TokenPred,
-)
 from faith._internal.types.configs import Configuration
 from faith._internal.types.flags import GenerationMode, SampleRatio
+from faith._types.records.model_response import ChatResponse, GenerationError, TokenPred
 from faith._types.records.prompt_record import PromptRecord
+from faith._types.records.sample_record import SampleRecord
 from faith.benchmark.benchmark import Benchmark, BenchmarkDataset
 from faith.benchmark.formatting.prompt import PromptFormatter
 from faith.benchmark.formatting.qa import QAFormatter
@@ -558,8 +554,8 @@ def test_benchmark_record_transform(
 def test_model_querier(
     generation_mode: GenerationMode,
     gen_params: GenParams,
-    input_records: list[Record],
-    expected_records: list[Record],
+    input_records: list[SampleRecord],
+    expected_records: list[SampleRecord],
 ) -> None:
     model = FakeModel(model_name="fake-model")
     transform = model_querier(model, generation_mode, gen_params)

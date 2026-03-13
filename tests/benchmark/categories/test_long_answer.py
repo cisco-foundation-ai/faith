@@ -12,8 +12,9 @@ from datasets import Dataset, DatasetDict, Features, Value
 
 from faith import __version__
 from faith._internal.algo.matching import AnswerFormat
-from faith._internal.records.types import ChatResponse, GenerationError, RecordStats
 from faith._internal.types.flags import GenerationMode, SampleRatio
+from faith._types.records.model_response import ChatResponse, GenerationError
+from faith._types.records.stats_record import StatsRecord
 from faith.benchmark.benchmark import BenchmarkSpec
 from faith.benchmark.categories.long_answer import LABenchmark
 from faith.benchmark.formatting.prompt import PromptFormatter
@@ -662,7 +663,7 @@ SUMMARY: [your summary text]""",
         ]
         >> log_grader
     ] == [
-        RecordStats(
+        StatsRecord(
             label="foo",
             prediction="Answer: foo",
             answer_format=AnswerFormat.PROPER,
@@ -678,7 +679,7 @@ SUMMARY: [your summary text]""",
                 },
             },
         ),
-        RecordStats(
+        StatsRecord(
             label="foo",
             prediction="",
             answer_format=AnswerFormat.PROPER,
@@ -694,7 +695,7 @@ SUMMARY: [your summary text]""",
                 },
             },
         ),
-        RecordStats(
+        StatsRecord(
             label="bar",
             prediction="<answer>BaZ</answer>",
             answer_format=AnswerFormat.PROPER,
@@ -806,7 +807,7 @@ SUMMARY: [your summary text]""",
     }
 
     assert [
-        RecordStats(
+        StatsRecord(
             label="foo bar",
             prediction="foo bar baz",
             answer_format=AnswerFormat.PROPER,
@@ -821,7 +822,7 @@ SUMMARY: [your summary text]""",
                 },
             },
         ),
-        RecordStats(
+        StatsRecord(
             label="a b c d",
             prediction="a b c d e",
             answer_format=AnswerFormat.PROPER,
@@ -836,7 +837,7 @@ SUMMARY: [your summary text]""",
                 },
             },
         ),
-        RecordStats(
+        StatsRecord(
             label="one two three",
             prediction="ooops",
             answer_format=AnswerFormat.PROPER,

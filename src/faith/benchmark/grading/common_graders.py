@@ -15,15 +15,16 @@ from faith._internal.algo.matching import (
     SimpleMatcher,
 )
 from faith._internal.metrics.types import Labeling
-from faith._internal.records.types import Record, RecordStats
 from faith._internal.types.configs import Configuration
+from faith._types.records.sample_record import SampleRecord
+from faith._types.records.stats_record import StatsRecord
 from faith.benchmark.grading.log_grader import LogGrader
 
 
 class LogitsLogGrader(LogGrader):
     """A log grader for multiple choice benchmarks that log the next-token logits."""
 
-    def _markup_entry_impl(self, log_entry: Record) -> Record:
+    def _markup_entry_impl(self, log_entry: SampleRecord) -> SampleRecord:
         """Markup a single log entry with the computed statistics / scores."""
         label: str | None = log_entry.data.label
         extracted_pred: str | None = None
@@ -61,7 +62,7 @@ class LogitsLogGrader(LogGrader):
                     default=float("-inf"),
                 ),
             }
-        log_entry.stats = RecordStats(
+        log_entry.stats = StatsRecord(
             label=label,
             prediction=extracted_pred,
             answer_format=answer_format,
@@ -92,7 +93,7 @@ class NextTokenLogGrader(LogGrader):
         ), "A non-empty answer set must be provided for next token log grader."
         self._answer_set = answer_set
 
-    def _markup_entry_impl(self, log_entry: Record) -> Record:
+    def _markup_entry_impl(self, log_entry: SampleRecord) -> SampleRecord:
         """Markup a single log entry with the computed statistics / scores."""
         label: Labeling | None = log_entry.data.label
         extracted_pred: Labeling | None = None
@@ -103,7 +104,7 @@ class NextTokenLogGrader(LogGrader):
             )
             if len(match) > 0:
                 extracted_pred, answer_format = match[0], AnswerFormat.PROPER
-        log_entry.stats = RecordStats(
+        log_entry.stats = StatsRecord(
             label=label,
             prediction=extracted_pred,
             answer_format=answer_format,
@@ -136,7 +137,7 @@ class ChatCompletionLogGrader(LogGrader):
         if answer_formats := output_processing_config.get("answer_formats"):
             self._answer_matcher |= SequentialMatcher(*answer_formats)
 
-    def _markup_entry_impl(self, log_entry: Record) -> Record:
+    def _markup_entry_impl(self, log_entry: SampleRecord) -> SampleRecord:
         """Markup a single log entry with the computed statistics / scores."""
         label: Labeling | None = log_entry.data.label
         extracted_answer: Labeling | None = None
@@ -148,7 +149,7 @@ class ChatCompletionLogGrader(LogGrader):
                 chat_comp.answer_text
             )
 
-        log_entry.stats = RecordStats(
+        log_entry.stats = StatsRecord(
             label=label,
             prediction=extracted_answer,
             answer_format=answer_format,

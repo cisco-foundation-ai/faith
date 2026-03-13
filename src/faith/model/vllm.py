@@ -21,7 +21,7 @@ from vllm.distributed.parallel_state import (
 )
 from vllm.outputs import RequestOutput
 
-from faith._internal.records.types import ChatResponse, GenerationError, TokenPred
+from faith._types.records.model_response import ChatResponse, GenerationError, TokenPred
 from faith.benchmark.formatting.prompt import PromptFormatter
 from faith.model.base import (
     BaseModel,

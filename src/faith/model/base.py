@@ -12,7 +12,7 @@ from typing import Any, cast
 from dataclasses_json import DataClassJsonMixin
 from transformers import PreTrainedTokenizerBase
 
-from faith._internal.records.types import ChatResponse, GenerationError, TokenPred
+from faith._types.records.model_response import ChatResponse, GenerationError, TokenPred
 from faith.benchmark.formatting.prompt import PromptFormatter
 
 PromptList = list[str | list[dict[str, str]]]

@@ -4,13 +4,13 @@
 
 import pytest
 
-from faith._internal.records.types import (
+from faith._internal.types.flags import GenerationMode
+from faith._types.records.model_record import ModelRecord
+from faith._types.records.model_response import (
     ChatResponse,
     GenerationError,
-    ModelRecord,
     TokenPred,
 )
-from faith._internal.types.flags import GenerationMode
 
 
 @pytest.mark.parametrize("mode", list(GenerationMode))

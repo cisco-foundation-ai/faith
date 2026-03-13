@@ -4,8 +4,10 @@
 
 from typing import Any, cast
 
-from faith._internal.records.types import ModelRecord, Record, RecordStats, _Metadata
+from faith._types.records.model_record import ModelRecord
 from faith._types.records.prompt_record import PromptRecord
+from faith._types.records.sample_record import SampleRecord, _Metadata
+from faith._types.records.stats_record import StatsRecord
 
 
 def make_fake_record(
@@ -13,10 +15,10 @@ def make_fake_record(
     metadata: dict[str, Any] | None = None,
     data: dict[str, Any] | None = None,
     model_data: dict[str, Any] | None = None,
-    stats: RecordStats | None = None,
-) -> Record:
-    """Create a fake `Record` for testing purposes."""
-    return Record(
+    stats: StatsRecord | None = None,
+) -> SampleRecord:
+    """Create a fake `SampleRecord` for testing purposes."""
+    return SampleRecord(
         metadata=cast(
             _Metadata, {"data_hash": "aaabbf123", "version": "1.0"} | (metadata or {})
         ),
