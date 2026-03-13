@@ -131,7 +131,7 @@ def _cli_query(args: argparse.Namespace, datastore: Datastore) -> Iterator[Path]
 
     if not model_specs:
         raise RuntimeError(
-            "error: at least one model must be specified via --model-paths or --model-configs."
+            "error: at least one model must be specified via either --model-paths or --model-configs."
         )
 
     return run_experiment_queries(
@@ -231,7 +231,8 @@ def _add_model_args(parser: argparse.ArgumentParser) -> None:
         "Arguments for the model's configuration",
     )
 
-    group.add_argument(
+    model_source = group.add_mutually_exclusive_group(required=True)
+    model_source.add_argument(
         "--model-paths",
         type=AnnotatedPath(
             name=lambda x: x,
@@ -243,13 +244,24 @@ def _add_model_args(parser: argparse.ArgumentParser) -> None:
             tokenizer=TypeWithDefault[str | None](str, None),
         ),
         nargs="*",
-        help="The paths/names of the models to benchmark. For OpenAI and Hugging Face models, see the model lists. For custom models, specify the path to the model. Requires --model-engine.",
+        help=(
+            "The paths/names of the models to benchmark. "
+            "When a name is given, the model-engine is used to resolve that name. "
+            "When a path is given, the path is treated as a local path by the engine. "
+            "If the path is a gcp uri, the model is copied to a local temp directory. "
+            "Requires --model-engine to be specified. "
+            "Mutually exclusive with --model-configs."
+        ),
     )
-    group.add_argument(
+    model_source.add_argument(
         "--model-configs",
         type=AnnotatedPath(num_gpus=TypeWithDefault[int | None](int, None)),
         nargs="*",
-        help="Paths to YAML model configuration files. Each file fully specifies a model's path, engine, and generation parameters. Can be used alongside --model-paths.",
+        help=(
+            "Paths to YAML model configuration files. "
+            "Each file fully specifies a model's path, engine, and generation parameters. "
+            "Mutually exclusive with --model-paths."
+        ),
     )
     group.add_argument(
         "--model-engine",
