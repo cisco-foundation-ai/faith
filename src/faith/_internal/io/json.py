@@ -20,6 +20,16 @@ def read_json_file(file_path: Path) -> Any:
         return orjson.loads(file.read())
 
 
+def read_logs_from_json(file_path: Path) -> list[dict[str, Any]]:
+    """Reads a JSONL log file and returns a list of dictionaries per entry."""
+    logs = read_json_file(file_path)
+    assert isinstance(logs, list), f"Expected a list, got {type(logs)}"
+    assert all(
+        isinstance(log, dict) for log in logs
+    ), "Expected all elements to be dictionaries"
+    return logs
+
+
 def write_as_json(file_path: Path, obj: Any) -> None:
     """Writes `obj` to a file as a json record.
 

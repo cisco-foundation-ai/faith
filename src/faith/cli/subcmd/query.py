@@ -24,7 +24,7 @@ from transformers import PreTrainedTokenizerBase
 from faith import __version__
 from faith._internal.functools.compose import compose
 from faith._internal.io.datastore import Datastore, DatastoreContext
-from faith._internal.io.json import write_as_json
+from faith._internal.io.json import read_logs_from_json, write_as_json
 from faith._internal.io.logging import LoggingTransform
 from faith._internal.iter.mux import MuxTransform
 from faith._internal.iter.transform import (
@@ -37,7 +37,6 @@ from faith._internal.multiprocessing.gpu_scheduling import (
     GPUJob,
     run_gpu_jobs_in_parallel,
 )
-from faith._internal.records.io import load_records_from_json
 from faith._internal.records.reconciliation import (
     ReplacementStrategy,
     reconcile_records,
@@ -85,9 +84,7 @@ def current_timestamp() -> str:
 def read_trial_log(trial_log_path: Path) -> Iterable[SampleRecord]:
     """Read the trial log records from the given path."""
     if trial_log_path.exists():
-        return [
-            SampleRecord.from_dict(d) for d in load_records_from_json(trial_log_path)
-        ]
+        return [SampleRecord.from_dict(d) for d in read_logs_from_json(trial_log_path)]
     return []  # No records if the log file doesn't exist yet.
 
 
