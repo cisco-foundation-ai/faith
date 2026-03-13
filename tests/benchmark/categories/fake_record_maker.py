@@ -2,11 +2,11 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from typing import Any, cast
+from typing import Any
 
 from faith._types.records.model_record import ModelRecord
 from faith._types.records.prompt_record import PromptRecord
-from faith._types.records.sample_record import SampleRecord, _Metadata
+from faith._types.records.sample_record import Metadata, SampleRecord
 from faith._types.records.stats import StatsRecord
 
 
@@ -19,8 +19,8 @@ def make_fake_record(
 ) -> SampleRecord:
     """Create a fake `SampleRecord` for testing purposes."""
     return SampleRecord(
-        metadata=cast(
-            _Metadata, {"data_hash": "aaabbf123", "version": "1.0"} | (metadata or {})
+        metadata=Metadata.from_dict(
+            {"data_hash": "aaabbf123", "version": "1.0"} | (metadata or {})
         ),
         data=PromptRecord.from_dict(
             {

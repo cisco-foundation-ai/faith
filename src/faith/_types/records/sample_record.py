@@ -2,29 +2,31 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import StrEnum, auto
-from typing import TypedDict
 
-from dataclasses_json import DataClassJsonMixin
+from dataclasses_json import DataClassJsonMixin, config
 
 from faith._types.records.model_record import ModelRecord
 from faith._types.records.prompt_record import PromptRecord
 from faith._types.records.stats import StatsRecord
 
 
-class _Metadata(TypedDict):
+@dataclass
+class Metadata(DataClassJsonMixin):
     """Represents the metadata associated with a log record."""
 
-    data_hash: str
     version: str
+    data_hash: str | None = field(
+        default=None, metadata=config(exclude=lambda x: x is None)
+    )
 
 
 @dataclass
 class SampleRecord(DataClassJsonMixin):
     """Represents a log record used to track individual queries to a model."""
 
-    metadata: _Metadata
+    metadata: Metadata
     data: PromptRecord
     model_data: ModelRecord
     stats: StatsRecord | None = None

@@ -1,6 +1,8 @@
 [
   {
-    "metadata": {},
+    "metadata": {
+      "version": "0.3.0"
+    },
     "data": {
       "benchmark_sample_hash": "90e6950630e77869a3f9ebf122f901300d4942e8822b5228e0d33b2e6700be68",
       "benchmark_sample_index": 0,
@@ -31,7 +33,9 @@
     }
   },
   {
-    "metadata": {},
+    "metadata": {
+      "version": "0.3.0"
+    },
     "data": {
       "benchmark_sample_hash": "f858962903141e723e5d50859527facacd90fee122243e91fbd8d80504cad895",
       "benchmark_sample_index": 1,
@@ -61,7 +65,9 @@
     }
   },
   {
-    "metadata": {},
+    "metadata": {
+      "version": "0.3.0"
+    },
     "data": {
       "benchmark_sample_hash": "49f2e4b28ca28f97e97dceb8caa56077fe6cba7a82d2aa69981f03c09ea3f70f",
       "benchmark_sample_index": 2,
@@ -92,7 +98,9 @@
     }
   },
   {
-    "metadata": {},
+    "metadata": {
+      "version": "0.3.0"
+    },
     "data": {
       "benchmark_sample_hash": "76fe97746bbf87dd35fd579c67f7ffb0aa742ab19d317b657ac66b11302e2ef2",
       "benchmark_sample_index": 3,

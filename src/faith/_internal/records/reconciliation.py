@@ -38,11 +38,13 @@ class _RecordReconciliation(
             return (RecordStatus.CLEAN, existing)
         if self._strategy == ReplacementStrategy.ALWAYS:
             return (RecordStatus.DIRTY, new)
-        if (
-            self._strategy == ReplacementStrategy.IF_DATA_HASH_DIFFERS
-            and existing.metadata["data_hash"] != new.metadata["data_hash"]
-        ):
-            return (RecordStatus.DIRTY, new)
+        if self._strategy == ReplacementStrategy.IF_DATA_HASH_DIFFERS:
+            assert new.metadata.data_hash is not None
+            if (
+                existing.metadata.data_hash is None
+                or existing.metadata.data_hash != new.metadata.data_hash
+            ):
+                return (RecordStatus.DIRTY, new)
         return (RecordStatus.CLEAN, existing)
 
 

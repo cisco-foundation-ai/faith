@@ -45,7 +45,7 @@ from faith._internal.types.flags import GenerationMode
 from faith._types.records.model_record import ModelRecord
 from faith._types.records.model_response import ChatResponse, GenerationError
 from faith._types.records.prompt_record import PromptRecord
-from faith._types.records.sample_record import RecordStatus, SampleRecord
+from faith._types.records.sample_record import Metadata, RecordStatus, SampleRecord
 from faith.benchmark.benchmark import Benchmark
 from faith.benchmark.listing import choices_to_benchmarks, find_benchmarks
 from faith.experiment.experiment import BenchmarkExperiment
@@ -120,10 +120,10 @@ class BenchmarkRecordTransform(Mapping[PromptRecord, SampleRecord]):
     def _map_fn(self, element: PromptRecord) -> SampleRecord:
         """Map a PromptRecord into a log record containing the data and metadata for querying."""
         return SampleRecord(
-            metadata={
-                "version": self._bench_version,
-                "data_hash": element.sha256(),
-            },
+            metadata=Metadata(
+                version=self._bench_version,
+                data_hash=element.sha256(),
+            ),
             data=element,
             model_data=ModelRecord(
                 prompt=self._bench_formatter.render_conversation(
