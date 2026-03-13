@@ -14,10 +14,9 @@ from faith._internal.algo.matching import (
     SequentialMatcher,
     SimpleMatcher,
 )
-from faith._internal.metrics.types import Labeling
 from faith._internal.types.configs import Configuration
 from faith._types.records.sample_record import SampleRecord
-from faith._types.records.stats_record import StatsRecord
+from faith._types.records.stats import Labeling, StatsRecord
 from faith.benchmark.grading.log_grader import LogGrader
 
 

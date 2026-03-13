@@ -23,7 +23,7 @@ from faith._internal.metrics.aggregations import (
 )
 from faith._internal.types.stats import MetricSummary
 from faith._types.records.sample_record import SampleRecord
-from faith._types.records.stats_record import StatsRecord
+from faith._types.records.stats import StatsRecord
 from faith.benchmark.benchmark import Benchmark, BenchmarkSpec
 from faith.benchmark.load import load_benchmark
 

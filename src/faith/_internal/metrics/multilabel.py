@@ -9,7 +9,7 @@ from collections.abc import Sequence
 import numpy as np
 from sklearn.metrics import f1_score
 
-from faith._internal.metrics.types import MultiLabelSeq
+from faith._types.records.stats import MultiLabelSeq
 
 
 def _tags_to_matrix(

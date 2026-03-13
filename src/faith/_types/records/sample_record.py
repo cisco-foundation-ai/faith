@@ -10,7 +10,7 @@ from dataclasses_json import DataClassJsonMixin
 
 from faith._types.records.model_record import ModelRecord
 from faith._types.records.prompt_record import PromptRecord
-from faith._types.records.stats_record import StatsRecord
+from faith._types.records.stats import StatsRecord
 
 
 class _Metadata(TypedDict):

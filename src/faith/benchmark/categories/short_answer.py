@@ -24,11 +24,11 @@ from faith._internal.metrics.llm import (
     llm_multilabel_metrics,
     llm_prediction_metrics,
 )
-from faith._internal.metrics.types import SingleLabelSeq
 from faith._internal.types.configs import Configuration
 from faith._internal.types.flags import GenerationMode
 from faith._internal.types.stats import MetricSummary
 from faith._types.records.prompt_record import PromptRecord
+from faith._types.records.stats import SingleLabelSeq
 from faith.benchmark.benchmark import BaseBenchmark
 from faith.benchmark.dataset.dataset import BenchmarkDataset
 from faith.benchmark.formatting.qa import QAFormatter

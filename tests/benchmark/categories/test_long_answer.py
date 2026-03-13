@@ -14,7 +14,7 @@ from faith import __version__
 from faith._internal.algo.matching import AnswerFormat
 from faith._internal.types.flags import GenerationMode, SampleRatio
 from faith._types.records.model_response import ChatResponse, GenerationError
-from faith._types.records.stats_record import StatsRecord
+from faith._types.records.stats import StatsRecord
 from faith.benchmark.benchmark import BenchmarkSpec
 from faith.benchmark.categories.long_answer import LABenchmark
 from faith.benchmark.formatting.prompt import PromptFormatter

@@ -8,7 +8,7 @@ import numpy as np
 import pytest
 
 from faith._internal.metrics.multilabel import _tags_to_matrix, micro_f1_score
-from faith._internal.metrics.types import MultiLabelSeq
+from faith._types.records.stats import MultiLabelSeq
 
 
 @pytest.mark.parametrize(

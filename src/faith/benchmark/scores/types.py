@@ -8,8 +8,8 @@ from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from typing import Any, Generic, NotRequired, TypedDict, TypeVar
 
-from faith._internal.metrics.types import Labeling
 from faith._internal.types.configs import Configuration
+from faith._types.records.stats import Labeling
 
 _LABELING = TypeVar("_LABELING", bound=Labeling)
 

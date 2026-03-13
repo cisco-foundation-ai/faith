@@ -2,13 +2,17 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, TypeAlias
 
 from dataclasses_json import DataClassJsonMixin, config
 
 from faith._internal.algo.matching import AnswerFormat
-from faith._internal.metrics.types import Labeling
+
+Labeling: TypeAlias = str | Sequence[str]
+SingleLabelSeq: TypeAlias = Sequence[str | None]
+MultiLabelSeq: TypeAlias = Sequence[Sequence[str] | None]
 
 
 @dataclass(frozen=True)

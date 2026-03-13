@@ -12,9 +12,9 @@ from typing import Any
 from tqdm import tqdm
 
 from faith._internal.iter.transform import IsoTransform
-from faith._internal.metrics.types import Labeling
 from faith._internal.types.configs import Configuration
 from faith._types.records.sample_record import SampleRecord
+from faith._types.records.stats import Labeling
 from faith.benchmark.scores.domain_specific import DomainSpecificScore
 from faith.benchmark.scores.types import Score
 

@@ -10,7 +10,7 @@ from transformers import AutoTokenizer
 
 from faith._internal.algo.matching import AnswerFormat
 from faith._internal.types.flags import GenerationMode, SampleRatio
-from faith._types.records.stats_record import StatsRecord
+from faith._types.records.stats import StatsRecord
 from faith.benchmark.benchmark import BenchmarkSpec
 from faith.benchmark.categories.multiple_choice import MCBenchmark
 from faith.benchmark.formatting.prompt import PromptFormatter

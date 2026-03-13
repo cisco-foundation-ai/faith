@@ -7,7 +7,7 @@ from typing import Any, cast
 from faith._types.records.model_record import ModelRecord
 from faith._types.records.prompt_record import PromptRecord
 from faith._types.records.sample_record import SampleRecord, _Metadata
-from faith._types.records.stats_record import StatsRecord
+from faith._types.records.stats import StatsRecord
 
 
 def make_fake_record(
