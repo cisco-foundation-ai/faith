@@ -8,7 +8,7 @@ model:
   name: o3-2025-04-16
   prompt_format: "chat"
   engine: !from '$MODELS_ROOT/default_engines.yaml["openai-engine"]'
-  generation:
-    !from '$MODELS_ROOT/default_generation.yaml["reasoning"]':
+  generation: !from
+    '$MODELS_ROOT/default_generation.yaml["reasoning"]':
       temperature: 1.0
       max_completion_tokens: -1
