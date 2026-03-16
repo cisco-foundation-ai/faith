@@ -41,6 +41,7 @@ from faith._internal.records.reconciliation import (
     ReplacementStrategy,
     reconcile_records,
 )
+from faith._internal.records.sort import SortByTransform
 from faith._internal.types.flags import GenerationMode
 from faith._types.records.model_record import ModelRecord
 from faith._types.records.model_response import ChatResponse, GenerationError
@@ -364,6 +365,7 @@ def _run_single_model(
                             ),
                         }
                     )
+                    >> SortByTransform[int]("data", "benchmark_sample_index")
                     >> LoggingTransform[SampleRecord](exp_datastore.path / trial_path)
                     >> DevNullReducer[SampleRecord]()
                 )

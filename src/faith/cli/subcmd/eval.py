@@ -21,6 +21,7 @@ from faith._internal.metrics.aggregations import (
     agg_trial_stats,
     is_breakdown_dict,
 )
+from faith._internal.records.sort import SortByTransform
 from faith._internal.types.stats import MetricSummary
 from faith._types.records.sample_record import SampleRecord
 from faith._types.records.stats import StatsRecord
@@ -90,7 +91,10 @@ def compute_experiment_metrics(
             ]
             >> benchmark.log_grader(**kwargs)
             >> (
-                LoggingTransform[SampleRecord](trial_log_filepath)
+                (
+                    SortByTransform[int]("data", "benchmark_sample_index")
+                    | LoggingTransform[SampleRecord](trial_log_filepath)
+                )
                 if annotate_prediction_stats
                 else IdentityTransform[SampleRecord]()
             )
