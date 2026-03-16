@@ -13,7 +13,7 @@ from faith.benchmark.scores.domain_specific import (
     JaccardIndex,
     LogScaledScore,
 )
-from faith.benchmark.scores.types import Score
+from faith.benchmark.scores.scoring import Score
 
 
 def test_score_fn_enum() -> None:

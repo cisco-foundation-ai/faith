@@ -21,7 +21,7 @@ from faith._internal.types.configs import Configuration
 from faith._internal.types.stats import MetricSummary
 from faith._types.records.model_response import GenerationError
 from faith.benchmark.formatting.prompt import PromptFormatter
-from faith.benchmark.scores.types import Score, ScoreFn
+from faith.benchmark.scores.scoring import Score, ScoreFn
 from faith.model.model_engine import ModelEngine
 
 logger = logging.getLogger(__name__)

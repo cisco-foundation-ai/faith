@@ -18,7 +18,7 @@ from faith._internal.types.stats import MetricSummary
 from faith._internal.types.validation import assert_same_length
 from faith._types.records.stats import StatsRecord
 from faith.benchmark.scores.domain_specific import DomainSpecificScore
-from faith.benchmark.scores.types import Score
+from faith.benchmark.scores.scoring import Score
 
 
 class GradeAggregator(Reducer[StatsRecord | None, MetricSummary]):
