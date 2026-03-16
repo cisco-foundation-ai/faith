@@ -40,6 +40,7 @@ from faith.benchmark.listing import benchmark_choices
 from faith.cli.flags import parse_begin_end_tokens
 from faith.experiment.params import DataSamplingParams, ExperimentParams
 from faith.model.base import ReasoningSpec
+from faith.model.listing import choice_to_model, model_choices
 from faith.model.model_engine import ModelEngine
 from faith.model.params import EngineParams, GenParams
 from faith.model.spec import ModelSpec
@@ -154,7 +155,12 @@ def _cli_query(args: argparse.Namespace, datastore: Datastore) -> Iterator[Path]
                     ),
                 )
                 for annotated_config_path in args.model_configs
-                if (spec := ModelSpec.from_file(annotated_config_path.path)) is not None
+                if (
+                    spec := ModelSpec.from_file(
+                        choice_to_model(annotated_config_path.raw_path)
+                    )
+                )
+                is not None
             ]
         )
 
@@ -282,16 +288,18 @@ def _add_model_args(parser: argparse.ArgumentParser) -> None:
             "Mutually exclusive with --model-configs."
         ),
     )
-    model_source.add_argument(
+    model_configs_action = model_source.add_argument(
         "--model-configs",
         type=AnnotatedPath(num_gpus=TypeWithDefault[int | None](int, None)),
         nargs="*",
         help=(
-            "Paths to YAML model configuration files. "
+            "Paths to YAML model configuration files or names of packaged model configs. "
             "Each file fully specifies a model's path, engine, and generation parameters. "
-            "Mutually exclusive with --model-paths."
+            "Mutually exclusive with --model-paths. "
+            f"Available packaged configs: {', '.join(model_choices())}."
         ),
     )
+    model_configs_action.completer = lambda **_: model_choices()  # type: ignore[attr-defined]
     group.add_argument(
         "--model-engine",
         type=ModelEngine.from_string,
