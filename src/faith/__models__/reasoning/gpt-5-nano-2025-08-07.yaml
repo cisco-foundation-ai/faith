@@ -6,6 +6,7 @@
 model:
   path: gpt-5-nano-2025-08-07
   name: gpt-5-nano-2025-08-07
+  prompt_format: "chat"
   engine: !from '$MODELS_ROOT/default_engines.yaml["openai-engine"]'
   generation:
     !from '$MODELS_ROOT/default_generation.yaml["reasoning"]':

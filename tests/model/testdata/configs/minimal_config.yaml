@@ -5,5 +5,6 @@
 ---
 model:
   path: "gpt-4o"
+  prompt_format: chat
   engine:
     engine_type: openai

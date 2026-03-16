@@ -6,5 +6,6 @@
 model:
   path: gpt-4.1-2025-04-14
   name: gpt-4.1-2025-04-14
+  prompt_format: "chat"
   engine: !from '$MODELS_ROOT/default_engines.yaml["openai-engine"]'
   generation: !from '$MODELS_ROOT/default_generation.yaml["instruct"]'

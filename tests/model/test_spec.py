@@ -9,6 +9,7 @@ from pathlib import Path
 import pytest
 from dacite.exceptions import MissingValueError
 
+from faith.benchmark.formatting.prompt import PromptFormatter
 from faith.model.base import ReasoningSpec
 from faith.model.model_engine import ModelEngine
 from faith.model.params import EngineParams, GenParams
@@ -27,6 +28,7 @@ def test_full_config() -> None:
             context_length=4096,
             kwargs={"max_num_batched_tokens": 8192},
         ),
+        prompt_format=PromptFormatter.CHAT,
         name="llama2-7b",
         tokenizer="/path/to/tokenizer",
         reasoning=ReasoningSpec(start_delimiter="<think>", end_delimiter="</think>"),
@@ -44,10 +46,11 @@ def test_minimal_config_applies_defaults() -> None:
     """Only required fields — assert all defaults match CLI defaults."""
     assert ModelSpec.from_file(_CONFIGS_DIR / "minimal_config.yaml") == ModelSpec(
         path="gpt-4o",
-        name="gpt-4o",
         engine=EngineParams(
             engine_type=ModelEngine.OPENAI,
         ),
+        prompt_format=PromptFormatter.CHAT,
+        name="gpt-4o",
     )
 
 
@@ -60,6 +63,7 @@ def test_no_generation_section() -> None:
             num_gpus=2,
             context_length=2048,
         ),
+        prompt_format=PromptFormatter.BASE,
         name="llama2",
     )
 
@@ -88,10 +92,11 @@ def test_composed_config_with_from_directive() -> None:
     """Engine loaded via !from directive — assert merge works."""
     assert ModelSpec.from_file(_CONFIGS_DIR / "composed_config.yaml") == ModelSpec(
         path="meta-llama/Llama-2-13b",
-        name="meta-llama_Llama-2-13b",
         engine=EngineParams(
             engine_type=ModelEngine.VLLM,
             num_gpus=2,
             context_length=4096,
         ),
+        prompt_format=PromptFormatter.BASE,
+        name="meta-llama_Llama-2-13b",
     )

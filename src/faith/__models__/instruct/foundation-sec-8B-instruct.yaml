@@ -6,5 +6,6 @@
 model:
   path: fdtn-ai/Foundation-Sec-8B-Instruct
   name: foundation-sec-8b-instruct
+  prompt_format: "chat"
   engine: !from '$MODELS_ROOT/default_engines.yaml["vllm-engine"]'
   generation: !from '$MODELS_ROOT/default_generation.yaml["instruct"]'

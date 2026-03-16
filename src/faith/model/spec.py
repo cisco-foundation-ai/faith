@@ -12,6 +12,7 @@ from dataclasses_json import DataClassJsonMixin
 
 from faith._internal.io.paths import canonical_segment
 from faith._internal.io.yaml import read_extended_yaml_file
+from faith.benchmark.formatting.prompt import PromptFormatter
 from faith.model.base import ReasoningSpec
 from faith.model.model_engine import ModelEngine
 from faith.model.params import EngineParams, GenParams
@@ -27,6 +28,7 @@ class ModelSpec(DataClassJsonMixin):
 
     path: str
     engine: EngineParams
+    prompt_format: PromptFormatter
     name: str = ""
     reasoning: ReasoningSpec | None = None
     response_pattern: str | None = None
@@ -51,5 +53,10 @@ class ModelSpec(DataClassJsonMixin):
         return from_dict(
             data_class=ModelSpec,
             data=model_spec_dict,
-            config=Config(type_hooks={ModelEngine: ModelEngine.from_string}),
+            config=Config(
+                type_hooks={
+                    ModelEngine: ModelEngine.from_string,
+                    PromptFormatter: PromptFormatter.from_string,
+                }
+            ),
         )

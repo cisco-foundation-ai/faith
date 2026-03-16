@@ -5,4 +5,5 @@
 ---
 model:
   path: "meta-llama/Llama-2-13b"
+  prompt_format: base
   engine: !from 'base_engine.yaml["vllm_defaults"]'

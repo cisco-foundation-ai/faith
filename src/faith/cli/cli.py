@@ -79,6 +79,10 @@ def _cli_query(args: argparse.Namespace, datastore: Datastore) -> Iterator[Path]
         ]
     }
     if args.model_paths:
+        if args.prompt_format is None:
+            raise RuntimeError(
+                "error: --prompt-format is required when using --model-paths."
+            )
         global_engine = EngineParams(
             engine_type=args.model_engine,
             num_gpus=args.num_gpus.value,
@@ -96,6 +100,7 @@ def _cli_query(args: argparse.Namespace, datastore: Datastore) -> Iterator[Path]
                 ModelSpec(
                     path=annotated_path.raw_path,
                     engine=dataclasses.replace(global_engine, num_gpus=num_gpus),
+                    prompt_format=args.prompt_format,
                     generation=global_gen,
                     **{
                         k: v
@@ -127,10 +132,15 @@ def _cli_query(args: argparse.Namespace, datastore: Datastore) -> Iterator[Path]
         if not args.num_gpus.is_default:
             engine_overrides["num_gpus"] = args.num_gpus.value
 
+        spec_overrides: dict[str, Any] = {}
+        if args.prompt_format is not None:
+            spec_overrides["prompt_format"] = args.prompt_format
+
         model_specs.extend(
             [
                 dataclasses.replace(
                     spec,
+                    **spec_overrides,
                     engine=dataclasses.replace(
                         spec.engine,
                         kwargs=spec.engine.kwargs | global_engine_kwargs,
@@ -175,7 +185,6 @@ def _cli_query(args: argparse.Namespace, datastore: Datastore) -> Iterator[Path]
             benchmark_names=args.benchmarks,
             custom_benchmark_paths=args.custom_benchmarks,
             generation_mode=args.generation_mode,
-            prompt_format=args.prompt_format,
             n_shot=args.n_shot,
             num_trials=args.num_trials,
             initial_seed=args.seed,
@@ -228,8 +237,8 @@ def _add_experiment_args(parser: argparse.ArgumentParser) -> None:
     group.add_argument(
         "--prompt-format",
         type=PromptFormatter.from_string,
-        required=True,
-        help="The prompt format to use for the model. For a list of available formats, see the format list.",
+        default=None,
+        help="The prompt format to use for the model. Required for --model-paths; acts as an override for --model-configs.",
         choices=list(PromptFormatter),
     )
     group.add_argument(

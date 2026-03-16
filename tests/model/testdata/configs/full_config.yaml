@@ -11,6 +11,7 @@ model:
     start_delimiter: "<think>"
     end_delimiter: "</think>"
   response_pattern: "Answer: (.*)"
+  prompt_format: chat
   engine:
     engine_type: vllm
     num_gpus: 4

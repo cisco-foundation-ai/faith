@@ -6,5 +6,6 @@
 model:
   path: DeepHat/DeepHat-V1-7B
   name: deephat-v1-7b
+  prompt_format: "chat"
   engine: !from '$MODELS_ROOT/default_engines.yaml["vllm-engine"]'
   generation: !from '$MODELS_ROOT/default_generation.yaml["instruct"]'

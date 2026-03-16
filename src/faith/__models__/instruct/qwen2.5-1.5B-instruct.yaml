@@ -6,5 +6,6 @@
 model:
   path: Qwen/Qwen2.5-1.5B-Instruct
   name: qwen2.5-1.5b-instruct
+  prompt_format: "chat"
   engine: !from '$MODELS_ROOT/default_engines.yaml["vllm-engine"]'
   generation: !from '$MODELS_ROOT/default_generation.yaml["instruct"]'

@@ -6,6 +6,7 @@
 model:
   path: openai/gpt-oss-120b
   name: gpt-oss-120b
+  prompt_format: "chat"
   reasoning:
     start_delimiter: [200006, 173781, 200005, 35644, 200008]
     end_delimiter: [200007, 200006, 173781, 200005, 17196, 200008]

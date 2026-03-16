@@ -291,7 +291,7 @@ def _run_single_model(
             # pylint: disable-next=raise-missing-from
             raise RuntimeError(f"Failed to initialize model: {e}")
 
-        prompt_formatter = exp_params.prompt_format
+        prompt_formatter = model_spec.prompt_format
         assert (
             prompt_formatter in model.supported_formats
         ), f"Prompt format '{prompt_formatter}' is not supported by the model '{model.name_or_path}'. Supported formats: {model.supported_formats}"

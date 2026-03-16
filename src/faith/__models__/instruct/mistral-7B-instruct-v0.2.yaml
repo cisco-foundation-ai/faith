@@ -6,5 +6,6 @@
 model:
   path: mistralai/Mistral-7B-Instruct-v0.2
   name: mistral-7b-instruct-v0.2
+  prompt_format: "chat"
   engine: !from '$MODELS_ROOT/default_engines.yaml["vllm-engine"]'
   generation: !from '$MODELS_ROOT/default_generation.yaml["instruct"]'

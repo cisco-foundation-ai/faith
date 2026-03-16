@@ -11,7 +11,6 @@ from pathlib import Path
 from dataclasses_json import DataClassJsonMixin
 
 from faith._internal.types.flags import GenerationMode, SampleRatio
-from faith.benchmark.formatting.prompt import PromptFormatter
 
 
 @dataclass(frozen=True)
@@ -28,7 +27,6 @@ class ExperimentParams:
     benchmark_names: Sequence[str] | None
     custom_benchmark_paths: Sequence[Path] | None
     generation_mode: GenerationMode
-    prompt_format: PromptFormatter
     n_shot: Sequence[SampleRatio]
     num_trials: int
     initial_seed: int
