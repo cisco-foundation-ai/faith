@@ -62,7 +62,7 @@ def _summarize_to_table_or_csv(
     selected_stats: Sequence[str],
     summary_filepath: Path | None,
 ) -> None:
-    """Summarize experiments to table or CSV (existing behavior)."""
+    """Summarize experiments to table or CSV."""
     if summary_filepath is not None and summary_filepath.exists():
         raise FileExistsError(f"Output path {summary_filepath} already exists")
 
@@ -144,10 +144,9 @@ def _summarize_to_bigquery(
     )
 
     # Find and parse all metrics files first (fail fast before any DB writes)
-    metrics_paths = _find_metrics_files(experiment_path)
     all_metrics = [
         metric
-        for metrics_path in metrics_paths
+        for metrics_path in _find_metrics_files(experiment_path)
         for metric in _process_metrics_file(metrics_path)
     ]
 

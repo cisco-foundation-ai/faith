@@ -170,8 +170,7 @@ def test_process_metrics_file_missing_experiment():
 def test_process_metrics_file_success():
     """Test successful metrics file processing."""
     testdata_dir = Path(__file__).parent / "testdata" / "process_metrics"
-    result = _process_metrics_file(testdata_dir / "metrics.json")
-    assert result == [
+    assert _process_metrics_file(testdata_dir / "metrics.json") == [
         {
             "metric_name": "accuracy.mean",
             "metric_value": 0.85,
