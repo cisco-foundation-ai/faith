@@ -211,6 +211,6 @@ class BigQueryClient:
 
         # Atomically load the metrics into the bigquery table and wait for completion.
         # If job fails, GoogleAPIError is raised and no rows are inserted
-        self._client.load_table_from_json(metrics, self.table_ref).result()
-
-        return len(metrics)
+        job = self._client.load_table_from_json(metrics, self.table_ref)
+        job.result()  # Wait for job completion
+        return job.output_rows
