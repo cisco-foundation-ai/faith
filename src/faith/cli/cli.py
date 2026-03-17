@@ -38,6 +38,7 @@ from faith._internal.types.flags import (
 from faith.benchmark.formatting.prompt import PromptFormatter
 from faith.benchmark.listing import benchmark_choices
 from faith.cli.flags import parse_begin_end_tokens
+from faith.cli.subcmd.summarize import OutputFormat
 from faith.experiment.params import DataSamplingParams, ExperimentParams
 from faith.model.base import ReasoningSpec
 from faith.model.listing import choice_to_model, model_choices
@@ -471,10 +472,10 @@ def _summarize_main(args: argparse.Namespace) -> None:
     from faith.cli.subcmd.summarize import summarize_experiments
 
     summarize_experiments(
+        OutputFormat(args.output_format),
         args.experiment_path,
         args.stats,
         args.summary_filepath,
-        output_format=args.output_format,
         bigquery_project=args.bigquery_project,
         bigquery_dataset=args.bigquery_dataset,
         bigquery_table=args.bigquery_table,
@@ -568,7 +569,9 @@ def _run_all_main(args: argparse.Namespace) -> None:
                     ),
                     metrics_output_path=experiment_path.parent / "metrics.json",
                 )
-            summarize_experiments(datastore.path, args.stats, args.summary_filepath)
+            summarize_experiments(
+                OutputFormat.TABLE, datastore.path, args.stats, args.summary_filepath
+            )
 
 
 _run_all_parser = _cli_subparsers.add_parser(

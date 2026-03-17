@@ -13,6 +13,7 @@ import pytest
 from pandas.testing import assert_frame_equal
 
 from faith.cli.subcmd.summarize import (
+    OutputFormat,
     _find_metrics_files,
     _process_metrics_file,
     _resolve_bigquery_config,
@@ -26,7 +27,9 @@ def test_summarize_experiments() -> None:
 
     with tempfile.TemporaryDirectory() as temp_dir:
         summary_filepath = Path(temp_dir) / "new" / "summary.csv"
-        summarize_experiments(experiment_path, selected_stats, summary_filepath)
+        summarize_experiments(
+            OutputFormat.CSV, experiment_path, selected_stats, summary_filepath
+        )
         assert_frame_equal(
             pd.read_csv(summary_filepath),
             pd.DataFrame(
@@ -50,7 +53,9 @@ def test_summarize_experiments() -> None:
         )
 
     with io.StringIO() as buf, contextlib.redirect_stdout(buf):
-        summarize_experiments(experiment_path, selected_stats, None)
+        summarize_experiments(
+            OutputFormat.TABLE, experiment_path, selected_stats, None
+        )
         assert (
             buf.getvalue()
             == """| benchmark    | model                     | prompt_format   | gen_mode   | n_shot   |   temp |   accuracy_max |   accuracy_mean |   accuracy_median |   accuracy_min |   accuracy_p_25 |   accuracy_p_75 |   accuracy_std |
@@ -67,11 +72,15 @@ def test_summarize_experiments_fails_on_existing() -> None:
 
     with tempfile.TemporaryDirectory() as temp_dir:
         summary_filepath = Path(temp_dir) / "new" / "summary.csv"
-        summarize_experiments(experiment_path, selected_stats, summary_filepath)
+        summarize_experiments(
+            OutputFormat.CSV, experiment_path, selected_stats, summary_filepath
+        )
 
         # Attempting to summarize again should raise FileExistsError.
         try:
-            summarize_experiments(experiment_path, selected_stats, summary_filepath)
+            summarize_experiments(
+                OutputFormat.CSV, experiment_path, selected_stats, summary_filepath
+            )
         except FileExistsError as e:
             assert str(e) == f"Output path {summary_filepath} already exists"
 

@@ -4,8 +4,8 @@
 
 """Implementation of the subcommand `summarize` to summarize experiment metrics."""
 
-import logging
 import os
+from enum import Enum
 from pathlib import Path
 from typing import Sequence
 
@@ -19,14 +19,20 @@ from faith.ingestion.parser import (
     parse_primary_metric,
 )
 
-logger = logging.getLogger(__name__)
+
+class OutputFormat(str, Enum):
+    """Output format for summarize command."""
+
+    TABLE = "table"
+    CSV = "csv"
+    BIGQUERY = "bigquery"
 
 
 def summarize_experiments(
+    output_format: OutputFormat,
     experiment_path: Path,
     selected_stats: Sequence[str],
     summary_filepath: Path | None,
-    output_format: str = "table",
     bigquery_project: str | None = None,
     bigquery_dataset: str | None = None,
     bigquery_table: str | None = None,
@@ -34,15 +40,15 @@ def summarize_experiments(
     """Summarize the experiments in the given path.
 
     Args:
+        output_format: Output format (table, csv, or bigquery)
         experiment_path: Path to experiment results
         selected_stats: Stats to include (for table/csv output)
         summary_filepath: Output file path (for csv output)
-        output_format: Output format (table, csv, or bigquery)
         bigquery_project: GCP project ID (for bigquery output)
         bigquery_dataset: BigQuery dataset name (for bigquery output)
         bigquery_table: BigQuery table name (default: metrics)
     """
-    if output_format == "bigquery":
+    if output_format == OutputFormat.BIGQUERY:
         _summarize_to_bigquery(
             experiment_path,
             bigquery_project,
@@ -106,13 +112,13 @@ def _find_metrics_files(experiment_path: Path) -> list[Path]:
 
 def _process_metrics_file(metrics_path: Path):
     """Parse a single metrics file and return the metrics records."""
-    experiment_json = metrics_path.parent / "experiment.json"
-    if not experiment_json.exists():
+    experiment_file = metrics_path.parent / "experiment.json"
+    if not experiment_file.exists():
         raise FileNotFoundError(
-            f"Missing experiment.json for {metrics_path}. Expected: {experiment_json}"
+            f"Missing experiment.json for {metrics_path}. Expected: {experiment_file}"
         )
 
-    with DatastoreContext.from_path(str(experiment_json)) as ds:
+    with DatastoreContext.from_path(str(experiment_file)) as ds:
         experiment_data = read_json_file(ds.pull())
     experiment_config = parse_experiment_config(experiment_data)
     primary_metric_name = parse_primary_metric(experiment_data)
