@@ -53,9 +53,7 @@ def test_summarize_experiments() -> None:
         )
 
     with io.StringIO() as buf, contextlib.redirect_stdout(buf):
-        summarize_experiments(
-            OutputFormat.TABLE, experiment_path, selected_stats, None
-        )
+        summarize_experiments(OutputFormat.TABLE, experiment_path, selected_stats, None)
         assert (
             buf.getvalue()
             == """| benchmark    | model                     | prompt_format   | gen_mode   | n_shot   |   temp |   accuracy_max |   accuracy_mean |   accuracy_median |   accuracy_min |   accuracy_p_25 |   accuracy_p_75 |   accuracy_std |
