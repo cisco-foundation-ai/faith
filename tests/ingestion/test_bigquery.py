@@ -106,7 +106,7 @@ def test_insert_metrics_duplicate_check():
 
 def test_insert_metrics_success():
     """Test successful metrics insertion."""
-    mock_job = Mock(result=Mock(return_value=None))
+    mock_job = Mock(result=Mock(return_value=None), output_rows=2)
     mock_client = Mock(
         query=Mock(return_value=Mock(result=Mock(return_value=Mock(total_rows=0)))),
         get_table=Mock(return_value=Mock()),
