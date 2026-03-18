@@ -4,27 +4,15 @@
 
 from pathlib import Path
 
-import pytest
 from pytest_unordered import unordered
 
 from faith._internal.io.resources import benchmarks_root
-from faith._types.configs.metadata import BenchmarkState
 from faith.benchmark.config import load_config_from_path
 from faith.benchmark.listing import (
     benchmark_choices,
     choices_to_benchmarks,
     find_benchmarks,
 )
-
-
-def test_benchmark_state_from_string() -> None:
-    assert BenchmarkState.from_string("enabled") == BenchmarkState.ENABLED
-    assert BenchmarkState.from_string("EXPERIMENTAL") == BenchmarkState.EXPERIMENTAL
-    assert BenchmarkState.from_string("disabled") == BenchmarkState.DISABLED
-    assert BenchmarkState.from_string("test_only") == BenchmarkState.TEST_ONLY
-
-    with pytest.raises(ValueError):
-        BenchmarkState.from_string("unknown")
 
 
 def test_benchmark_choices() -> None:

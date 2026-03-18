@@ -3,10 +3,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from dataclasses import dataclass, field
-from enum import StrEnum, auto
+from enum import auto
 
 from dataclasses_json import DataClassJsonMixin, config
 
+from faith._types.enums import CIStrEnum
 from faith._types.records.model_record import ModelRecord
 from faith._types.records.prompt_record import PromptRecord
 from faith._types.records.stats import StatsRecord
@@ -32,7 +33,7 @@ class SampleRecord(DataClassJsonMixin):
     stats: StatsRecord | None = None
 
 
-class RecordStatus(StrEnum):
+class RecordStatus(CIStrEnum):
     """Indicates whether a record is clean (unchanged) or dirty (new or updated)."""
 
     CLEAN = auto()

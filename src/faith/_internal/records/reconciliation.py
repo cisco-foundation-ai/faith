@@ -3,14 +3,15 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from collections.abc import Iterable
-from enum import StrEnum, auto
+from enum import auto
 
 from faith._internal.iter.join import LeftJoinTransform
 from faith._internal.iter.transform import Mapping, Transform
+from faith._types.enums import CIStrEnum
 from faith._types.records.sample_record import RecordStatus, SampleRecord
 
 
-class ReplacementStrategy(StrEnum):
+class ReplacementStrategy(CIStrEnum):
     """Defines the strategy to use when reconciling matching records."""
 
     NEVER = auto()

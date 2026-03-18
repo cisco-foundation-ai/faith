@@ -727,7 +727,7 @@ Choices:
     benchmark_chat = MCBenchmark(
         spec=BenchmarkSpec(
             name="test-bar",
-            generation_mode=GenerationMode.CHAT_COMPLETION,
+            generation_mode=GenerationMode.CHAT_COMP,
             prompt_format=PromptFormatter.CHAT,
             n_shot=SampleRatio(0),
         ),
@@ -1101,7 +1101,7 @@ Choices:
     benchmark_chat = MCBenchmark(
         spec=BenchmarkSpec(
             name="test-bar",
-            generation_mode=GenerationMode.CHAT_COMPLETION,
+            generation_mode=GenerationMode.CHAT_COMP,
             prompt_format=PromptFormatter.CHAT,
             n_shot=SampleRatio(0),
         ),

@@ -176,7 +176,7 @@ class MCBenchmark(BaseBenchmark):
             return LogitsLogGrader(op_cfg, recompute_stats)
         if self.generation_mode == GenerationMode.NEXT_TOKEN:
             return NextTokenLogGrader(op_cfg, recompute_stats, self.answer_set)
-        if self.generation_mode == GenerationMode.CHAT_COMPLETION:
+        if self.generation_mode == GenerationMode.CHAT_COMP:
             return ChatCompletionLogGrader(op_cfg, model_format_config, recompute_stats)
         raise ValueError(
             f"Unsupported generation mode: {self.generation_mode} for multiple-choice log grading."

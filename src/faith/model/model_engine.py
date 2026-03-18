@@ -7,9 +7,9 @@
 The `ModelEngine` enum acts as a factory for creating instances for a given model type.
 """
 
-from enum import Enum
 from typing import Any, Callable
 
+from faith._types.enums import CIEnum
 from faith.model.base import BaseModel
 
 
@@ -57,7 +57,7 @@ def _create_sagemaker_model(name_or_path: str, **kwargs: Any) -> BaseModel:
     return SageMakerModel(name_or_path, **kwargs)
 
 
-class ModelEngine(Enum):
+class ModelEngine(CIEnum):
     """Enum representing different model engines and their factory methods.
 
     Each enum value corresponds to a model engine and provides a method to create
@@ -70,21 +70,10 @@ class ModelEngine(Enum):
     VLLM = (_create_vllm_model,)
     SAGEMAKER = (_create_sagemaker_model,)
 
-    def __init__(self, create_model_fn: Callable[[str], BaseModel]) -> None:
-        """Initialize the ModelEngine enum with its corresponding factory function."""
-        self._create_model_fn = create_model_fn
-
-    def __str__(self) -> str:
-        """Return the string representation of the enum value."""
-        return self.name.lower()
-
-    @staticmethod
-    def from_string(name: str) -> "ModelEngine":
-        """Convert a string to the corresponding ModelEngine enum."""
-        try:
-            return ModelEngine[name.upper()]
-        except KeyError as e:
-            raise ValueError(f"Unknown model type: {name}") from e
+    @property
+    def create_model_fn(self) -> Callable[..., BaseModel]:
+        """Return the factory function for this model engine."""
+        return self.value[0]
 
     def create_model(self, name_or_path: str, **kwargs: Any) -> BaseModel:
         """Create a model using the factory method associated with this value.
@@ -93,4 +82,4 @@ class ModelEngine(Enum):
             name_or_path (str): The name of the model to load with the model engine.
             **kwargs: Additional keyword arguments to pass to the model constructor.
         """
-        return self._create_model_fn(name_or_path, **kwargs)
+        return self.create_model_fn(name_or_path, **kwargs)

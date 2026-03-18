@@ -4,9 +4,9 @@
 
 """Provides `PromptFormatter` for formatting prompts for different model types."""
 
-from enum import Enum
 from typing import Callable
 
+from faith._types.enums import CIEnum
 from faith._types.records.model_response import ChatConversation
 
 
@@ -52,27 +52,16 @@ def _format_chat_input(
     ]
 
 
-class PromptFormatter(Enum):
+class PromptFormatter(CIEnum):
     """Enum for different model prompt types."""
 
     BASE = (_format_base_input,)
     CHAT = (_format_chat_input,)
 
-    def __init__(self, formatter: Callable[..., str | ChatConversation]) -> None:
-        """Initialize the PromptFormatter enum with a specific formatting function."""
-        self._formatter = formatter
-
-    def __str__(self) -> str:
-        """Return the string representation of the enum value."""
-        return self.name.lower()
-
-    @staticmethod
-    def from_string(name: str) -> "PromptFormatter":
-        """Convert a string to the corresponding PromptFormatter enum."""
-        try:
-            return PromptFormatter[name.upper()]
-        except KeyError as e:
-            raise ValueError(f"Unknown prompt formatter: {name}") from e
+    @property
+    def formatter(self) -> Callable[..., str | ChatConversation]:
+        """Return the formatting function for this prompt type."""
+        return self.value[0]
 
     def format(
         self,
@@ -87,4 +76,4 @@ class PromptFormatter(Enum):
             prompt: The main prompt text to format.
             response_leadin: Optional lead-in text for the response.
         """
-        return self._formatter(prompt, system_prompt, response_leadin)
+        return self.formatter(prompt, system_prompt, response_leadin)

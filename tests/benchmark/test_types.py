@@ -29,7 +29,7 @@ def test_benchmark_spec_sha256() -> None:
 def test_benchmark_spec_to_dict() -> None:
     spec = BenchmarkSpec(
         name="stultus",
-        generation_mode=GenerationMode.CHAT_COMPLETION,
+        generation_mode=GenerationMode.CHAT_COMP,
         prompt_format=PromptFormatter.CHAT,
         n_shot=SampleRatio(1, 2),
     )
@@ -58,7 +58,7 @@ def test_benchmark_spec_to_dict() -> None:
         ),
         BenchmarkSpec(
             name="insulsus",
-            generation_mode=GenerationMode.CHAT_COMPLETION,
+            generation_mode=GenerationMode.CHAT_COMP,
             prompt_format=PromptFormatter.CHAT,
             n_shot=SampleRatio(0),
         ),

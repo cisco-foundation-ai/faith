@@ -4,21 +4,7 @@
 
 from unittest.mock import patch
 
-import pytest
-
 from faith.model.model_engine import ModelEngine
-
-
-def test_model_engine_strings() -> None:
-    assert ModelEngine.from_string(str(ModelEngine.OPENAI)) == ModelEngine.OPENAI
-    assert (
-        ModelEngine.from_string(str(ModelEngine.OPENROUTER)) == ModelEngine.OPENROUTER
-    )
-    assert ModelEngine.from_string(str(ModelEngine.SAGEMAKER)) == ModelEngine.SAGEMAKER
-    assert ModelEngine.from_string(str(ModelEngine.VLLM)) == ModelEngine.VLLM
-
-    with pytest.raises(ValueError, match="Unknown model type: unknown"):
-        ModelEngine.from_string("unknown")
 
 
 def test_model_engine_create_model() -> None:

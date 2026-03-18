@@ -17,9 +17,7 @@ from faith.model.model_engine import ModelEngine
 class EngineParams(DataClassJsonMixin):
     """Parameters for the model backend engine."""
 
-    engine_type: ModelEngine = field(
-        metadata=config(decoder=ModelEngine.from_string, encoder=str)
-    )
+    engine_type: ModelEngine = field(metadata=config(decoder=ModelEngine, encoder=str))
     num_gpus: int = 1
     context_length: int = 3500
     kwargs: dict[str, Any] = field(default_factory=dict)

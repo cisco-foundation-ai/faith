@@ -86,7 +86,7 @@ class SABenchmark(BaseBenchmark):
         recompute_stats: bool = False,
     ) -> LogGrader:
         """Fetch a log grader for this benchmark."""
-        if self.generation_mode == GenerationMode.CHAT_COMPLETION:
+        if self.generation_mode == GenerationMode.CHAT_COMP:
             return ChatCompletionLogGrader(
                 self._config.output_processing, model_format_config, recompute_stats
             )

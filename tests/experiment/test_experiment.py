@@ -46,7 +46,7 @@ def test_benchmark_experiment() -> None:
     # Test initialization with valid parameters
     experiment = BenchmarkExperiment(
         benchmark_path=benchmarks_root() / "for-unit-test-only",
-        generation_mode=GenerationMode.CHAT_COMPLETION,
+        generation_mode=GenerationMode.CHAT_COMP,
         prompt_format=PromptFormatter.CHAT,
         n_shot=SampleRatio(5),
         model_name="example_model",
@@ -61,7 +61,7 @@ def test_benchmark_experiment() -> None:
     )
     assert experiment.benchmark_spec == BenchmarkSpec(
         name="for-unit-test-only",
-        generation_mode=GenerationMode.CHAT_COMPLETION,
+        generation_mode=GenerationMode.CHAT_COMP,
         prompt_format=PromptFormatter.CHAT,
         n_shot=SampleRatio(5),
     )
@@ -109,7 +109,7 @@ def test_experiment_iteration() -> None:
     )
     experiment = BenchmarkExperiment(
         benchmark_path=benchmarks_root() / "for-unit-test-only",
-        generation_mode=GenerationMode.CHAT_COMPLETION,
+        generation_mode=GenerationMode.CHAT_COMP,
         prompt_format=PromptFormatter.CHAT,
         n_shot=SampleRatio(5),
         model_name="example_model",

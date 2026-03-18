@@ -5,13 +5,14 @@
 """Implementation of the subcommand `summarize` to summarize experiment metrics."""
 
 import os
-from enum import Enum
+from enum import auto
 from pathlib import Path
 from typing import Sequence
 
 from faith._internal.io.datastore import DatastoreContext
 from faith._internal.io.json import read_json_file
 from faith._internal.io.pandas import safe_df_to_csv
+from faith._types.enums import CIStrEnum
 from faith.experiment.summarize import build_summary
 from faith.ingestion.parser import (
     parse_experiment_config,
@@ -20,12 +21,12 @@ from faith.ingestion.parser import (
 )
 
 
-class OutputFormat(str, Enum):
+class OutputFormat(CIStrEnum):
     """Output format for summarize command."""
 
-    TABLE = "table"
-    CSV = "csv"
-    BIGQUERY = "bigquery"
+    TABLE = auto()
+    CSV = auto()
+    BIGQUERY = auto()
 
 
 def summarize_experiments(

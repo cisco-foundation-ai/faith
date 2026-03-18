@@ -6,24 +6,22 @@
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from enum import Enum
+from enum import auto
 from pathlib import Path
 from types import MappingProxyType
 from typing import Any, Callable, Generic, TypeVar
 
+from faith._types.enums import CIStrEnum
+
 _T = TypeVar("_T")
 
 
-class GenerationMode(Enum):
+class GenerationMode(CIStrEnum):
     """An enumeration of different generation modes for model outputs."""
 
-    LOGITS = "logits"
-    NEXT_TOKEN = "next_token"
-    CHAT_COMPLETION = "chat_comp"
-
-    def __str__(self) -> str:
-        """Return the string representation of the generation mode."""
-        return self.value
+    LOGITS = auto()
+    NEXT_TOKEN = auto()
+    CHAT_COMP = auto()
 
 
 @dataclass(frozen=True)

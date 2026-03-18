@@ -5,24 +5,18 @@
 """Benchmark metadata configuration."""
 
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import auto
+
+from faith._types.enums import CIStrEnum
 
 
-class BenchmarkState(Enum):
+class BenchmarkState(CIStrEnum):
     """Enum for benchmark states."""
 
-    ENABLED = "enabled"
-    EXPERIMENTAL = "experimental"
-    DISABLED = "disabled"
-    TEST_ONLY = "test_only"
-
-    @staticmethod
-    def from_string(s: str) -> "BenchmarkState":
-        """Convert a string to a BenchmarkState enum."""
-        try:
-            return BenchmarkState[s.upper()]
-        except KeyError as e:
-            raise ValueError(f"Unknown benchmark state: {s}") from e
+    ENABLED = auto()
+    EXPERIMENTAL = auto()
+    DISABLED = auto()
+    TEST_ONLY = auto()
 
 
 @dataclass(frozen=True)

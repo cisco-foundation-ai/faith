@@ -2,24 +2,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-import pytest
 
 from faith.benchmark.formatting.prompt import PromptFormatter
-
-
-def test_prompt_formatter_str() -> None:
-    """Test the __str__ method of PromptFormatter enum."""
-    assert str(PromptFormatter.BASE) == "base"
-    assert str(PromptFormatter.CHAT) == "chat"
-
-
-def test_prompt_formatter_from_string() -> None:
-    """Test the from_string method of PromptFormatter enum."""
-    assert PromptFormatter.from_string("base") == PromptFormatter.BASE
-    assert PromptFormatter.from_string("chat") == PromptFormatter.CHAT
-
-    with pytest.raises(ValueError, match="Unknown prompt formatter: invalid"):
-        PromptFormatter.from_string("invalid")
 
 
 def test_prompt_formatter_base_format() -> None:

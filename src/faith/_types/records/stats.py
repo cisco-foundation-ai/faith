@@ -22,7 +22,7 @@ class StatsRecord(DataClassJsonMixin):
     label: Labeling | None
     prediction: Labeling | None
     answer_format: AnswerFormat = field(
-        metadata=config(decoder=AnswerFormat.from_string, encoder=str)
+        metadata=config(decoder=AnswerFormat, encoder=str)
     )
     subject: str | None = None
     log_probs: dict[str, float] | None = None

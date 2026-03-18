@@ -90,7 +90,7 @@ def test_short_answer_benchmark_chat() -> None:
     benchmark = SABenchmark(
         spec=BenchmarkSpec(
             name="test-foo",
-            generation_mode=GenerationMode.CHAT_COMPLETION,
+            generation_mode=GenerationMode.CHAT_COMP,
             prompt_format=PromptFormatter.BASE,
             n_shot=SampleRatio(5),
         ),
@@ -111,7 +111,7 @@ def test_short_answer_benchmark_chat() -> None:
     )
 
     assert benchmark.answer_set is None
-    assert benchmark.generation_mode == GenerationMode.CHAT_COMPLETION
+    assert benchmark.generation_mode == GenerationMode.CHAT_COMP
     assert benchmark.version == __version__
 
 
@@ -134,7 +134,7 @@ def test_short_answer_benchmark_build_dataset() -> None:
     benchmark_1shot = SABenchmark(
         spec=BenchmarkSpec(
             name="test-foo",
-            generation_mode=GenerationMode.CHAT_COMPLETION,
+            generation_mode=GenerationMode.CHAT_COMP,
             prompt_format=PromptFormatter.BASE,
             n_shot=SampleRatio(1),
         ),
@@ -205,7 +205,7 @@ def test_short_answer_benchmark_build_dataset() -> None:
     benchmark_1shot_no_dev = SABenchmark(
         spec=BenchmarkSpec(
             name="test-foo",
-            generation_mode=GenerationMode.CHAT_COMPLETION,
+            generation_mode=GenerationMode.CHAT_COMP,
             prompt_format=PromptFormatter.BASE,
             n_shot=SampleRatio(1),
         ),
@@ -261,7 +261,7 @@ def test_short_answer_benchmark_build_dataset() -> None:
     benchmark_0shot = SABenchmark(
         spec=BenchmarkSpec(
             name="test-foo",
-            generation_mode=GenerationMode.CHAT_COMPLETION,
+            generation_mode=GenerationMode.CHAT_COMP,
             prompt_format=PromptFormatter.BASE,
             n_shot=SampleRatio(0),
         ),
@@ -354,7 +354,7 @@ def test_short_answer_benchmark_process_logs_chat() -> None:
     benchmark_chat = SABenchmark(
         spec=BenchmarkSpec(
             name="test-foo",
-            generation_mode=GenerationMode.CHAT_COMPLETION,
+            generation_mode=GenerationMode.CHAT_COMP,
             prompt_format=PromptFormatter.BASE,
             n_shot=SampleRatio(5),
         ),
@@ -518,7 +518,7 @@ def test_short_answer_benchmark_grade_aggregator_string_match() -> None:
     benchmark_chat = SABenchmark(
         spec=BenchmarkSpec(
             name="test-foo",
-            generation_mode=GenerationMode.CHAT_COMPLETION,
+            generation_mode=GenerationMode.CHAT_COMP,
             prompt_format=PromptFormatter.BASE,
             n_shot=SampleRatio(5),
         ),
@@ -670,7 +670,7 @@ def test_short_answer_benchmark_grade_aggregator_label_set() -> None:
     benchmark_chat = SABenchmark(
         spec=BenchmarkSpec(
             name="test-foo",
-            generation_mode=GenerationMode.CHAT_COMPLETION,
+            generation_mode=GenerationMode.CHAT_COMP,
             prompt_format=PromptFormatter.BASE,
             n_shot=SampleRatio(5),
         ),
@@ -826,7 +826,7 @@ def test_short_answer_benchmark_grade_aggregator_domain_specific() -> None:
     benchmark_chat = SABenchmark(
         spec=BenchmarkSpec(
             name="test-foo",
-            generation_mode=GenerationMode.CHAT_COMPLETION,
+            generation_mode=GenerationMode.CHAT_COMP,
             prompt_format=PromptFormatter.BASE,
             n_shot=SampleRatio(5),
         ),

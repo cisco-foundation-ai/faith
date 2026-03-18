@@ -9,7 +9,6 @@ import pytest
 from faith._internal.types.flags import (
     AnnotatedPath,
     DefaultValue,
-    GenerationMode,
     PathWithAnnotations,
     SampleRatio,
     TypeWithDefault,
@@ -28,12 +27,6 @@ def test_sample_ratio_validation() -> None:
         match="Ratio must be an integer or a fraction with numerator <= denominator",
     ):
         SampleRatio(3, 2)
-
-
-def test_generation_mode_str() -> None:
-    assert str(GenerationMode.LOGITS) == "logits"
-    assert str(GenerationMode.NEXT_TOKEN) == "next_token"
-    assert str(GenerationMode.CHAT_COMPLETION) == "chat_comp"
 
 
 def test_sample_ratio_str() -> None:

@@ -7,7 +7,6 @@
 import logging
 import math
 from collections.abc import Sequence
-from enum import Enum
 from typing import Any, NotRequired, Type, TypedDict
 
 import numpy as np
@@ -21,6 +20,7 @@ from faith._internal.parsing.expr import evaluate_expr
 from faith._internal.types.stats import MetricSummary
 from faith._types.configs.patterns import AnswerFormat, Disambiguation, PatternDef
 from faith._types.configs.scoring import ScoreFnConfig
+from faith._types.enums import CIEnum
 from faith._types.records.model_response import GenerationError
 from faith.benchmark.formatting.prompt import PromptFormatter
 from faith.benchmark.scores.scoring import Score, ScoreFn
@@ -216,7 +216,7 @@ class LLMJudgeScore(ScoreFn[str]):
         assert (
             self._llm_min_score < self._llm_max_score
         ), "Invalid score range for judge: min {self._llm_min_score} >= max {self._llm_max_score}."
-        model_engine = ModelEngine.from_string(judge_model["model_engine"])
+        model_engine = ModelEngine(judge_model["model_engine"])
         self._judge_model = model_engine.create_model(
             judge_model["model_path"], **(judge_model.get("engine_kwargs") or {})
         )
@@ -229,7 +229,7 @@ class LLMJudgeScore(ScoreFn[str]):
                     data=vf,
                     config=Config(
                         type_hooks={
-                            AnswerFormat: AnswerFormat.from_string,
+                            AnswerFormat: AnswerFormat,
                             Disambiguation: Disambiguation,
                         },
                     ),
@@ -400,7 +400,7 @@ class CompositeScore(ScoreFn[Any]):
         return {"mean": float(np.mean([s["value"] for s in scores]))}
 
 
-class DomainSpecificScore(Enum):
+class DomainSpecificScore(CIEnum):
     """Enum for scores used in domain-specific benchmarks."""
 
     CVSS = (CVSSScore,)  # Score from CVSS vectors, normalized to [0, 1].
@@ -412,34 +412,19 @@ class DomainSpecificScore(Enum):
     LLM_JUDGE = (LLMJudgeScore,)  # Score from LLM-based judge evaluation.
     COMPOSITE = (CompositeScore,)  # Composite score from multiple sub-scores.
 
-    def __init__(self, scoring_cls: Type[ScoreFn]) -> None:
-        """Initialize the DomainSpecificScore with the enum value's scoring class."""
-        self._scoring_cls = scoring_cls
-
-    def __str__(self) -> str:
-        """Return the name of the score function."""
-        return self.name.lower()
-
-    @staticmethod
-    def from_string(name: str) -> "DomainSpecificScore":
-        """Get the DomainSpecificScore instance from its string representation."""
-        try:
-            return DomainSpecificScore[name.upper()]
-        except KeyError as e:
-            raise ValueError(
-                f"Invalid score function name: {name}. Available options: {[m.name for m in DomainSpecificScore]}"
-            ) from e
+    @property
+    def scoring_cls(self) -> Type[ScoreFn]:
+        """Return the scoring class for this score function."""
+        return self.value[0]
 
     def get_score_fn(self, **kwargs: Any) -> ScoreFn:
         """Get the scorer instance for this score function."""
-        return self._scoring_cls(**kwargs)
+        return self.scoring_cls(**kwargs)
 
     @staticmethod
     def from_configs(**score_fn_kwargs: ScoreFnConfig) -> dict[str, ScoreFn]:
         """Load custom score functions using the config supplied by each key-word argument."""
         return {
-            name: DomainSpecificScore.from_string(score_cfg.type).get_score_fn(
-                **score_cfg.kwargs
-            )
+            name: DomainSpecificScore(score_cfg.type).get_score_fn(**score_cfg.kwargs)
             for name, score_cfg in score_fn_kwargs.items()
         }

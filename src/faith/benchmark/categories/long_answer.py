@@ -73,7 +73,7 @@ class LABenchmark(BaseBenchmark):
     ) -> LogGrader:
         """Fetch a log grader for this benchmark."""
         if (
-            self.generation_mode == GenerationMode.CHAT_COMPLETION
+            self.generation_mode == GenerationMode.CHAT_COMP
             and self._answer_type == LongAnswerType.FREE_FORM
         ):
             return ChatCompletionLogGrader(

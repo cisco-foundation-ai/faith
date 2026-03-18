@@ -237,7 +237,7 @@ def _add_experiment_args(parser: argparse.ArgumentParser) -> None:
     )
     group.add_argument(
         "--prompt-format",
-        type=PromptFormatter.from_string,
+        type=PromptFormatter,
         default=None,
         help="The prompt format to use for the model. Required for --model-paths; acts as an override for --model-configs.",
         choices=list(PromptFormatter),
@@ -312,7 +312,7 @@ def _add_model_args(parser: argparse.ArgumentParser) -> None:
     model_configs_action.completer = lambda **_: model_choices()  # type: ignore[attr-defined]
     group.add_argument(
         "--model-engine",
-        type=ModelEngine.from_string,
+        type=ModelEngine,
         help="The type of model to use. For a list of available models, see the model list.",
         choices=list(ModelEngine),
     )
@@ -472,7 +472,7 @@ def _summarize_main(args: argparse.Namespace) -> None:
     from faith.cli.subcmd.summarize import summarize_experiments
 
     summarize_experiments(
-        OutputFormat(args.output_format),
+        args.output_format,
         args.experiment_path,
         args.stats,
         args.summary_filepath,
@@ -490,7 +490,7 @@ def _add_summarize_args(parser: argparse.ArgumentParser) -> None:
 
     group.add_argument(
         "--output-format",
-        type=str,
+        type=OutputFormat,
         default="table",
         choices=["table", "csv", "bigquery"],
         help="Output format: 'table' (print to console), 'csv' (save to file), or 'bigquery' (ingest to BigQuery).",

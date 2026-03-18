@@ -18,16 +18,9 @@ from faith.benchmark.scores.scoring import Score
 
 
 def test_score_fn_enum() -> None:
-    # Test valid score function names
-    assert DomainSpecificScore.from_string("cvss") == DomainSpecificScore.CVSS
-    assert str(DomainSpecificScore.CVSS) == "cvss"
     assert (
         DomainSpecificScore.CVSS.get_score_fn() is not None
     ), "DomainSpecificScore should return a valid scoring function instance"
-
-    # Test invalid score function name
-    with pytest.raises(ValueError):
-        DomainSpecificScore.from_string("invalid_score_fn")
 
 
 def test_score_fn_from_configs() -> None:

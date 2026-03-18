@@ -20,7 +20,7 @@ def load_benchmark_for_test(name: str) -> Benchmark:
     """Load a benchmark with a standard spec for coarse testing purposes."""
     benchmark_spec = BenchmarkSpec(
         name=name,
-        generation_mode=GenerationMode.CHAT_COMPLETION,
+        generation_mode=GenerationMode.CHAT_COMP,
         prompt_format=PromptFormatter.CHAT,
         n_shot=SampleRatio(0),
     )

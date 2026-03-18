@@ -41,6 +41,6 @@ class ModelRecord(DataClassJsonMixin):
             self.logits = None
         if mode != GenerationMode.NEXT_TOKEN:
             self.next_token = None
-        if mode != GenerationMode.CHAT_COMPLETION:
+        if mode != GenerationMode.CHAT_COMP:
             self.chat_comp = None
         self.error = None

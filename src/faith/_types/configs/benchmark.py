@@ -5,7 +5,7 @@
 """Top-level benchmark configuration type."""
 
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import auto
 from typing import Any
 
 from dacite import Config, from_dict
@@ -15,25 +15,26 @@ from faith._types.configs.metadata import BenchmarkState, MetadataConfig
 from faith._types.configs.patterns import AnswerFormat, Disambiguation
 from faith._types.configs.scoring import OutputProcessingConfig, ScoreFnConfig
 from faith._types.configs.source import DataFileType, SourceConfig
+from faith._types.enums import CIStrEnum
 
 
-class ShortAnswerType(Enum):
+class ShortAnswerType(CIStrEnum):
     """Enum for validation types for short answer benchmarks."""
 
     # Short answer benchmarks where each answer is treated as a set of labels.
-    LABEL_SET = "label_set"
+    LABEL_SET = auto()
     # Short answer benchmarks where each answer is treated as a single string label.
-    STRING_MATCH = "string_match"
+    STRING_MATCH = auto()
     # Short answer benchmarks where each answer is scored by domain-specific scores.
-    DOMAIN_SPECIFIC = "domain_specific"
+    DOMAIN_SPECIFIC = auto()
 
 
-class LongAnswerType(Enum):
+class LongAnswerType(CIStrEnum):
     """Enum for validation types for long answer benchmarks."""
 
     # Long answer benchmarks where each answer is free-form text
     # to be evaluated by an LLM.
-    FREE_FORM = "free_form"
+    FREE_FORM = auto()
 
 
 @dataclass(frozen=True)
@@ -103,8 +104,8 @@ class BenchmarkConfig:
                     BenchmarkState: BenchmarkState,
                     ShortAnswerType: ShortAnswerType,
                     LongAnswerType: LongAnswerType,
-                    DataFileType: DataFileType.from_string,
-                    AnswerFormat: AnswerFormat.from_string,
+                    DataFileType: DataFileType,
+                    AnswerFormat: AnswerFormat,
                     Disambiguation: Disambiguation,
                     ScoreFnConfig: _score_fn_hook,
                 },

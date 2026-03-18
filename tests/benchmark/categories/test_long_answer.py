@@ -157,7 +157,7 @@ def test_long_answer_benchmark_chat() -> None:
     benchmark = LABenchmark(
         spec=BenchmarkSpec(
             name="test-foo",
-            generation_mode=GenerationMode.CHAT_COMPLETION,
+            generation_mode=GenerationMode.CHAT_COMP,
             prompt_format=PromptFormatter.BASE,
             n_shot=SampleRatio(5),
         ),
@@ -209,7 +209,7 @@ def test_long_answer_benchmark_chat() -> None:
     )
 
     assert benchmark.answer_set is None
-    assert benchmark.generation_mode == GenerationMode.CHAT_COMPLETION
+    assert benchmark.generation_mode == GenerationMode.CHAT_COMP
     assert benchmark.version == __version__
 
 
@@ -232,7 +232,7 @@ def test_long_answer_benchmark_build_dataset() -> None:
     benchmark_1shot = LABenchmark(
         spec=BenchmarkSpec(
             name="test-foo",
-            generation_mode=GenerationMode.CHAT_COMPLETION,
+            generation_mode=GenerationMode.CHAT_COMP,
             prompt_format=PromptFormatter.BASE,
             n_shot=SampleRatio(1),
         ),
@@ -334,7 +334,7 @@ def test_long_answer_benchmark_build_dataset() -> None:
     benchmark_1shot_no_dev = LABenchmark(
         spec=BenchmarkSpec(
             name="test-foo",
-            generation_mode=GenerationMode.CHAT_COMPLETION,
+            generation_mode=GenerationMode.CHAT_COMP,
             prompt_format=PromptFormatter.BASE,
             n_shot=SampleRatio(1),
         ),
@@ -440,7 +440,7 @@ def test_long_answer_benchmark_build_dataset() -> None:
     benchmark_0shot = LABenchmark(
         spec=BenchmarkSpec(
             name="test-foo",
-            generation_mode=GenerationMode.CHAT_COMPLETION,
+            generation_mode=GenerationMode.CHAT_COMP,
             prompt_format=PromptFormatter.BASE,
             n_shot=SampleRatio(0),
         ),
@@ -618,7 +618,7 @@ SUMMARY: [your summary text]""",
     benchmark_chat = LABenchmark(
         spec=BenchmarkSpec(
             name="test-foo",
-            generation_mode=GenerationMode.CHAT_COMPLETION,
+            generation_mode=GenerationMode.CHAT_COMP,
             prompt_format=PromptFormatter.BASE,
             n_shot=SampleRatio(5),
         ),
@@ -798,7 +798,7 @@ SUMMARY: [your summary text]""",
     benchmark_chat = LABenchmark(
         spec=BenchmarkSpec(
             name="test-foo",
-            generation_mode=GenerationMode.CHAT_COMPLETION,
+            generation_mode=GenerationMode.CHAT_COMP,
             prompt_format=PromptFormatter.BASE,
             n_shot=SampleRatio(5),
         ),

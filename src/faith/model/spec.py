@@ -55,8 +55,8 @@ class ModelSpec(DataClassJsonMixin):
             data=model_spec_dict,
             config=Config(
                 type_hooks={
-                    ModelEngine: ModelEngine.from_string,
-                    PromptFormatter: PromptFormatter.from_string,
+                    ModelEngine: ModelEngine,
+                    PromptFormatter: PromptFormatter,
                 }
             ),
         )

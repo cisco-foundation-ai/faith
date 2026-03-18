@@ -21,45 +21,6 @@ from faith._types.configs.patterns import (
 )
 
 
-def test_answer_format_str() -> None:
-    assert str(AnswerFormat.PROPER) == "proper"
-    assert str(AnswerFormat.IMPROPER) == "improper"
-    assert str(AnswerFormat.INFERRED) == "inferred"
-    assert str(AnswerFormat.INVALID) == "invalid"
-
-
-def test_answer_format_from_string() -> None:
-    assert AnswerFormat.from_string("proper") == AnswerFormat.PROPER
-    assert AnswerFormat.from_string("improper") == AnswerFormat.IMPROPER
-    assert AnswerFormat.from_string("inferred") == AnswerFormat.INFERRED
-    assert AnswerFormat.from_string("invalid") == AnswerFormat.INVALID
-
-    with pytest.raises(ValueError, match="Unknown answer format: unknown"):
-        AnswerFormat.from_string("unknown")
-
-
-def test_disambiguation_str() -> None:
-    assert str(Disambiguation.MATCH_IF_SINGULAR) == "match_if_singular"
-    assert str(Disambiguation.MATCH_IF_UNIQUE) == "match_if_unique"
-    assert str(Disambiguation.MATCH_FIRST) == "match_first"
-    assert str(Disambiguation.MATCH_LAST) == "match_last"
-
-
-def test_disambiguation_from_string() -> None:
-    assert (
-        Disambiguation.from_string("match_if_singular")
-        == Disambiguation.MATCH_IF_SINGULAR
-    )
-    assert (
-        Disambiguation.from_string("match_if_unique") == Disambiguation.MATCH_IF_UNIQUE
-    )
-    assert Disambiguation.from_string("match_first") == Disambiguation.MATCH_FIRST
-    assert Disambiguation.from_string("match_last") == Disambiguation.MATCH_LAST
-
-    with pytest.raises(ValueError, match="Unknown disambiguation: unknown"):
-        Disambiguation.from_string("unknown")
-
-
 def test_format_pattern_init() -> None:
     pattern_def = PatternDef(
         format_type=AnswerFormat.PROPER,

@@ -12,7 +12,6 @@ import sys
 import time
 from collections.abc import Iterable, Iterator, Sequence
 from datetime import datetime
-from enum import Enum
 from functools import partial
 from pathlib import Path
 from typing import Type
@@ -43,6 +42,7 @@ from faith._internal.records.reconciliation import (
 )
 from faith._internal.records.sort import SortByTransform
 from faith._internal.types.flags import GenerationMode
+from faith._types.enums import CIEnum
 from faith._types.records.model_record import ModelRecord
 from faith._types.records.model_response import ChatResponse, GenerationError
 from faith._types.records.prompt_record import PromptRecord
@@ -145,7 +145,7 @@ def model_querier(
     mode_map = {
         GenerationMode.LOGITS: _ModelMethod.LOGITS,
         GenerationMode.NEXT_TOKEN: _ModelMethod.NEXT_TOKEN,
-        GenerationMode.CHAT_COMPLETION: _ModelMethod.GENERATION,
+        GenerationMode.CHAT_COMP: _ModelMethod.GENERATION,
     }
     return mode_map[generation_mode].create_transform(model, gen_params)
 
@@ -221,7 +221,7 @@ class _GenerationTransform(_PredictionTransform):
             yield record
 
 
-class _ModelMethod(Enum):
+class _ModelMethod(CIEnum):
     """Enumeration of model methods for generating predictions.
 
     Each enum value corresponds to a specific generative method of the model,
@@ -232,15 +232,16 @@ class _ModelMethod(Enum):
     NEXT_TOKEN = (_NextTokenTransform,)
     GENERATION = (_GenerationTransform,)
 
-    def __init__(self, transform_cls: Type[_PredictionTransform]) -> None:
-        """Initialize the model method with the corresponding transform class."""
-        self._transform_cls = transform_cls
+    @property
+    def transform_cls(self) -> Type[_PredictionTransform]:
+        """Return the transform class for this model method."""
+        return self.value[0]
 
     def create_transform(
         self, model: BaseModel, gen_params: GenParams
     ) -> IsoTransform[SampleRecord]:
         """Create an instance of the transform for the model and generation parameters."""
-        return self._transform_cls(model, gen_params)
+        return self.transform_cls(model, gen_params)
 
 
 def _run_single_model(

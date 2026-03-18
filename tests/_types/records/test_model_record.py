@@ -39,7 +39,7 @@ def test_reset_to_mode_keeps_selected_field(mode: GenerationMode) -> None:
         ),
         chat_comp=(
             ChatResponse(output_text="The answer is A")
-            if mode == GenerationMode.CHAT_COMPLETION
+            if mode == GenerationMode.CHAT_COMP
             else None
         ),
     )

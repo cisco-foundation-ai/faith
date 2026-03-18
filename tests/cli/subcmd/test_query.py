@@ -264,7 +264,7 @@ _ANSWER_TOKEN_MAP: dict[str, int] = {"A": 87, "B": 31, "C": 7, "D": 9, "E": 5}
         (
             BenchmarkSpec(
                 name="fake",
-                generation_mode=GenerationMode.CHAT_COMPLETION,
+                generation_mode=GenerationMode.CHAT_COMP,
                 prompt_format=PromptFormatter.BASE,
                 n_shot=SampleRatio(0),
             ),
@@ -364,7 +364,7 @@ def test_benchmark_record_transform(
     "generation_mode, gen_params, input_records, expected_records",
     [
         (
-            GenerationMode.CHAT_COMPLETION,
+            GenerationMode.CHAT_COMP,
             GenParams(temperature=0.5, top_p=1.0, max_completion_tokens=100, kwargs={}),
             [
                 make_fake_record(

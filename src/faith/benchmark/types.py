@@ -22,7 +22,7 @@ class BenchmarkSpec(DataClassJsonMixin):
         metadata=config(decoder=GenerationMode, encoder=str)
     )
     prompt_format: PromptFormatter = field(
-        metadata=config(decoder=PromptFormatter.from_string, encoder=str)
+        metadata=config(decoder=PromptFormatter, encoder=str)
     )
     n_shot: SampleRatio = field(
         metadata=config(decoder=SampleRatio.from_string, encoder=str)

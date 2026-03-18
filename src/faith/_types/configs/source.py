@@ -5,27 +5,17 @@
 """Benchmark data source configuration types."""
 
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import auto
+
+from faith._types.enums import CIStrEnum
 
 
-class DataFileType(Enum):
+class DataFileType(CIStrEnum):
     """Enum for the type of data files."""
 
-    CSV = "csv"
-    JSON = "json"
-    JSONL = "jsonl"
-
-    def __str__(self) -> str:
-        """Return the string representation of the enum."""
-        return self.value
-
-    @staticmethod
-    def from_string(s: str) -> "DataFileType":
-        """Convert a string to an DataFileType enum."""
-        try:
-            return DataFileType[s.upper()]
-        except KeyError as e:
-            raise ValueError(f"Unknown data file type: {s}") from e
+    CSV = auto()
+    JSON = auto()
+    JSONL = auto()
 
 
 @dataclass(frozen=True)
