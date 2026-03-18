@@ -7,6 +7,7 @@
 import pytest
 
 from faith._types.configs.source import (
+    DataFileType,
     FilesSourceConfig,
     GitRepoSourceConfig,
     HuggingFaceSourceConfig,
@@ -21,7 +22,7 @@ def test_mutually_exclusive_source_types() -> None:
     ):
         SourceConfig(
             huggingface=HuggingFaceSourceConfig(path="some/path"),
-            files=FilesSourceConfig(),
+            files=FilesSourceConfig(type=DataFileType.CSV),
         )
     with pytest.raises(
         ValueError,
@@ -29,15 +30,15 @@ def test_mutually_exclusive_source_types() -> None:
     ):
         SourceConfig(
             huggingface=HuggingFaceSourceConfig(path="some/path"),
-            git_repo=GitRepoSourceConfig(),
+            git_repo=GitRepoSourceConfig(type=DataFileType.CSV),
         )
     with pytest.raises(
         ValueError,
         match="At most one of huggingface, files, git_repo may be provided.",
     ):
         SourceConfig(
-            files=FilesSourceConfig(),
-            git_repo=GitRepoSourceConfig(),
+            files=FilesSourceConfig(type=DataFileType.CSV),
+            git_repo=GitRepoSourceConfig(type=DataFileType.CSV),
         )
     with pytest.raises(
         ValueError,
@@ -45,6 +46,6 @@ def test_mutually_exclusive_source_types() -> None:
     ):
         SourceConfig(
             huggingface=HuggingFaceSourceConfig(path="some/path"),
-            files=FilesSourceConfig(),
-            git_repo=GitRepoSourceConfig(),
+            files=FilesSourceConfig(type=DataFileType.CSV),
+            git_repo=GitRepoSourceConfig(type=DataFileType.CSV),
         )

@@ -34,13 +34,7 @@ class HuggingFaceSourceConfig(DataClassJsonMixin):
 class FilesSourceConfig(DataClassJsonMixin):
     """Configuration for loading data from local files."""
 
-    type: DataFileType | None = field(
-        default=None,
-        metadata=config(
-            encoder=lambda v: str(v) if v is not None else None,
-            decoder=lambda v: DataFileType(v) if v is not None else None,
-        ),
-    )
+    type: DataFileType = field(metadata=config(encoder=str, decoder=DataFileType))
     benchmark_data_paths: list[str] | None = None
     path_glob: str | None = None
     holdout_data_paths: list[str] | None = None

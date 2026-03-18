@@ -87,8 +87,6 @@ def _load_local_data_source(
     base_path: Path, files_cfg: FilesSourceConfig
 ) -> tuple[pd.DataFrame, pd.DataFrame | None]:
     """Load the benchmark datasets from local files."""
-    assert files_cfg.type is not None, "File type must be specified."
-
     benchmark_df = _load_data_from_local_paths(
         base_path,
         files_cfg.benchmark_data_paths
