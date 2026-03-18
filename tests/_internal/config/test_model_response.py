@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from faith._internal.config.model_response import model_response_format_config
-from faith._types.configs.patterns import AnswerFormat, Disambiguation, PatternDef
+from faith._types.config.patterns import AnswerFormat, Disambiguation, PatternDef
 
 
 def test_model_response_format_config() -> None:

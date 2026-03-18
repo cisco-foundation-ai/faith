@@ -13,7 +13,7 @@ from faith._internal.algo.matching import (
     SimpleMatcher,
     _FormatPattern,
 )
-from faith._types.configs.patterns import (
+from faith._types.config.patterns import (
     AnswerFormat,
     CaptureTransform,
     Disambiguation,

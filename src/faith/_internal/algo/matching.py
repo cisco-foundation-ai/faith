@@ -11,7 +11,7 @@ from collections import namedtuple
 from typing import Any, Generic, TypeVar, cast
 
 from faith._internal.parsing.expr import evaluate_expr
-from faith._types.configs.patterns import (
+from faith._types.config.patterns import (
     AnswerFormat,
     Disambiguation,
     PatternDef,

@@ -23,9 +23,9 @@ from faith._internal.metrics.llm import (
     llm_prediction_metrics,
 )
 from faith._internal.types.stats import MetricSummary
-from faith._types.configs.benchmark import BenchmarkConfig, ShortAnswerType
-from faith._types.configs.patterns import AnswerFormat, PatternDef
-from faith._types.configs.scoring import OutputProcessingConfig
+from faith._types.config.benchmark import BenchmarkConfig, ShortAnswerType
+from faith._types.config.patterns import AnswerFormat, PatternDef
+from faith._types.config.scoring import OutputProcessingConfig
 from faith._types.records.prompt_record import PromptRecord
 from faith._types.records.stats import SingleLabelSeq
 from faith.benchmark.benchmark import BaseBenchmark

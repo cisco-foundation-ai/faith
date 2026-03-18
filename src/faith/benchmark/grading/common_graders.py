@@ -13,8 +13,8 @@ from faith._internal.algo.matching import (
     SequentialMatcher,
     SimpleMatcher,
 )
-from faith._types.configs.patterns import AnswerFormat, PatternDef
-from faith._types.configs.scoring import OutputProcessingConfig
+from faith._types.config.patterns import AnswerFormat, PatternDef
+from faith._types.config.scoring import OutputProcessingConfig
 from faith._types.records.sample_record import SampleRecord
 from faith._types.records.stats import Labeling, StatsRecord
 from faith.benchmark.grading.log_grader import LogGrader

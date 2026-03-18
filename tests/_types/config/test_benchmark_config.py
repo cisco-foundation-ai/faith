@@ -6,7 +6,7 @@
 
 import pytest
 
-from faith._types.configs.benchmark import (
+from faith._types.config.benchmark import (
     BenchmarkConfig,
     LAQAConfig,
     LongAnswerType,
@@ -14,16 +14,16 @@ from faith._types.configs.benchmark import (
     SAQAConfig,
     ShortAnswerType,
 )
-from faith._types.configs.format import FormatConfig, InstructionsConfig, PromptConfig
-from faith._types.configs.metadata import BenchmarkState, MetadataConfig
-from faith._types.configs.patterns import (
+from faith._types.config.format import FormatConfig, InstructionsConfig, PromptConfig
+from faith._types.config.metadata import BenchmarkState, MetadataConfig
+from faith._types.config.patterns import (
     AnswerFormat,
     CaptureTransform,
     Disambiguation,
     PatternDef,
 )
-from faith._types.configs.scoring import OutputProcessingConfig, ScoreFnConfig
-from faith._types.configs.source import (
+from faith._types.config.scoring import OutputProcessingConfig, ScoreFnConfig
+from faith._types.config.source import (
     HuggingFaceSourceConfig,
     SourceConfig,
     SourceOptionsConfig,

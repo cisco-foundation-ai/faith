@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from faith._types.configs.format import FormatConfig, InstructionsConfig, PromptConfig
+from faith._types.config.format import FormatConfig, InstructionsConfig, PromptConfig
 from faith._types.records.prompt_record import PromptRecord
 from faith.benchmark.formatting.prompt import PromptFormatter
 from faith.benchmark.formatting.qa import QAFormatter

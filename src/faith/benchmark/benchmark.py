@@ -14,8 +14,8 @@ from transformers import PreTrainedTokenizerBase
 
 from faith import __version__
 from faith._internal.algo.sampling import NShotSampler
-from faith._types.configs.benchmark import BenchmarkConfig
-from faith._types.configs.patterns import PatternDef
+from faith._types.config.benchmark import BenchmarkConfig
+from faith._types.config.patterns import PatternDef
 from faith.benchmark.dataset.dataset import BenchmarkDataset
 from faith.benchmark.dataset.load import load_data, sample_datasets
 from faith.benchmark.formatting.qa import QAFormatter

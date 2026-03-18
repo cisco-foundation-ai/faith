@@ -5,7 +5,7 @@
 import pytest
 from cvss.exceptions import CVSS3MalformedError
 
-from faith._types.configs.scoring import ScoreFnConfig
+from faith._types.config.scoring import ScoreFnConfig
 from faith.benchmark.scores.domain_specific import (
     AliasAccuracyScore,
     CompositeScore,

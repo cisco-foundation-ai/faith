@@ -17,8 +17,8 @@ from faith._internal.algo.graph import wcc_dict
 from faith._internal.algo.matching import SequentialMatcher
 from faith._internal.parsing.expr import evaluate_expr
 from faith._internal.types.stats import MetricSummary
-from faith._types.configs.patterns import AnswerFormat, PatternDef
-from faith._types.configs.scoring import ScoreFnConfig
+from faith._types.config.patterns import AnswerFormat, PatternDef
+from faith._types.config.scoring import ScoreFnConfig
 from faith._types.enums import CIEnum
 from faith._types.records.model_response import GenerationError
 from faith.benchmark.formatting.prompt import PromptFormatter

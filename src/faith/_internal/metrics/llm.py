@@ -13,7 +13,7 @@ from faith._internal.metrics.aggregations import cross_count
 from faith._internal.metrics.multilabel import micro_f1_score
 from faith._internal.metrics.validation import assert_same_length
 from faith._internal.types.stats import MetricSummary
-from faith._types.configs.patterns import AnswerFormat
+from faith._types.config.patterns import AnswerFormat
 from faith._types.records.stats import MultiLabelSeq, SingleLabelSeq
 
 

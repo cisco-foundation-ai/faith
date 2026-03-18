@@ -8,7 +8,7 @@ from typing import Any, TypeAlias
 
 from dataclasses_json import DataClassJsonMixin, config
 
-from faith._types.configs.patterns import AnswerFormat
+from faith._types.config.patterns import AnswerFormat
 
 Labeling: TypeAlias = str | Sequence[str]
 SingleLabelSeq: TypeAlias = Sequence[str | None]

@@ -6,7 +6,7 @@
 
 from typing import Any
 
-from faith._types.configs.benchmark import BenchmarkConfig
+from faith._types.config.benchmark import BenchmarkConfig
 from faith.benchmark.benchmark import Benchmark
 from faith.benchmark.categories.long_answer import LABenchmark
 from faith.benchmark.categories.multiple_choice import MCBenchmark

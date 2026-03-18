@@ -9,7 +9,7 @@ from typing import Any
 
 from dataclasses_json import DataClassJsonMixin, config
 
-from faith._types.configs.patterns import PatternDef
+from faith._types.config.patterns import PatternDef
 
 
 @dataclass(frozen=True)

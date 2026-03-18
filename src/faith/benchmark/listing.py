@@ -8,7 +8,7 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from faith._internal.io.resources import benchmarks_root
-from faith._types.configs.metadata import BenchmarkState
+from faith._types.config.metadata import BenchmarkState
 from faith.benchmark.config import load_config_from_path
 
 

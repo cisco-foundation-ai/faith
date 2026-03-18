@@ -15,7 +15,7 @@ from datasets import load_dataset
 
 from faith._internal.algo.sampling import sample_partition
 from faith._internal.parsing.expr import evaluate_expr
-from faith._types.configs.source import (
+from faith._types.config.source import (
     DataFileType,
     FilesSourceConfig,
     GitRepoSourceConfig,

@@ -7,7 +7,7 @@
 from pathlib import Path
 
 from faith._internal.io.yaml import read_extended_yaml_file
-from faith._types.configs.benchmark import BenchmarkConfig
+from faith._types.config.benchmark import BenchmarkConfig
 
 
 def load_config_from_path(benchmark_path: Path) -> BenchmarkConfig:

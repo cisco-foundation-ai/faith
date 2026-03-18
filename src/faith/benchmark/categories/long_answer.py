@@ -12,8 +12,8 @@ from faith._internal.algo.hash import dict_sha256
 from faith._internal.algo.sampling import NShotSampler
 from faith._internal.metrics.llm import llm_basic_metrics, llm_metadata_metrics
 from faith._internal.types.stats import MetricSummary
-from faith._types.configs.benchmark import BenchmarkConfig, LongAnswerType
-from faith._types.configs.patterns import AnswerFormat, PatternDef
+from faith._types.config.benchmark import BenchmarkConfig, LongAnswerType
+from faith._types.config.patterns import AnswerFormat, PatternDef
 from faith._types.records.prompt_record import PromptRecord
 from faith.benchmark.benchmark import BaseBenchmark
 from faith.benchmark.dataset.dataset import BenchmarkDataset

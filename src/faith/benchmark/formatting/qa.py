@@ -10,7 +10,7 @@ from typing import Any
 
 from jinja2 import Template
 
-from faith._types.configs.format import FormatConfig
+from faith._types.config.format import FormatConfig
 from faith._types.records.model_response import ChatConversation
 from faith._types.records.prompt_record import PromptRecord
 from faith.benchmark.formatting.prompt import PromptFormatter

@@ -11,7 +11,7 @@ from faith._internal.metrics.llm import (
     llm_multilabel_metrics,
     llm_prediction_metrics,
 )
-from faith._types.configs.patterns import AnswerFormat
+from faith._types.config.patterns import AnswerFormat
 
 
 def test_llm_metadata_metrics() -> None:

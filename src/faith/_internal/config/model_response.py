@@ -4,7 +4,7 @@
 
 """Configurations for model response handling."""
 
-from faith._types.configs.patterns import AnswerFormat, Disambiguation, PatternDef
+from faith._types.config.patterns import AnswerFormat, Disambiguation, PatternDef
 
 
 def model_response_format_config(

@@ -9,10 +9,10 @@ from enum import auto
 
 from dataclasses_json import DataClassJsonMixin, config
 
-from faith._types.configs.format import FormatConfig
-from faith._types.configs.metadata import MetadataConfig
-from faith._types.configs.scoring import OutputProcessingConfig
-from faith._types.configs.source import SourceConfig
+from faith._types.config.format import FormatConfig
+from faith._types.config.metadata import MetadataConfig
+from faith._types.config.scoring import OutputProcessingConfig
+from faith._types.config.source import SourceConfig
 from faith._types.enums import CIStrEnum
 
 

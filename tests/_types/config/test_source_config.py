@@ -6,7 +6,7 @@
 
 import pytest
 
-from faith._types.configs.source import (
+from faith._types.config.source import (
     DataFileType,
     FilesSourceConfig,
     GitRepoSourceConfig,
