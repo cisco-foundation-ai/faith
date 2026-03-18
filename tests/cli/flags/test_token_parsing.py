@@ -4,7 +4,7 @@
 
 import pytest
 
-from faith.cli.flags import parse_begin_end_tokens
+from faith.cli.flags.token_parsing import parse_begin_end_tokens
 from faith.model.base import ReasoningSpec
 
 

@@ -27,17 +27,12 @@ import colorlog
 from faith._internal.io.datastore import Datastore, DatastoreContext
 from faith._internal.iter.transform import DevNullReducer
 from faith._internal.threading.periodic import PeriodicTaskContext
-from faith._internal.types.flags import (
-    AnnotatedPath,
-    DefaultValue,
-    GenerationMode,
-    SampleRatio,
-    TypeWithDefault,
-    UserValueType,
-)
+from faith._internal.types.flags import GenerationMode, SampleRatio
 from faith.benchmark.formatting.prompt import PromptFormatter
 from faith.benchmark.listing import benchmark_choices
-from faith.cli.flags import parse_begin_end_tokens
+from faith.cli.flags.annotated_path import AnnotatedPath
+from faith.cli.flags.arg_value import DefaultValue, TypeWithDefault, UserValueType
+from faith.cli.flags.token_parsing import parse_begin_end_tokens
 from faith.cli.subcmd.summarize import OutputFormat
 from faith.experiment.params import DataSamplingParams, ExperimentParams
 from faith.model.base import ReasoningSpec

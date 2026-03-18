@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+"""Provides utilities for parsing command line flags for token specifications."""
+
 import re
 
 from faith.model.base import ReasoningSpec

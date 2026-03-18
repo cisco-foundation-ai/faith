@@ -2,19 +2,9 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from pathlib import Path
-
 import pytest
 
-from faith._internal.types.flags import (
-    AnnotatedPath,
-    DefaultValue,
-    PathWithAnnotations,
-    SampleRatio,
-    TypeWithDefault,
-    UserValue,
-    UserValueType,
-)
+from faith._internal.types.flags import SampleRatio
 
 
 def test_sample_ratio_validation() -> None:
@@ -59,93 +49,3 @@ def test_sample_ratio_from_string() -> None:
     assert SampleRatio.from_string("5/1") == SampleRatio(5, 1)
     assert SampleRatio.from_string("5/5") == SampleRatio(5, 5)
     assert SampleRatio.from_string("5/10") == SampleRatio(5, 10)
-
-
-def test_default_value() -> None:
-    d = DefaultValue[float](0.0)
-    assert d.value == 0.0
-    assert d.is_default is True
-    assert repr(d) == "DefaultValue(0.0)"
-
-
-def test_user_value() -> None:
-    u = UserValue[float](3.14)
-    assert u.value == 3.14
-    assert u.is_default is False
-    assert repr(u) == "UserValue(3.14)"
-
-
-def test_arg_value_equality() -> None:
-    assert DefaultValue[int](1) == DefaultValue[int](1)
-    assert DefaultValue[int](1) == UserValue[int](1)
-    assert DefaultValue[int](1) != DefaultValue[int](2)
-    assert DefaultValue[int](1) != "not an ArgValue"
-
-
-def test_arg_value_hash() -> None:
-    assert hash(DefaultValue[int](1)) == hash(DefaultValue[int](1))
-    assert hash(DefaultValue[int](1)) != hash(DefaultValue[int](2))
-    assert hash(UserValue[int](5)) == hash(UserValue[int](5))
-    assert hash(UserValue[str]("5")) != hash(UserValue[int](5))
-    assert hash(DefaultValue[int](1)) == hash(UserValue[int](1))
-
-
-def test_user_value_type() -> None:
-    assert UserValueType(int)("10").value == 10
-    assert not UserValueType(int)("10").is_default
-    assert UserValueType(float)("3.14").value == 3.14
-    assert UserValueType(str)("hello").value == "hello"
-
-
-def test_type_with_default() -> None:
-    type_with_default = TypeWithDefault(int, 42)
-    assert type_with_default("10") == 10
-    assert type_with_default(None) == 42
-
-    type_with_default_str = TypeWithDefault(str, "default")
-    assert type_with_default_str("hello") == "hello"
-    assert type_with_default_str(None) == "default"
-
-
-def test_path_with_values() -> None:
-    path_with_values = PathWithAnnotations("example.txt", version=1.0, format="csv")
-    assert path_with_values.path == Path("example.txt")
-    assert path_with_values.raw_path == "example.txt"
-    assert path_with_values.get_value("version") == 1.0
-    assert path_with_values.get_value("format") == "csv"
-    assert path_with_values.values() == {"version": 1.0, "format": "csv"}
-
-    with pytest.raises(KeyError):
-        path_with_values.get_value("nonexistent_key")
-
-
-def test_path_with_values_str() -> None:
-    path_with_values = PathWithAnnotations("example.txt", version=1.0, format="csv")
-    assert str(path_with_values) == "example.txt@version=1.0@format=csv"
-
-    path_with_values_empty = PathWithAnnotations("empty.txt")
-    assert str(path_with_values_empty) == "empty.txt"
-
-
-def test_annotated_path() -> None:
-    annotated_path = AnnotatedPath(
-        rows=TypeWithDefault(int, 1), format=lambda x: x or "csv"
-    )
-
-    pav = annotated_path("path/to/file.json@rows=2@format=json")
-    assert pav.path == Path("path/to/file.json")
-    assert pav.get_value("rows") == 2
-    assert pav.get_value("format") == "json"
-
-    pav = annotated_path("path/to/file.csv@rows=2")
-    assert pav.path == Path("path/to/file.csv")
-    assert pav.get_value("rows") == 2
-    assert pav.get_value("format") == "csv"
-
-    pav = annotated_path("path/to/another_file.txt")
-    assert pav.path == Path("path/to/another_file.txt")
-    assert pav.get_value("rows") == 1
-    assert pav.get_value("format") == "csv"
-
-    with pytest.raises(AssertionError, match="Unknown annotation keys: {'name'}"):
-        annotated_path("path/to/file.csv@name=example@rows=2")
