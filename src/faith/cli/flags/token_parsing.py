@@ -6,7 +6,7 @@
 
 import re
 
-from faith.model.base import ReasoningSpec
+from faith._types.model.spec import Reasoning
 
 _INT_PAT = r"(?:0|-?[1-9]\d*)"
 _INT_CSV_PAT = rf"{_INT_PAT}(?:\s*,\s*{_INT_PAT})*"
@@ -34,7 +34,7 @@ def _parse_tokens(s: str) -> str | list[int]:
     return s
 
 
-def parse_begin_end_tokens(s: str) -> ReasoningSpec:
+def parse_begin_end_tokens(s: str) -> Reasoning:
     """Parse a flag string specifying a pair of begin and end reasoning tokens."""
     pair_match = re.fullmatch(
         rf"""
@@ -47,7 +47,7 @@ def parse_begin_end_tokens(s: str) -> ReasoningSpec:
     )
     if not pair_match:
         raise ValueError(f"Invalid token-sequence pair: '{s}'")
-    return ReasoningSpec(
+    return Reasoning(
         start_delimiter=_parse_tokens(pair_match[1]),
         end_delimiter=_parse_tokens(pair_match[2]),
     )

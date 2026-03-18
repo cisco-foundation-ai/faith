@@ -14,6 +14,7 @@ from faith._internal.metrics.llm import llm_basic_metrics, llm_metadata_metrics
 from faith._internal.types.stats import MetricSummary
 from faith._types.config.benchmark import BenchmarkConfig, LongAnswerType
 from faith._types.config.patterns import AnswerFormat, PatternDef
+from faith._types.model.generation import GenerationMode
 from faith._types.records.prompt_record import PromptRecord
 from faith.benchmark.benchmark import BaseBenchmark
 from faith.benchmark.dataset.dataset import BenchmarkDataset
@@ -23,7 +24,6 @@ from faith.benchmark.grading.grade_aggregator import GradeAggregator
 from faith.benchmark.grading.log_grader import LogGrader
 from faith.benchmark.scores.scoring import Score
 from faith.benchmark.types import BenchmarkSpec
-from faith.model.params import GenerationMode
 
 
 class LABenchmark(BaseBenchmark):

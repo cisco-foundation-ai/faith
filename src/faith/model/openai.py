@@ -9,9 +9,9 @@ from typing import Any
 
 from openai import OpenAI
 
+from faith._types.model.spec import Reasoning
 from faith._types.records.model_response import ChatResponse, GenerationError
 from faith.model.api_model import APIBasedModel
-from faith.model.base import ReasoningSpec
 
 
 class OpenAIModel(APIBasedModel):
@@ -21,7 +21,7 @@ class OpenAIModel(APIBasedModel):
         self,
         name_or_path: str,
         num_log_probs: int | None = None,
-        reasoning_spec: ReasoningSpec | None = None,
+        reasoning_spec: Reasoning | None = None,
         api_num_threads: int = 5,
         api_max_attempts: int = 10,
         api_retry_sleep_secs: float = 1.0,

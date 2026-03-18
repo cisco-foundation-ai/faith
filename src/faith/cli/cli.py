@@ -28,18 +28,17 @@ from faith._internal.io.datastore import Datastore, DatastoreContext
 from faith._internal.iter.transform import DevNullReducer
 from faith._internal.threading.periodic import PeriodicTaskContext
 from faith._types.dataset.sample_ratio import SampleRatio
-from faith.benchmark.formatting.prompt import PromptFormatter
+from faith._types.model.engine import EngineParams, ModelEngine
+from faith._types.model.generation import GenerationMode, GenParams
+from faith._types.model.prompt import PromptFormatter
+from faith._types.model.spec import ModelSpec, Reasoning
 from faith.benchmark.listing import benchmark_choices
 from faith.cli.flags.annotated_path import AnnotatedPath
 from faith.cli.flags.arg_value import DefaultValue, TypeWithDefault, UserValueType
 from faith.cli.flags.token_parsing import parse_begin_end_tokens
 from faith.cli.subcmd.summarize import OutputFormat
 from faith.experiment.params import DataSamplingParams, ExperimentParams
-from faith.model.base import ReasoningSpec
 from faith.model.listing import choice_to_model, model_choices
-from faith.model.model_engine import ModelEngine
-from faith.model.params import EngineParams, GenerationMode, GenParams
-from faith.model.spec import ModelSpec
 
 _cli_parser = argparse.ArgumentParser(
     description="General purpose script for running benchmarks on models.",
@@ -270,9 +269,7 @@ def _add_model_args(parser: argparse.ArgumentParser) -> None:
         type=AnnotatedPath(
             name=lambda x: x,
             num_gpus=TypeWithDefault[int | None](int, None),
-            reasoning=TypeWithDefault[ReasoningSpec | None](
-                parse_begin_end_tokens, None
-            ),
+            reasoning=TypeWithDefault[Reasoning | None](parse_begin_end_tokens, None),
             response_pattern=TypeWithDefault[str | None](str, None),
             tokenizer=TypeWithDefault[str | None](str, None),
         ),

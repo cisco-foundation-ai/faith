@@ -21,12 +21,12 @@ from vllm.distributed.parallel_state import (
 )
 from vllm.outputs import RequestOutput
 
+from faith._types.model.prompt import PromptFormatter
+from faith._types.model.spec import Reasoning
 from faith._types.records.model_response import ChatResponse, GenerationError, TokenPred
-from faith.benchmark.formatting.prompt import PromptFormatter
 from faith.model.base import (
     BaseModel,
     PromptList,
-    ReasoningSpec,
     _is_message_list,
     _is_string_list,
 )
@@ -152,7 +152,7 @@ class VLLMModel(_VLLMBackend):
         seed: int = 54748,
         context_len: int = 400,
         num_log_probs: int | None = None,
-        reasoning_spec: ReasoningSpec | None = None,
+        reasoning_spec: Reasoning | None = None,
         **vllm_kwargs: Any,
     ):
         """Initialize the VLLM client for the model with the given parameters."""

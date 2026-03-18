@@ -42,6 +42,9 @@ from faith._internal.records.reconciliation import (
 )
 from faith._internal.records.sort import SortByTransform
 from faith._types.enums import CIEnum
+from faith._types.model.engine import ModelEngine
+from faith._types.model.generation import GenerationMode, GenParams
+from faith._types.model.spec import ModelSpec
 from faith._types.records.model_record import ModelRecord
 from faith._types.records.model_response import ChatResponse, GenerationError
 from faith._types.records.prompt_record import PromptRecord
@@ -51,9 +54,7 @@ from faith.benchmark.listing import choices_to_benchmarks, find_benchmarks
 from faith.experiment.experiment import BenchmarkExperiment
 from faith.experiment.params import DataSamplingParams, ExperimentParams
 from faith.model.base import BaseModel
-from faith.model.model_engine import ModelEngine
-from faith.model.params import GenerationMode, GenParams
-from faith.model.spec import ModelSpec
+from faith.model.factory import create_model
 
 logger = logging.getLogger(__name__)
 
@@ -272,7 +273,8 @@ def _run_single_model(
     with DatastoreContext.from_path(model_spec.path) as model_datastore:
         model_datastore.pull(raise_on_error=True)
         try:
-            model = model_spec.engine.engine_type.create_model(
+            model = create_model(
+                model_spec.engine.engine_type,
                 name_or_path=str(model_datastore.path),
                 tokenizer_name_or_path=model_spec.tokenizer,
                 num_gpus=model_spec.engine.num_gpus,

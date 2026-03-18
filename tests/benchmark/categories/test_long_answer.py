@@ -22,13 +22,14 @@ from faith._types.config.patterns import (
 from faith._types.config.scoring import OutputProcessingConfig, ScoreFnConfig
 from faith._types.config.source import HuggingFaceSourceConfig, SourceConfig
 from faith._types.dataset.sample_ratio import SampleRatio
+from faith._types.model.engine import ModelEngine
+from faith._types.model.generation import GenerationMode
+from faith._types.model.prompt import PromptFormatter
 from faith._types.records.model_response import ChatResponse, GenerationError
 from faith._types.records.stats import StatsRecord
 from faith.benchmark.benchmark import BenchmarkSpec
 from faith.benchmark.categories.long_answer import LABenchmark
-from faith.benchmark.formatting.prompt import PromptFormatter
 from faith.model.base import BaseModel, PromptList
-from faith.model.params import GenerationMode
 from tests.benchmark.categories.fake_record_maker import make_fake_record
 
 
@@ -627,7 +628,7 @@ SUMMARY: [your summary text]""",
     )
 
     with patch(
-        "faith.model.model_engine.ModelEngine.OPENAI.create_model",
+        "faith.benchmark.scores.domain_specific.create_model",
         return_value=_FakeJudgeModel("gpt-4o"),
     ) as mock_create_model:
         log_grader = benchmark_chat.log_grader(
@@ -637,7 +638,9 @@ SUMMARY: [your summary text]""",
                 format_type=AnswerFormat.PROPER,
             )
         )
-        mock_create_model.assert_called_once_with("gpt-4o", api_num_threads=1)
+        mock_create_model.assert_called_once_with(
+            ModelEngine.OPENAI, "gpt-4o", api_num_threads=1
+        )
 
     assert [log.stats for log in [] >> log_grader] == []
     assert [
@@ -807,11 +810,13 @@ SUMMARY: [your summary text]""",
     )
 
     with patch(
-        "faith.model.model_engine.ModelEngine.OPENAI.create_model",
+        "faith.benchmark.scores.domain_specific.create_model",
         return_value=_FakeJudgeModel("gpt-4o"),
     ) as mock_create_model:
         aggregator = benchmark_chat.grade_aggregator()
-        mock_create_model.assert_called_once_with("gpt-4o", api_num_threads=1)
+        mock_create_model.assert_called_once_with(
+            ModelEngine.OPENAI, "gpt-4o", api_num_threads=1
+        )
 
     assert [] >> aggregator == {
         "format_count": {

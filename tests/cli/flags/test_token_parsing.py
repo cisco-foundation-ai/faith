@@ -4,17 +4,17 @@
 
 import pytest
 
+from faith._types.model.spec import Reasoning
 from faith.cli.flags.token_parsing import parse_begin_end_tokens
-from faith.model.base import ReasoningSpec
 
 
 def test_parse_begin_end_tokens() -> None:
-    assert parse_begin_end_tokens("start, end") == ReasoningSpec("start", "end")
-    assert parse_begin_end_tokens("'[0, 1]', '2'") == ReasoningSpec("[0, 1]", "2")
-    assert parse_begin_end_tokens('"0", "[1, 2]"') == ReasoningSpec("0", "[1, 2]")
-    assert parse_begin_end_tokens("42, 100") == ReasoningSpec([42], [100])
-    assert parse_begin_end_tokens("[10], [20]") == ReasoningSpec([10], [20])
-    assert parse_begin_end_tokens("[1, 2, 3], [4,5, 6 ]") == ReasoningSpec(
+    assert parse_begin_end_tokens("start, end") == Reasoning("start", "end")
+    assert parse_begin_end_tokens("'[0, 1]', '2'") == Reasoning("[0, 1]", "2")
+    assert parse_begin_end_tokens('"0", "[1, 2]"') == Reasoning("0", "[1, 2]")
+    assert parse_begin_end_tokens("42, 100") == Reasoning([42], [100])
+    assert parse_begin_end_tokens("[10], [20]") == Reasoning([10], [20])
+    assert parse_begin_end_tokens("[1, 2, 3], [4,5, 6 ]") == Reasoning(
         [1, 2, 3], [4, 5, 6]
     )
 

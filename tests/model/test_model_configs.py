@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 
 from faith._internal.io.resources import models_root
-from faith.model.spec import ModelSpec
+from faith._types.model.spec import ModelSpec
 
 # Collect all per-model YAML configs (exclude shared defaults like default_engines).
 _MODELS_DIR = models_root()

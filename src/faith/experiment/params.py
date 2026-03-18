@@ -11,7 +11,7 @@ from pathlib import Path
 from dataclasses_json import DataClassJsonMixin
 
 from faith._types.dataset.sample_ratio import SampleRatio
-from faith.model.params import GenerationMode
+from faith._types.model.generation import GenerationMode
 
 
 @dataclass(frozen=True)

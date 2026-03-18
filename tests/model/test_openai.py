@@ -8,8 +8,8 @@ from openai.types import CompletionUsage
 from openai.types.chat import ChatCompletion, ChatCompletionMessage
 from openai.types.chat.chat_completion import Choice
 
+from faith._types.model.prompt import PromptFormatter
 from faith._types.records.model_response import ChatResponse, GenerationError
-from faith.benchmark.formatting.prompt import PromptFormatter
 from faith.model.openai import OpenAIModel
 
 

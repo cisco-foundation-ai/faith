@@ -8,11 +8,10 @@ from pathlib import Path
 
 import pytest
 
-from faith.benchmark.formatting.prompt import PromptFormatter
-from faith.model.base import ReasoningSpec
-from faith.model.model_engine import ModelEngine
-from faith.model.params import EngineParams, GenParams
-from faith.model.spec import ModelSpec
+from faith._types.model.engine import EngineParams, ModelEngine
+from faith._types.model.generation import GenParams
+from faith._types.model.prompt import PromptFormatter
+from faith._types.model.spec import ModelSpec, Reasoning
 
 _CONFIGS_DIR = Path(__file__).parent / "testdata" / "configs"
 
@@ -30,7 +29,7 @@ def test_full_config() -> None:
         prompt_format=PromptFormatter.CHAT,
         name="llama2-7b",
         tokenizer="/path/to/tokenizer",
-        reasoning=ReasoningSpec(start_delimiter="<think>", end_delimiter="</think>"),
+        reasoning=Reasoning(start_delimiter="<think>", end_delimiter="</think>"),
         response_pattern="Answer: (.*)",
         generation=GenParams(
             temperature=0.7,

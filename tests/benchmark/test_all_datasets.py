@@ -9,12 +9,12 @@ import pytest
 from faith._internal.algo.hash import dict_sha256
 from faith._internal.io.resources import benchmarks_root
 from faith._types.dataset.sample_ratio import SampleRatio
+from faith._types.model.generation import GenerationMode
+from faith._types.model.prompt import PromptFormatter
 from faith.benchmark.benchmark import Benchmark
 from faith.benchmark.config import load_config_from_path
-from faith.benchmark.formatting.prompt import PromptFormatter
 from faith.benchmark.load import load_benchmark
 from faith.benchmark.types import BenchmarkSpec
-from faith.model.params import GenerationMode
 
 
 def load_benchmark_for_test(name: str) -> Benchmark:

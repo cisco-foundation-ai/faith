@@ -11,9 +11,17 @@ from dataclasses_json import DataClassJsonMixin, config
 
 from faith._internal.io.paths import canonical_segment
 from faith._internal.io.yaml import read_extended_yaml_file
-from faith.benchmark.formatting.prompt import PromptFormatter
-from faith.model.base import ReasoningSpec
-from faith.model.params import EngineParams, GenParams
+from faith._types.model.engine import EngineParams
+from faith._types.model.generation import GenParams
+from faith._types.model.prompt import PromptFormatter
+
+
+@dataclass(frozen=True)
+class Reasoning(DataClassJsonMixin):
+    """Delimiters used to denote reasoning steps in the model's output."""
+
+    start_delimiter: str | list[int]
+    end_delimiter: str | list[int]
 
 
 @dataclass(frozen=True)
@@ -30,7 +38,7 @@ class ModelSpec(DataClassJsonMixin):
         metadata=config(encoder=str, decoder=PromptFormatter)
     )
     name: str = ""
-    reasoning: ReasoningSpec | None = None
+    reasoning: Reasoning | None = None
     response_pattern: str | None = None
     tokenizer: str | None = None
     generation: GenParams = field(default_factory=GenParams)

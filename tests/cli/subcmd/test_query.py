@@ -19,18 +19,18 @@ from faith._types.config.benchmark import BenchmarkConfig
 from faith._types.config.format import FormatConfig, InstructionsConfig, PromptConfig
 from faith._types.config.patterns import PatternDef
 from faith._types.dataset.sample_ratio import SampleRatio
+from faith._types.model.generation import GenerationMode, GenParams
+from faith._types.model.prompt import PromptFormatter
 from faith._types.records.model_response import ChatResponse, GenerationError, TokenPred
 from faith._types.records.prompt_record import PromptRecord
 from faith._types.records.sample_record import SampleRecord
 from faith.benchmark.benchmark import Benchmark, BenchmarkDataset
-from faith.benchmark.formatting.prompt import PromptFormatter
 from faith.benchmark.formatting.qa import QAFormatter
 from faith.benchmark.grading.grade_aggregator import GradeAggregator
 from faith.benchmark.grading.log_grader import LogGrader
 from faith.benchmark.types import BenchmarkSpec
 from faith.cli.subcmd.query import BenchmarkRecordTransform, model_querier
 from faith.model.base import BaseModel, PromptList
-from faith.model.params import GenerationMode, GenParams
 from tests.benchmark.categories.fake_record_maker import make_fake_record
 
 

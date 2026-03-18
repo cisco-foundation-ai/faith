@@ -6,14 +6,12 @@
 
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
-from dataclasses import dataclass
 from typing import Any, cast
 
-from dataclasses_json import DataClassJsonMixin
 from transformers import PreTrainedTokenizerBase
 
+from faith._types.model.prompt import PromptFormatter
 from faith._types.records.model_response import ChatResponse, GenerationError, TokenPred
-from faith.benchmark.formatting.prompt import PromptFormatter
 
 PromptList = list[str | list[dict[str, str]]]
 
@@ -37,14 +35,6 @@ def _is_message_list(inputs: PromptList) -> bool:
 def _is_string_list(inputs: PromptList) -> bool:
     """Check if the inputs are in a string list format."""
     return isinstance(inputs, list) and all(isinstance(i, str) for i in inputs)
-
-
-@dataclass(frozen=True)
-class ReasoningSpec(DataClassJsonMixin):
-    """Delimiters used to denote reasoning steps in the model's output."""
-
-    start_delimiter: str | list[int]
-    end_delimiter: str | list[int]
 
 
 class BaseModel(ABC):

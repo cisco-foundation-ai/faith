@@ -20,10 +20,11 @@ from faith._internal.types.stats import MetricSummary
 from faith._types.config.patterns import AnswerFormat, PatternDef
 from faith._types.config.scoring import ScoreFnConfig
 from faith._types.enums import CIEnum
+from faith._types.model.engine import ModelEngine
+from faith._types.model.prompt import PromptFormatter
 from faith._types.records.model_response import GenerationError
-from faith.benchmark.formatting.prompt import PromptFormatter
 from faith.benchmark.scores.scoring import Score, ScoreFn
-from faith.model.model_engine import ModelEngine
+from faith.model.factory import create_model
 
 logger = logging.getLogger(__name__)
 
@@ -216,8 +217,10 @@ class LLMJudgeScore(ScoreFn[str]):
             self._llm_min_score < self._llm_max_score
         ), "Invalid score range for judge: min {self._llm_min_score} >= max {self._llm_max_score}."
         model_engine = ModelEngine(judge_model["model_engine"])
-        self._judge_model = model_engine.create_model(
-            judge_model["model_path"], **(judge_model.get("engine_kwargs") or {})
+        self._judge_model = create_model(
+            model_engine,
+            judge_model["model_path"],
+            **(judge_model.get("engine_kwargs") or {}),
         )
         self._judge_model_formatter = PromptFormatter.CHAT
         self._judge_generation_kwargs = judge_model.get("generation_kwargs") or {}

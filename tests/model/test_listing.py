@@ -7,11 +7,7 @@ from pathlib import Path
 from pytest_unordered import unordered
 
 from faith._internal.io.resources import models_root
-from faith.model.listing import (
-    choice_to_model,
-    find_models,
-    model_choices,
-)
+from faith.model.listing import choice_to_model, find_models, model_choices
 
 ALL_INSTRUCT = [
     "instruct/deephat-v1-7b",

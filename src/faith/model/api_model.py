@@ -12,9 +12,10 @@ from tqdm import tqdm
 
 from faith._internal.functools.retriable import RetryFunctionWrapper
 from faith._internal.iter.fork_merge import ForkAndMergeTransform
+from faith._types.model.prompt import PromptFormatter
+from faith._types.model.spec import Reasoning
 from faith._types.records.model_response import ChatResponse, GenerationError
-from faith.benchmark.formatting.prompt import PromptFormatter
-from faith.model.base import BaseModel, PromptList, ReasoningSpec, _is_message_list
+from faith.model.base import BaseModel, PromptList, _is_message_list
 
 
 class APIBasedModel(BaseModel, ABC):
@@ -24,7 +25,7 @@ class APIBasedModel(BaseModel, ABC):
         self,
         name_or_path: str,
         num_log_probs: int | None = None,
-        reasoning_spec: ReasoningSpec | None = None,
+        reasoning_spec: Reasoning | None = None,
         api_num_threads: int = 5,
         api_max_attempts: int = 10,
         api_retry_sleep_secs: float = 1.0,

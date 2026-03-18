@@ -11,12 +11,12 @@ from typing import Any
 from faith._internal.io.datastore import Datastore
 from faith._types.config.benchmark import BenchmarkConfig
 from faith._types.dataset.sample_ratio import SampleRatio
+from faith._types.model.generation import GenerationMode, GenParams
+from faith._types.model.prompt import PromptFormatter
 from faith.benchmark.benchmark import Benchmark
 from faith.benchmark.config import load_config_from_path
-from faith.benchmark.formatting.prompt import PromptFormatter
 from faith.benchmark.load import load_benchmark
 from faith.benchmark.types import BenchmarkSpec
-from faith.model.params import GenerationMode, GenParams
 
 
 class BenchmarkExperiment:

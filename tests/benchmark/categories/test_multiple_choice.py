@@ -25,11 +25,11 @@ from faith._types.config.source import (
     SourceOptionsConfig,
 )
 from faith._types.dataset.sample_ratio import SampleRatio
+from faith._types.model.generation import GenerationMode
+from faith._types.model.prompt import PromptFormatter
 from faith._types.records.stats import StatsRecord
 from faith.benchmark.benchmark import BenchmarkSpec
 from faith.benchmark.categories.multiple_choice import MCBenchmark
-from faith.benchmark.formatting.prompt import PromptFormatter
-from faith.model.params import GenerationMode
 from tests.benchmark.categories.fake_record_maker import make_fake_record
 
 TEST_ROOT_DIR = Path(__file__).parent.absolute()

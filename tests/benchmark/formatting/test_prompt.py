@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 
-from faith.benchmark.formatting.prompt import PromptFormatter
+from faith._types.model.prompt import PromptFormatter
 
 
 def test_prompt_formatter_base_format() -> None:

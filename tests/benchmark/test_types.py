@@ -9,9 +9,9 @@ import pytest
 
 from faith._internal.io.json import read_json_file, write_as_json
 from faith._types.dataset.sample_ratio import SampleRatio
-from faith.benchmark.formatting.prompt import PromptFormatter
+from faith._types.model.generation import GenerationMode
+from faith._types.model.prompt import PromptFormatter
 from faith.benchmark.types import BenchmarkSpec
-from faith.model.params import GenerationMode
 
 
 def test_benchmark_spec_sha256() -> None:

@@ -19,11 +19,11 @@ from faith._types.config.patterns import (
 from faith._types.config.scoring import OutputProcessingConfig, ScoreFnConfig
 from faith._types.config.source import HuggingFaceSourceConfig, SourceConfig
 from faith._types.dataset.sample_ratio import SampleRatio
+from faith._types.model.generation import GenerationMode
+from faith._types.model.prompt import PromptFormatter
 from faith._types.records.stats import StatsRecord
 from faith.benchmark.benchmark import BenchmarkSpec
 from faith.benchmark.categories.short_answer import SABenchmark
-from faith.benchmark.formatting.prompt import PromptFormatter
-from faith.model.params import GenerationMode
 from tests.benchmark.categories.fake_record_maker import make_fake_record
 
 

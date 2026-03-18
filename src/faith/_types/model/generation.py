@@ -2,17 +2,16 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Types use by the model backend engines."""
+"""Generation mode enum and generation parameters."""
 
 from dataclasses import dataclass, field
 from enum import auto
 from typing import Any
 
-from dataclasses_json import DataClassJsonMixin, config
+from dataclasses_json import DataClassJsonMixin
 
 from faith._internal.algo.hash import dict_sha256
 from faith._types.enums import CIStrEnum
-from faith.model.model_engine import ModelEngine
 
 
 class GenerationMode(CIStrEnum):
@@ -21,16 +20,6 @@ class GenerationMode(CIStrEnum):
     LOGITS = auto()
     NEXT_TOKEN = auto()
     CHAT_COMP = auto()
-
-
-@dataclass(frozen=True)
-class EngineParams(DataClassJsonMixin):
-    """Parameters for the model backend engine."""
-
-    engine_type: ModelEngine = field(metadata=config(decoder=ModelEngine, encoder=str))
-    num_gpus: int = 1
-    context_length: int = 3500
-    kwargs: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
