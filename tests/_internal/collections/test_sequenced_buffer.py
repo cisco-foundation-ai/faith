@@ -4,7 +4,7 @@
 
 import pytest
 
-from faith._internal.types.collections import SequencedBuffer
+from faith._internal.collections.sequenced_buffer import SequencedBuffer
 
 
 def test_sequence_buffer() -> None:

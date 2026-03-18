@@ -8,8 +8,8 @@ from collections.abc import Iterable
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Callable, Generic, TypeVar
 
+from faith._internal.collections.sequenced_buffer import SequencedBuffer
 from faith._internal.iter.transform import Transform
-from faith._internal.types.collections import SequencedBuffer
 
 _IN = TypeVar("_IN")
 _OUT = TypeVar("_OUT")
