@@ -8,11 +8,11 @@ import pytest
 
 from faith._internal.io.datastore import Datastore
 from faith._internal.io.resources import benchmarks_root
-from faith._internal.types.flags import GenerationMode, SampleRatio
+from faith._internal.types.flags import SampleRatio
 from faith.benchmark.formatting.prompt import PromptFormatter
 from faith.benchmark.types import BenchmarkSpec
 from faith.experiment.experiment import BenchmarkExperiment
-from faith.model.params import GenParams
+from faith.model.params import GenerationMode, GenParams
 
 
 class FakeDatastore(Datastore):

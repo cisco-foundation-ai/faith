@@ -5,17 +5,6 @@
 """Provides types for parsing command line flags."""
 
 from dataclasses import dataclass
-from enum import auto
-
-from faith._types.enums import CIStrEnum
-
-
-class GenerationMode(CIStrEnum):
-    """An enumeration of different generation modes for model outputs."""
-
-    LOGITS = auto()
-    NEXT_TOKEN = auto()
-    CHAT_COMP = auto()
 
 
 @dataclass(frozen=True)

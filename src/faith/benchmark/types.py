@@ -9,8 +9,9 @@ from dataclasses import dataclass, field
 from dataclasses_json import DataClassJsonMixin, config
 
 from faith._internal.algo.hash import dict_sha256
-from faith._internal.types.flags import GenerationMode, SampleRatio
+from faith._internal.types.flags import SampleRatio
 from faith.benchmark.formatting.prompt import PromptFormatter
+from faith.model.params import GenerationMode
 
 
 @dataclass(frozen=True)

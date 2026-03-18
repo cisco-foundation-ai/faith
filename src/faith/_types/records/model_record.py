@@ -6,13 +6,13 @@ from dataclasses import dataclass, field
 
 from dataclasses_json import DataClassJsonMixin, config
 
-from faith._internal.types.flags import GenerationMode
 from faith._types.records.model_response import (
     ChatConversation,
     ChatResponse,
     GenerationError,
     TokenPred,
 )
+from faith.model.params import GenerationMode
 
 
 @dataclass

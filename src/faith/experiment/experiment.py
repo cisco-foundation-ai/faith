@@ -9,14 +9,14 @@ from pathlib import Path
 from typing import Any
 
 from faith._internal.io.datastore import Datastore
-from faith._internal.types.flags import GenerationMode, SampleRatio
+from faith._internal.types.flags import SampleRatio
 from faith._types.configs.benchmark import BenchmarkConfig
 from faith.benchmark.benchmark import Benchmark
 from faith.benchmark.config import load_config_from_path
 from faith.benchmark.formatting.prompt import PromptFormatter
 from faith.benchmark.load import load_benchmark
 from faith.benchmark.types import BenchmarkSpec
-from faith.model.params import GenParams
+from faith.model.params import GenerationMode, GenParams
 
 
 class BenchmarkExperiment:

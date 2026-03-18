@@ -5,12 +5,22 @@
 """Types use by the model backend engines."""
 
 from dataclasses import dataclass, field
+from enum import auto
 from typing import Any
 
 from dataclasses_json import DataClassJsonMixin, config
 
 from faith._internal.algo.hash import dict_sha256
+from faith._types.enums import CIStrEnum
 from faith.model.model_engine import ModelEngine
+
+
+class GenerationMode(CIStrEnum):
+    """An enumeration of different generation modes for model outputs."""
+
+    LOGITS = auto()
+    NEXT_TOKEN = auto()
+    CHAT_COMP = auto()
 
 
 @dataclass(frozen=True)

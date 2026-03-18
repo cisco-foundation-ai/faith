@@ -15,7 +15,7 @@ from transformers import AutoTokenizer, PreTrainedTokenizerBase
 
 from faith._internal.algo.sampling import NShotSampler
 from faith._internal.io.json import write_as_json
-from faith._internal.types.flags import GenerationMode, SampleRatio
+from faith._internal.types.flags import SampleRatio
 from faith._types.configs.benchmark import BenchmarkConfig
 from faith._types.configs.format import FormatConfig, InstructionsConfig, PromptConfig
 from faith._types.configs.patterns import PatternDef
@@ -30,7 +30,7 @@ from faith.benchmark.grading.log_grader import LogGrader
 from faith.benchmark.types import BenchmarkSpec
 from faith.cli.subcmd.query import BenchmarkRecordTransform, model_querier
 from faith.model.base import BaseModel, PromptList
-from faith.model.params import GenParams
+from faith.model.params import GenerationMode, GenParams
 from tests.benchmark.categories.fake_record_maker import make_fake_record
 
 

@@ -8,7 +8,7 @@ import pytest
 from datasets import Dataset, DatasetDict, Features, Value
 
 from faith import __version__
-from faith._internal.types.flags import GenerationMode, SampleRatio
+from faith._internal.types.flags import SampleRatio
 from faith._types.configs.benchmark import BenchmarkConfig, SAQAConfig, ShortAnswerType
 from faith._types.configs.format import FormatConfig, InstructionsConfig, PromptConfig
 from faith._types.configs.patterns import (
@@ -23,6 +23,7 @@ from faith._types.records.stats import StatsRecord
 from faith.benchmark.benchmark import BenchmarkSpec
 from faith.benchmark.categories.short_answer import SABenchmark
 from faith.benchmark.formatting.prompt import PromptFormatter
+from faith.model.params import GenerationMode
 from tests.benchmark.categories.fake_record_maker import make_fake_record
 
 

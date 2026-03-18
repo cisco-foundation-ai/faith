@@ -41,7 +41,6 @@ from faith._internal.records.reconciliation import (
     reconcile_records,
 )
 from faith._internal.records.sort import SortByTransform
-from faith._internal.types.flags import GenerationMode
 from faith._types.enums import CIEnum
 from faith._types.records.model_record import ModelRecord
 from faith._types.records.model_response import ChatResponse, GenerationError
@@ -53,7 +52,7 @@ from faith.experiment.experiment import BenchmarkExperiment
 from faith.experiment.params import DataSamplingParams, ExperimentParams
 from faith.model.base import BaseModel
 from faith.model.model_engine import ModelEngine
-from faith.model.params import GenParams
+from faith.model.params import GenerationMode, GenParams
 from faith.model.spec import ModelSpec
 
 logger = logging.getLogger(__name__)

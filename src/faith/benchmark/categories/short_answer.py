@@ -22,7 +22,6 @@ from faith._internal.metrics.llm import (
     llm_multilabel_metrics,
     llm_prediction_metrics,
 )
-from faith._internal.types.flags import GenerationMode
 from faith._internal.types.stats import MetricSummary
 from faith._types.configs.benchmark import BenchmarkConfig, ShortAnswerType
 from faith._types.configs.patterns import AnswerFormat, PatternDef
@@ -37,6 +36,7 @@ from faith.benchmark.grading.grade_aggregator import GradeAggregator
 from faith.benchmark.grading.log_grader import LogGrader
 from faith.benchmark.scores.scoring import Score
 from faith.benchmark.types import BenchmarkSpec
+from faith.model.params import GenerationMode
 
 
 class SABenchmark(BaseBenchmark):

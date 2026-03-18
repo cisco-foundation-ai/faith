@@ -27,7 +27,7 @@ import colorlog
 from faith._internal.io.datastore import Datastore, DatastoreContext
 from faith._internal.iter.transform import DevNullReducer
 from faith._internal.threading.periodic import PeriodicTaskContext
-from faith._internal.types.flags import GenerationMode, SampleRatio
+from faith._internal.types.flags import SampleRatio
 from faith.benchmark.formatting.prompt import PromptFormatter
 from faith.benchmark.listing import benchmark_choices
 from faith.cli.flags.annotated_path import AnnotatedPath
@@ -38,7 +38,7 @@ from faith.experiment.params import DataSamplingParams, ExperimentParams
 from faith.model.base import ReasoningSpec
 from faith.model.listing import choice_to_model, model_choices
 from faith.model.model_engine import ModelEngine
-from faith.model.params import EngineParams, GenParams
+from faith.model.params import EngineParams, GenerationMode, GenParams
 from faith.model.spec import ModelSpec
 
 _cli_parser = argparse.ArgumentParser(
@@ -226,21 +226,14 @@ def _add_experiment_args(parser: argparse.ArgumentParser) -> None:
     group.add_argument(
         "--generation-mode",
         type=GenerationMode,
-        required=True,
+        default=GenerationMode.CHAT_COMP,
         help="The generation mode to use for the model. For a list of available modes, see the mode list.",
         choices=list(GenerationMode),
     )
     group.add_argument(
-        "--prompt-format",
-        type=PromptFormatter,
-        default=None,
-        help="The prompt format to use for the model. Required for --model-paths; acts as an override for --model-configs.",
-        choices=list(PromptFormatter),
-    )
-    group.add_argument(
         "--n-shot",
         type=SampleRatio.from_string,
-        required=True,
+        default=[SampleRatio.from_string("0")],
         nargs="+",
         help="The number of in-context examples per question. [Default: 0]",
     )
@@ -305,6 +298,13 @@ def _add_model_args(parser: argparse.ArgumentParser) -> None:
         ),
     )
     model_configs_action.completer = lambda **_: model_choices()  # type: ignore[attr-defined]
+    group.add_argument(
+        "--prompt-format",
+        type=PromptFormatter,
+        default=None,
+        help="The prompt format to use for the model. Required for --model-paths; acts as an override for --model-configs.",
+        choices=list(PromptFormatter),
+    )
     group.add_argument(
         "--model-engine",
         type=ModelEngine,
