@@ -11,14 +11,13 @@ from typing import Any, NotRequired, Type, TypedDict
 
 import numpy as np
 from cvss import CVSS3, CVSSError
-from dacite import Config, from_dict
 from jinja2 import Template
 
 from faith._internal.algo.graph import wcc_dict
 from faith._internal.algo.matching import SequentialMatcher
 from faith._internal.parsing.expr import evaluate_expr
 from faith._internal.types.stats import MetricSummary
-from faith._types.configs.patterns import AnswerFormat, Disambiguation, PatternDef
+from faith._types.configs.patterns import AnswerFormat, PatternDef
 from faith._types.configs.scoring import ScoreFnConfig
 from faith._types.enums import CIEnum
 from faith._types.records.model_response import GenerationError
@@ -223,20 +222,7 @@ class LLMJudgeScore(ScoreFn[str]):
         self._judge_model_formatter = PromptFormatter.CHAT
         self._judge_generation_kwargs = judge_model.get("generation_kwargs") or {}
         parsed_formats = [
-            (
-                from_dict(
-                    data_class=PatternDef,
-                    data=vf,
-                    config=Config(
-                        type_hooks={
-                            AnswerFormat: AnswerFormat,
-                            Disambiguation: Disambiguation,
-                        },
-                    ),
-                )
-                if isinstance(vf, dict)
-                else vf
-            )
+            PatternDef.from_dict(vf) if isinstance(vf, dict) else vf
             for vf in verdict_formats
         ]
         self._verdict_matcher = SequentialMatcher(*parsed_formats)

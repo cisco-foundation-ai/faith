@@ -6,15 +6,13 @@
 
 from dataclasses import dataclass, field
 from enum import auto
-from typing import Any
 
-from dacite import Config, from_dict
+from dataclasses_json import DataClassJsonMixin, config
 
 from faith._types.configs.format import FormatConfig
-from faith._types.configs.metadata import BenchmarkState, MetadataConfig
-from faith._types.configs.patterns import AnswerFormat, Disambiguation
-from faith._types.configs.scoring import OutputProcessingConfig, ScoreFnConfig
-from faith._types.configs.source import DataFileType, SourceConfig
+from faith._types.configs.metadata import MetadataConfig
+from faith._types.configs.scoring import OutputProcessingConfig
+from faith._types.configs.source import SourceConfig
 from faith._types.enums import CIStrEnum
 
 
@@ -38,28 +36,28 @@ class LongAnswerType(CIStrEnum):
 
 
 @dataclass(frozen=True)
-class MCQAConfig:
+class MCQAConfig(DataClassJsonMixin):
     """Configuration for multiple choice question-answering benchmarks."""
 
     answer_symbols: list[str] = field(default_factory=lambda: ["A", "B", "C", "D"])
 
 
 @dataclass(frozen=True)
-class SAQAConfig:
+class SAQAConfig(DataClassJsonMixin):
     """Configuration for short answer question-answering benchmarks."""
 
-    type: ShortAnswerType
+    type: ShortAnswerType = field(metadata=config(encoder=str, decoder=ShortAnswerType))
 
 
 @dataclass(frozen=True)
-class LAQAConfig:
+class LAQAConfig(DataClassJsonMixin):
     """Configuration for long answer question-answering benchmarks."""
 
-    type: LongAnswerType
+    type: LongAnswerType = field(metadata=config(encoder=str, decoder=LongAnswerType))
 
 
 @dataclass(frozen=True)
-class BenchmarkConfig:
+class BenchmarkConfig(DataClassJsonMixin):
     """Top-level benchmark configuration loaded from benchmark.yaml files."""
 
     metadata: MetadataConfig = field(default_factory=MetadataConfig)
@@ -83,31 +81,3 @@ class BenchmarkConfig:
             raise ValueError(
                 "At most one of mcqa_config, saqa_config, laqa_config may be provided."
             )
-
-    @staticmethod
-    def from_dict(data: dict[str, Any]) -> "BenchmarkConfig":
-        """Load a BenchmarkConfig from a raw dictionary (e.g. parsed YAML)."""
-
-        def _score_fn_hook(d: dict[str, Any] | ScoreFnConfig) -> ScoreFnConfig:
-            if isinstance(d, ScoreFnConfig):
-                return d
-            return ScoreFnConfig(
-                type=d["type"],
-                kwargs={k: v for k, v in d.items() if k != "type"},
-            )
-
-        return from_dict(
-            data_class=BenchmarkConfig,
-            data=data,
-            config=Config(
-                type_hooks={
-                    BenchmarkState: BenchmarkState,
-                    ShortAnswerType: ShortAnswerType,
-                    LongAnswerType: LongAnswerType,
-                    DataFileType: DataFileType,
-                    AnswerFormat: AnswerFormat,
-                    Disambiguation: Disambiguation,
-                    ScoreFnConfig: _score_fn_hook,
-                },
-            ),
-        )

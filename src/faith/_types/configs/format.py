@@ -6,9 +6,11 @@
 
 from dataclasses import dataclass, field
 
+from dataclasses_json import DataClassJsonMixin
+
 
 @dataclass(frozen=True)
-class InstructionsConfig:
+class InstructionsConfig(DataClassJsonMixin):
     """Configuration for benchmark instruction templates."""
 
     system_prompt_template: str | None = None
@@ -17,7 +19,7 @@ class InstructionsConfig:
 
 
 @dataclass(frozen=True)
-class PromptConfig:
+class PromptConfig(DataClassJsonMixin):
     """Configuration for benchmark prompt templates."""
 
     question_template: str | None = None
@@ -26,7 +28,7 @@ class PromptConfig:
 
 
 @dataclass(frozen=True)
-class FormatConfig:
+class FormatConfig(DataClassJsonMixin):
     """Configuration for benchmark formatting (instructions + prompts)."""
 
     instructions: InstructionsConfig = field(default_factory=InstructionsConfig)

@@ -7,6 +7,8 @@
 from dataclasses import dataclass, field
 from enum import auto
 
+from dataclasses_json import DataClassJsonMixin, config
+
 from faith._types.enums import CIStrEnum
 
 
@@ -20,7 +22,7 @@ class BenchmarkState(CIStrEnum):
 
 
 @dataclass(frozen=True)
-class MetadataConfig:
+class MetadataConfig(DataClassJsonMixin):
     """Benchmark metadata."""
 
     name: str | None = None
@@ -28,4 +30,7 @@ class MetadataConfig:
     license: str | None = None
     urls: list[str] = field(default_factory=list)
     categories: list[str] = field(default_factory=list)
-    state: BenchmarkState = BenchmarkState.ENABLED
+    state: BenchmarkState = field(
+        default=BenchmarkState.ENABLED,
+        metadata=config(encoder=str, decoder=BenchmarkState),
+    )

@@ -7,6 +7,8 @@
 from dataclasses import dataclass, field
 from enum import auto
 
+from dataclasses_json import DataClassJsonMixin, config
+
 from faith._types.enums import CIStrEnum
 
 
@@ -19,7 +21,7 @@ class DataFileType(CIStrEnum):
 
 
 @dataclass(frozen=True)
-class HuggingFaceSourceConfig:
+class HuggingFaceSourceConfig(DataClassJsonMixin):
     """Configuration for loading data from HuggingFace datasets."""
 
     path: str | None = None
@@ -29,10 +31,16 @@ class HuggingFaceSourceConfig:
 
 
 @dataclass(frozen=True)
-class FilesSourceConfig:
+class FilesSourceConfig(DataClassJsonMixin):
     """Configuration for loading data from local files."""
 
-    type: DataFileType | None = None
+    type: DataFileType | None = field(
+        default=None,
+        metadata=config(
+            encoder=lambda v: str(v) if v is not None else None,
+            decoder=lambda v: DataFileType(v) if v is not None else None,
+        ),
+    )
     benchmark_data_paths: list[str] | None = None
     path_glob: str | None = None
     holdout_data_paths: list[str] | None = None
@@ -49,14 +57,14 @@ class GitRepoSourceConfig(FilesSourceConfig):
 
 
 @dataclass(frozen=True)
-class SourceOptionsConfig:
+class SourceOptionsConfig(DataClassJsonMixin):
     """Options for source data transformation."""
 
     dataframe_transform_expr: str | None = None
 
 
 @dataclass(frozen=True)
-class SourceConfig:
+class SourceConfig(DataClassJsonMixin):
     """Configuration for benchmark data sources."""
 
     huggingface: HuggingFaceSourceConfig | None = None

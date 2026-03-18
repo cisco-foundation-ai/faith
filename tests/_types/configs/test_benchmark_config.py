@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Tests for BenchmarkConfig.from_dict dacite loader."""
+"""Tests for BenchmarkConfig.from_dict loader."""
 
 import pytest
 

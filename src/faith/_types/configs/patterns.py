@@ -7,6 +7,8 @@
 from dataclasses import dataclass, field
 from enum import auto
 
+from dataclasses_json import DataClassJsonMixin, config
+
 from faith._types.enums import CIStrEnum
 
 
@@ -30,7 +32,7 @@ class Disambiguation(CIStrEnum):
 
 
 @dataclass(frozen=True)
-class CaptureTransform:
+class CaptureTransform(DataClassJsonMixin):
     """Configuration for transforming regex capture groups."""
 
     params: list[str] = field(default_factory=list)
@@ -38,10 +40,15 @@ class CaptureTransform:
 
 
 @dataclass(frozen=True)
-class PatternDef:
+class PatternDef(DataClassJsonMixin):
     """A pattern definition for matching and extracting answers from text."""
 
-    format_type: AnswerFormat
+    format_type: AnswerFormat = field(
+        metadata=config(encoder=str, decoder=AnswerFormat)
+    )
     pattern: str = ""
-    disambiguation: Disambiguation = Disambiguation.MATCH_IF_SINGULAR
+    disambiguation: Disambiguation = field(
+        default=Disambiguation.MATCH_IF_SINGULAR,
+        metadata=config(encoder=str, decoder=Disambiguation),
+    )
     capture_transform: CaptureTransform = field(default_factory=CaptureTransform)

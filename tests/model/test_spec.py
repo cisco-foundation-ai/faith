@@ -7,7 +7,6 @@
 from pathlib import Path
 
 import pytest
-from dacite.exceptions import MissingValueError
 
 from faith.benchmark.formatting.prompt import PromptFormatter
 from faith.model.base import ReasoningSpec
@@ -69,22 +68,20 @@ def test_no_generation_section() -> None:
 
 
 def test_missing_model_path_raises() -> None:
-    """Missing model.path — should raise ValueError."""
-    with pytest.raises(MissingValueError, match='missing value for field "path"'):
+    """Missing model.path — should raise KeyError."""
+    with pytest.raises(KeyError, match="path"):
         ModelSpec.from_file(_CONFIGS_DIR / "missing_path.yaml")
 
 
 def test_missing_engine_section_raises() -> None:
-    """Missing engine section entirely — should raise ValueError."""
-    with pytest.raises(MissingValueError, match='missing value for field "engine"'):
+    """Missing engine section entirely — should raise KeyError."""
+    with pytest.raises(KeyError, match="engine"):
         ModelSpec.from_file(_CONFIGS_DIR / "missing_engine.yaml")
 
 
 def test_missing_engine_type_raises() -> None:
-    """Missing engine.type — should raise ValueError."""
-    with pytest.raises(
-        MissingValueError, match='missing value for field "engine.engine_type"'
-    ):
+    """Missing engine.type — should raise KeyError."""
+    with pytest.raises(KeyError, match="engine_type"):
         ModelSpec.from_file(_CONFIGS_DIR / "missing_engine_type.yaml")
 
 
