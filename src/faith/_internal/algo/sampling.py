@@ -7,7 +7,7 @@
 import numpy as np
 import pandas as pd
 
-from faith._internal.types.flags import SampleRatio
+from faith._types.dataset.sample_ratio import SampleRatio
 
 
 def sample_partition(

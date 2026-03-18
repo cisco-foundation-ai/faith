@@ -15,13 +15,13 @@ from datasets import load_dataset
 
 from faith._internal.algo.sampling import sample_partition
 from faith._internal.parsing.expr import evaluate_expr
-from faith._internal.types.flags import SampleRatio
 from faith._types.configs.source import (
     DataFileType,
     FilesSourceConfig,
     GitRepoSourceConfig,
     SourceConfig,
 )
+from faith._types.dataset.sample_ratio import SampleRatio
 
 # The maximum comprehension length to allow for data transforms.
 MCL_FOR_TRANSFORMS = 10_000_000

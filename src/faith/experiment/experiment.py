@@ -9,8 +9,8 @@ from pathlib import Path
 from typing import Any
 
 from faith._internal.io.datastore import Datastore
-from faith._internal.types.flags import SampleRatio
 from faith._types.configs.benchmark import BenchmarkConfig
+from faith._types.dataset.sample_ratio import SampleRatio
 from faith.benchmark.benchmark import Benchmark
 from faith.benchmark.config import load_config_from_path
 from faith.benchmark.formatting.prompt import PromptFormatter

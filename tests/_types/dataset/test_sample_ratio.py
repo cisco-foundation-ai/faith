@@ -4,7 +4,7 @@
 
 import pytest
 
-from faith._internal.types.flags import SampleRatio
+from faith._types.dataset.sample_ratio import SampleRatio
 
 
 def test_sample_ratio_validation() -> None:

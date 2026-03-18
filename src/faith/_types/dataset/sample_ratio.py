@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Provides types for parsing command line flags."""
+"""Provides the SampleRatio type for specifying dataset sampling behavior."""
 
 from dataclasses import dataclass
 

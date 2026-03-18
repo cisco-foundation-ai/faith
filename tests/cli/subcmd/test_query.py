@@ -15,10 +15,10 @@ from transformers import AutoTokenizer, PreTrainedTokenizerBase
 
 from faith._internal.algo.sampling import NShotSampler
 from faith._internal.io.json import write_as_json
-from faith._internal.types.flags import SampleRatio
 from faith._types.configs.benchmark import BenchmarkConfig
 from faith._types.configs.format import FormatConfig, InstructionsConfig, PromptConfig
 from faith._types.configs.patterns import PatternDef
+from faith._types.dataset.sample_ratio import SampleRatio
 from faith._types.records.model_response import ChatResponse, GenerationError, TokenPred
 from faith._types.records.prompt_record import PromptRecord
 from faith._types.records.sample_record import SampleRecord
