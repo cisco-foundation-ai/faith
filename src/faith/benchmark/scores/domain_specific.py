@@ -12,13 +12,15 @@ from typing import Any, NotRequired, Type, TypedDict
 
 import numpy as np
 from cvss import CVSS3, CVSSError
+from dacite import Config, from_dict
 from jinja2 import Template
 
 from faith._internal.algo.graph import wcc_dict
-from faith._internal.algo.matching import AnswerFormat, SequentialMatcher
+from faith._internal.algo.matching import SequentialMatcher
 from faith._internal.parsing.expr import evaluate_expr
-from faith._internal.types.configs import Configuration
 from faith._internal.types.stats import MetricSummary
+from faith._types.configs.patterns import AnswerFormat, Disambiguation, PatternDef
+from faith._types.configs.scoring import ScoreFnConfig
 from faith._types.records.model_response import GenerationError
 from faith.benchmark.formatting.prompt import PromptFormatter
 from faith.benchmark.scores.scoring import Score, ScoreFn
@@ -112,7 +114,7 @@ class LogScaledScore(ScoreFn[str]):
         self,
         tolerance: float,
         scaling: float = 10.0,
-        attributes: Configuration | None = None,
+        attributes: dict[str, Any] | None = None,
         score_range: dict[str, float] | None = None,
     ) -> None:
         """Initialize the LogScaledScore with a given tolerance."""
@@ -150,7 +152,7 @@ class AliasAccuracyScore(ScoreFn[str]):
     def __init__(
         self,
         alias_map: dict[str, list[str]],
-        attributes: Configuration | None = None,
+        attributes: dict[str, Any] | None = None,
         score_range: dict[str, float] | None = None,
     ) -> None:
         """Initialize the AliasAccuracyScore with a dictionary of aliases."""
@@ -199,10 +201,10 @@ class LLMJudgeScore(ScoreFn[str]):
     def __init__(
         self,
         judge_prompt_template: str,
-        judge_model: Configuration,
-        verdict_formats: list[Configuration],
+        judge_model: dict[str, Any],
+        verdict_formats: list[PatternDef | dict[str, Any]],
         llm_score_range: dict[str, float] | None = None,
-        attributes: Configuration | None = None,
+        attributes: dict[str, Any] | None = None,
         score_range: dict[str, float] | None = None,
     ) -> None:
         """Initialize the LLM-based judge."""
@@ -220,7 +222,24 @@ class LLMJudgeScore(ScoreFn[str]):
         )
         self._judge_model_formatter = PromptFormatter.CHAT
         self._judge_generation_kwargs = judge_model.get("generation_kwargs") or {}
-        self._verdict_matcher = SequentialMatcher(*verdict_formats)
+        parsed_formats = [
+            (
+                from_dict(
+                    data_class=PatternDef,
+                    data=vf,
+                    config=Config(
+                        type_hooks={
+                            AnswerFormat: AnswerFormat.from_string,
+                            Disambiguation: Disambiguation,
+                        },
+                    ),
+                )
+                if isinstance(vf, dict)
+                else vf
+            )
+            for vf in verdict_formats
+        ]
+        self._verdict_matcher = SequentialMatcher(*parsed_formats)
 
     @property
     def _raw_score_range(self) -> tuple[float, float]:
@@ -308,14 +327,25 @@ class CompositeScore(ScoreFn[Any]):
     def __init__(
         self,
         aggregation: str,
-        attributes: Configuration | None = None,
+        attributes: dict[str, Any] | None = None,
         score_range: dict[str, float] | None = None,
-        sub_scores: Configuration | None = None,
+        sub_scores: dict[str, ScoreFnConfig | dict[str, Any]] | None = None,
     ) -> None:
         """Initialize the CompositeScore with a dictionary of scoring functions."""
         super().__init__(attributes=attributes, score_range=score_range)
         self._aggregation = aggregation
-        self._score_fns = DomainSpecificScore.from_configs(**(sub_scores or {}))
+        parsed_sub_scores = {
+            name: (
+                cfg
+                if isinstance(cfg, ScoreFnConfig)
+                else ScoreFnConfig(
+                    type=cfg["type"],
+                    kwargs={k: v for k, v in cfg.items() if k != "type"},
+                )
+            )
+            for name, cfg in (sub_scores or {}).items()
+        }
+        self._score_fns = DomainSpecificScore.from_configs(**parsed_sub_scores)
         assert all(
             attr not in self._RESERVED_ATTRIBUTES
             for score_fn in self._score_fns.values()
@@ -405,11 +435,11 @@ class DomainSpecificScore(Enum):
         return self._scoring_cls(**kwargs)
 
     @staticmethod
-    def from_configs(**score_fn_kwargs: Configuration) -> dict[str, ScoreFn]:
+    def from_configs(**score_fn_kwargs: ScoreFnConfig) -> dict[str, ScoreFn]:
         """Load custom score functions using the config supplied by each key-word argument."""
         return {
-            name: DomainSpecificScore.from_string(score_cfg["type"]).get_score_fn(
-                **{k: v for k, v in score_cfg.items() if k != "type"}
+            name: DomainSpecificScore.from_string(score_cfg.type).get_score_fn(
+                **score_cfg.kwargs
             )
             for name, score_cfg in score_fn_kwargs.items()
         }

@@ -8,12 +8,16 @@ from collections.abc import Sequence
 import pytest
 
 from faith._internal.algo.matching import (
-    AnswerFormat,
     Match,
-    MatchDisambiguation,
     SequentialMatcher,
     SimpleMatcher,
     _FormatPattern,
+)
+from faith._types.configs.patterns import (
+    AnswerFormat,
+    CaptureTransform,
+    Disambiguation,
+    PatternDef,
 )
 
 
@@ -34,45 +38,39 @@ def test_answer_format_from_string() -> None:
         AnswerFormat.from_string("unknown")
 
 
-def test_match_disambiguation_str() -> None:
-    assert str(MatchDisambiguation.MATCH_IF_SINGULAR) == "match_if_singular"
-    assert str(MatchDisambiguation.MATCH_IF_UNIQUE) == "match_if_unique"
-    assert str(MatchDisambiguation.MATCH_FIRST) == "match_first"
-    assert str(MatchDisambiguation.MATCH_LAST) == "match_last"
+def test_disambiguation_str() -> None:
+    assert str(Disambiguation.MATCH_IF_SINGULAR) == "match_if_singular"
+    assert str(Disambiguation.MATCH_IF_UNIQUE) == "match_if_unique"
+    assert str(Disambiguation.MATCH_FIRST) == "match_first"
+    assert str(Disambiguation.MATCH_LAST) == "match_last"
 
 
-def test_match_disambiguation_from_string() -> None:
+def test_disambiguation_from_string() -> None:
     assert (
-        MatchDisambiguation.from_string("match_if_singular")
-        == MatchDisambiguation.MATCH_IF_SINGULAR
+        Disambiguation.from_string("match_if_singular")
+        == Disambiguation.MATCH_IF_SINGULAR
     )
     assert (
-        MatchDisambiguation.from_string("match_if_unique")
-        == MatchDisambiguation.MATCH_IF_UNIQUE
+        Disambiguation.from_string("match_if_unique") == Disambiguation.MATCH_IF_UNIQUE
     )
-    assert (
-        MatchDisambiguation.from_string("match_first")
-        == MatchDisambiguation.MATCH_FIRST
-    )
-    assert (
-        MatchDisambiguation.from_string("match_last") == MatchDisambiguation.MATCH_LAST
-    )
+    assert Disambiguation.from_string("match_first") == Disambiguation.MATCH_FIRST
+    assert Disambiguation.from_string("match_last") == Disambiguation.MATCH_LAST
 
-    with pytest.raises(ValueError, match="Unknown match disambiguation: unknown"):
-        MatchDisambiguation.from_string("unknown")
+    with pytest.raises(ValueError, match="Unknown disambiguation: unknown"):
+        Disambiguation.from_string("unknown")
 
 
 def test_format_pattern_init() -> None:
-    pattern_def = {
-        "format_type": "proper",
-        "match_disambiguation": "match_if_singular",
-        "pattern": r"(\d+) (\d+)",
-        "capture_transform": {"params": ["x", "y"], "expr": "int(x) + int(y)"},
-    }
+    pattern_def = PatternDef(
+        format_type=AnswerFormat.PROPER,
+        disambiguation=Disambiguation.MATCH_IF_SINGULAR,
+        pattern=r"(\d+) (\d+)",
+        capture_transform=CaptureTransform(params=["x", "y"], expr="int(x) + int(y)"),
+    )
     pattern = _FormatPattern(pattern_def)
     # pylint: disable=protected-access
     assert pattern._format_type == AnswerFormat.PROPER
-    assert pattern._match_disambiguation == MatchDisambiguation.MATCH_IF_SINGULAR
+    assert pattern._disambiguation == Disambiguation.MATCH_IF_SINGULAR
     assert pattern._pattern.pattern == r"(\d+) (\d+)"
     assert pattern._num_captures == 2
     assert pattern._capture_transform(5, 7) == 12
@@ -85,12 +83,12 @@ def test_format_pattern_init() -> None:
         ),
     ):
         _FormatPattern(
-            {
-                "format_type": "proper",
-                "match_disambiguation": "match_if_singular",
-                "pattern": r"(\d+) (\d+)",
-                "capture_transform": {"params": ["x"], "expr": "int(x)"},
-            }
+            PatternDef(
+                format_type=AnswerFormat.PROPER,
+                disambiguation=Disambiguation.MATCH_IF_SINGULAR,
+                pattern=r"(\d+) (\d+)",
+                capture_transform=CaptureTransform(params=["x"], expr="int(x)"),
+            )
         )
     with pytest.raises(
         AssertionError,
@@ -99,53 +97,55 @@ def test_format_pattern_init() -> None:
         ),
     ):
         _FormatPattern(
-            {
-                "format_type": "proper",
-                "match_disambiguation": "match_if_singular",
-                "pattern": r"(\d+) (\d+)",
-            }
+            PatternDef(
+                format_type=AnswerFormat.PROPER,
+                disambiguation=Disambiguation.MATCH_IF_SINGULAR,
+                pattern=r"(\d+) (\d+)",
+            )
         )
 
 
 def test_format_pattern_answer_format() -> None:
     assert (
         _FormatPattern(
-            {
-                "format_type": "proper",
-                "match_disambiguation": "match_if_singular",
-                "pattern": r"(\d+) (\d+)",
-                "capture_transform": {"params": ["x", "y"], "expr": "int(x) + int(y)"},
-            }
+            PatternDef(
+                format_type=AnswerFormat.PROPER,
+                disambiguation=Disambiguation.MATCH_IF_SINGULAR,
+                pattern=r"(\d+) (\d+)",
+                capture_transform=CaptureTransform(
+                    params=["x", "y"], expr="int(x) + int(y)"
+                ),
+            )
         ).answer_format
         == AnswerFormat.PROPER
     )
     assert (
         _FormatPattern(
-            {
-                "format_type": "improper",
-                "match_disambiguation": "match_if_unique",
-                "pattern": r"(\d+)",
-            }
+            PatternDef(
+                format_type=AnswerFormat.IMPROPER,
+                disambiguation=Disambiguation.MATCH_IF_UNIQUE,
+                pattern=r"(\d+)",
+            )
         ).answer_format
         == AnswerFormat.IMPROPER
     )
     assert (
         _FormatPattern(
-            {
-                "format_type": "inferred",
-                "match_disambiguation": "match_first",
-                "pattern": r"(\d+)",
-            }
+            PatternDef(
+                format_type=AnswerFormat.INFERRED,
+                disambiguation=Disambiguation.MATCH_FIRST,
+                pattern=r"(\d+)",
+            )
         ).answer_format
         == AnswerFormat.INFERRED
     )
     assert (
         _FormatPattern(
-            {
-                "format_type": "invalid",
-                "match_disambiguation": "match_last",
-                "pattern": r"(\d+)",
-            }
+            PatternDef(
+                format_type=AnswerFormat.INVALID,
+                disambiguation=Disambiguation.MATCH_LAST,
+                pattern=r"(\d+)",
+            )
         ).answer_format
         == AnswerFormat.INVALID
     )
@@ -155,12 +155,14 @@ def test_format_pattern_answer_format() -> None:
     "spec, input_output_pairs",
     [
         (
-            {
-                "format_type": "proper",
-                "match_disambiguation": "match_if_singular",
-                "pattern": r"(\d+) (\d+)",
-                "capture_transform": {"params": ["x", "y"], "expr": "int(x) + int(y)"},
-            },
+            PatternDef(
+                format_type=AnswerFormat.PROPER,
+                disambiguation=Disambiguation.MATCH_IF_SINGULAR,
+                pattern=r"(\d+) (\d+)",
+                capture_transform=CaptureTransform(
+                    params=["x", "y"], expr="int(x) + int(y)"
+                ),
+            ),
             [
                 ("5 7", (12, AnswerFormat.PROPER)),
                 ("5 7 or 8 2", None),
@@ -168,11 +170,11 @@ def test_format_pattern_answer_format() -> None:
             ],
         ),
         (
-            {
-                "format_type": "improper",
-                "match_disambiguation": "match_if_unique",
-                "pattern": r"(\d+)",
-            },
+            PatternDef(
+                format_type=AnswerFormat.IMPROPER,
+                disambiguation=Disambiguation.MATCH_IF_UNIQUE,
+                pattern=r"(\d+)",
+            ),
             [
                 ("57 abc", ("57", AnswerFormat.IMPROPER)),
                 ("5 or 5 and 5", ("5", AnswerFormat.IMPROPER)),
@@ -182,11 +184,11 @@ def test_format_pattern_answer_format() -> None:
             ],
         ),
         (
-            {
-                "format_type": "inferred",
-                "match_disambiguation": "match_first",
-                "pattern": r"(\d+)",
-            },
+            PatternDef(
+                format_type=AnswerFormat.INFERRED,
+                disambiguation=Disambiguation.MATCH_FIRST,
+                pattern=r"(\d+)",
+            ),
             [
                 ("5 abc", ("5", AnswerFormat.INFERRED)),
                 ("5 or 6 and 7", ("5", AnswerFormat.INFERRED)),
@@ -195,11 +197,11 @@ def test_format_pattern_answer_format() -> None:
             ],
         ),
         (
-            {
-                "format_type": "invalid",
-                "match_disambiguation": "match_last",
-                "pattern": r"(\d+)",
-            },
+            PatternDef(
+                format_type=AnswerFormat.INVALID,
+                disambiguation=Disambiguation.MATCH_LAST,
+                pattern=r"(\d+)",
+            ),
             [
                 ("5 abc", ("5", AnswerFormat.INVALID)),
                 ("5 or 6 and 7", ("7", AnswerFormat.INVALID)),
@@ -208,11 +210,11 @@ def test_format_pattern_answer_format() -> None:
             ],
         ),
         (
-            {
-                "format_type": "improper",
-                "match_disambiguation": "match_all",
-                "pattern": r"(\d+)F",
-            },
+            PatternDef(
+                format_type=AnswerFormat.IMPROPER,
+                disambiguation=Disambiguation.MATCH_ALL,
+                pattern=r"(\d+)F",
+            ),
             [
                 ("448F", ("448", AnswerFormat.IMPROPER)),
                 ("57F abc", None),
@@ -222,11 +224,11 @@ def test_format_pattern_answer_format() -> None:
             ],
         ),
         (
-            {
-                "format_type": "proper",
-                "match_disambiguation": "match_all",
-                "pattern": r"(?s)\d+kg\s+.*",
-            },
+            PatternDef(
+                format_type=AnswerFormat.PROPER,
+                disambiguation=Disambiguation.MATCH_ALL,
+                pattern=r"(?s)\d+kg\s+.*",
+            ),
             [
                 ("945kg\n\nabc", ("945kg\n\nabc", AnswerFormat.PROPER)),
                 ("weight: 57kg abc", None),
@@ -236,15 +238,15 @@ def test_format_pattern_answer_format() -> None:
             ],
         ),
         (
-            {
-                "format_type": "proper",
-                "match_disambiguation": "match_all",
-                "pattern": r"(?is)\s*(\{.*\})\s*",
-                "capture_transform": {
-                    "params": ["dict_str"],
-                    "expr": "from_json(dict_str).get('height')",
-                },
-            },
+            PatternDef(
+                format_type=AnswerFormat.PROPER,
+                disambiguation=Disambiguation.MATCH_ALL,
+                pattern=r"(?is)\s*(\{.*\})\s*",
+                capture_transform=CaptureTransform(
+                    params=["dict_str"],
+                    expr="from_json(dict_str).get('height')",
+                ),
+            ),
             [
                 ('{\n  "height": 180,\n  "weight": 75\n}', (180, AnswerFormat.PROPER)),
                 ('{\n  "weight": 75\n}', (None, AnswerFormat.PROPER)),
@@ -254,7 +256,7 @@ def test_format_pattern_answer_format() -> None:
     ],
 )
 def test_format_pattern_call(
-    spec: dict[str, str],
+    spec: PatternDef,
     input_output_pairs: Sequence[tuple[str, tuple[str, AnswerFormat] | None]],
 ) -> None:
     """Test the call method of _FormatPattern."""
@@ -266,11 +268,11 @@ def test_format_pattern_call(
 def test_simple_matcher() -> None:
     """Test the SimpleMatcher class."""
     matcher = SimpleMatcher(
-        {
-            "format_type": "proper",
-            "match_disambiguation": "match_if_singular",
-            "pattern": r"(\d+)\s*\+\s*(?:\d+)",
-        }
+        PatternDef(
+            format_type=AnswerFormat.PROPER,
+            disambiguation=Disambiguation.MATCH_IF_SINGULAR,
+            pattern=r"(\d+)\s*\+\s*(?:\d+)",
+        )
     )
 
     assert matcher("5 + 7") == Match("5", AnswerFormat.PROPER)
@@ -283,17 +285,19 @@ def test_simple_matcher() -> None:
 def test_sequential_matcher() -> None:
     """Test the SequentialMatcher class."""
     matcher = SequentialMatcher(
-        {
-            "format_type": "proper",
-            "match_disambiguation": "match_if_singular",
-            "pattern": r"(\d+)\s*\+\s*(\d+)",
-            "capture_transform": {"params": ["x", "y"], "expr": "str(int(x) + int(y))"},
-        },
-        {
-            "format_type": "improper",
-            "match_disambiguation": "match_if_unique",
-            "pattern": r"(\d+)",
-        },
+        PatternDef(
+            format_type=AnswerFormat.PROPER,
+            disambiguation=Disambiguation.MATCH_IF_SINGULAR,
+            pattern=r"(\d+)\s*\+\s*(\d+)",
+            capture_transform=CaptureTransform(
+                params=["x", "y"], expr="str(int(x) + int(y))"
+            ),
+        ),
+        PatternDef(
+            format_type=AnswerFormat.IMPROPER,
+            disambiguation=Disambiguation.MATCH_IF_UNIQUE,
+            pattern=r"(\d+)",
+        ),
     )
 
     assert matcher("5 + 7") == ("12", AnswerFormat.PROPER)
@@ -310,44 +314,44 @@ def test_sequential_matcher_assertions() -> None:
         AssertionError, match="The first pattern must have a proper answer format."
     ):
         SequentialMatcher(
-            {
-                "format_type": "improper",
-                "match_disambiguation": "match_if_unique",
-                "pattern": r"(\d+)",
-            }
+            PatternDef(
+                format_type=AnswerFormat.IMPROPER,
+                disambiguation=Disambiguation.MATCH_IF_UNIQUE,
+                pattern=r"(\d+)",
+            )
         )
     with pytest.raises(
         AssertionError, match="Only the first pattern can have a proper answer format."
     ):
         SequentialMatcher(
-            {
-                "format_type": "proper",
-                "match_disambiguation": "match_if_singular",
-                "pattern": r"(\d+)",
-            },
-            {
-                "format_type": "proper",
-                "match_disambiguation": "match_if_unique",
-                "pattern": r"(\w+)",
-            },
+            PatternDef(
+                format_type=AnswerFormat.PROPER,
+                disambiguation=Disambiguation.MATCH_IF_SINGULAR,
+                pattern=r"(\d+)",
+            ),
+            PatternDef(
+                format_type=AnswerFormat.PROPER,
+                disambiguation=Disambiguation.MATCH_IF_UNIQUE,
+                pattern=r"(\w+)",
+            ),
         )
 
 
 def test_matcher_composition() -> None:
     """Test that matchers can be composed."""
     matcher1 = SimpleMatcher(
-        {
-            "format_type": "proper",
-            "match_disambiguation": "match_all",
-            "pattern": r"(\d+)\s*\+\s*(?:\d+)",
-        }
+        PatternDef(
+            format_type=AnswerFormat.PROPER,
+            disambiguation=Disambiguation.MATCH_ALL,
+            pattern=r"(\d+)\s*\+\s*(?:\d+)",
+        )
     )
     matcher2 = SimpleMatcher(
-        {
-            "format_type": "proper",
-            "match_disambiguation": "match_all",
-            "pattern": r"(\d)(?:\d*)",
-        }
+        PatternDef(
+            format_type=AnswerFormat.PROPER,
+            disambiguation=Disambiguation.MATCH_ALL,
+            pattern=r"(\d)(?:\d*)",
+        )
     )
     matcher = matcher1 | matcher2
 

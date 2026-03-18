@@ -73,13 +73,13 @@ benchmark:
           capture_transform:
             params: ["x"]
             expr: "x.strip().upper()"
-          match_disambiguation: "match_if_unique"
+          disambiguation: "match_if_unique"
           format_type: "proper"
         - pattern: '(?i)((?:/\w+:\w+){2,})\b'
           capture_transform:
             params: ["x"]
             expr: '"CVSS:3.0" + x.strip().upper()'
-          match_disambiguation: "match_if_unique"
+          disambiguation: "match_if_unique"
           format_type: "improper"
       score_fns:
         cvss_score:

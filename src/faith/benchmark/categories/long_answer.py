@@ -3,19 +3,18 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from collections.abc import Sequence
-from enum import Enum
 from typing import Any
 
 import numpy as np
 import pandas as pd
 
 from faith._internal.algo.hash import dict_sha256
-from faith._internal.algo.matching import AnswerFormat
 from faith._internal.algo.sampling import NShotSampler
 from faith._internal.metrics.llm import llm_basic_metrics, llm_metadata_metrics
-from faith._internal.types.configs import Configuration
 from faith._internal.types.flags import GenerationMode
 from faith._internal.types.stats import MetricSummary
+from faith._types.configs.benchmark import BenchmarkConfig, LongAnswerType
+from faith._types.configs.patterns import AnswerFormat, PatternDef
 from faith._types.records.prompt_record import PromptRecord
 from faith.benchmark.benchmark import BaseBenchmark
 from faith.benchmark.dataset.dataset import BenchmarkDataset
@@ -27,14 +26,6 @@ from faith.benchmark.scores.scoring import Score
 from faith.benchmark.types import BenchmarkSpec
 
 
-class LongAnswerType(Enum):
-    """Enum for validation types for long answer benchmarks."""
-
-    # Long answer benchmarks where each answer is free-form text
-    # to be evaluated by an LLM.
-    FREE_FORM = "free_form"
-
-
 class LABenchmark(BaseBenchmark):
     """Base `Benchmark` class for benchmarks with long answer question-answer pairs."""
 
@@ -42,16 +33,19 @@ class LABenchmark(BaseBenchmark):
     # there is no current reason to implement an answer lead-in, which is
     # difficult to implement since long answer benchmarks do not have answer sets.
 
-    def __init__(self, spec: BenchmarkSpec, config: Configuration, **kwargs: Any):
+    def __init__(self, spec: BenchmarkSpec, config: BenchmarkConfig, **kwargs: Any):
         """Initializes the LABenchmark with the given specification and configuration."""
         super().__init__(spec, config, **kwargs)
         assert spec.generation_mode not in [
             GenerationMode.LOGITS,
             GenerationMode.NEXT_TOKEN,
         ], "Long answer benchmarks do not support logits/next_token generation mode since long answers may be multiple tokens."
-        self._answer_type = LongAnswerType(self._config["laqa_config"]["type"])
         assert (
-            len(self._config.get("output_processing", {}).get("score_fns", {})) > 0
+            self._config.laqa_config is not None
+        ), "LAQAConfig is required for long answer benchmarks."
+        self._answer_type = self._config.laqa_config.type
+        assert (
+            len(self._config.output_processing.score_fns) > 0
         ), "Long answer benchmarks must have at least one score function defined."
 
     def _build_dataset(
@@ -74,7 +68,7 @@ class LABenchmark(BaseBenchmark):
     def log_grader(
         self,
         *,
-        model_format_config: Configuration | None = None,
+        model_format_config: PatternDef | None = None,
         recompute_stats: bool = False,
     ) -> LogGrader:
         """Fetch a log grader for this benchmark."""
@@ -83,7 +77,7 @@ class LABenchmark(BaseBenchmark):
             and self._answer_type == LongAnswerType.FREE_FORM
         ):
             return ChatCompletionLogGrader(
-                self._config.get("output_processing") or {},
+                self._config.output_processing,
                 model_format_config,
                 recompute_stats,
             )
@@ -93,7 +87,7 @@ class LABenchmark(BaseBenchmark):
 
     def grade_aggregator(self) -> GradeAggregator:
         """Fetch a grade aggregator for this benchmark."""
-        return LAMetricsAggregator(self._config["output_processing"])
+        return LAMetricsAggregator(self._config.output_processing)
 
 
 class LABenchmarkDataset(BenchmarkDataset):

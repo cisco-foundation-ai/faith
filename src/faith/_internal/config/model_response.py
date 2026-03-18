@@ -4,19 +4,19 @@
 
 """Configurations for model response handling."""
 
-from typing import Any
+from faith._types.configs.patterns import AnswerFormat, Disambiguation, PatternDef
 
 
 def model_response_format_config(
     format_pattern: str | None = None,
-) -> dict[str, Any] | None:
+) -> PatternDef | None:
     """Get the configuration for model response formatting."""
     return (
-        {
-            "pattern": format_pattern or r"(?s).*",
-            "match_disambiguation": "match_all",
-            "format_type": "proper",
-        }
+        PatternDef(
+            pattern=format_pattern or r"(?s).*",
+            disambiguation=Disambiguation.MATCH_ALL,
+            format_type=AnswerFormat.PROPER,
+        )
         if format_pattern is not None
         else None
     )

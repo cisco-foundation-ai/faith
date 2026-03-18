@@ -6,7 +6,7 @@
 
 from typing import Any
 
-from faith._internal.types.configs import Configuration
+from faith._types.configs.benchmark import BenchmarkConfig
 from faith.benchmark.benchmark import Benchmark
 from faith.benchmark.categories.long_answer import LABenchmark
 from faith.benchmark.categories.multiple_choice import MCBenchmark
@@ -15,13 +15,13 @@ from faith.benchmark.types import BenchmarkSpec
 
 
 def load_benchmark(
-    spec: BenchmarkSpec, config: Configuration, **kwargs: Any
+    spec: BenchmarkSpec, config: BenchmarkConfig, **kwargs: Any
 ) -> Benchmark:
     """Load a benchmark from a benchmark specification `spec` and configuration `config`."""
-    if config.get("mcqa_config") is not None:
+    if config.mcqa_config is not None:
         return MCBenchmark(spec, config, **kwargs)
-    if config.get("saqa_config") is not None:
+    if config.saqa_config is not None:
         return SABenchmark(spec, config, **kwargs)
-    if config.get("laqa_config") is not None:
+    if config.laqa_config is not None:
         return LABenchmark(spec, config, **kwargs)
     raise ValueError(f"Unsupported benchmark type for {spec.name}.")

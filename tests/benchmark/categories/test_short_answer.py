@@ -8,8 +8,17 @@ import pytest
 from datasets import Dataset, DatasetDict, Features, Value
 
 from faith import __version__
-from faith._internal.algo.matching import AnswerFormat
 from faith._internal.types.flags import GenerationMode, SampleRatio
+from faith._types.configs.benchmark import BenchmarkConfig, SAQAConfig, ShortAnswerType
+from faith._types.configs.format import FormatConfig, InstructionsConfig, PromptConfig
+from faith._types.configs.patterns import (
+    AnswerFormat,
+    CaptureTransform,
+    Disambiguation,
+    PatternDef,
+)
+from faith._types.configs.scoring import OutputProcessingConfig, ScoreFnConfig
+from faith._types.configs.source import HuggingFaceSourceConfig, SourceConfig
 from faith._types.records.stats import StatsRecord
 from faith.benchmark.benchmark import BenchmarkSpec
 from faith.benchmark.categories.short_answer import SABenchmark
@@ -29,21 +38,21 @@ def test_short_answer_benchmark_logits() -> None:
                 prompt_format=PromptFormatter.BASE,
                 n_shot=SampleRatio(5),
             ),
-            config={
-                "saqa_config": {"type": "string_match"},
-                "format": {
-                    "instructions": {
-                        "system_prompt_template": "You are a helpful assistant.",
-                        "base_inst_template": "Please answer the following question.",
-                        "chat_inst_template": "Please answer the following question in a chat format.",
-                    },
-                    "prompt": {
-                        "question_template": "Question: {{ question }}",
-                        "answer_template": "Answer: {{ answer }}",
-                        "prompt_template": "{{ instruction }}\n\n{{ question }}",
-                    },
-                },
-            },
+            config=BenchmarkConfig(
+                saqa_config=SAQAConfig(type=ShortAnswerType.STRING_MATCH),
+                format=FormatConfig(
+                    instructions=InstructionsConfig(
+                        system_prompt_template="You are a helpful assistant.",
+                        base_inst_template="Please answer the following question.",
+                        chat_inst_template="Please answer the following question in a chat format.",
+                    ),
+                    prompt=PromptConfig(
+                        question_template="Question: {{ question }}",
+                        answer_template="Answer: {{ answer }}",
+                        prompt_template="{{ instruction }}\n\n{{ question }}",
+                    ),
+                ),
+            ),
         )
 
 
@@ -59,21 +68,21 @@ def test_short_answer_benchmark_next_token() -> None:
                 prompt_format=PromptFormatter.BASE,
                 n_shot=SampleRatio(5),
             ),
-            config={
-                "saqa_config": {"type": "string_match"},
-                "format": {
-                    "instructions": {
-                        "system_prompt_template": "You are a helpful assistant.",
-                        "base_inst_template": "Please answer the following question.",
-                        "chat_inst_template": "Please answer the following question in a chat format.",
-                    },
-                    "prompt": {
-                        "question_template": "Question: {{ question }}",
-                        "answer_template": "Answer: {{ answer }}",
-                        "prompt_template": "{{ instruction }}\n\n{{ question }}",
-                    },
-                },
-            },
+            config=BenchmarkConfig(
+                saqa_config=SAQAConfig(type=ShortAnswerType.STRING_MATCH),
+                format=FormatConfig(
+                    instructions=InstructionsConfig(
+                        system_prompt_template="You are a helpful assistant.",
+                        base_inst_template="Please answer the following question.",
+                        chat_inst_template="Please answer the following question in a chat format.",
+                    ),
+                    prompt=PromptConfig(
+                        question_template="Question: {{ question }}",
+                        answer_template="Answer: {{ answer }}",
+                        prompt_template="{{ instruction }}\n\n{{ question }}",
+                    ),
+                ),
+            ),
         )
 
 
@@ -85,20 +94,20 @@ def test_short_answer_benchmark_chat() -> None:
             prompt_format=PromptFormatter.BASE,
             n_shot=SampleRatio(5),
         ),
-        config={
-            "saqa_config": {"type": "string_match"},
-            "format": {
-                "instructions": {
-                    "base_inst_template": "Please answer the following question.",
-                    "chat_inst_template": "Please answer the following question in a chat format.",
-                },
-                "prompt": {
-                    "question_template": "Question: {{ question }}",
-                    "answer_template": "Answer: {{ answer }}",
-                    "prompt_template": "{{ instruction }}\n\n{{ question }}",
-                },
-            },
-        },
+        config=BenchmarkConfig(
+            saqa_config=SAQAConfig(type=ShortAnswerType.STRING_MATCH),
+            format=FormatConfig(
+                instructions=InstructionsConfig(
+                    base_inst_template="Please answer the following question.",
+                    chat_inst_template="Please answer the following question in a chat format.",
+                ),
+                prompt=PromptConfig(
+                    question_template="Question: {{ question }}",
+                    answer_template="Answer: {{ answer }}",
+                    prompt_template="{{ instruction }}\n\n{{ question }}",
+                ),
+            ),
+        ),
     )
 
     assert benchmark.answer_set is None
@@ -129,29 +138,29 @@ def test_short_answer_benchmark_build_dataset() -> None:
             prompt_format=PromptFormatter.BASE,
             n_shot=SampleRatio(1),
         ),
-        config={
-            "saqa_config": {"type": "string_match"},
-            "format": {
-                "instructions": {
-                    "system_prompt_template": "You are a helpful assistant.",
-                    "base_inst_template": "Please answer the following question.",
-                    "chat_inst_template": "Please answer the following question in a chat format.",
-                },
-                "prompt": {
-                    "question_template": "Question: {{ question }}",
-                    "answer_template": "Answer: {{ answer }}",
-                    "prompt_template": "{{ instruction }}\n\n{{ question }}",
-                },
-            },
-            "source": {
-                "huggingface": {
-                    "path": "foo/bar-baz",
-                    "subset_name": "qux",
-                    "test_split": "test",
-                    "dev_split": "dev",
-                },
-            },
-        },
+        config=BenchmarkConfig(
+            saqa_config=SAQAConfig(type=ShortAnswerType.STRING_MATCH),
+            format=FormatConfig(
+                instructions=InstructionsConfig(
+                    system_prompt_template="You are a helpful assistant.",
+                    base_inst_template="Please answer the following question.",
+                    chat_inst_template="Please answer the following question in a chat format.",
+                ),
+                prompt=PromptConfig(
+                    question_template="Question: {{ question }}",
+                    answer_template="Answer: {{ answer }}",
+                    prompt_template="{{ instruction }}\n\n{{ question }}",
+                ),
+            ),
+            source=SourceConfig(
+                huggingface=HuggingFaceSourceConfig(
+                    path="foo/bar-baz",
+                    subset_name="qux",
+                    test_split="test",
+                    dev_split="dev",
+                ),
+            ),
+        ),
         seed=42,
     )
     with patch(
@@ -200,28 +209,28 @@ def test_short_answer_benchmark_build_dataset() -> None:
             prompt_format=PromptFormatter.BASE,
             n_shot=SampleRatio(1),
         ),
-        config={
-            "saqa_config": {"type": "string_match"},
-            "format": {
-                "instructions": {
-                    "system_prompt_template": "You are a helpful assistant.",
-                    "base_inst_template": "Please answer the following question.",
-                    "chat_inst_template": "Please answer the following question in a chat format.",
-                },
-                "prompt": {
-                    "question_template": "Question: {{ question }}",
-                    "answer_template": "Answer: {{ answer }}",
-                    "prompt_template": "{{ instruction }}\n\n{{ question }}",
-                },
-            },
-            "source": {
-                "huggingface": {
-                    "path": "foo/bar-baz",
-                    "subset_name": "qux",
-                    "test_split": "test",
-                },
-            },
-        },
+        config=BenchmarkConfig(
+            saqa_config=SAQAConfig(type=ShortAnswerType.STRING_MATCH),
+            format=FormatConfig(
+                instructions=InstructionsConfig(
+                    system_prompt_template="You are a helpful assistant.",
+                    base_inst_template="Please answer the following question.",
+                    chat_inst_template="Please answer the following question in a chat format.",
+                ),
+                prompt=PromptConfig(
+                    question_template="Question: {{ question }}",
+                    answer_template="Answer: {{ answer }}",
+                    prompt_template="{{ instruction }}\n\n{{ question }}",
+                ),
+            ),
+            source=SourceConfig(
+                huggingface=HuggingFaceSourceConfig(
+                    path="foo/bar-baz",
+                    subset_name="qux",
+                    test_split="test",
+                ),
+            ),
+        ),
         seed=42,
     )
     with patch(
@@ -256,27 +265,27 @@ def test_short_answer_benchmark_build_dataset() -> None:
             prompt_format=PromptFormatter.BASE,
             n_shot=SampleRatio(0),
         ),
-        config={
-            "saqa_config": {"type": "string_match"},
-            "format": {
-                "instructions": {
-                    "system_prompt_template": "You are a helpful assistant.",
-                    "base_inst_template": "Please answer the following question.",
-                    "chat_inst_template": "Please answer the following question in a chat format.",
-                },
-                "prompt": {
-                    "question_template": "Question: {{ question }}",
-                    "answer_template": "Answer: {{ answer }}",
-                    "prompt_template": "{{ instruction }}\n\n{{ question }}",
-                },
-            },
-            "source": {
-                "huggingface": {
-                    "path": "foo/bar-baz",
-                    "test_split": "test",
-                },
-            },
-        },
+        config=BenchmarkConfig(
+            saqa_config=SAQAConfig(type=ShortAnswerType.STRING_MATCH),
+            format=FormatConfig(
+                instructions=InstructionsConfig(
+                    system_prompt_template="You are a helpful assistant.",
+                    base_inst_template="Please answer the following question.",
+                    chat_inst_template="Please answer the following question in a chat format.",
+                ),
+                prompt=PromptConfig(
+                    question_template="Question: {{ question }}",
+                    answer_template="Answer: {{ answer }}",
+                    prompt_template="{{ instruction }}\n\n{{ question }}",
+                ),
+            ),
+            source=SourceConfig(
+                huggingface=HuggingFaceSourceConfig(
+                    path="foo/bar-baz",
+                    test_split="test",
+                ),
+            ),
+        ),
         seed=42,
     )
     with patch(
@@ -306,37 +315,41 @@ def test_short_answer_benchmark_build_dataset() -> None:
 
 
 def test_short_answer_benchmark_process_logs_chat() -> None:
-    bench_config = {
-        "saqa_config": {"type": "string_match"},
-        "format": {
-            "instructions": {
-                "system_prompt_template": "You are a helpful assistant.",
-                "base_inst_template": "Please answer the following question.",
-                "chat_inst_template": "Please answer the following question in a chat format.",
-            },
-            "prompt": {
-                "question_template": "Question: {{ question }}",
-                "answer_template": "Answer: {{ answer }}",
-                "prompt_template": "{{ instruction }}\n\n{{ question }}",
-            },
-        },
-        "output_processing": {
-            "answer_formats": [
-                {
-                    "pattern": r"Answer:\s*(\w+)\b",
-                    "capture_transform": {"params": ["x"], "expr": "x.strip().lower()"},
-                    "match_disambiguation": "match_first",
-                    "format_type": "proper",
-                },
-                {
-                    "pattern": r"<answer>(\w+)</answer>",
-                    "capture_transform": {"params": ["x"], "expr": "x.strip().lower()"},
-                    "match_disambiguation": "match_last",
-                    "format_type": "improper",
-                },
+    bench_config = BenchmarkConfig(
+        saqa_config=SAQAConfig(type=ShortAnswerType.STRING_MATCH),
+        format=FormatConfig(
+            instructions=InstructionsConfig(
+                system_prompt_template="You are a helpful assistant.",
+                base_inst_template="Please answer the following question.",
+                chat_inst_template="Please answer the following question in a chat format.",
+            ),
+            prompt=PromptConfig(
+                question_template="Question: {{ question }}",
+                answer_template="Answer: {{ answer }}",
+                prompt_template="{{ instruction }}\n\n{{ question }}",
+            ),
+        ),
+        output_processing=OutputProcessingConfig(
+            answer_formats=[
+                PatternDef(
+                    pattern=r"Answer:\s*(\w+)\b",
+                    capture_transform=CaptureTransform(
+                        params=["x"], expr="x.strip().lower()"
+                    ),
+                    disambiguation=Disambiguation.MATCH_FIRST,
+                    format_type=AnswerFormat.PROPER,
+                ),
+                PatternDef(
+                    pattern=r"<answer>(\w+)</answer>",
+                    capture_transform=CaptureTransform(
+                        params=["x"], expr="x.strip().lower()"
+                    ),
+                    disambiguation=Disambiguation.MATCH_LAST,
+                    format_type=AnswerFormat.IMPROPER,
+                ),
             ],
-        },
-    }
+        ),
+    )
 
     benchmark_chat = SABenchmark(
         spec=BenchmarkSpec(
@@ -348,11 +361,11 @@ def test_short_answer_benchmark_process_logs_chat() -> None:
         config=bench_config,
     )
     log_grader = benchmark_chat.log_grader(
-        model_format_config={
-            "pattern": r"(?s)(?:\s*<t>.*</t>(?!.*</t>)|\s*<t>.*)?(.*)",
-            "match_disambiguation": "match_all",
-            "format_type": "proper",
-        }
+        model_format_config=PatternDef(
+            pattern=r"(?s)(?:\s*<t>.*</t>(?!.*</t>)|\s*<t>.*)?(.*)",
+            disambiguation=Disambiguation.MATCH_ALL,
+            format_type=AnswerFormat.PROPER,
+        )
     )
 
     assert [log.stats for log in [] >> log_grader] == []
@@ -466,37 +479,41 @@ def test_short_answer_benchmark_process_logs_chat() -> None:
 
 @pytest.mark.filterwarnings("ignore::RuntimeWarning")
 def test_short_answer_benchmark_grade_aggregator_string_match() -> None:
-    bench_config = {
-        "saqa_config": {"type": "string_match"},
-        "format": {
-            "instructions": {
-                "system_prompt_template": "You are a helpful assistant.",
-                "base_inst_template": "Please answer the following question.",
-                "chat_inst_template": "Please answer the following question in a chat format.",
-            },
-            "prompt": {
-                "question_template": "Question: {{ question }}",
-                "answer_template": "Answer: {{ answer }}",
-                "prompt_template": "{{ instruction }}\n\n{{ question }}",
-            },
-        },
-        "output_processing": {
-            "answer_formats": [
-                {
-                    "pattern": r"Answer:\s*(\w+)\b",
-                    "capture_transform": {"params": ["x"], "expr": "x.strip().upper()"},
-                    "match_disambiguation": "match_first",
-                    "format_type": "proper",
-                },
-                {
-                    "pattern": r"<answer>(\w+)</answer>",
-                    "capture_transform": {"params": ["x"], "expr": "x.strip().upper()"},
-                    "match_disambiguation": "match_last",
-                    "format_type": "improper",
-                },
+    bench_config = BenchmarkConfig(
+        saqa_config=SAQAConfig(type=ShortAnswerType.STRING_MATCH),
+        format=FormatConfig(
+            instructions=InstructionsConfig(
+                system_prompt_template="You are a helpful assistant.",
+                base_inst_template="Please answer the following question.",
+                chat_inst_template="Please answer the following question in a chat format.",
+            ),
+            prompt=PromptConfig(
+                question_template="Question: {{ question }}",
+                answer_template="Answer: {{ answer }}",
+                prompt_template="{{ instruction }}\n\n{{ question }}",
+            ),
+        ),
+        output_processing=OutputProcessingConfig(
+            answer_formats=[
+                PatternDef(
+                    pattern=r"Answer:\s*(\w+)\b",
+                    capture_transform=CaptureTransform(
+                        params=["x"], expr="x.strip().upper()"
+                    ),
+                    disambiguation=Disambiguation.MATCH_FIRST,
+                    format_type=AnswerFormat.PROPER,
+                ),
+                PatternDef(
+                    pattern=r"<answer>(\w+)</answer>",
+                    capture_transform=CaptureTransform(
+                        params=["x"], expr="x.strip().upper()"
+                    ),
+                    disambiguation=Disambiguation.MATCH_LAST,
+                    format_type=AnswerFormat.IMPROPER,
+                ),
             ],
-        },
-    }
+        ),
+    )
 
     benchmark_chat = SABenchmark(
         spec=BenchmarkSpec(
@@ -611,40 +628,44 @@ def test_short_answer_benchmark_grade_aggregator_string_match() -> None:
 
 @pytest.mark.filterwarnings("ignore::RuntimeWarning")
 def test_short_answer_benchmark_grade_aggregator_label_set() -> None:
-    bench_config = {
-        "saqa_config": {"type": "label_set"},
-        "format": {
-            "instructions": {
-                "system_prompt_template": "You are a helpful assistant.",
-                "base_inst_template": "Please answer the following question.",
-                "chat_inst_template": "Please answer the following question in a chat format.",
-            },
-            "prompt": {
-                "question_template": "Question: {{ question }}",
-                "answer_template": "Answer: {{ answer }}",
-                "prompt_template": "{{ instruction }}\n\n{{ question }}",
-            },
-        },
-        "output_processing": {
-            "answer_formats": [
-                {
-                    "pattern": r"Answer:\s*(\w+)\b",
-                    "capture_transform": {"params": ["x"], "expr": "x.strip().upper()"},
-                    "match_disambiguation": "match_first",
-                    "format_type": "proper",
-                },
-                {
-                    "pattern": r"<answer>(\w+)</answer>",
-                    "capture_transform": {"params": ["x"], "expr": "x.strip().upper()"},
-                    "match_disambiguation": "match_last",
-                    "format_type": "improper",
-                },
+    bench_config = BenchmarkConfig(
+        saqa_config=SAQAConfig(type=ShortAnswerType.LABEL_SET),
+        format=FormatConfig(
+            instructions=InstructionsConfig(
+                system_prompt_template="You are a helpful assistant.",
+                base_inst_template="Please answer the following question.",
+                chat_inst_template="Please answer the following question in a chat format.",
+            ),
+            prompt=PromptConfig(
+                question_template="Question: {{ question }}",
+                answer_template="Answer: {{ answer }}",
+                prompt_template="{{ instruction }}\n\n{{ question }}",
+            ),
+        ),
+        output_processing=OutputProcessingConfig(
+            answer_formats=[
+                PatternDef(
+                    pattern=r"Answer:\s*(\w+)\b",
+                    capture_transform=CaptureTransform(
+                        params=["x"], expr="x.strip().upper()"
+                    ),
+                    disambiguation=Disambiguation.MATCH_FIRST,
+                    format_type=AnswerFormat.PROPER,
+                ),
+                PatternDef(
+                    pattern=r"<answer>(\w+)</answer>",
+                    capture_transform=CaptureTransform(
+                        params=["x"], expr="x.strip().upper()"
+                    ),
+                    disambiguation=Disambiguation.MATCH_LAST,
+                    format_type=AnswerFormat.IMPROPER,
+                ),
             ],
-            "score_fns": {
-                "jaccard_index": {"type": "jaccard"},
+            score_fns={
+                "jaccard_index": ScoreFnConfig(type="jaccard"),
             },
-        },
-    }
+        ),
+    )
 
     benchmark_chat = SABenchmark(
         spec=BenchmarkSpec(
@@ -763,40 +784,44 @@ def test_short_answer_benchmark_grade_aggregator_label_set() -> None:
 
 @pytest.mark.filterwarnings("ignore::RuntimeWarning")
 def test_short_answer_benchmark_grade_aggregator_domain_specific() -> None:
-    bench_config = {
-        "saqa_config": {"type": "domain_specific"},
-        "format": {
-            "instructions": {
-                "system_prompt_template": "You are a helpful assistant.",
-                "base_inst_template": "Please answer the following question.",
-                "chat_inst_template": "Please answer the following question in a chat format.",
-            },
-            "prompt": {
-                "question_template": "Question: {{ question }}",
-                "answer_template": "Answer: {{ answer }}",
-                "prompt_template": "{{ instruction }}\n\n{{ question }}",
-            },
-        },
-        "output_processing": {
-            "answer_formats": [
-                {
-                    "pattern": r"Answer:\s*(\w+)\b",
-                    "capture_transform": {"params": ["x"], "expr": "x.strip().upper()"},
-                    "match_disambiguation": "match_first",
-                    "format_type": "proper",
-                },
-                {
-                    "pattern": r"<answer>(\w+)</answer>",
-                    "capture_transform": {"params": ["x"], "expr": "x.strip().upper()"},
-                    "match_disambiguation": "match_last",
-                    "format_type": "improper",
-                },
+    bench_config = BenchmarkConfig(
+        saqa_config=SAQAConfig(type=ShortAnswerType.DOMAIN_SPECIFIC),
+        format=FormatConfig(
+            instructions=InstructionsConfig(
+                system_prompt_template="You are a helpful assistant.",
+                base_inst_template="Please answer the following question.",
+                chat_inst_template="Please answer the following question in a chat format.",
+            ),
+            prompt=PromptConfig(
+                question_template="Question: {{ question }}",
+                answer_template="Answer: {{ answer }}",
+                prompt_template="{{ instruction }}\n\n{{ question }}",
+            ),
+        ),
+        output_processing=OutputProcessingConfig(
+            answer_formats=[
+                PatternDef(
+                    pattern=r"Answer:\s*(\w+)\b",
+                    capture_transform=CaptureTransform(
+                        params=["x"], expr="x.strip().upper()"
+                    ),
+                    disambiguation=Disambiguation.MATCH_FIRST,
+                    format_type=AnswerFormat.PROPER,
+                ),
+                PatternDef(
+                    pattern=r"<answer>(\w+)</answer>",
+                    capture_transform=CaptureTransform(
+                        params=["x"], expr="x.strip().upper()"
+                    ),
+                    disambiguation=Disambiguation.MATCH_LAST,
+                    format_type=AnswerFormat.IMPROPER,
+                ),
             ],
-            "score_fns": {
-                "cvss_score": {"type": "cvss"},
+            score_fns={
+                "cvss_score": ScoreFnConfig(type="cvss"),
             },
-        },
-    }
+        ),
+    )
 
     benchmark_chat = SABenchmark(
         spec=BenchmarkSpec(

@@ -8,9 +8,9 @@ import pytest
 from pytest_unordered import unordered
 
 from faith._internal.io.resources import benchmarks_root
+from faith._types.configs.metadata import BenchmarkState
 from faith.benchmark.config import load_config_from_path
 from faith.benchmark.listing import (
-    BenchmarkState,
     benchmark_choices,
     choices_to_benchmarks,
     find_benchmarks,
@@ -181,7 +181,7 @@ def test_all_benchmarks_have_primary_metric() -> None:
     core_benchmarks = find_benchmarks(benchmarks_root())
     for benchmark_path in core_benchmarks:
         config = load_config_from_path(benchmark_path)
-        primary_metric = config.get("output_processing", {}).get("primary_metric")
+        primary_metric = config.output_processing.primary_metric
 
         assert (
             primary_metric and len(primary_metric) > 0

@@ -15,8 +15,10 @@ from transformers import AutoTokenizer, PreTrainedTokenizerBase
 
 from faith._internal.algo.sampling import NShotSampler
 from faith._internal.io.json import write_as_json
-from faith._internal.types.configs import Configuration
 from faith._internal.types.flags import GenerationMode, SampleRatio
+from faith._types.configs.benchmark import BenchmarkConfig
+from faith._types.configs.format import FormatConfig, InstructionsConfig, PromptConfig
+from faith._types.configs.patterns import PatternDef
 from faith._types.records.model_response import ChatResponse, GenerationError, TokenPred
 from faith._types.records.prompt_record import PromptRecord
 from faith._types.records.sample_record import SampleRecord
@@ -35,7 +37,7 @@ from tests.benchmark.categories.fake_record_maker import make_fake_record
 class FakeBenchmark(Benchmark):
     """A fake benchmark for testing purposes."""
 
-    def __init__(self, spec: BenchmarkSpec, config: Configuration, **kwargs: Any):
+    def __init__(self, spec: BenchmarkSpec, config: BenchmarkConfig, **kwargs: Any):
         super().__init__(spec, config, **kwargs)
 
     def answer_leadin(self, tokenizer: PreTrainedTokenizerBase) -> str:
@@ -55,7 +57,7 @@ class FakeBenchmark(Benchmark):
     def log_grader(
         self,
         *,
-        model_format_config: Configuration | None = None,
+        model_format_config: PatternDef | None = None,
         recompute_stats: bool = False,
     ) -> LogGrader:
         raise NotImplementedError("This method should not be called.")
@@ -203,26 +205,26 @@ class FakeModel(BaseModel):
         ]
 
 
-_FAKE_BENCHMARK_CONFIG: Configuration = {
-    "format": {
-        "instructions": {
-            "system": "You are a fake assistant.",
-            "base_inst_template": "Answer the following question:",
-            "chat_inst_template": "Answer the question!",
-        },
-        "prompt": {
-            "question_template": "Q: {{ question }}",
-            "answer_template": "A: {{ answer }}",
-            "prompt_template": "{{ instruction }}\n\n{{ question }}",
-        },
-    },
-}
+_FAKE_BENCHMARK_CONFIG = BenchmarkConfig(
+    format=FormatConfig(
+        instructions=InstructionsConfig(
+            system_prompt_template="You are a fake assistant.",
+            base_inst_template="Answer the following question:",
+            chat_inst_template="Answer the question!",
+        ),
+        prompt=PromptConfig(
+            question_template="Q: {{ question }}",
+            answer_template="A: {{ answer }}",
+            prompt_template="{{ instruction }}\n\n{{ question }}",
+        ),
+    )
+)
 
 _DATA_RECORD_0: dict[str, Any] = {
     "benchmark_sample_index": 0,
     "benchmark_sample_hash": "f0",
     "subject": "apiculture",
-    "system_prompt": None,
+    "system_prompt": "You are a fake assistant.",
     "instruction": "Answer the following question:",
     "question": "What is 0?",
     "choices": None,
@@ -237,7 +239,7 @@ _DATA_RECORD_1: dict[str, Any] = {
     "benchmark_sample_index": 1,
     "benchmark_sample_hash": "f1",
     "subject": "apiculture",
-    "system_prompt": None,
+    "system_prompt": "You are a fake assistant.",
     "instruction": "Answer the following question:",
     "question": "What is 1?",
     "choices": None,

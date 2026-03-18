@@ -2,23 +2,12 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+from faith._types.configs.format import FormatConfig, InstructionsConfig, PromptConfig
 from faith._types.records.prompt_record import PromptRecord
 from faith.benchmark.formatting.prompt import PromptFormatter
 from faith.benchmark.formatting.qa import QAFormatter
 
-
-def test_qa_formatter() -> None:
-    # pylint: disable=protected-access
-    format_cfg = {
-        "instructions": {
-            "system_prompt_template": "System prompt for {{ subject }}",
-            "base_inst_template": "Basic instruction template for {{ subject }}",
-            "chat_inst_template": "Chat instruction template for {{ subject }}",
-        },
-        "prompt": {
-            "question_template": "Question: {{ question }}",
-            "answer_template": "Answer: {{ answer }}",
-            "prompt_template": """{%- if instruction -%}
+_PROMPT_TEMPLATE = """{%- if instruction -%}
 {{ instruction }}
 
 {% endif -%}
@@ -29,9 +18,25 @@ def test_qa_formatter() -> None:
 
 {% endfor -%}
 {% endif -%}
-{{ question }}""",
-        },
-    }
+{{ question }}"""
+
+_FORMAT_CFG = FormatConfig(
+    instructions=InstructionsConfig(
+        system_prompt_template="System prompt for {{ subject }}",
+        base_inst_template="Basic instruction template for {{ subject }}",
+        chat_inst_template="Chat instruction template for {{ subject }}",
+    ),
+    prompt=PromptConfig(
+        question_template="Question: {{ question }}",
+        answer_template="Answer: {{ answer }}",
+        prompt_template=_PROMPT_TEMPLATE,
+    ),
+)
+
+
+def test_qa_formatter() -> None:
+    # pylint: disable=protected-access
+    format_cfg = _FORMAT_CFG
 
     formatter = QAFormatter(PromptFormatter.BASE, format_cfg=format_cfg)
 
@@ -163,29 +168,18 @@ Question: What is the capital of France?"""
 
 
 def test_qa_formatter_render_conversation() -> None:
-    format_cfg = {
-        "instructions": {
-            "system_prompt_template": "System prompt",
-            "base_inst_template": "Basic instruction template for {{ subject }}",
-            "chat_inst_template": "Chat instruction template for {{ subject }}",
-        },
-        "prompt": {
-            "question_template": "Question: {{ question }}",
-            "answer_template": "Answer: {{ answer }}",
-            "prompt_template": """{%- if instruction -%}
-{{ instruction }}
-
-{% endif -%}
-{% if examples -%}
-{% for example in examples -%}
-{{ example.question }}
-{{ example.answer }}
-
-{% endfor -%}
-{% endif -%}
-{{ question }}""",
-        },
-    }
+    format_cfg = FormatConfig(
+        instructions=InstructionsConfig(
+            system_prompt_template="System prompt",
+            base_inst_template="Basic instruction template for {{ subject }}",
+            chat_inst_template="Chat instruction template for {{ subject }}",
+        ),
+        prompt=PromptConfig(
+            question_template="Question: {{ question }}",
+            answer_template="Answer: {{ answer }}",
+            prompt_template=_PROMPT_TEMPLATE,
+        ),
+    )
 
     base_formatter = QAFormatter(PromptFormatter.BASE, format_cfg=format_cfg)
     assert (

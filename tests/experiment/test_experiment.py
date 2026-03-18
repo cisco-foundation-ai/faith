@@ -55,7 +55,7 @@ def test_benchmark_experiment() -> None:
         num_trials=3,
         initial_seed=3,
     )
-    assert experiment.benchmark_config["metadata"]["name"] == "for-unit-test-only"
+    assert experiment.benchmark_config.metadata.name == "for-unit-test-only"
     assert str(experiment.datastore.path).startswith(
         "/tmp/for-unit-test-only/example_model/chat/chat_comp/5_shot/gen_params_"
     )

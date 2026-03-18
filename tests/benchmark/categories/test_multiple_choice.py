@@ -8,8 +8,23 @@ from unittest.mock import ANY
 import pytest
 from transformers import AutoTokenizer
 
-from faith._internal.algo.matching import AnswerFormat
 from faith._internal.types.flags import GenerationMode, SampleRatio
+from faith._types.configs.benchmark import BenchmarkConfig, MCQAConfig
+from faith._types.configs.format import FormatConfig, InstructionsConfig, PromptConfig
+from faith._types.configs.patterns import (
+    AnswerFormat,
+    CaptureTransform,
+    Disambiguation,
+    PatternDef,
+)
+from faith._types.configs.scoring import OutputProcessingConfig
+from faith._types.configs.source import (
+    DataFileType,
+    FilesSourceConfig,
+    GitRepoSourceConfig,
+    SourceConfig,
+    SourceOptionsConfig,
+)
 from faith._types.records.stats import StatsRecord
 from faith.benchmark.benchmark import BenchmarkSpec
 from faith.benchmark.categories.multiple_choice import MCBenchmark
@@ -27,27 +42,27 @@ def test_multiple_choice_benchmark() -> None:
             prompt_format=PromptFormatter.CHAT,
             n_shot=SampleRatio(0),
         ),
-        config={
-            "mcqa_config": {"answer_symbols": ["A", "B"]},
-            "format": {
-                "instructions": {
-                    "system_prompt_template": "You are a compassionate comptroller.",
-                    "base_inst_template": "Please analyze and answer the following question.",
-                    "chat_inst_template": "Please analyze and answer the following question in a chat format.",
-                },
-                "prompt": {
-                    "question_template": """Question: {{ question }}
+        config=BenchmarkConfig(
+            mcqa_config=MCQAConfig(answer_symbols=["A", "B"]),
+            format=FormatConfig(
+                instructions=InstructionsConfig(
+                    system_prompt_template="You are a compassionate comptroller.",
+                    base_inst_template="Please analyze and answer the following question.",
+                    chat_inst_template="Please analyze and answer the following question in a chat format.",
+                ),
+                prompt=PromptConfig(
+                    question_template="""Question: {{ question }}
 
 Choices:
 {% for choice_letter, choice in choice_map.items() -%}
 #{{ choice_letter }}# {{ choice }}{% if not loop.last %}
 {% endif %}{% endfor -%}
 """,
-                    "answer_template": "Antwort--> {{ answer }}",
-                    "prompt_template": "{{ instruction }}\n\n{{ question }}",
-                },
-            },
-        },
+                    answer_template="Antwort--> {{ answer }}",
+                    prompt_template="{{ instruction }}\n\n{{ question }}",
+                ),
+            ),
+        ),
     )
 
     assert benchmark.answer_set == {"A", "B"}
@@ -63,27 +78,27 @@ def test_multiple_choice_benchmark_answer_leadin() -> None:
             prompt_format=PromptFormatter.CHAT,
             n_shot=SampleRatio(0),
         ),
-        config={
-            "mcqa_config": {"answer_symbols": ["A", "B"]},
-            "format": {
-                "instructions": {
-                    "system_prompt_template": "You are a compassionate comptroller.",
-                    "base_inst_template": "Please analyze and answer the following question.",
-                    "chat_inst_template": "Please analyze and answer the following question in a chat format.",
-                },
-                "prompt": {
-                    "question_template": """Question: {{ question }}
+        config=BenchmarkConfig(
+            mcqa_config=MCQAConfig(answer_symbols=["A", "B"]),
+            format=FormatConfig(
+                instructions=InstructionsConfig(
+                    system_prompt_template="You are a compassionate comptroller.",
+                    base_inst_template="Please analyze and answer the following question.",
+                    chat_inst_template="Please analyze and answer the following question in a chat format.",
+                ),
+                prompt=PromptConfig(
+                    question_template="""Question: {{ question }}
 
 Choices:
 {% for choice_letter, choice in choice_map.items() -%}
 #{{ choice_letter }}# {{ choice }}{% if not loop.last %}
 {% endif %}{% endfor -%}
 """,
-                    "answer_template": "Antwort--> {{ answer }}",
-                    "prompt_template": "{{ instruction }}\n\n{{ question }}",
-                },
-            },
-        },
+                    answer_template="Antwort--> {{ answer }}",
+                    prompt_template="{{ instruction }}\n\n{{ question }}",
+                ),
+            ),
+        ),
     )
 
     tokenizer = AutoTokenizer.from_pretrained("fdtn-ai/Foundation-Sec-8B")
@@ -99,27 +114,27 @@ def test_multiple_choice_benchmark_answer_leadin_multiple_answer_vars() -> None:
             prompt_format=PromptFormatter.CHAT,
             n_shot=SampleRatio(0),
         ),
-        config={
-            "mcqa_config": {"answer_symbols": ["A", "B"]},
-            "format": {
-                "instructions": {
-                    "system_prompt_template": "You are a compassionate comptroller.",
-                    "base_inst_template": "Please analyze and answer the following question.",
-                    "chat_inst_template": "Please analyze and answer the following question in a chat format.",
-                },
-                "prompt": {
-                    "question_template": """Question: {{ question }}
+        config=BenchmarkConfig(
+            mcqa_config=MCQAConfig(answer_symbols=["A", "B"]),
+            format=FormatConfig(
+                instructions=InstructionsConfig(
+                    system_prompt_template="You are a compassionate comptroller.",
+                    base_inst_template="Please analyze and answer the following question.",
+                    chat_inst_template="Please analyze and answer the following question in a chat format.",
+                ),
+                prompt=PromptConfig(
+                    question_template="""Question: {{ question }}
 
 Choices:
 {% for choice_letter, choice in choice_map.items() -%}
 #{{ choice_letter }}# {{ choice }}{% if not loop.last %}
 {% endif %}{% endfor -%}
 """,
-                    "answer_template": "{{ answer }}, uhm... final answer is {{ answer }}",
-                    "prompt_template": "{{ instruction }}\n\n{{ question }}",
-                },
-            },
-        },
+                    answer_template="{{ answer }}, uhm... final answer is {{ answer }}",
+                    prompt_template="{{ instruction }}\n\n{{ question }}",
+                ),
+            ),
+        ),
     )
 
     tokenizer = AutoTokenizer.from_pretrained("fdtn-ai/Foundation-Sec-8B")
@@ -138,27 +153,27 @@ def test_multiple_choice_benchmark_answer_token_map() -> None:
             prompt_format=PromptFormatter.CHAT,
             n_shot=SampleRatio(0),
         ),
-        config={
-            "mcqa_config": {"answer_symbols": ["A", "B", "C", "D", "E", "F"]},
-            "format": {
-                "instructions": {
-                    "system_prompt_template": "You are a compassionate comptroller.",
-                    "base_inst_template": "Please analyze and answer the following question.",
-                    "chat_inst_template": "Please analyze and answer the following question in a chat format.",
-                },
-                "prompt": {
-                    "question_template": """Question: {{ question }}
+        config=BenchmarkConfig(
+            mcqa_config=MCQAConfig(answer_symbols=["A", "B", "C", "D", "E", "F"]),
+            format=FormatConfig(
+                instructions=InstructionsConfig(
+                    system_prompt_template="You are a compassionate comptroller.",
+                    base_inst_template="Please analyze and answer the following question.",
+                    chat_inst_template="Please analyze and answer the following question in a chat format.",
+                ),
+                prompt=PromptConfig(
+                    question_template="""Question: {{ question }}
 
 Choices:
 {% for choice_letter, choice in choice_map.items() -%}
 #{{ choice_letter }}# {{ choice }}{% if not loop.last %}
 {% endif %}{% endfor -%}
 """,
-                    "answer_template": "Antwort--> {{ answer }}",
-                    "prompt_template": "{{ instruction }}\n\n{{ question }}",
-                },
-            },
-        },
+                    answer_template="Antwort--> {{ answer }}",
+                    prompt_template="{{ instruction }}\n\n{{ question }}",
+                ),
+            ),
+        ),
     )
 
     tokenizer = AutoTokenizer.from_pretrained("fdtn-ai/Foundation-Sec-8B")
@@ -189,35 +204,35 @@ def test_multiple_choice_benchmark_build_dataset() -> None:
             prompt_format=PromptFormatter.CHAT,
             n_shot=SampleRatio(1),
         ),
-        config={
-            "mcqa_config": {"answer_symbols": ["A", "B", "C"]},
-            "format": {
-                "instructions": {
-                    "system_prompt_template": "You are a compassionate comptroller.",
-                    "base_inst_template": "Please analyze and answer the following question.",
-                    "chat_inst_template": "Please analyze and answer the following question in a chat format.",
-                },
-                "prompt": {
-                    "question_template": """Question: {{ question }}
+        config=BenchmarkConfig(
+            mcqa_config=MCQAConfig(answer_symbols=["A", "B", "C"]),
+            format=FormatConfig(
+                instructions=InstructionsConfig(
+                    system_prompt_template="You are a compassionate comptroller.",
+                    base_inst_template="Please analyze and answer the following question.",
+                    chat_inst_template="Please analyze and answer the following question in a chat format.",
+                ),
+                prompt=PromptConfig(
+                    question_template="""Question: {{ question }}
 
 Choices:
 {% for choice_letter, choice in choice_map.items() -%}
 #{{ choice_letter }}# {{ choice }}{% if not loop.last %}
 {% endif %}{% endfor -%}
 """,
-                    "answer_template": "Antwort--> {{ answer }}",
-                    "prompt_template": "{{ instruction }}\n\n{{ question }}",
-                },
-            },
-            "source": {
-                "ancillary_columns": ["bonus"],
-                "files": {
-                    "type": "csv",
-                    "benchmark_data_paths": ["data/fake_mc_dataset.csv"],
-                    "holdout_data_paths": ["data/fake_mc_holdout_dataset.csv"],
-                },
-                "options": {
-                    "dataframe_transform_expr": """df.assign(
+                    answer_template="Antwort--> {{ answer }}",
+                    prompt_template="{{ instruction }}\n\n{{ question }}",
+                ),
+            ),
+            source=SourceConfig(
+                ancillary_columns=["bonus"],
+                files=FilesSourceConfig(
+                    type=DataFileType.CSV,
+                    benchmark_data_paths=["data/fake_mc_dataset.csv"],
+                    holdout_data_paths=["data/fake_mc_holdout_dataset.csv"],
+                ),
+                options=SourceOptionsConfig(
+                    dataframe_transform_expr="""df.assign(
     question=df["question"].str.strip(),
     answer=df["answer"].str.strip().str.upper(),
     choices=[
@@ -226,9 +241,9 @@ Choices:
     ],
     bonus=df["other"].str.strip(),
 )[["question", "choices", "answer", "bonus"]]""",
-                },
-            },
-        },
+                ),
+            ),
+        ),
         path=TEST_ROOT_DIR,
         seed=123,
     )
@@ -274,34 +289,34 @@ Choices:
             prompt_format=PromptFormatter.CHAT,
             n_shot=SampleRatio(0),
         ),
-        config={
-            "mcqa_config": {"answer_symbols": ["A", "B", "C", "D"]},
-            "format": {
-                "instructions": {
-                    "system_prompt_template": "You are a compassionate comptroller.",
-                    "base_inst_template": "Please analyze and answer the following question.",
-                    "chat_inst_template": "Please analyze and answer the following question in a chat format.",
-                },
-                "prompt": {
-                    "question_template": """Question: {{ question }}
+        config=BenchmarkConfig(
+            mcqa_config=MCQAConfig(answer_symbols=["A", "B", "C", "D"]),
+            format=FormatConfig(
+                instructions=InstructionsConfig(
+                    system_prompt_template="You are a compassionate comptroller.",
+                    base_inst_template="Please analyze and answer the following question.",
+                    chat_inst_template="Please analyze and answer the following question in a chat format.",
+                ),
+                prompt=PromptConfig(
+                    question_template="""Question: {{ question }}
 
 Choices:
 {% for choice_letter, choice in choice_map.items() -%}
 #{{ choice_letter }}# {{ choice }}{% if not loop.last %}
 {% endif %}{% endfor -%}
 """,
-                    "answer_template": "Antwort--> {{ answer }}",
-                    "prompt_template": "{{ instruction }}\n\n{{ question }}",
-                },
-            },
-            "source": {
-                "files": {
-                    "type": "json",
-                    "benchmark_data_paths": ["data/*.json"],
-                    "selected_columns": ["questions", "metadata"],
-                },
-                "options": {
-                    "dataframe_transform_expr": """df.assign(
+                    answer_template="Antwort--> {{ answer }}",
+                    prompt_template="{{ instruction }}\n\n{{ question }}",
+                ),
+            ),
+            source=SourceConfig(
+                files=FilesSourceConfig(
+                    type=DataFileType.JSON,
+                    benchmark_data_paths=["data/*.json"],
+                    selected_columns=["questions", "metadata"],
+                ),
+                options=SourceOptionsConfig(
+                    dataframe_transform_expr="""df.assign(
     question=df["question"].str.strip(),
     answer=df["answer"].str.strip().str.upper(),
     choices=[
@@ -309,9 +324,9 @@ Choices:
         for lst in df[sorted(col for col in df.columns if col.startswith("options."))].values.tolist()
     ],
 )[["question", "choices", "answer"]]""",
-                },
-            },
-        },
+                ),
+            ),
+        ),
         path=TEST_ROOT_DIR,
         seed=123,
     )
@@ -349,37 +364,37 @@ def test_multiple_choice_benchmark_from_git_repo() -> None:
             prompt_format=PromptFormatter.CHAT,
             n_shot=SampleRatio(0),
         ),
-        config={
-            "mcqa_config": {"answer_symbols": ["A", "B", "C", "D"]},
-            "format": {
-                "instructions": {
-                    "system_prompt_template": "You are a compassionate comptroller.",
-                    "base_inst_template": "Please analyze and answer the following question.",
-                    "chat_inst_template": "Please analyze and answer the following question in a chat format.",
-                },
-                "prompt": {
-                    "question_template": """Question: {{ question }}
+        config=BenchmarkConfig(
+            mcqa_config=MCQAConfig(answer_symbols=["A", "B", "C", "D"]),
+            format=FormatConfig(
+                instructions=InstructionsConfig(
+                    system_prompt_template="You are a compassionate comptroller.",
+                    base_inst_template="Please analyze and answer the following question.",
+                    chat_inst_template="Please analyze and answer the following question in a chat format.",
+                ),
+                prompt=PromptConfig(
+                    question_template="""Question: {{ question }}
 
 Choices:
 {% for choice_letter, choice in choice_map.items() -%}
 #{{ choice_letter }}# {{ choice }}{% if not loop.last %}
 {% endif %}{% endfor -%}
 """,
-                    "answer_template": "Antwort--> {{ answer }}",
-                    "prompt_template": "{{ instruction }}\n\n{{ question }}",
-                },
-            },
-            "source": {
-                "git_repo": {
-                    "repo_url": "https://github.com/cybermetric/CyberMetric.git",
-                    "branch": "main",
-                    "commit": "2f5818bd2c19350cd6cfae028b75499ebe4ffd29",
-                    "type": "json",
-                    "benchmark_data_paths": ["CyberMetric-80-v1.json"],
-                    "selected_columns": ["questions"],
-                },
-                "options": {
-                    "dataframe_transform_expr": """df.assign(
+                    answer_template="Antwort--> {{ answer }}",
+                    prompt_template="{{ instruction }}\n\n{{ question }}",
+                ),
+            ),
+            source=SourceConfig(
+                git_repo=GitRepoSourceConfig(
+                    repo_url="https://github.com/cybermetric/CyberMetric.git",
+                    branch="main",
+                    commit="2f5818bd2c19350cd6cfae028b75499ebe4ffd29",
+                    type=DataFileType.JSON,
+                    benchmark_data_paths=["CyberMetric-80-v1.json"],
+                    selected_columns=["questions"],
+                ),
+                options=SourceOptionsConfig(
+                    dataframe_transform_expr="""df.assign(
     question=df["question"].str.strip(),
     answer=df["solution"].str.strip().str.upper(),
     choices=[
@@ -389,9 +404,9 @@ Choices:
         ].values.tolist()
     ],
 )[["question", "choices", "answer"]]""",
-                },
-            },
-        },
+                ),
+            ),
+        ),
         seed=123,
     )
     dataset_0shot = benchmark_0shot.build_dataset(randomize_choices=True, sample_size=1)
@@ -435,43 +450,47 @@ Choices:
 
 
 def test_multiple_choice_benchmark_log_grader() -> None:
-    bench_config = {
-        "mcqa_config": {"answer_symbols": ["A", "B"]},
-        "format": {
-            "instructions": {
-                "system_prompt_template": "You are a compassionate comptroller.",
-                "base_inst_template": "Please analyze and answer the following question.",
-                "chat_inst_template": "Please analyze and answer the following question in a chat format.",
-            },
-            "prompt": {
-                "question_template": """Question: {{ question }}
+    bench_config = BenchmarkConfig(
+        mcqa_config=MCQAConfig(answer_symbols=["A", "B"]),
+        format=FormatConfig(
+            instructions=InstructionsConfig(
+                system_prompt_template="You are a compassionate comptroller.",
+                base_inst_template="Please analyze and answer the following question.",
+                chat_inst_template="Please analyze and answer the following question in a chat format.",
+            ),
+            prompt=PromptConfig(
+                question_template="""Question: {{ question }}
 
 Choices:
 {% for choice_letter, choice in choice_map.items() -%}
 #{{ choice_letter }}# {{ choice }}{% if not loop.last %}
 {% endif %}{% endfor -%}
 """,
-                "answer_template": "Antwort--> {{ answer }}",
-                "prompt_template": "{{ instruction }}\n\n{{ question }}",
-            },
-        },
-        "output_processing": {
-            "answer_formats": [
-                {
-                    "pattern": r"Antwort-->\s*([A-Z])",
-                    "capture_transform": {"params": ["x"], "expr": "x.strip().upper()"},
-                    "match_disambiguation": "match_first",
-                    "format_type": "proper",
-                },
-                {
-                    "pattern": r"Answer:\s+([A-Z])",
-                    "capture_transform": {"params": ["x"], "expr": "x.strip().upper()"},
-                    "match_disambiguation": "match_last",
-                    "format_type": "improper",
-                },
+                answer_template="Antwort--> {{ answer }}",
+                prompt_template="{{ instruction }}\n\n{{ question }}",
+            ),
+        ),
+        output_processing=OutputProcessingConfig(
+            answer_formats=[
+                PatternDef(
+                    pattern=r"Antwort-->\s*([A-Z])",
+                    capture_transform=CaptureTransform(
+                        params=["x"], expr="x.strip().upper()"
+                    ),
+                    disambiguation=Disambiguation.MATCH_FIRST,
+                    format_type=AnswerFormat.PROPER,
+                ),
+                PatternDef(
+                    pattern=r"Answer:\s+([A-Z])",
+                    capture_transform=CaptureTransform(
+                        params=["x"], expr="x.strip().upper()"
+                    ),
+                    disambiguation=Disambiguation.MATCH_LAST,
+                    format_type=AnswerFormat.IMPROPER,
+                ),
             ],
-        },
-    }
+        ),
+    )
 
     # Test for a benchmark with logits generation mode.
     benchmark_logits = MCBenchmark(
@@ -484,11 +503,11 @@ Choices:
         config=bench_config,
     )
     logits_log_grader = benchmark_logits.log_grader(
-        model_format_config={
-            "pattern": r"(?s)(.*)",
-            "match_disambiguation": "match_all",
-            "format_type": "proper",
-        }
+        model_format_config=PatternDef(
+            pattern=r"(?s)(.*)",
+            disambiguation=Disambiguation.MATCH_ALL,
+            format_type=AnswerFormat.PROPER,
+        )
     )
 
     assert [log.stats for log in [] >> logits_log_grader] == []
@@ -618,11 +637,11 @@ Choices:
         config=bench_config,
     )
     next_token_log_grader = benchmark_next_token.log_grader(
-        model_format_config={
-            "pattern": r"(?s)(.*)",
-            "match_disambiguation": "match_all",
-            "format_type": "proper",
-        },
+        model_format_config=PatternDef(
+            pattern=r"(?s)(.*)",
+            disambiguation=Disambiguation.MATCH_ALL,
+            format_type=AnswerFormat.PROPER,
+        ),
         recompute_stats=True,
     )
 
@@ -715,11 +734,15 @@ Choices:
         config=bench_config,
     )
     chat_log_grader = benchmark_chat.log_grader(
-        model_format_config={
-            "pattern": r"(?s)(?:\s*:think-on:.*:think-off:(?!.*:think-off:)|\s*:think-on:*)?(.*)",
-            "match_disambiguation": "match_all",
-            "format_type": "proper",
-        }
+        model_format_config=PatternDef(
+            pattern=(
+                r"(?s)"
+                r"(?:\s*:think-on:.*:think-off:(?!.*:think-off:)|\s*:think-on:*)"
+                r"?(.*)"
+            ),
+            disambiguation=Disambiguation.MATCH_ALL,
+            format_type=AnswerFormat.PROPER,
+        )
     )
 
     assert [log.stats for log in [] >> chat_log_grader] == []
@@ -854,43 +877,47 @@ Choices:
 
 @pytest.mark.filterwarnings("ignore::RuntimeWarning")
 def test_multiple_choice_benchmark_grade_aggregator_logits() -> None:
-    bench_config = {
-        "mcqa_config": {"answer_symbols": ["A", "B"]},
-        "format": {
-            "instructions": {
-                "system_prompt_template": "You are a compassionate comptroller.",
-                "base_inst_template": "Please analyze and answer the following question.",
-                "chat_inst_template": "Please analyze and answer the following question in a chat format.",
-            },
-            "prompt": {
-                "question_template": """Question: {{ question }}
+    bench_config = BenchmarkConfig(
+        mcqa_config=MCQAConfig(answer_symbols=["A", "B"]),
+        format=FormatConfig(
+            instructions=InstructionsConfig(
+                system_prompt_template="You are a compassionate comptroller.",
+                base_inst_template="Please analyze and answer the following question.",
+                chat_inst_template="Please analyze and answer the following question in a chat format.",
+            ),
+            prompt=PromptConfig(
+                question_template="""Question: {{ question }}
 
 Choices:
 {% for choice_letter, choice in choice_map.items() -%}
 #{{ choice_letter }}# {{ choice }}{% if not loop.last %}
 {% endif %}{% endfor -%}
 """,
-                "answer_template": "Antwort--> {{ answer }}",
-                "prompt_template": "{{ instruction }}\n\n{{ question }}",
-            },
-        },
-        "output_processing": {
-            "answer_formats": [
-                {
-                    "pattern": r"Antwort-->\s*([A-Z])",
-                    "capture_transform": {"params": ["x"], "expr": "x.strip().upper()"},
-                    "match_disambiguation": "match_first",
-                    "format_type": "proper",
-                },
-                {
-                    "pattern": r"Answer:\s+([A-Z])",
-                    "capture_transform": {"params": ["x"], "expr": "x.strip().upper()"},
-                    "match_disambiguation": "match_last",
-                    "format_type": "improper",
-                },
+                answer_template="Antwort--> {{ answer }}",
+                prompt_template="{{ instruction }}\n\n{{ question }}",
+            ),
+        ),
+        output_processing=OutputProcessingConfig(
+            answer_formats=[
+                PatternDef(
+                    pattern=r"Antwort-->\s*([A-Z])",
+                    capture_transform=CaptureTransform(
+                        params=["x"], expr="x.strip().upper()"
+                    ),
+                    disambiguation=Disambiguation.MATCH_FIRST,
+                    format_type=AnswerFormat.PROPER,
+                ),
+                PatternDef(
+                    pattern=r"Answer:\s+([A-Z])",
+                    capture_transform=CaptureTransform(
+                        params=["x"], expr="x.strip().upper()"
+                    ),
+                    disambiguation=Disambiguation.MATCH_LAST,
+                    format_type=AnswerFormat.IMPROPER,
+                ),
             ],
-        },
-    }
+        ),
+    )
 
     benchmark_chat = MCBenchmark(
         spec=BenchmarkSpec(
@@ -1029,43 +1056,47 @@ Choices:
 
 @pytest.mark.filterwarnings("ignore::RuntimeWarning")
 def test_multiple_choice_benchmark_grade_aggregator_chat() -> None:
-    bench_config = {
-        "mcqa_config": {"answer_symbols": ["A", "B"]},
-        "format": {
-            "instructions": {
-                "system_prompt_template": "You are a compassionate comptroller.",
-                "base_inst_template": "Please analyze and answer the following question.",
-                "chat_inst_template": "Please analyze and answer the following question in a chat format.",
-            },
-            "prompt": {
-                "question_template": """Question: {{ question }}
+    bench_config = BenchmarkConfig(
+        mcqa_config=MCQAConfig(answer_symbols=["A", "B"]),
+        format=FormatConfig(
+            instructions=InstructionsConfig(
+                system_prompt_template="You are a compassionate comptroller.",
+                base_inst_template="Please analyze and answer the following question.",
+                chat_inst_template="Please analyze and answer the following question in a chat format.",
+            ),
+            prompt=PromptConfig(
+                question_template="""Question: {{ question }}
 
 Choices:
 {% for choice_letter, choice in choice_map.items() -%}
 #{{ choice_letter }}# {{ choice }}{% if not loop.last %}
 {% endif %}{% endfor -%}
 """,
-                "answer_template": "Antwort--> {{ answer }}",
-                "prompt_template": "{{ instruction }}\n\n{{ question }}",
-            },
-        },
-        "output_processing": {
-            "answer_formats": [
-                {
-                    "pattern": r"Antwort-->\s*([A-Z])",
-                    "capture_transform": {"params": ["x"], "expr": "x.strip().upper()"},
-                    "match_disambiguation": "match_first",
-                    "format_type": "proper",
-                },
-                {
-                    "pattern": r"Answer:\s+([A-Z])",
-                    "capture_transform": {"params": ["x"], "expr": "x.strip().upper()"},
-                    "match_disambiguation": "match_last",
-                    "format_type": "improper",
-                },
+                answer_template="Antwort--> {{ answer }}",
+                prompt_template="{{ instruction }}\n\n{{ question }}",
+            ),
+        ),
+        output_processing=OutputProcessingConfig(
+            answer_formats=[
+                PatternDef(
+                    pattern=r"Antwort-->\s*([A-Z])",
+                    capture_transform=CaptureTransform(
+                        params=["x"], expr="x.strip().upper()"
+                    ),
+                    disambiguation=Disambiguation.MATCH_FIRST,
+                    format_type=AnswerFormat.PROPER,
+                ),
+                PatternDef(
+                    pattern=r"Answer:\s+([A-Z])",
+                    capture_transform=CaptureTransform(
+                        params=["x"], expr="x.strip().upper()"
+                    ),
+                    disambiguation=Disambiguation.MATCH_LAST,
+                    format_type=AnswerFormat.IMPROPER,
+                ),
             ],
-        },
-    }
+        ),
+    )
 
     benchmark_chat = MCBenchmark(
         spec=BenchmarkSpec(

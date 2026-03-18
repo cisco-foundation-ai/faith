@@ -8,70 +8,27 @@ import json
 import re
 from abc import ABC, abstractmethod
 from collections import namedtuple
-from enum import Enum
 from typing import Any, Generic, TypeVar, cast
 
 from faith._internal.parsing.expr import evaluate_expr
-from faith._internal.types.configs import Configuration
-
-
-class AnswerFormat(Enum):
-    """Enum for different ways an answer conforms to its expected format."""
-
-    PROPER = "proper"
-    IMPROPER = "improper"
-    INFERRED = "inferred"
-    INVALID = "invalid"
-
-    def __str__(self) -> str:
-        """Return the string representation of the enum."""
-        return self.value
-
-    @staticmethod
-    def from_string(s: str) -> "AnswerFormat":
-        """Convert a string to an AnswerFormat enum."""
-        try:
-            return AnswerFormat[s.upper()]
-        except KeyError as e:
-            raise ValueError(f"Unknown answer format: {s}") from e
-
-
-class MatchDisambiguation(Enum):
-    """Enum for different ways multiple matches can be disambiguated."""
-
-    MATCH_IF_SINGULAR = "match_if_singular"
-    MATCH_IF_UNIQUE = "match_if_unique"
-    MATCH_FIRST = "match_first"
-    MATCH_LAST = "match_last"
-    MATCH_ALL = "match_all"
-
-    def __str__(self) -> str:
-        """Return the string representation of the enum."""
-        return self.value
-
-    @staticmethod
-    def from_string(s: str) -> "MatchDisambiguation":
-        """Convert a string to a MatchDisambiguation enum."""
-        try:
-            return MatchDisambiguation[s.upper()]
-        except KeyError as e:
-            raise ValueError(f"Unknown match disambiguation: {s}") from e
+from faith._types.configs.patterns import (
+    AnswerFormat,
+    Disambiguation,
+    PatternDef,
+)
 
 
 class _FormatPattern:
     """Base class for pattern matching and processing."""
 
-    def __init__(self, pattern_def: Configuration):
-        self._format_type = AnswerFormat.from_string(pattern_def["format_type"])
-        self._match_disambiguation = MatchDisambiguation.from_string(
-            pattern_def.get("match_disambiguation") or "match_if_singular",
-        )
-        self._pattern = re.compile(pattern_def.get("pattern") or "")
+    def __init__(self, pattern_def: PatternDef):
+        self._format_type = pattern_def.format_type
+        self._disambiguation = pattern_def.disambiguation
+        self._pattern = re.compile(pattern_def.pattern)
         self._num_captures = self._pattern.groups if self._pattern.groups > 0 else 1
 
-        ct = pattern_def.get("capture_transform") or {}
-        self._transform_params = ct.get("params") or []
-        self._transform_expr = ct.get("expr")
+        self._transform_params = pattern_def.capture_transform.params
+        self._transform_expr = pattern_def.capture_transform.expr
         if self._transform_expr is not None:
             assert (
                 len(self._transform_params) == self._num_captures
@@ -104,7 +61,7 @@ class _FormatPattern:
 
     def _match(self, s: str) -> list[str] | list[tuple[str, ...]]:
         """Match the string `s` with the regex pattern."""
-        if self._match_disambiguation == MatchDisambiguation.MATCH_ALL:
+        if self._disambiguation == Disambiguation.MATCH_ALL:
             m = self._pattern.fullmatch(s)
             return [m.groups() if len(m.groups()) > 0 else (m.group(0),)] if m else []
         return self._pattern.findall(s)
@@ -129,16 +86,13 @@ class _FormatPattern:
             for match in match_tuples
         ), f"Pattern '{self._pattern.pattern}' should yield {self._num_captures} captures per match, but got {matches}."
 
-        if (
-            len(match_tuples) == 1
-            or self._match_disambiguation == MatchDisambiguation.MATCH_FIRST
-        ):
+        if len(match_tuples) == 1 or self._disambiguation == Disambiguation.MATCH_FIRST:
             return self._capture_transform(*(match_tuples[0])), self.answer_format
 
-        if self._match_disambiguation == MatchDisambiguation.MATCH_LAST:
+        if self._disambiguation == Disambiguation.MATCH_LAST:
             return self._capture_transform(*(match_tuples[-1])), self.answer_format
 
-        if self._match_disambiguation == MatchDisambiguation.MATCH_IF_UNIQUE:
+        if self._disambiguation == Disambiguation.MATCH_IF_UNIQUE:
             # Note: Here we convert the captures to tuples to ensure lists are hashable.
             unique = {tuple(self._capture_transform(*match)) for match in match_tuples}
             if len(unique) == 1:
@@ -198,7 +152,7 @@ class _StringMatcher(Matcher[str]):
 class SimpleMatcher(_StringMatcher):
     """Reduce a string to a subselection using a regex pattern."""
 
-    def __init__(self, pattern_def: Configuration):
+    def __init__(self, pattern_def: PatternDef):
         """Initialize with a single pattern definition."""
         self._pattern = _FormatPattern(pattern_def)
 
@@ -222,7 +176,7 @@ class AllMatcher(_StringMatcher):
 class SequentialMatcher(Matcher[Any]):
     """Match a string against multiple patterns in sequence, returning the first match."""
 
-    def __init__(self, *pattern_defs: Configuration):
+    def __init__(self, *pattern_defs: PatternDef):
         """Initialize with a list of pattern definitions to be matched in order."""
         self._patterns = [_FormatPattern(pattern_def) for pattern_def in pattern_defs]
         assert len(self._patterns) > 0, "At least one pattern must be provided."

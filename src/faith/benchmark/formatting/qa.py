@@ -10,7 +10,7 @@ from typing import Any
 
 from jinja2 import Template
 
-from faith._internal.types.configs import Configuration
+from faith._types.configs.format import FormatConfig
 from faith._types.records.model_response import ChatConversation
 from faith._types.records.prompt_record import PromptRecord
 from faith.benchmark.formatting.prompt import PromptFormatter
@@ -37,24 +37,22 @@ class QAFormatter:
     """A configurable formatter that constructs question-answer pairs for a benchmark."""
 
     def __init__(
-        self, prompt_format: PromptFormatter, format_cfg: Configuration
+        self, prompt_format: PromptFormatter, format_cfg: FormatConfig
     ) -> None:
         """Configures the formatter according to the given configs."""
         self._prompt_format = prompt_format
-        inst_cfg = format_cfg.get("instructions") or {}
-        prompt_cfg = format_cfg.get("prompt") or {}
         self._system_prompt_template = _opt_template(
-            inst_cfg.get("system_prompt_template")
+            format_cfg.instructions.system_prompt_template
         )
         inst_tmpl: str | None = None
         if prompt_format == PromptFormatter.BASE:
-            inst_tmpl = inst_cfg.get("base_inst_template")
+            inst_tmpl = format_cfg.instructions.base_inst_template
         elif prompt_format == PromptFormatter.CHAT:
-            inst_tmpl = inst_cfg.get("chat_inst_template")
+            inst_tmpl = format_cfg.instructions.chat_inst_template
         self._inst_template = _opt_template(inst_tmpl)
-        self._question_template = _opt_template(prompt_cfg.get("question_template"))
-        self._answer_template = _opt_template(prompt_cfg.get("answer_template"))
-        self._prompt_template = _opt_template(prompt_cfg.get("prompt_template"))
+        self._question_template = _opt_template(format_cfg.prompt.question_template)
+        self._answer_template = _opt_template(format_cfg.prompt.answer_template)
+        self._prompt_template = _opt_template(format_cfg.prompt.prompt_template)
 
     def _render_system_prompt(self, subject: str | None = None) -> str | None:
         if self._system_prompt_template is None:

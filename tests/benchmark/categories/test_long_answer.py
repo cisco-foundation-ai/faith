@@ -11,8 +11,17 @@ import pytest
 from datasets import Dataset, DatasetDict, Features, Value
 
 from faith import __version__
-from faith._internal.algo.matching import AnswerFormat
 from faith._internal.types.flags import GenerationMode, SampleRatio
+from faith._types.configs.benchmark import BenchmarkConfig, LAQAConfig, LongAnswerType
+from faith._types.configs.format import FormatConfig, InstructionsConfig, PromptConfig
+from faith._types.configs.patterns import (
+    AnswerFormat,
+    CaptureTransform,
+    Disambiguation,
+    PatternDef,
+)
+from faith._types.configs.scoring import OutputProcessingConfig, ScoreFnConfig
+from faith._types.configs.source import HuggingFaceSourceConfig, SourceConfig
 from faith._types.records.model_response import ChatResponse, GenerationError
 from faith._types.records.stats import StatsRecord
 from faith.benchmark.benchmark import BenchmarkSpec
@@ -34,50 +43,52 @@ def test_long_answer_benchmark_logits() -> None:
                 prompt_format=PromptFormatter.BASE,
                 n_shot=SampleRatio(5),
             ),
-            config={
-                "laqa_config": {"type": "free_form"},
-                "format": {
-                    "instructions": {
-                        "system_prompt_template": "You are a helpful assistant.",
-                        "base_inst_template": "Please respond to the following question.",
-                        "chat_inst_template": "Please respond to the following question in a chat format.",
-                    },
-                    "prompt": {
-                        "question_template": "Question: {{ question }}",
-                        "answer_template": "Answer: {{ answer }}",
-                        "prompt_template": "{{ instruction }}\n\n{{ question }}",
-                    },
-                },
-                "output_processing": {
-                    "score_fns": {
-                        "llm_grade": {
-                            "type": "llm_judge",
-                            "judge_prompt_template": "Compare `{{ correct_answer }}` to `{{ generated_answer }}` on a scale from 1-10.",
-                            "judge_model": {
-                                "model_engine": "openai",
-                                "model_path": "gpt-4o",
-                                "engine_kwargs": {"api_num_threads": 1},
-                                "generation_kwargs": {
-                                    "temperature": 0.3,
-                                    "max_completion_tokens": 1024,
-                                },
-                            },
-                            "llm_score_range": {"min": 1.0, "max": 10.0},
-                            "verdict_formats": [
-                                {
-                                    "pattern": r"(?is)\bSCORE:\s*(\d{1,2})\b",
-                                    "capture_transform": {
-                                        "params": ["score"],
-                                        "expr": "{'awarded_points': float(score)}",
+            config=BenchmarkConfig(
+                laqa_config=LAQAConfig(type=LongAnswerType.FREE_FORM),
+                format=FormatConfig(
+                    instructions=InstructionsConfig(
+                        system_prompt_template="You are a helpful assistant.",
+                        base_inst_template="Please respond to the following question.",
+                        chat_inst_template="Please respond to the following question in a chat format.",
+                    ),
+                    prompt=PromptConfig(
+                        question_template="Question: {{ question }}",
+                        answer_template="Answer: {{ answer }}",
+                        prompt_template="{{ instruction }}\n\n{{ question }}",
+                    ),
+                ),
+                output_processing=OutputProcessingConfig(
+                    score_fns={
+                        "llm_grade": ScoreFnConfig(
+                            type="llm_judge",
+                            kwargs={
+                                "judge_prompt_template": "Compare `{{ correct_answer }}` to `{{ generated_answer }}` on a scale from 1-10.",
+                                "judge_model": {
+                                    "model_engine": "openai",
+                                    "model_path": "gpt-4o",
+                                    "engine_kwargs": {"api_num_threads": 1},
+                                    "generation_kwargs": {
+                                        "temperature": 0.3,
+                                        "max_completion_tokens": 1024,
                                     },
-                                    "match_disambiguation": "match_last",
-                                    "format_type": "proper",
                                 },
-                            ],
-                        },
+                                "llm_score_range": {"min": 1.0, "max": 10.0},
+                                "verdict_formats": [
+                                    PatternDef(
+                                        pattern=r"(?is)\bSCORE:\s*(\d{1,2})\b",
+                                        capture_transform=CaptureTransform(
+                                            params=["score"],
+                                            expr="{'awarded_points': float(score)}",
+                                        ),
+                                        disambiguation=Disambiguation.MATCH_LAST,
+                                        format_type=AnswerFormat.PROPER,
+                                    ),
+                                ],
+                            },
+                        ),
                     },
-                },
-            },
+                ),
+            ),
         )
 
 
@@ -93,24 +104,81 @@ def test_long_answer_benchmark_next_token() -> None:
                 prompt_format=PromptFormatter.BASE,
                 n_shot=SampleRatio(5),
             ),
-            config={
-                "laqa_config": {"type": "free_form"},
-                "format": {
-                    "instructions": {
-                        "system_prompt_template": "You are a helpful assistant.",
-                        "base_inst_template": "Please respond to the following question.",
-                        "chat_inst_template": "Please respond to the following question in a chat format.",
+            config=BenchmarkConfig(
+                laqa_config=LAQAConfig(type=LongAnswerType.FREE_FORM),
+                format=FormatConfig(
+                    instructions=InstructionsConfig(
+                        system_prompt_template="You are a helpful assistant.",
+                        base_inst_template="Please respond to the following question.",
+                        chat_inst_template="Please respond to the following question in a chat format.",
+                    ),
+                    prompt=PromptConfig(
+                        question_template="Question: {{ question }}",
+                        answer_template="Answer: {{ answer }}",
+                        prompt_template="{{ instruction }}\n\n{{ question }}",
+                    ),
+                ),
+                output_processing=OutputProcessingConfig(
+                    score_fns={
+                        "llm_grade": ScoreFnConfig(
+                            type="llm_judge",
+                            kwargs={
+                                "judge_prompt_template": "Compare `{{ correct_answer }}` to `{{ generated_answer }}` on a scale from 1-10.",
+                                "judge_model": {
+                                    "model_engine": "openai",
+                                    "model_path": "gpt-4o",
+                                    "engine_kwargs": {"api_num_threads": 1},
+                                    "generation_kwargs": {
+                                        "temperature": 0.3,
+                                        "max_completion_tokens": 1024,
+                                    },
+                                },
+                                "llm_score_range": {"min": 1.0, "max": 10.0},
+                                "verdict_formats": [
+                                    PatternDef(
+                                        pattern=r"(?is)\bSCORE:\s*(\d{1,2})\b",
+                                        capture_transform=CaptureTransform(
+                                            params=["score"],
+                                            expr="{'awarded_points': float(score)}",
+                                        ),
+                                        disambiguation=Disambiguation.MATCH_LAST,
+                                        format_type=AnswerFormat.PROPER,
+                                    ),
+                                ],
+                            },
+                        ),
                     },
-                    "prompt": {
-                        "question_template": "Question: {{ question }}",
-                        "answer_template": "Answer: {{ answer }}",
-                        "prompt_template": "{{ instruction }}\n\n{{ question }}",
-                    },
-                },
-                "output_processing": {
-                    "score_fns": {
-                        "llm_grade": {
-                            "type": "llm_judge",
+                ),
+            ),
+        )
+
+
+def test_long_answer_benchmark_chat() -> None:
+    benchmark = LABenchmark(
+        spec=BenchmarkSpec(
+            name="test-foo",
+            generation_mode=GenerationMode.CHAT_COMPLETION,
+            prompt_format=PromptFormatter.BASE,
+            n_shot=SampleRatio(5),
+        ),
+        config=BenchmarkConfig(
+            laqa_config=LAQAConfig(type=LongAnswerType.FREE_FORM),
+            format=FormatConfig(
+                instructions=InstructionsConfig(
+                    base_inst_template="Please respond to the following question.",
+                    chat_inst_template="Please respond to the following question in a chat format.",
+                ),
+                prompt=PromptConfig(
+                    question_template="Question: {{ question }}",
+                    answer_template="Answer: {{ answer }}",
+                    prompt_template="{{ instruction }}\n\n{{ question }}",
+                ),
+            ),
+            output_processing=OutputProcessingConfig(
+                score_fns={
+                    "llm_grade": ScoreFnConfig(
+                        type="llm_judge",
+                        kwargs={
                             "judge_prompt_template": "Compare `{{ correct_answer }}` to `{{ generated_answer }}` on a scale from 1-10.",
                             "judge_model": {
                                 "model_engine": "openai",
@@ -123,74 +191,21 @@ def test_long_answer_benchmark_next_token() -> None:
                             },
                             "llm_score_range": {"min": 1.0, "max": 10.0},
                             "verdict_formats": [
-                                {
-                                    "pattern": r"(?is)\bSCORE:\s*(\d{1,2})\b",
-                                    "capture_transform": {
-                                        "params": ["score"],
-                                        "expr": "{'awarded_points': float(score)}",
-                                    },
-                                    "match_disambiguation": "match_last",
-                                    "format_type": "proper",
-                                },
+                                PatternDef(
+                                    pattern=r"(?is)\bSCORE:\s*(\d{1,2})\b",
+                                    capture_transform=CaptureTransform(
+                                        params=["score"],
+                                        expr="{'awarded_points': float(score)}",
+                                    ),
+                                    disambiguation=Disambiguation.MATCH_LAST,
+                                    format_type=AnswerFormat.PROPER,
+                                ),
                             ],
                         },
-                    },
+                    ),
                 },
-            },
-        )
-
-
-def test_long_answer_benchmark_chat() -> None:
-    benchmark = LABenchmark(
-        spec=BenchmarkSpec(
-            name="test-foo",
-            generation_mode=GenerationMode.CHAT_COMPLETION,
-            prompt_format=PromptFormatter.BASE,
-            n_shot=SampleRatio(5),
+            ),
         ),
-        config={
-            "laqa_config": {"type": "free_form"},
-            "format": {
-                "instructions": {
-                    "base_inst_template": "Please respond to the following question.",
-                    "chat_inst_template": "Please respond to the following question in a chat format.",
-                },
-                "prompt": {
-                    "question_template": "Question: {{ question }}",
-                    "answer_template": "Answer: {{ answer }}",
-                    "prompt_template": "{{ instruction }}\n\n{{ question }}",
-                },
-            },
-            "output_processing": {
-                "score_fns": {
-                    "llm_grade": {
-                        "type": "llm_judge",
-                        "judge_prompt_template": "Compare `{{ correct_answer }}` to `{{ generated_answer }}` on a scale from 1-10.",
-                        "judge_model": {
-                            "model_engine": "openai",
-                            "model_path": "gpt-4o",
-                            "engine_kwargs": {"api_num_threads": 1},
-                            "generation_kwargs": {
-                                "temperature": 0.3,
-                                "max_completion_tokens": 1024,
-                            },
-                        },
-                        "llm_score_range": {"min": 1.0, "max": 10.0},
-                        "verdict_formats": [
-                            {
-                                "pattern": r"(?is)\bSCORE:\s*(\d{1,2})\b",
-                                "capture_transform": {
-                                    "params": ["score"],
-                                    "expr": "{'awarded_points': float(score)}",
-                                },
-                                "match_disambiguation": "match_last",
-                                "format_type": "proper",
-                            },
-                        ],
-                    },
-                },
-            },
-        },
     )
 
     assert benchmark.answer_set is None
@@ -221,58 +236,60 @@ def test_long_answer_benchmark_build_dataset() -> None:
             prompt_format=PromptFormatter.BASE,
             n_shot=SampleRatio(1),
         ),
-        config={
-            "laqa_config": {"type": "free_form"},
-            "format": {
-                "instructions": {
-                    "system_prompt_template": "You are a helpful assistant.",
-                    "base_inst_template": "Please respond to the following question.",
-                    "chat_inst_template": "Please respond to the following question in a chat format.",
-                },
-                "prompt": {
-                    "question_template": "Question: {{ question }}",
-                    "answer_template": "Answer: {{ answer }}",
-                    "prompt_template": "{{ instruction }}\n\n{{ question }}",
-                },
-            },
-            "source": {
-                "huggingface": {
-                    "path": "foo/baz-bar",
-                    "subset_name": "qux",
-                    "test_split": "test",
-                    "dev_split": "dev",
-                },
-            },
-            "output_processing": {
-                "score_fns": {
-                    "llm_grade": {
-                        "type": "llm_judge",
-                        "judge_prompt_template": "Compare `{{ correct_answer }}` to `{{ generated_answer }}` on a scale from 1-10.",
-                        "judge_model": {
-                            "model_engine": "openai",
-                            "model_path": "gpt-4o",
-                            "engine_kwargs": {"api_num_threads": 1},
-                            "generation_kwargs": {
-                                "temperature": 0.3,
-                                "max_completion_tokens": 1024,
-                            },
-                        },
-                        "llm_score_range": {"min": 1.0, "max": 10.0},
-                        "verdict_formats": [
-                            {
-                                "pattern": r"(?is)\bSCORE:\s*(\d{1,2})\b",
-                                "capture_transform": {
-                                    "params": ["score"],
-                                    "expr": "{'awarded_points': float(score)}",
+        config=BenchmarkConfig(
+            laqa_config=LAQAConfig(type=LongAnswerType.FREE_FORM),
+            format=FormatConfig(
+                instructions=InstructionsConfig(
+                    system_prompt_template="You are a helpful assistant.",
+                    base_inst_template="Please respond to the following question.",
+                    chat_inst_template="Please respond to the following question in a chat format.",
+                ),
+                prompt=PromptConfig(
+                    question_template="Question: {{ question }}",
+                    answer_template="Answer: {{ answer }}",
+                    prompt_template="{{ instruction }}\n\n{{ question }}",
+                ),
+            ),
+            source=SourceConfig(
+                huggingface=HuggingFaceSourceConfig(
+                    path="foo/baz-bar",
+                    subset_name="qux",
+                    test_split="test",
+                    dev_split="dev",
+                ),
+            ),
+            output_processing=OutputProcessingConfig(
+                score_fns={
+                    "llm_grade": ScoreFnConfig(
+                        type="llm_judge",
+                        kwargs={
+                            "judge_prompt_template": "Compare `{{ correct_answer }}` to `{{ generated_answer }}` on a scale from 1-10.",
+                            "judge_model": {
+                                "model_engine": "openai",
+                                "model_path": "gpt-4o",
+                                "engine_kwargs": {"api_num_threads": 1},
+                                "generation_kwargs": {
+                                    "temperature": 0.3,
+                                    "max_completion_tokens": 1024,
                                 },
-                                "match_disambiguation": "match_last",
-                                "format_type": "proper",
                             },
-                        ],
-                    },
+                            "llm_score_range": {"min": 1.0, "max": 10.0},
+                            "verdict_formats": [
+                                PatternDef(
+                                    pattern=r"(?is)\bSCORE:\s*(\d{1,2})\b",
+                                    capture_transform=CaptureTransform(
+                                        params=["score"],
+                                        expr="{'awarded_points': float(score)}",
+                                    ),
+                                    disambiguation=Disambiguation.MATCH_LAST,
+                                    format_type=AnswerFormat.PROPER,
+                                ),
+                            ],
+                        },
+                    ),
                 },
-            },
-        },
+            ),
+        ),
         seed=42,
     )
     with patch(
@@ -321,57 +338,59 @@ def test_long_answer_benchmark_build_dataset() -> None:
             prompt_format=PromptFormatter.BASE,
             n_shot=SampleRatio(1),
         ),
-        config={
-            "laqa_config": {"type": "free_form"},
-            "format": {
-                "instructions": {
-                    "system_prompt_template": "You are a helpful assistant.",
-                    "base_inst_template": "Please respond to the following question.",
-                    "chat_inst_template": "Please respond to the following question in a chat format.",
-                },
-                "prompt": {
-                    "question_template": "Question: {{ question }}",
-                    "answer_template": "Answer: {{ answer }}",
-                    "prompt_template": "{{ instruction }}\n\n{{ question }}",
-                },
-            },
-            "source": {
-                "huggingface": {
-                    "path": "foo/baz-bar",
-                    "subset_name": "qux",
-                    "test_split": "test",
-                },
-            },
-            "output_processing": {
-                "score_fns": {
-                    "llm_grade": {
-                        "type": "llm_judge",
-                        "judge_prompt_template": "Compare `{{ correct_answer }}` to `{{ generated_answer }}` on a scale from 1-10.",
-                        "judge_model": {
-                            "model_engine": "openai",
-                            "model_path": "gpt-4o",
-                            "engine_kwargs": {"api_num_threads": 1},
-                            "generation_kwargs": {
-                                "temperature": 0.3,
-                                "max_completion_tokens": 1024,
-                            },
-                        },
-                        "llm_score_range": {"min": 1.0, "max": 10.0},
-                        "verdict_formats": [
-                            {
-                                "pattern": r"(?is)\bSCORE:\s*(\d{1,2})\b",
-                                "capture_transform": {
-                                    "params": ["score"],
-                                    "expr": "{'awarded_points': float(score)}",
+        config=BenchmarkConfig(
+            laqa_config=LAQAConfig(type=LongAnswerType.FREE_FORM),
+            format=FormatConfig(
+                instructions=InstructionsConfig(
+                    system_prompt_template="You are a helpful assistant.",
+                    base_inst_template="Please respond to the following question.",
+                    chat_inst_template="Please respond to the following question in a chat format.",
+                ),
+                prompt=PromptConfig(
+                    question_template="Question: {{ question }}",
+                    answer_template="Answer: {{ answer }}",
+                    prompt_template="{{ instruction }}\n\n{{ question }}",
+                ),
+            ),
+            source=SourceConfig(
+                huggingface=HuggingFaceSourceConfig(
+                    path="foo/baz-bar",
+                    subset_name="qux",
+                    test_split="test",
+                ),
+            ),
+            output_processing=OutputProcessingConfig(
+                score_fns={
+                    "llm_grade": ScoreFnConfig(
+                        type="llm_judge",
+                        kwargs={
+                            "judge_prompt_template": "Compare `{{ correct_answer }}` to `{{ generated_answer }}` on a scale from 1-10.",
+                            "judge_model": {
+                                "model_engine": "openai",
+                                "model_path": "gpt-4o",
+                                "engine_kwargs": {"api_num_threads": 1},
+                                "generation_kwargs": {
+                                    "temperature": 0.3,
+                                    "max_completion_tokens": 1024,
                                 },
-                                "match_disambiguation": "match_last",
-                                "format_type": "proper",
                             },
-                        ],
-                    },
+                            "llm_score_range": {"min": 1.0, "max": 10.0},
+                            "verdict_formats": [
+                                PatternDef(
+                                    pattern=r"(?is)\bSCORE:\s*(\d{1,2})\b",
+                                    capture_transform=CaptureTransform(
+                                        params=["score"],
+                                        expr="{'awarded_points': float(score)}",
+                                    ),
+                                    disambiguation=Disambiguation.MATCH_LAST,
+                                    format_type=AnswerFormat.PROPER,
+                                ),
+                            ],
+                        },
+                    ),
                 },
-            },
-        },
+            ),
+        ),
         seed=42,
     )
     with patch(
@@ -425,56 +444,58 @@ def test_long_answer_benchmark_build_dataset() -> None:
             prompt_format=PromptFormatter.BASE,
             n_shot=SampleRatio(0),
         ),
-        config={
-            "laqa_config": {"type": "free_form"},
-            "format": {
-                "instructions": {
-                    "system_prompt_template": "You are a helpful assistant.",
-                    "base_inst_template": "Please respond to the following question.",
-                    "chat_inst_template": "Please respond to the following question in a chat format.",
-                },
-                "prompt": {
-                    "question_template": "Question: {{ question }}",
-                    "answer_template": "Answer: {{ answer }}",
-                    "prompt_template": "{{ instruction }}\n\n{{ question }}",
-                },
-            },
-            "source": {
-                "huggingface": {
-                    "path": "foo/baz-bar",
-                    "test_split": "test",
-                },
-            },
-            "output_processing": {
-                "score_fns": {
-                    "llm_grade": {
-                        "type": "llm_judge",
-                        "judge_prompt_template": "Compare `{{ correct_answer }}` to `{{ generated_answer }}` on a scale from 1-10.",
-                        "judge_model": {
-                            "model_engine": "openai",
-                            "model_path": "gpt-4o",
-                            "engine_kwargs": {"api_num_threads": 1},
-                            "generation_kwargs": {
-                                "temperature": 0.3,
-                                "max_completion_tokens": 1024,
-                            },
-                        },
-                        "llm_score_range": {"min": 1.0, "max": 10.0},
-                        "verdict_formats": [
-                            {
-                                "pattern": r"(?is)\bSCORE:\s*(\d{1,2})\b",
-                                "capture_transform": {
-                                    "params": ["score"],
-                                    "expr": "{'awarded_points': float(score)}",
+        config=BenchmarkConfig(
+            laqa_config=LAQAConfig(type=LongAnswerType.FREE_FORM),
+            format=FormatConfig(
+                instructions=InstructionsConfig(
+                    system_prompt_template="You are a helpful assistant.",
+                    base_inst_template="Please respond to the following question.",
+                    chat_inst_template="Please respond to the following question in a chat format.",
+                ),
+                prompt=PromptConfig(
+                    question_template="Question: {{ question }}",
+                    answer_template="Answer: {{ answer }}",
+                    prompt_template="{{ instruction }}\n\n{{ question }}",
+                ),
+            ),
+            source=SourceConfig(
+                huggingface=HuggingFaceSourceConfig(
+                    path="foo/baz-bar",
+                    test_split="test",
+                ),
+            ),
+            output_processing=OutputProcessingConfig(
+                score_fns={
+                    "llm_grade": ScoreFnConfig(
+                        type="llm_judge",
+                        kwargs={
+                            "judge_prompt_template": "Compare `{{ correct_answer }}` to `{{ generated_answer }}` on a scale from 1-10.",
+                            "judge_model": {
+                                "model_engine": "openai",
+                                "model_path": "gpt-4o",
+                                "engine_kwargs": {"api_num_threads": 1},
+                                "generation_kwargs": {
+                                    "temperature": 0.3,
+                                    "max_completion_tokens": 1024,
                                 },
-                                "match_disambiguation": "match_last",
-                                "format_type": "proper",
                             },
-                        ],
-                    },
+                            "llm_score_range": {"min": 1.0, "max": 10.0},
+                            "verdict_formats": [
+                                PatternDef(
+                                    pattern=r"(?is)\bSCORE:\s*(\d{1,2})\b",
+                                    capture_transform=CaptureTransform(
+                                        params=["score"],
+                                        expr="{'awarded_points': float(score)}",
+                                    ),
+                                    disambiguation=Disambiguation.MATCH_LAST,
+                                    format_type=AnswerFormat.PROPER,
+                                ),
+                            ],
+                        },
+                    ),
                 },
-            },
-        },
+            ),
+        ),
         seed=42,
     )
     with patch(
@@ -537,25 +558,26 @@ class _FakeJudgeModel(BaseModel):
 
 
 def test_long_answer_benchmark_process_logs_chat() -> None:
-    bench_config = {
-        "laqa_config": {"type": "free_form"},
-        "format": {
-            "instructions": {
-                "system_prompt_template": "You are a helpful assistant.",
-                "base_inst_template": "Please respond to the following question.",
-                "chat_inst_template": "Please respond to the following question in a chat format.",
-            },
-            "prompt": {
-                "question_template": "Question: {{ question }}",
-                "answer_template": "Answer: {{ answer }}",
-                "prompt_template": "{{ instruction }}\n\n{{ question }}",
-            },
-        },
-        "output_processing": {
-            "score_fns": {
-                "llm_grade": {
-                    "type": "llm_judge",
-                    "judge_prompt_template": """You are an expert evaluator tasked with comparing two answers for accuracy and completeness.
+    bench_config = BenchmarkConfig(
+        laqa_config=LAQAConfig(type=LongAnswerType.FREE_FORM),
+        format=FormatConfig(
+            instructions=InstructionsConfig(
+                system_prompt_template="You are a helpful assistant.",
+                base_inst_template="Please respond to the following question.",
+                chat_inst_template="Please respond to the following question in a chat format.",
+            ),
+            prompt=PromptConfig(
+                question_template="Question: {{ question }}",
+                answer_template="Answer: {{ answer }}",
+                prompt_template="{{ instruction }}\n\n{{ question }}",
+            ),
+        ),
+        output_processing=OutputProcessingConfig(
+            score_fns={
+                "llm_grade": ScoreFnConfig(
+                    type="llm_judge",
+                    kwargs={
+                        "judge_prompt_template": """You are an expert evaluator tasked with comparing two answers for accuracy and completeness.
 
 GOLDEN ANSWER (Expected/Correct): {{ correct_answer }}
 
@@ -566,31 +588,32 @@ Evaluate the model's answer against the golden answer and provide a score from 1
 Format your response exactly as:
 SCORE: [number]
 SUMMARY: [your summary text]""",
-                    "judge_model": {
-                        "model_engine": "openai",
-                        "model_path": "gpt-4o",
-                        "engine_kwargs": {"api_num_threads": 1},
-                        "generation_kwargs": {
-                            "temperature": 0.3,
-                            "max_completion_tokens": 1024,
-                        },
-                    },
-                    "llm_score_range": {"min": 1.0, "max": 10.0},
-                    "verdict_formats": [
-                        {
-                            "pattern": r"(?is)\bSCORE:\s*(\d{1,2})\b.*SUMMARY:\s*(.+)",
-                            "capture_transform": {
-                                "params": ["score", "summary"],
-                                "expr": "{'awarded_points': float(score), 'details': {'summary': summary.strip()}}",
+                        "judge_model": {
+                            "model_engine": "openai",
+                            "model_path": "gpt-4o",
+                            "engine_kwargs": {"api_num_threads": 1},
+                            "generation_kwargs": {
+                                "temperature": 0.3,
+                                "max_completion_tokens": 1024,
                             },
-                            "match_disambiguation": "match_last",
-                            "format_type": "proper",
                         },
-                    ],
-                },
+                        "llm_score_range": {"min": 1.0, "max": 10.0},
+                        "verdict_formats": [
+                            PatternDef(
+                                pattern=r"(?is)\bSCORE:\s*(\d{1,2})\b.*SUMMARY:\s*(.+)",
+                                capture_transform=CaptureTransform(
+                                    params=["score", "summary"],
+                                    expr="{'awarded_points': float(score), 'details': {'summary': summary.strip()}}",
+                                ),
+                                disambiguation=Disambiguation.MATCH_LAST,
+                                format_type=AnswerFormat.PROPER,
+                            ),
+                        ],
+                    },
+                ),
             },
-        },
-    }
+        ),
+    )
 
     benchmark_chat = LABenchmark(
         spec=BenchmarkSpec(
@@ -607,11 +630,11 @@ SUMMARY: [your summary text]""",
         return_value=_FakeJudgeModel("gpt-4o"),
     ) as mock_create_model:
         log_grader = benchmark_chat.log_grader(
-            model_format_config={
-                "pattern": r"(?s)(?:\s*<t>.*</t>(?!.*</t>)|\s*<t>.*)?(.*)",
-                "match_disambiguation": "match_all",
-                "format_type": "proper",
-            }
+            model_format_config=PatternDef(
+                pattern=r"(?s)(?:\s*<t>.*</t>(?!.*</t>)|\s*<t>.*)?(.*)",
+                disambiguation=Disambiguation.MATCH_ALL,
+                format_type=AnswerFormat.PROPER,
+            )
         )
         mock_create_model.assert_called_once_with("gpt-4o", api_num_threads=1)
 
@@ -715,25 +738,26 @@ SUMMARY: [your summary text]""",
 
 @pytest.mark.filterwarnings("ignore::RuntimeWarning")
 def test_long_answer_benchmark_grade_aggregator() -> None:
-    bench_config = {
-        "laqa_config": {"type": "free_form"},
-        "format": {
-            "instructions": {
-                "system_prompt_template": "You are a helpful assistant.",
-                "base_inst_template": "Please respond to the following question.",
-                "chat_inst_template": "Please respond to the following question in a chat format.",
-            },
-            "prompt": {
-                "question_template": "Question: {{ question }}",
-                "answer_template": "Answer: {{ answer }}",
-                "prompt_template": "{{ instruction }}\n\n{{ question }}",
-            },
-        },
-        "output_processing": {
-            "score_fns": {
-                "llm_grade": {
-                    "type": "llm_judge",
-                    "judge_prompt_template": """You are an expert evaluator tasked with comparing two answers for accuracy and completeness.
+    bench_config = BenchmarkConfig(
+        laqa_config=LAQAConfig(type=LongAnswerType.FREE_FORM),
+        format=FormatConfig(
+            instructions=InstructionsConfig(
+                system_prompt_template="You are a helpful assistant.",
+                base_inst_template="Please respond to the following question.",
+                chat_inst_template="Please respond to the following question in a chat format.",
+            ),
+            prompt=PromptConfig(
+                question_template="Question: {{ question }}",
+                answer_template="Answer: {{ answer }}",
+                prompt_template="{{ instruction }}\n\n{{ question }}",
+            ),
+        ),
+        output_processing=OutputProcessingConfig(
+            score_fns={
+                "llm_grade": ScoreFnConfig(
+                    type="llm_judge",
+                    kwargs={
+                        "judge_prompt_template": """You are an expert evaluator tasked with comparing two answers for accuracy and completeness.
 
 GOLDEN ANSWER (Expected/Correct): {{ correct_answer }}
 
@@ -744,31 +768,32 @@ Evaluate the model's answer against the golden answer and provide a score from 1
 Format your response exactly as:
 SCORE: [number]
 SUMMARY: [your summary text]""",
-                    "judge_model": {
-                        "model_engine": "openai",
-                        "model_path": "gpt-4o",
-                        "engine_kwargs": {"api_num_threads": 1},
-                        "generation_kwargs": {
-                            "temperature": 0.3,
-                            "max_completion_tokens": 1024,
-                        },
-                    },
-                    "llm_score_range": {"min": 1.0, "max": 10.0},
-                    "verdict_formats": [
-                        {
-                            "pattern": r"(?is)\bSCORE:\s*(\d{1,2})\b.*SUMMARY:\s*(.+)",
-                            "capture_transform": {
-                                "params": ["score", "summary"],
-                                "expr": "{'awarded_points': float(score), 'details': {'summary': summary.strip()}}",
+                        "judge_model": {
+                            "model_engine": "openai",
+                            "model_path": "gpt-4o",
+                            "engine_kwargs": {"api_num_threads": 1},
+                            "generation_kwargs": {
+                                "temperature": 0.3,
+                                "max_completion_tokens": 1024,
                             },
-                            "match_disambiguation": "match_last",
-                            "format_type": "proper",
                         },
-                    ],
-                },
+                        "llm_score_range": {"min": 1.0, "max": 10.0},
+                        "verdict_formats": [
+                            PatternDef(
+                                pattern=r"(?is)\bSCORE:\s*(\d{1,2})\b.*SUMMARY:\s*(.+)",
+                                capture_transform=CaptureTransform(
+                                    params=["score", "summary"],
+                                    expr="{'awarded_points': float(score), 'details': {'summary': summary.strip()}}",
+                                ),
+                                disambiguation=Disambiguation.MATCH_LAST,
+                                format_type=AnswerFormat.PROPER,
+                            ),
+                        ],
+                    },
+                ),
             },
-        },
-    }
+        ),
+    )
 
     benchmark_chat = LABenchmark(
         spec=BenchmarkSpec(

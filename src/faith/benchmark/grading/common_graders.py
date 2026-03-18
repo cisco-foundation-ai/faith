@@ -9,12 +9,12 @@ from typing import Any
 
 from faith._internal.algo.matching import (
     AllMatcher,
-    AnswerFormat,
     Matcher,
     SequentialMatcher,
     SimpleMatcher,
 )
-from faith._internal.types.configs import Configuration
+from faith._types.configs.patterns import AnswerFormat, PatternDef
+from faith._types.configs.scoring import OutputProcessingConfig
 from faith._types.records.sample_record import SampleRecord
 from faith._types.records.stats import Labeling, StatsRecord
 from faith.benchmark.grading.log_grader import LogGrader
@@ -81,7 +81,7 @@ class NextTokenLogGrader(LogGrader):
 
     def __init__(
         self,
-        output_processing_config: Configuration,
+        output_processing_config: OutputProcessingConfig,
         recompute_stats: bool,
         answer_set: frozenset[str],
     ):
@@ -122,8 +122,8 @@ class ChatCompletionLogGrader(LogGrader):
 
     def __init__(
         self,
-        output_processing_config: Configuration,
-        model_format_config: Configuration | None,
+        output_processing_config: OutputProcessingConfig,
+        model_format_config: PatternDef | None,
         recompute_stats: bool,
     ):
         """Initialize the chat completion log grader."""
@@ -133,7 +133,7 @@ class ChatCompletionLogGrader(LogGrader):
             if model_format_config is not None
             else AllMatcher()
         )
-        if answer_formats := output_processing_config.get("answer_formats"):
+        if answer_formats := output_processing_config.answer_formats:
             self._answer_matcher |= SequentialMatcher(*answer_formats)
 
     def _markup_entry_impl(self, log_entry: SampleRecord) -> SampleRecord:

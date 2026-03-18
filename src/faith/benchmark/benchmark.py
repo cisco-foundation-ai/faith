@@ -14,8 +14,9 @@ from transformers import PreTrainedTokenizerBase
 
 from faith import __version__
 from faith._internal.algo.sampling import NShotSampler
-from faith._internal.types.configs import Configuration
 from faith._internal.types.flags import GenerationMode
+from faith._types.configs.benchmark import BenchmarkConfig
+from faith._types.configs.patterns import PatternDef
 from faith.benchmark.dataset.dataset import BenchmarkDataset
 from faith.benchmark.dataset.load import load_data, sample_datasets
 from faith.benchmark.formatting.qa import QAFormatter
@@ -32,7 +33,7 @@ class Benchmark(ABC):
     def __init__(
         self,
         spec: BenchmarkSpec,
-        config: Configuration,
+        config: BenchmarkConfig,
         path: Path | None = None,
         seed: int | None = None,
     ):
@@ -40,7 +41,7 @@ class Benchmark(ABC):
 
         Args:
             spec (BenchmarkSpec): The specification for the benchmark.
-            config (Configuration): The configuration dictionary for the benchmark.
+            config (BenchmarkConfig): The configuration for the benchmark.
             formatter (QAFormatter): The formatter used to create prompts.
             path (Path | None): The path to the benchmark data directory used when
                 loading data.
@@ -50,9 +51,7 @@ class Benchmark(ABC):
         self._generation_mode = spec.generation_mode
         self._n_shot = spec.n_shot
         self._config = config
-        self._formatter = QAFormatter(
-            spec.prompt_format, self._config.get("format") or {}
-        )
+        self._formatter = QAFormatter(spec.prompt_format, self._config.format)
         self._seed = seed
         self._path = path
 
@@ -103,7 +102,7 @@ class Benchmark(ABC):
     def log_grader(
         self,
         *,
-        model_format_config: Configuration | None = None,
+        model_format_config: PatternDef | None = None,
         recompute_stats: bool = False,
     ) -> LogGrader:
         """Fetch a log grader for this benchmark."""
@@ -126,10 +125,8 @@ class BaseBenchmark(Benchmark):
         if self._seed is None:
             logger.warning("No seed provided for benchmark; using default seed.")
         rng = np.random.default_rng(self._seed)
-        ancillary_columns = frozenset(
-            self._config["source"].get("ancillary_columns") or []
-        )
-        benchdata, holdout = load_data(self.name, self._path, self._config["source"])
+        ancillary_columns = frozenset(self._config.source.ancillary_columns)
+        benchdata, holdout = load_data(self.name, self._path, self._config.source)
         benchdata, holdout = sample_datasets(
             benchdata, holdout, self._n_shot, sample_size, rng
         )

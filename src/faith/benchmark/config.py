@@ -7,10 +7,10 @@
 from pathlib import Path
 
 from faith._internal.io.yaml import read_extended_yaml_file
-from faith._internal.types.configs import Configuration
+from faith._types.configs.benchmark import BenchmarkConfig
 
 
-def load_config_from_path(benchmark_path: Path) -> Configuration:
+def load_config_from_path(benchmark_path: Path) -> BenchmarkConfig:
     """Load a benchmark configuration from a benchmark path."""
     assert (
         benchmark_path.exists() and benchmark_path.is_dir()
@@ -19,4 +19,4 @@ def load_config_from_path(benchmark_path: Path) -> Configuration:
     assert (
         config_path.exists() and config_path.is_file()
     ), f"Benchmark config file '{config_path}' does not exist."
-    return read_extended_yaml_file(config_path)["benchmark"]
+    return BenchmarkConfig.from_dict(read_extended_yaml_file(config_path)["benchmark"])

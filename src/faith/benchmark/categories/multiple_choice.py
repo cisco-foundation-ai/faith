@@ -17,12 +17,13 @@ from sklearn.metrics import confusion_matrix, f1_score
 from transformers import PreTrainedTokenizerBase
 
 from faith._internal.algo.hash import dict_sha256
-from faith._internal.algo.matching import AnswerFormat
 from faith._internal.algo.sampling import NShotSampler
 from faith._internal.metrics.llm import llm_metadata_metrics, llm_prediction_metrics
-from faith._internal.types.configs import Configuration
 from faith._internal.types.flags import GenerationMode
 from faith._internal.types.stats import MetricSummary
+from faith._types.configs.benchmark import BenchmarkConfig
+from faith._types.configs.patterns import AnswerFormat, PatternDef
+from faith._types.configs.scoring import OutputProcessingConfig
 from faith._types.records.prompt_record import PromptRecord
 from faith._types.records.stats import SingleLabelSeq
 from faith.benchmark.benchmark import BaseBenchmark
@@ -39,16 +40,19 @@ from faith.benchmark.scores.scoring import Score
 from faith.benchmark.types import BenchmarkSpec
 
 
-def _load_answer_set(config: Configuration) -> frozenset[str]:
+def _load_answer_set(config: BenchmarkConfig) -> frozenset[str]:
     """Get the space of all answer symbols from the benchmark's config.
 
     Args:
-        config: The configuration dictionary for the benchmark.
+        config: The configuration for the benchmark.
 
     Returns:
         The set of answer symbols for the benchmark.
     """
-    answer_symbols = config["mcqa_config"]["answer_symbols"]
+    assert (
+        config.mcqa_config is not None
+    ), "MCQAConfig is required for multiple choice benchmarks."
+    answer_symbols = config.mcqa_config.answer_symbols
     assert isinstance(
         answer_symbols, list
     ), f"Choices must be a list, but got {type(answer_symbols)}"
@@ -74,7 +78,7 @@ def _load_answer_set(config: Configuration) -> frozenset[str]:
 class MCBenchmark(BaseBenchmark):
     """A benchmark for multiple choice question-answering tasks."""
 
-    def __init__(self, spec: BenchmarkSpec, config: Configuration, **kwargs: Any):
+    def __init__(self, spec: BenchmarkSpec, config: BenchmarkConfig, **kwargs: Any):
         """Initializes the multiple choice benchmark with the given specification."""
         super().__init__(spec, config, **kwargs)
         self._answer_symbols = _load_answer_set(self._config)
@@ -163,11 +167,11 @@ class MCBenchmark(BaseBenchmark):
     def log_grader(
         self,
         *,
-        model_format_config: Configuration | None = None,
+        model_format_config: PatternDef | None = None,
         recompute_stats: bool = False,
     ) -> LogGrader:
         """Fetch a log grader for this benchmark."""
-        op_cfg = self._config["output_processing"]
+        op_cfg = self._config.output_processing
         if self.generation_mode == GenerationMode.LOGITS:
             return LogitsLogGrader(op_cfg, recompute_stats)
         if self.generation_mode == GenerationMode.NEXT_TOKEN:
@@ -180,7 +184,7 @@ class MCBenchmark(BaseBenchmark):
 
     def grade_aggregator(self) -> GradeAggregator:
         """Fetch a grade aggregator for this benchmark."""
-        return MCMetricsAggregator(self._config["output_processing"], self.answer_set)
+        return MCMetricsAggregator(self._config.output_processing, self.answer_set)
 
 
 class MCBenchmarkDataset(BenchmarkDataset):
@@ -276,7 +280,7 @@ class MCMetricsAggregator(GradeAggregator):
 
     def __init__(
         self,
-        output_processing_config: Configuration,
+        output_processing_config: OutputProcessingConfig,
         answer_set: frozenset[str],
     ):
         """Initialize the metrics aggregator for multiple choice benchmarks."""

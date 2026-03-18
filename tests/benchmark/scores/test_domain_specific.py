@@ -5,6 +5,7 @@
 import pytest
 from cvss.exceptions import CVSS3MalformedError
 
+from faith._types.configs.scoring import ScoreFnConfig
 from faith.benchmark.scores.domain_specific import (
     AliasAccuracyScore,
     CompositeScore,
@@ -31,18 +32,20 @@ def test_score_fn_enum() -> None:
 
 def test_score_fn_from_configs() -> None:
     scores = DomainSpecificScore.from_configs(
-        cvss_score={"type": "cvss"},
-        aliases={
-            "type": "alias_accuracy",
-            "alias_map": {
-                "Benjamin Franklin": [
-                    "Silence Dogood",
-                    "Anthony Afterwit",
-                    "Benevolus",
-                ],
-                "Samuel Clemens": ["Mark Twain"],
+        cvss_score=ScoreFnConfig(type="cvss"),
+        aliases=ScoreFnConfig(
+            type="alias_accuracy",
+            kwargs={
+                "alias_map": {
+                    "Benjamin Franklin": [
+                        "Silence Dogood",
+                        "Anthony Afterwit",
+                        "Benevolus",
+                    ],
+                    "Samuel Clemens": ["Mark Twain"],
+                },
             },
-        },
+        ),
     )
     assert set(scores.keys()) == {"cvss_score", "aliases"}
     assert isinstance(scores["cvss_score"], CVSSScore)
@@ -237,14 +240,20 @@ def test_alias_accuracy_aggregate() -> None:
 
 def test_composite_score_fn_from_configs() -> None:
     scores = DomainSpecificScore.from_configs(
-        weighted_score={
-            "type": "composite",
-            "aggregation": "sub_scores.weight.cvss_score * sub_scores.score.cvss_score + sub_scores.weight.jaccard_index * sub_scores.score.jaccard_index",
-            "sub_scores": {
-                "cvss_score": {"type": "cvss", "attributes": {"weight": 0.7}},
-                "jaccard_index": {"type": "jaccard", "attributes": {"weight": 0.3}},
+        weighted_score=ScoreFnConfig(
+            type="composite",
+            kwargs={
+                "aggregation": "sub_scores.weight.cvss_score * sub_scores.score.cvss_score + sub_scores.weight.jaccard_index * sub_scores.score.jaccard_index",
+                "sub_scores": {
+                    "cvss_score": ScoreFnConfig(
+                        type="cvss", kwargs={"attributes": {"weight": 0.7}}
+                    ),
+                    "jaccard_index": ScoreFnConfig(
+                        type="jaccard", kwargs={"attributes": {"weight": 0.3}}
+                    ),
+                },
             },
-        }
+        )
     )
     assert set(scores.keys()) == {"weighted_score"}
     assert isinstance(scores["weighted_score"], CompositeScore)
@@ -253,14 +262,16 @@ def test_composite_score_fn_from_configs() -> None:
         ValueError, match="Invalid aggregation expression for composite score"
     ):
         DomainSpecificScore.from_configs(
-            invalid_composite={
-                "type": "composite",
-                "aggregation": "sum(sub_scores.score[k] * sub_scores.weight[k] for k in sub_scores.score.keys())",
-                "sub_scores": {
-                    "cvss_score": {"type": "cvss"},
-                    "jaccard_index": {"type": "jaccard"},
+            invalid_composite=ScoreFnConfig(
+                type="composite",
+                kwargs={
+                    "aggregation": "sum(sub_scores.score[k] * sub_scores.weight[k] for k in sub_scores.score.keys())",
+                    "sub_scores": {
+                        "cvss_score": ScoreFnConfig(type="cvss"),
+                        "jaccard_index": ScoreFnConfig(type="jaccard"),
+                    },
                 },
-            }
+            )
         )
 
 
@@ -268,8 +279,12 @@ def test_composite_score() -> None:
     score_fn = CompositeScore(
         aggregation="0.7 * sub_scores.score.log_1 + 0.3 * sub_scores.score.log_2",
         sub_scores={
-            "log_1": {"type": "log_scaled_score", "tolerance": 0.1, "scaling": 10.0},
-            "log_2": {"type": "log_scaled_score", "tolerance": 0.5, "scaling": 2.0},
+            "log_1": ScoreFnConfig(
+                type="log_scaled_score", kwargs={"tolerance": 0.1, "scaling": 10.0}
+            ),
+            "log_2": ScoreFnConfig(
+                type="log_scaled_score", kwargs={"tolerance": 0.5, "scaling": 2.0}
+            ),
         },
     )
     assert score_fn("100", None) == {
@@ -306,18 +321,14 @@ def test_composite_score() -> None:
     attr_weight_score_fn = CompositeScore(
         aggregation="sum(sub_scores.score[k] * sub_scores.weight[k] for k in sub_scores.score.keys()) / sum(sub_scores.weight.values())",
         sub_scores={
-            "log_1": {
-                "type": "log_scaled_score",
-                "tolerance": 0.1,
-                "scaling": 10.0,
-                "attributes": {"weight": 3},
-            },
-            "log_2": {
-                "type": "log_scaled_score",
-                "tolerance": 0.5,
-                "scaling": 2.0,
-                "attributes": {"weight": 1},
-            },
+            "log_1": ScoreFnConfig(
+                type="log_scaled_score",
+                kwargs={"tolerance": 0.1, "scaling": 10.0, "attributes": {"weight": 3}},
+            ),
+            "log_2": ScoreFnConfig(
+                type="log_scaled_score",
+                kwargs={"tolerance": 0.5, "scaling": 2.0, "attributes": {"weight": 1}},
+            ),
         },
     )
     assert attr_weight_score_fn("100", None) == {
@@ -356,8 +367,12 @@ def test_composite_score_aggregate() -> None:
     score_fn = CompositeScore(
         aggregation="0.7 * sub_scores.score.log_1 + 0.3 * sub_scores.score.log_2",
         sub_scores={
-            "log_1": {"type": "log_scaled_score", "tolerance": 0.1, "scaling": 10.0},
-            "log_2": {"type": "log_scaled_score", "tolerance": 0.5, "scaling": 2.0},
+            "log_1": ScoreFnConfig(
+                type="log_scaled_score", kwargs={"tolerance": 0.1, "scaling": 10.0}
+            ),
+            "log_2": ScoreFnConfig(
+                type="log_scaled_score", kwargs={"tolerance": 0.5, "scaling": 2.0}
+            ),
         },
     )
 

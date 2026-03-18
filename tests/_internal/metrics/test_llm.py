@@ -5,13 +5,13 @@
 
 import pytest
 
-from faith._internal.algo.matching import AnswerFormat
 from faith._internal.metrics.llm import (
     llm_basic_metrics,
     llm_metadata_metrics,
     llm_multilabel_metrics,
     llm_prediction_metrics,
 )
+from faith._types.configs.patterns import AnswerFormat
 
 
 def test_llm_metadata_metrics() -> None:

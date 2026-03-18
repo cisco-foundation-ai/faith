@@ -9,14 +9,12 @@ extends the `Benchmark` class to handle short answer question-answering tasks.
 """
 
 from collections.abc import Sequence
-from enum import Enum
 from typing import Any
 
 import numpy as np
 import pandas as pd
 
 from faith._internal.algo.hash import dict_sha256
-from faith._internal.algo.matching import AnswerFormat
 from faith._internal.algo.sampling import NShotSampler
 from faith._internal.metrics.llm import (
     llm_basic_metrics,
@@ -24,9 +22,11 @@ from faith._internal.metrics.llm import (
     llm_multilabel_metrics,
     llm_prediction_metrics,
 )
-from faith._internal.types.configs import Configuration
 from faith._internal.types.flags import GenerationMode
 from faith._internal.types.stats import MetricSummary
+from faith._types.configs.benchmark import BenchmarkConfig, ShortAnswerType
+from faith._types.configs.patterns import AnswerFormat, PatternDef
+from faith._types.configs.scoring import OutputProcessingConfig
 from faith._types.records.prompt_record import PromptRecord
 from faith._types.records.stats import SingleLabelSeq
 from faith.benchmark.benchmark import BaseBenchmark
@@ -39,17 +39,6 @@ from faith.benchmark.scores.scoring import Score
 from faith.benchmark.types import BenchmarkSpec
 
 
-class ShortAnswerType(Enum):
-    """Enum for validation types for short answer benchmarks."""
-
-    # Short answer benchmarks where each answer is treated as a set of labels.
-    LABEL_SET = "label_set"
-    # Short answer benchmarks where each answer is treated as a single string label.
-    STRING_MATCH = "string_match"
-    # Short answer benchmarks where each answer is scored by domain-specific scores.
-    DOMAIN_SPECIFIC = "domain_specific"
-
-
 class SABenchmark(BaseBenchmark):
     """Base `Benchmark` class for benchmarks with short answer question-answer pairs."""
 
@@ -57,18 +46,20 @@ class SABenchmark(BaseBenchmark):
     # there is no current reason to implement an answer lead-in, which is
     # difficult to implement since short answer benchmarks do not have answer sets.
 
-    def __init__(self, spec: BenchmarkSpec, config: Configuration, **kwargs: Any):
+    def __init__(self, spec: BenchmarkSpec, config: BenchmarkConfig, **kwargs: Any):
         """Initializes the SABenchmark with the given specification and configuration."""
         super().__init__(spec, config, **kwargs)
         assert spec.generation_mode not in [
             GenerationMode.LOGITS,
             GenerationMode.NEXT_TOKEN,
         ], "Short answer benchmarks do not support logits/next_token generation mode since short answers may be multiple tokens."
-        self._answer_type = ShortAnswerType(self._config["saqa_config"]["type"])
+        assert (
+            self._config.saqa_config is not None
+        ), "SAQAConfig is required for short answer benchmarks."
+        self._answer_type = self._config.saqa_config.type
         if self._answer_type == ShortAnswerType.DOMAIN_SPECIFIC:
             assert (
-                len(self._config.get("output_processing", {}).get("score_fns") or {})
-                > 0
+                len(self._config.output_processing.score_fns) > 0
             ), "Domain-specific short answer benchmarks must have at least one score function defined."
 
     def _build_dataset(
@@ -91,20 +82,21 @@ class SABenchmark(BaseBenchmark):
     def log_grader(
         self,
         *,
-        model_format_config: Configuration | None = None,
+        model_format_config: PatternDef | None = None,
         recompute_stats: bool = False,
     ) -> LogGrader:
         """Fetch a log grader for this benchmark."""
-        op_cfg = self._config["output_processing"]
         if self.generation_mode == GenerationMode.CHAT_COMPLETION:
-            return ChatCompletionLogGrader(op_cfg, model_format_config, recompute_stats)
+            return ChatCompletionLogGrader(
+                self._config.output_processing, model_format_config, recompute_stats
+            )
         raise ValueError(
             f"Unsupported generation mode: {self.generation_mode} for short answer log grading."
         )
 
     def grade_aggregator(self) -> GradeAggregator:
         """Fetch a grade aggregator for this benchmark."""
-        return SAMetricsAggregator(self._config["output_processing"], self._answer_type)
+        return SAMetricsAggregator(self._config.output_processing, self._answer_type)
 
 
 class SABenchmarkDataset(BenchmarkDataset):
@@ -152,7 +144,9 @@ class SAMetricsAggregator(GradeAggregator):
     """The `GradeAggregator` for short answer benchmarks."""
 
     def __init__(
-        self, output_processing_config: Configuration, answer_type: ShortAnswerType
+        self,
+        output_processing_config: OutputProcessingConfig,
+        answer_type: ShortAnswerType,
     ):
         """Initializes the SAMetricsAggregator with the given score function definitions."""
         super().__init__(output_processing_config)

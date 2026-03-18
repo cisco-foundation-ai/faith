@@ -5,28 +5,11 @@
 """Functions that list benchmarks with their states and categories."""
 
 from collections.abc import Sequence
-from enum import Enum
 from pathlib import Path
 
 from faith._internal.io.resources import benchmarks_root
+from faith._types.configs.metadata import BenchmarkState
 from faith.benchmark.config import load_config_from_path
-
-
-class BenchmarkState(Enum):
-    """Enum for benchmark states."""
-
-    ENABLED = "enabled"
-    EXPERIMENTAL = "experimental"
-    DISABLED = "disabled"
-    TEST_ONLY = "test_only"
-
-    @staticmethod
-    def from_string(s: str) -> "BenchmarkState":
-        """Convert a string to a BenchmarkState enum."""
-        try:
-            return BenchmarkState[s.upper()]
-        except KeyError as e:
-            raise ValueError(f"Unknown benchmark state: {s}") from e
 
 
 def _get_benchmark_paths(
@@ -39,12 +22,11 @@ def _get_benchmark_paths(
         [
             str(f.parent.relative_to(root_dir))
             for f in root_dir.glob("**/benchmark.yaml")
-            if (metadata := load_config_from_path(f.parent).get("metadata") or {})
-            and BenchmarkState.from_string(metadata.get("state") or "enabled")
-            in allowed_states
+            if (metadata := load_config_from_path(f.parent).metadata)
+            and metadata.state in allowed_states
             and (
                 not allowed_categories
-                or allowed_categories.intersection(metadata.get("categories") or [])
+                or allowed_categories.intersection(metadata.categories)
             )
         ]
     )

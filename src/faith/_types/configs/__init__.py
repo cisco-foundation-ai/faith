@@ -2,6 +2,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from typing import Any, TypeAlias
+"""Typed configuration dataclasses for specifying a benchmark."""
 
-Configuration: TypeAlias = dict[str, Any]
+__all__: list[str] = []

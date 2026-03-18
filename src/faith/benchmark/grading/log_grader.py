@@ -12,7 +12,7 @@ from typing import Any
 from tqdm import tqdm
 
 from faith._internal.iter.transform import IsoTransform
-from faith._internal.types.configs import Configuration
+from faith._types.configs.scoring import OutputProcessingConfig
 from faith._types.records.sample_record import SampleRecord
 from faith._types.records.stats import Labeling
 from faith.benchmark.scores.domain_specific import DomainSpecificScore
@@ -26,14 +26,14 @@ class LogGrader(IsoTransform[SampleRecord]):
 
     def __init__(
         self,
-        output_processing_config: Configuration,
+        output_processing_config: OutputProcessingConfig,
         recompute_stats: bool,
     ):
         """Initialize the logs grader."""
         super().__init__()
         self._recompute_stats = recompute_stats
         self._score_fns = DomainSpecificScore.from_configs(
-            **(output_processing_config.get("score_fns") or {})
+            **output_processing_config.score_fns
         )
 
     def __call__(self, logs: Iterable[SampleRecord]) -> Iterable[SampleRecord]:

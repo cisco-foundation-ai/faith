@@ -9,8 +9,8 @@ from pathlib import Path
 from typing import Any
 
 from faith._internal.io.datastore import Datastore
-from faith._internal.types.configs import Configuration
 from faith._internal.types.flags import GenerationMode, SampleRatio
+from faith._types.configs.benchmark import BenchmarkConfig
 from faith.benchmark.benchmark import Benchmark
 from faith.benchmark.config import load_config_from_path
 from faith.benchmark.formatting.prompt import PromptFormatter
@@ -53,7 +53,7 @@ class BenchmarkExperiment:
 
         # State that specifies and configures the benchmark.
         self._benchmark_config = load_config_from_path(self._benchmark_dir)
-        benchmark_name = self._benchmark_config.get("metadata", {}).get("name")
+        benchmark_name = self._benchmark_config.metadata.name
         assert benchmark_name, "Benchmark config missing field `metadata.name`."
         self._benchmark_spec = BenchmarkSpec(
             name=benchmark_name,
@@ -83,7 +83,7 @@ class BenchmarkExperiment:
         self._trial = 0
 
     @property
-    def benchmark_config(self) -> Configuration:
+    def benchmark_config(self) -> BenchmarkConfig:
         """Returns the benchmark configuration loaded from its directory."""
         return self._benchmark_config
 

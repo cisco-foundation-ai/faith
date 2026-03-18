@@ -70,11 +70,11 @@ benchmark:
           capture_transform:
             params: ["x"]
             expr: "x.upper().replace('‑', '-')"
-          match_disambiguation: "match_if_unique"
+          disambiguation: "match_if_unique"
           format_type: "proper"
         - pattern: '(?i)\b(?:cwe|id):\s+(\d+)\b'
           capture_transform:
             params: ["x"]
             expr: 'f"CWE-{x}"'
-          match_disambiguation: "match_if_unique"
+          disambiguation: "match_if_unique"
           format_type: "improper"

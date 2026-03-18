@@ -13,9 +13,9 @@ from typing import Any
 import numpy as np
 
 from faith._internal.iter.transform import Reducer
-from faith._internal.types.configs import Configuration
 from faith._internal.types.stats import MetricSummary
 from faith._internal.types.validation import assert_same_length
+from faith._types.configs.scoring import OutputProcessingConfig
 from faith._types.records.stats import StatsRecord
 from faith.benchmark.scores.domain_specific import DomainSpecificScore
 from faith.benchmark.scores.scoring import Score
@@ -24,11 +24,11 @@ from faith.benchmark.scores.scoring import Score
 class GradeAggregator(Reducer[StatsRecord | None, MetricSummary]):
     """Base class for aggregating benchmark grades from benchmark logs."""
 
-    def __init__(self, output_processing_config: Configuration) -> None:
+    def __init__(self, output_processing_config: OutputProcessingConfig) -> None:
         """Initialize the GradeAggregator."""
         super().__init__()
         self._score_fns = DomainSpecificScore.from_configs(
-            **(output_processing_config.get("score_fns") or {})
+            **output_processing_config.score_fns
         )
 
     def __call__(self, stats_logs: Iterable[StatsRecord | None]) -> MetricSummary:

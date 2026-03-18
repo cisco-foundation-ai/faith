@@ -11,7 +11,7 @@
             "expr": "x.upper()"
           },
           "format_type": "proper",
-          "match_disambiguation": "match_if_unique",
+          "disambiguation": "match_if_unique",
           "pattern": "(?i)\\banswer\\s*:\\s*\\(?([A-D])\\b"
         },
         {
@@ -20,7 +20,7 @@
             "expr": "x.upper()"
           },
           "format_type": "improper",
-          "match_disambiguation": "match_if_unique",
+          "disambiguation": "match_if_unique",
           "pattern": "(?i)\\banswer\\s+is:?\\s+(?:\\(|\\*\\*)?([A-Z])\\b"
         },
         {
@@ -29,7 +29,7 @@
             "expr": "x.upper()"
           },
           "format_type": "improper",
-          "match_disambiguation": "match_if_singular",
+          "disambiguation": "match_if_singular",
           "pattern": "\\(([A-Z])\\)"
         },
         {
@@ -38,7 +38,7 @@
             "expr": "x.upper()"
           },
           "format_type": "improper",
-          "match_disambiguation": "match_if_singular",
+          "disambiguation": "match_if_singular",
           "pattern": "(?i)\\boption\\s+([A-Z])\\b"
         },
         {
@@ -47,7 +47,7 @@
             "expr": "x.upper()"
           },
           "format_type": "improper",
-          "match_disambiguation": "match_if_singular",
+          "disambiguation": "match_if_singular",
           "pattern": "(?i)^\\W*([A-Z])\\W*$"
         }
       ]
