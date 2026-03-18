@@ -13,8 +13,8 @@ from typing import Any
 import numpy as np
 
 from faith._internal.iter.transform import Reducer
+from faith._internal.metrics.validation import assert_same_length
 from faith._internal.types.stats import MetricSummary
-from faith._internal.types.validation import assert_same_length
 from faith._types.configs.scoring import OutputProcessingConfig
 from faith._types.records.stats import StatsRecord
 from faith.benchmark.scores.domain_specific import DomainSpecificScore
