@@ -10,7 +10,7 @@ from pathlib import Path
 import pandas as pd
 
 from faith._internal.io.json import read_json_file
-from faith._internal.types.stats import MetricSummary
+from faith._types.record.stats import MetricSummary
 
 
 def _build_experiment_record(

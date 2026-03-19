@@ -22,13 +22,12 @@ from faith._internal.metrics.llm import (
     llm_multilabel_metrics,
     llm_prediction_metrics,
 )
-from faith._internal.types.stats import MetricSummary
 from faith._types.config.benchmark import BenchmarkConfig, ShortAnswerType
 from faith._types.config.patterns import AnswerFormat, PatternDef
 from faith._types.config.scoring import OutputProcessingConfig
 from faith._types.model.generation import GenerationMode
 from faith._types.record.prompt_record import PromptRecord
-from faith._types.record.stats import SingleLabelSeq
+from faith._types.record.stats import MetricSummary, SingleLabelSeq
 from faith.benchmark.benchmark import BaseBenchmark
 from faith.benchmark.dataset.dataset import BenchmarkDataset
 from faith.benchmark.formatting.qa import QAFormatter

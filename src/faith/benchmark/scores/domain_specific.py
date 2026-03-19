@@ -16,13 +16,13 @@ from jinja2 import Template
 from faith._internal.algo.graph import wcc_dict
 from faith._internal.algo.matching import SequentialMatcher
 from faith._internal.parsing.expr import evaluate_expr
-from faith._internal.types.stats import MetricSummary
 from faith._types.config.patterns import AnswerFormat, PatternDef
 from faith._types.config.scoring import ScoreFnConfig
 from faith._types.enums import CIEnum
 from faith._types.model.engine import ModelEngine
 from faith._types.model.prompt import PromptFormatter
 from faith._types.record.model_response import GenerationError
+from faith._types.record.stats import MetricSummary
 from faith.benchmark.scores.scoring import Score, ScoreFn
 from faith.model.factory import create_model
 

@@ -14,6 +14,8 @@ Labeling: TypeAlias = str | Sequence[str]
 SingleLabelSeq: TypeAlias = Sequence[str | None]
 MultiLabelSeq: TypeAlias = Sequence[Sequence[str] | None]
 
+MetricSummary: TypeAlias = dict[str, Any]
+
 
 @dataclass(frozen=True)
 class StatsRecord(DataClassJsonMixin):

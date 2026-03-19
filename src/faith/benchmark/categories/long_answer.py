@@ -11,11 +11,11 @@ import pandas as pd
 from faith._internal.algo.hash import dict_sha256
 from faith._internal.algo.sampling import NShotSampler
 from faith._internal.metrics.llm import llm_basic_metrics, llm_metadata_metrics
-from faith._internal.types.stats import MetricSummary
 from faith._types.config.benchmark import BenchmarkConfig, LongAnswerType
 from faith._types.config.patterns import AnswerFormat, PatternDef
 from faith._types.model.generation import GenerationMode
 from faith._types.record.prompt_record import PromptRecord
+from faith._types.record.stats import MetricSummary
 from faith.benchmark.benchmark import BaseBenchmark
 from faith.benchmark.dataset.dataset import BenchmarkDataset
 from faith.benchmark.formatting.qa import QAFormatter
