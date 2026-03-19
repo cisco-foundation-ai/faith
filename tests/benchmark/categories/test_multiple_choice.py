@@ -27,7 +27,7 @@ from faith._types.config.source import (
 from faith._types.dataset.sample_ratio import SampleRatio
 from faith._types.model.generation import GenerationMode
 from faith._types.model.prompt import PromptFormatter
-from faith._types.records.stats import StatsRecord
+from faith._types.record.stats import StatsRecord
 from faith.benchmark.benchmark import BenchmarkSpec
 from faith.benchmark.categories.multiple_choice import MCBenchmark
 from tests.benchmark.categories.fake_record_maker import make_fake_record

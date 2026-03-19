@@ -11,7 +11,7 @@ from typing import Any, cast
 from transformers import PreTrainedTokenizerBase
 
 from faith._types.model.prompt import PromptFormatter
-from faith._types.records.model_response import ChatResponse, GenerationError, TokenPred
+from faith._types.record.model_response import ChatResponse, GenerationError, TokenPred
 
 PromptList = list[str | list[dict[str, str]]]
 

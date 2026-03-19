@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 from faith._internal.io.json import read_json_file, write_as_json
-from faith._types.records.prompt_record import PromptRecord
+from faith._types.record.prompt_record import PromptRecord
 
 
 def test_prompt_record_sha256() -> None:

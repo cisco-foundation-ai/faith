@@ -22,7 +22,7 @@ from faith._types.config.scoring import ScoreFnConfig
 from faith._types.enums import CIEnum
 from faith._types.model.engine import ModelEngine
 from faith._types.model.prompt import PromptFormatter
-from faith._types.records.model_response import GenerationError
+from faith._types.record.model_response import GenerationError
 from faith.benchmark.scores.scoring import Score, ScoreFn
 from faith.model.factory import create_model
 

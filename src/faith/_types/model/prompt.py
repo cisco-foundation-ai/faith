@@ -7,7 +7,7 @@
 from typing import Callable
 
 from faith._types.enums import CIEnum
-from faith._types.records.model_response import ChatConversation
+from faith._types.record.model_response import ChatConversation
 
 
 def _format_base_input(

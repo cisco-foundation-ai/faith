@@ -8,7 +8,7 @@ from unittest.mock import Mock, patch
 import orjson
 
 from faith._types.model.prompt import PromptFormatter
-from faith._types.records.model_response import ChatResponse, GenerationError
+from faith._types.record.model_response import ChatResponse, GenerationError
 from faith.model.sagemaker import SageMakerModel
 
 

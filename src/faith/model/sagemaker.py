@@ -15,7 +15,7 @@ from botocore.config import Config
 
 from faith._internal.parsing.expr import evaluate_expr
 from faith._types.model.spec import Reasoning
-from faith._types.records.model_response import ChatResponse, GenerationError
+from faith._types.record.model_response import ChatResponse, GenerationError
 from faith.model.api_model import APIBasedModel
 
 logger = logging.getLogger(__name__)

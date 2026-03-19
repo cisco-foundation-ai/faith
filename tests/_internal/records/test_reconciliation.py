@@ -9,7 +9,7 @@ from faith._internal.records.reconciliation import (
     ReplacementStrategy,
     reconcile_records,
 )
-from faith._types.records.sample_record import RecordStatus, SampleRecord
+from faith._types.record.sample_record import RecordStatus, SampleRecord
 from tests.benchmark.categories.fake_record_maker import make_fake_record
 
 CLEAN = RecordStatus.CLEAN

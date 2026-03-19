@@ -45,10 +45,10 @@ from faith._types.enums import CIEnum
 from faith._types.model.engine import ModelEngine
 from faith._types.model.generation import GenerationMode, GenParams
 from faith._types.model.spec import ModelSpec
-from faith._types.records.model_record import ModelRecord
-from faith._types.records.model_response import ChatResponse, GenerationError
-from faith._types.records.prompt_record import PromptRecord
-from faith._types.records.sample_record import Metadata, RecordStatus, SampleRecord
+from faith._types.record.model_record import ModelRecord
+from faith._types.record.model_response import ChatResponse, GenerationError
+from faith._types.record.prompt_record import PromptRecord
+from faith._types.record.sample_record import Metadata, RecordStatus, SampleRecord
 from faith.benchmark.benchmark import Benchmark
 from faith.benchmark.listing import choices_to_benchmarks, find_benchmarks
 from faith.experiment.experiment import BenchmarkExperiment

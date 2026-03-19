@@ -14,7 +14,7 @@ from faith._internal.functools.retriable import RetryFunctionWrapper
 from faith._internal.iter.fork_merge import ForkAndMergeTransform
 from faith._types.model.prompt import PromptFormatter
 from faith._types.model.spec import Reasoning
-from faith._types.records.model_response import ChatResponse, GenerationError
+from faith._types.record.model_response import ChatResponse, GenerationError
 from faith.model.base import BaseModel, PromptList, _is_message_list
 
 

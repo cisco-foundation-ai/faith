@@ -25,8 +25,8 @@ from faith._types.dataset.sample_ratio import SampleRatio
 from faith._types.model.engine import ModelEngine
 from faith._types.model.generation import GenerationMode
 from faith._types.model.prompt import PromptFormatter
-from faith._types.records.model_response import ChatResponse, GenerationError
-from faith._types.records.stats import StatsRecord
+from faith._types.record.model_response import ChatResponse, GenerationError
+from faith._types.record.stats import StatsRecord
 from faith.benchmark.benchmark import BenchmarkSpec
 from faith.benchmark.categories.long_answer import LABenchmark
 from faith.model.base import BaseModel, PromptList

@@ -21,9 +21,9 @@ from faith._types.config.patterns import PatternDef
 from faith._types.dataset.sample_ratio import SampleRatio
 from faith._types.model.generation import GenerationMode, GenParams
 from faith._types.model.prompt import PromptFormatter
-from faith._types.records.model_response import ChatResponse, GenerationError, TokenPred
-from faith._types.records.prompt_record import PromptRecord
-from faith._types.records.sample_record import SampleRecord
+from faith._types.record.model_response import ChatResponse, GenerationError, TokenPred
+from faith._types.record.prompt_record import PromptRecord
+from faith._types.record.sample_record import SampleRecord
 from faith.benchmark.benchmark import Benchmark, BenchmarkDataset
 from faith.benchmark.formatting.qa import QAFormatter
 from faith.benchmark.grading.grade_aggregator import GradeAggregator

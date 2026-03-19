@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from dataclasses_json import DataClassJsonMixin, config
 
 from faith._types.model.generation import GenerationMode
-from faith._types.records.model_response import (
+from faith._types.record.model_response import (
     ChatConversation,
     ChatResponse,
     GenerationError,

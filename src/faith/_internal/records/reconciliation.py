@@ -8,7 +8,7 @@ from enum import auto
 from faith._internal.iter.join import LeftJoinTransform
 from faith._internal.iter.transform import Mapping, Transform
 from faith._types.enums import CIStrEnum
-from faith._types.records.sample_record import RecordStatus, SampleRecord
+from faith._types.record.sample_record import RecordStatus, SampleRecord
 
 
 class ReplacementStrategy(CIStrEnum):

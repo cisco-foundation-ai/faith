@@ -5,7 +5,7 @@
 from unittest.mock import Mock, patch
 
 from faith._types.model.prompt import PromptFormatter
-from faith._types.records.model_response import ChatResponse, GenerationError
+from faith._types.record.model_response import ChatResponse, GenerationError
 from faith.model.open_router import OpenRouterModel
 
 

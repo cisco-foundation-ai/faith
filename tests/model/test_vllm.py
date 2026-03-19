@@ -8,7 +8,7 @@ import pytest
 
 from faith._types.model.prompt import PromptFormatter
 from faith._types.model.spec import Reasoning
-from faith._types.records.model_response import ChatResponse, TokenPred
+from faith._types.record.model_response import ChatResponse, TokenPred
 from faith.model.vllm import VLLMModel, _remove_longest_common_prefix
 
 

@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 
 from faith._internal.algo.sampling import NShotSampler
-from faith._types.records.prompt_record import PromptRecord
+from faith._types.record.prompt_record import PromptRecord
 from faith.benchmark.formatting.qa import QAFormatter
 
 

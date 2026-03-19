@@ -16,7 +16,7 @@ from faith._internal.iter.transform import Reducer
 from faith._internal.metrics.validation import assert_same_length
 from faith._internal.types.stats import MetricSummary
 from faith._types.config.scoring import OutputProcessingConfig
-from faith._types.records.stats import StatsRecord
+from faith._types.record.stats import StatsRecord
 from faith.benchmark.scores.domain_specific import DomainSpecificScore
 from faith.benchmark.scores.scoring import Score
 

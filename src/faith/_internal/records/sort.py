@@ -7,7 +7,7 @@ from functools import reduce
 from typing import Any, Generic, Protocol, TypeVar
 
 from faith._internal.iter.transform import IsoTransform
-from faith._types.records.sample_record import SampleRecord
+from faith._types.record.sample_record import SampleRecord
 
 
 class _Comparable(Protocol):

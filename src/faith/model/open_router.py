@@ -10,7 +10,7 @@ from typing import Any
 from openrouter import OpenRouter
 
 from faith._types.model.spec import Reasoning
-from faith._types.records.model_response import ChatResponse, GenerationError
+from faith._types.record.model_response import ChatResponse, GenerationError
 from faith.model.api_model import APIBasedModel
 
 

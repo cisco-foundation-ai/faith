@@ -8,9 +8,9 @@ from enum import auto
 from dataclasses_json import DataClassJsonMixin, config
 
 from faith._types.enums import CIStrEnum
-from faith._types.records.model_record import ModelRecord
-from faith._types.records.prompt_record import PromptRecord
-from faith._types.records.stats import StatsRecord
+from faith._types.record.model_record import ModelRecord
+from faith._types.record.prompt_record import PromptRecord
+from faith._types.record.stats import StatsRecord
 
 
 @dataclass

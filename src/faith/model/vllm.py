@@ -23,7 +23,7 @@ from vllm.outputs import RequestOutput
 
 from faith._types.model.prompt import PromptFormatter
 from faith._types.model.spec import Reasoning
-from faith._types.records.model_response import ChatResponse, GenerationError, TokenPred
+from faith._types.record.model_response import ChatResponse, GenerationError, TokenPred
 from faith.model.base import (
     BaseModel,
     PromptList,
