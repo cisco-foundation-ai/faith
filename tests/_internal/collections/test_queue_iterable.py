@@ -9,7 +9,7 @@ import pytest
 from faith._internal.collections.queue_iterable import QueueIterable
 
 
-def test_basic_iteration() -> None:
+def test_queue_iterable_basic_iteration() -> None:
     """Items put before close are yielded in order."""
     qi: QueueIterable[int] = QueueIterable()
     with qi:
@@ -18,7 +18,7 @@ def test_basic_iteration() -> None:
     assert list(qi) == [0, 1, 2, 3, 4]
 
 
-def test_empty() -> None:
+def test_queue_iterable_empty() -> None:
     """An immediate close yields no items."""
     qi: QueueIterable[int] = QueueIterable()
     with qi:
@@ -26,7 +26,7 @@ def test_empty() -> None:
     assert not list(qi)
 
 
-def test_blocks_until_items_available() -> None:
+def test_queue_iterable_blocks_until_items_available() -> None:
     """The iterable blocks on an empty queue until items arrive from another thread."""
     qi: QueueIterable[int] = QueueIterable()
     results: list[int] = []
@@ -45,7 +45,7 @@ def test_blocks_until_items_available() -> None:
     assert results == [0, 1, 2]
 
 
-def test_put_after_close_raises() -> None:
+def test_queue_iterable_put_after_close_raises() -> None:
     """Putting an item after close raises RuntimeError."""
     qi: QueueIterable[int] = QueueIterable()
     with qi:
@@ -54,7 +54,7 @@ def test_put_after_close_raises() -> None:
         qi.put(1)
 
 
-def test_extra_close_raises() -> None:
+def test_queue_iterable_extra_close_raises() -> None:
     """Calling close more times than expected raises RuntimeError."""
     qi: QueueIterable[str] = QueueIterable()
     qi.close()
@@ -64,7 +64,7 @@ def test_extra_close_raises() -> None:
         qi.close()
 
 
-def test_context_manager_closes_on_error() -> None:
+def test_queue_iterable_context_manager_closes_on_error() -> None:
     """The iterable is closed even if the producer raises inside the context."""
     qi: QueueIterable[int] = QueueIterable()
     try:
@@ -76,7 +76,7 @@ def test_context_manager_closes_on_error() -> None:
     assert list(qi) == [1]
 
 
-def test_multiple_producers() -> None:
+def test_queue_iterable_multiple_producers() -> None:
     """Multiple producer threads each close independently."""
     qi: QueueIterable[int] = QueueIterable(num_producers=3)
     results: list[int] = []

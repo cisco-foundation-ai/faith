@@ -61,7 +61,7 @@ _EXPERIMENT_DATA = {
 }
 
 
-def test_parse_config():
+def test_parse_experiment_config():
     """Test parsing experiment config."""
     config = parse_experiment_config(_EXPERIMENT_DATA)
 
@@ -80,13 +80,7 @@ def test_parse_config():
     )
 
 
-def test_parse_primary_metric():
-    """Test parsing primary metric from experiment data."""
-    primary_metric = parse_primary_metric(_EXPERIMENT_DATA)
-    assert primary_metric == "accuracy.mean"
-
-
-def test_parse_missing_benchmark():
+def test_parse_experiment_config_on_missing_benchmark():
     """Test parsing config with incomplete benchmark spec raises error."""
     data = {"experiment_params": {"benchmark": {}, "model": {"path": "test/model"}}}
 
@@ -95,7 +89,7 @@ def test_parse_missing_benchmark():
         parse_experiment_config(data)
 
 
-def test_parse_num_shots_fractional():
+def test_parse_experiment_config_with_num_shots_fractional():
     """Test that fractional n_shot (e.g., '1/2') extracts both fields."""
     data = {
         "experiment_params": {
@@ -126,6 +120,12 @@ def test_parse_num_shots_fractional():
     )
 
 
+def test_parse_primary_metric():
+    """Test parsing primary metric from experiment data."""
+    primary_metric = parse_primary_metric(_EXPERIMENT_DATA)
+    assert primary_metric == "accuracy.mean"
+
+
 def test_parse_primary_metric_from_config():
     """Test reading primary_metric from benchmark config output_processing."""
     data = {
@@ -150,7 +150,7 @@ def test_parse_primary_metric_from_config():
     assert primary_metric == "custom_metric.mean"
 
 
-def test_parse_missing_primary_metric():
+def test_parse_primary_metric_missing():
     """Test parsing without primary_metric returns None."""
     data = {
         "experiment_params": {
@@ -185,7 +185,7 @@ _EXPERIMENT_CONFIG = ExperimentConfig(
 _PRIMARY_METRIC_NAME = "accuracy.mean"
 
 
-def test_parse_simple_metrics():
+def test_parse_metrics_file_with_flat_metrics():
     """Test parsing simple flat metrics."""
     metrics_file = _TESTDATA_DIR / "simple" / "metrics.json"
 
@@ -311,7 +311,7 @@ def test_parse_simple_metrics():
     assert results == expected
 
 
-def test_parse_nested_metrics():
+def test_parse_metrics_file_with_nested_metrics():
     """Test parsing nested metrics (like f1_scores)."""
     metrics_file = _TESTDATA_DIR / "nested" / "metrics.json"
 
@@ -513,7 +513,7 @@ def test_parse_nested_metrics():
     assert results == expected
 
 
-def test_parse_invalid_stats_type(tmp_path):
+def test_parse_metrics_file_with_invalid_stats_type(tmp_path):
     """Test parsing metrics.json with invalid stats type returns empty list."""
     metrics_file = tmp_path / "gen_params_abc123" / "metrics.json"
     metrics_file.parent.mkdir(parents=True)
@@ -523,7 +523,7 @@ def test_parse_invalid_stats_type(tmp_path):
     assert results == []
 
 
-def test_parse_nonexistent_file(tmp_path):
+def test_parse_metrics_file_with_nonexistent_file(tmp_path):
     """Test parsing nonexistent metrics file."""
     with pytest.raises(FileNotFoundError):
         parse_metrics_file(

@@ -15,7 +15,7 @@ from faith._types.config.source import (
 )
 
 
-def test_mutually_exclusive_source_types() -> None:
+def test_source_config_mutually_exclusive_source_types() -> None:
     with pytest.raises(
         ValueError,
         match="At most one of huggingface, files, git_repo may be provided.",

@@ -14,8 +14,8 @@ from faith._types.record.model_response import (
 
 
 @pytest.mark.parametrize("mode", list(GenerationMode))
-def test_reset_to_mode_keeps_selected_field(mode: GenerationMode) -> None:
-    """reset_to_mode clears all response fields except the one matching the mode."""
+def test_model_record_reset_to_mode(mode: GenerationMode) -> None:
+    """Verify that reset_to_mode clears all response fields except the one matching the mode."""
     record = ModelRecord(
         prompt="What is 2 + 2?",
         answer_symbol_ids={"A": 0, "B": 1},

@@ -10,7 +10,7 @@ import pytest
 from faith._internal.threading.periodic import PeriodicTaskContext
 
 
-def test_verify_calls_task_on_init() -> None:
+def test_periodic_task_context_verify_calls_task_on_init() -> None:
     """verify=True (default) calls task once during __init__."""
     call_count = 0
 
@@ -22,7 +22,7 @@ def test_verify_calls_task_on_init() -> None:
     assert call_count == 1
 
 
-def test_verify_propagates_exception() -> None:
+def test_periodic_task_context_verify_propagates_exception() -> None:
     """verify=True propagates exceptions from the initial task call."""
 
     def bad_task() -> None:
@@ -32,7 +32,7 @@ def test_verify_propagates_exception() -> None:
         PeriodicTaskContext(bad_task, interval=100, verify=True)
 
 
-def test_verify_false_skips_init_call() -> None:
+def test_periodic_task_context_verify_false_skips_init_call() -> None:
     """verify=False skips the initial task call."""
     call_count = 0
 
@@ -44,7 +44,7 @@ def test_verify_false_skips_init_call() -> None:
     assert call_count == 0
 
 
-def test_periodic_execution() -> None:
+def test_periodic_task_context_periodic_task_execution() -> None:
     """Task is called periodically while the context is active."""
     call_count = 0
     event = threading.Event()
@@ -62,7 +62,7 @@ def test_periodic_execution() -> None:
     assert call_count >= 3
 
 
-def test_final_call_on_exit() -> None:
+def test_periodic_task_context_final_call_on_exit() -> None:
     """__exit__ performs one final task call."""
     calls: list[str] = []
 
@@ -77,7 +77,7 @@ def test_final_call_on_exit() -> None:
     assert len(calls) == 1
 
 
-def test_responsive_shutdown() -> None:
+def test_periodic_task_context_responsive_shutdown() -> None:
     """Context manager exits promptly, not blocked by a long interval."""
     with PeriodicTaskContext(lambda: None, interval=100, verify=False):
         start = time.monotonic()
@@ -85,7 +85,7 @@ def test_responsive_shutdown() -> None:
     assert elapsed < 2.0, f"Shutdown took {elapsed:.2f}s, expected < 2s"
 
 
-def test_invalid_interval() -> None:
+def test_periodic_task_context_invalid_interval() -> None:
     """Interval must be positive."""
     with pytest.raises(AssertionError, match="Interval must be positive"):
         PeriodicTaskContext(lambda: None, interval=0)

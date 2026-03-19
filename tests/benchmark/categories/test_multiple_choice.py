@@ -35,7 +35,7 @@ from tests.benchmark.categories.fake_record_maker import make_fake_record
 TEST_ROOT_DIR = Path(__file__).parent.absolute()
 
 
-def test_multiple_choice_benchmark() -> None:
+def test_mc_benchmark() -> None:
     benchmark = MCBenchmark(
         spec=BenchmarkSpec(
             name="test-bar",
@@ -71,7 +71,7 @@ Choices:
 
 
 @pytest.mark.slow
-def test_multiple_choice_benchmark_answer_leadin() -> None:
+def test_mc_benchmark_answer_leadin() -> None:
     benchmark = MCBenchmark(
         spec=BenchmarkSpec(
             name="test-bar",
@@ -107,7 +107,7 @@ Choices:
 
 
 @pytest.mark.slow
-def test_multiple_choice_benchmark_answer_leadin_multiple_answer_vars() -> None:
+def test_mc_benchmark_answer_leadin_multiple_answer_vars() -> None:
     benchmark = MCBenchmark(
         spec=BenchmarkSpec(
             name="test-bar",
@@ -146,7 +146,7 @@ Choices:
 
 
 @pytest.mark.slow
-def test_multiple_choice_benchmark_answer_token_map() -> None:
+def test_mc_benchmark_answer_token_map() -> None:
     benchmark = MCBenchmark(
         spec=BenchmarkSpec(
             name="test-bar",
@@ -197,7 +197,7 @@ Choices:
     }
 
 
-def test_multiple_choice_benchmark_build_dataset() -> None:
+def test_mc_benchmark_build_dataset() -> None:
     benchmark_1shot = MCBenchmark(
         spec=BenchmarkSpec(
             name="test-bar",
@@ -355,7 +355,7 @@ Choices:
 # public git repository we have is CyberMetric; migrate this test to use our own
 # repository when it is public.
 @pytest.mark.slow
-def test_multiple_choice_benchmark_from_git_repo() -> None:
+def test_mc_benchmark_from_git_repo() -> None:
     # Source a benchmark from our git repository at a specific commit.
     benchmark_0shot = MCBenchmark(
         spec=BenchmarkSpec(
@@ -448,7 +448,7 @@ Choices:
     ]
 
 
-def test_multiple_choice_benchmark_log_grader() -> None:
+def test_mc_benchmark_log_grader() -> None:
     bench_config = BenchmarkConfig(
         mcqa_config=MCQAConfig(answer_symbols=["A", "B"]),
         format=FormatConfig(
@@ -875,7 +875,7 @@ Choices:
 
 
 @pytest.mark.filterwarnings("ignore::RuntimeWarning")
-def test_multiple_choice_benchmark_grade_aggregator_logits() -> None:
+def test_mc_benchmark_grade_aggregator_logits() -> None:
     bench_config = BenchmarkConfig(
         mcqa_config=MCQAConfig(answer_symbols=["A", "B"]),
         format=FormatConfig(
@@ -1054,7 +1054,7 @@ Choices:
 
 
 @pytest.mark.filterwarnings("ignore::RuntimeWarning")
-def test_multiple_choice_benchmark_grade_aggregator_chat() -> None:
+def test_mc_benchmark_grade_aggregator_chat() -> None:
     bench_config = BenchmarkConfig(
         mcqa_config=MCQAConfig(answer_symbols=["A", "B"]),
         format=FormatConfig(

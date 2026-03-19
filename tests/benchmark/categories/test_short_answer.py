@@ -27,7 +27,7 @@ from faith.benchmark.categories.short_answer import SABenchmark
 from tests.benchmark.categories.fake_record_maker import make_fake_record
 
 
-def test_short_answer_benchmark_logits() -> None:
+def test_sa_benchmark_logits() -> None:
     with pytest.raises(
         AssertionError,
         match="Short answer benchmarks do not support logits/next_token generation mode",
@@ -57,7 +57,7 @@ def test_short_answer_benchmark_logits() -> None:
         )
 
 
-def test_short_answer_benchmark_next_token() -> None:
+def test_sa_benchmark_next_token() -> None:
     with pytest.raises(
         AssertionError,
         match="Short answer benchmarks do not support logits/next_token generation mode",
@@ -87,7 +87,7 @@ def test_short_answer_benchmark_next_token() -> None:
         )
 
 
-def test_short_answer_benchmark_chat() -> None:
+def test_sa_benchmark_chat() -> None:
     benchmark = SABenchmark(
         spec=BenchmarkSpec(
             name="test-foo",
@@ -116,7 +116,7 @@ def test_short_answer_benchmark_chat() -> None:
     assert benchmark.version == __version__
 
 
-def test_short_answer_benchmark_build_dataset() -> None:
+def test_sa_benchmark_build_dataset() -> None:
     fake_test_dataset = Dataset.from_dict(
         {
             "question": ["What is the capital of Austria?", "What is 1+2?"],
@@ -311,7 +311,7 @@ def test_short_answer_benchmark_build_dataset() -> None:
         ]
 
 
-def test_short_answer_benchmark_process_logs_chat() -> None:
+def test_sa_benchmark_log_grader_chat() -> None:
     bench_config = BenchmarkConfig(
         saqa_config=SAQAConfig(type=ShortAnswerType.STRING_MATCH),
         format=FormatConfig(
@@ -475,7 +475,7 @@ def test_short_answer_benchmark_process_logs_chat() -> None:
 
 
 @pytest.mark.filterwarnings("ignore::RuntimeWarning")
-def test_short_answer_benchmark_grade_aggregator_string_match() -> None:
+def test_sa_benchmark_grade_aggregator_string_match() -> None:
     bench_config = BenchmarkConfig(
         saqa_config=SAQAConfig(type=ShortAnswerType.STRING_MATCH),
         format=FormatConfig(
@@ -624,7 +624,7 @@ def test_short_answer_benchmark_grade_aggregator_string_match() -> None:
 
 
 @pytest.mark.filterwarnings("ignore::RuntimeWarning")
-def test_short_answer_benchmark_grade_aggregator_label_set() -> None:
+def test_sa_benchmark_grade_aggregator_label_set() -> None:
     bench_config = BenchmarkConfig(
         saqa_config=SAQAConfig(type=ShortAnswerType.LABEL_SET),
         format=FormatConfig(
@@ -780,7 +780,7 @@ def test_short_answer_benchmark_grade_aggregator_label_set() -> None:
 
 
 @pytest.mark.filterwarnings("ignore::RuntimeWarning")
-def test_short_answer_benchmark_grade_aggregator_domain_specific() -> None:
+def test_sa_benchmark_grade_aggregator_domain_specific() -> None:
     bench_config = BenchmarkConfig(
         saqa_config=SAQAConfig(type=ShortAnswerType.DOMAIN_SPECIFIC),
         format=FormatConfig(

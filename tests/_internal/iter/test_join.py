@@ -50,7 +50,7 @@ _key = itemgetter(0)
         "cross-product",
     ],
 )
-def test_inner_join(left, right, expected) -> None:
+def test_inner_join_transform(left, right, expected) -> None:
     """Test that inner join yields only pairs where the key exists in both sides."""
     assert list(left >> InnerJoinTransform(right, on_key=_key)) == unordered(expected)
 
@@ -87,7 +87,7 @@ def test_inner_join(left, right, expected) -> None:
         "cross-product",
     ],
 )
-def test_left_join(left, right, expected) -> None:
+def test_left_join_transform(left, right, expected) -> None:
     """Test that left join preserves all left items, with None for unmatched rights."""
     assert list(left >> LeftJoinTransform(right, on_key=_key)) == unordered(expected)
 
@@ -124,7 +124,7 @@ def test_left_join(left, right, expected) -> None:
         "cross-product",
     ],
 )
-def test_right_join(left, right, expected) -> None:
+def test_right_join_transform(left, right, expected) -> None:
     """Test that right join preserves all right items, with None for unmatched lefts."""
     assert list(left >> RightJoinTransform(right, on_key=_key)) == unordered(expected)
 
@@ -165,6 +165,6 @@ def test_right_join(left, right, expected) -> None:
         "cross-product",
     ],
 )
-def test_outer_join(left, right, expected) -> None:
+def test_outer_join_transform(left, right, expected) -> None:
     """Test that outer join preserves all items from both sides."""
     assert list(left >> OuterJoinTransform(right, on_key=_key)) == unordered(expected)

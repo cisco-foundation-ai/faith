@@ -10,7 +10,7 @@ from faith.cli.flags.annotated_path import AnnotatedPath, PathWithAnnotations
 from faith.cli.flags.arg_value import TypeWithDefault
 
 
-def test_path_with_values() -> None:
+def test_path_with_annotations() -> None:
     path_with_values = PathWithAnnotations("example.txt", version=1.0, format="csv")
     assert path_with_values.path == Path("example.txt")
     assert path_with_values.raw_path == "example.txt"
@@ -22,7 +22,7 @@ def test_path_with_values() -> None:
         path_with_values.get_value("nonexistent_key")
 
 
-def test_path_with_values_str() -> None:
+def test_path_with_annotations_str() -> None:
     path_with_values = PathWithAnnotations("example.txt", version=1.0, format="csv")
     assert str(path_with_values) == "example.txt@version=1.0@format=csv"
 

@@ -19,19 +19,25 @@ class FakeDatastore(Datastore):
     """A fake datastore implementation for testing purposes."""
 
     def __init__(self, root_path: Path):
+        """Initialize the FakeDatastore with a root path."""
         self._root_path = root_path
 
     @property
     def path(self) -> Path:
+        """The path of the datastore is just the root path for testing."""
         return self._root_path
 
+    # pylint: disable-next=unused-argument
     def pull(self, *, raise_on_error: bool = False) -> Path:
+        """Fake pull just returns the root path."""
         return self._root_path
 
+    # pylint: disable-next=unused-argument
     def push(self, *, raise_on_error: bool = False) -> None:
-        pass
+        """Fake push does nothing."""
 
     def sub_store(self, sub_path: Path) -> Datastore:
+        """Return a new FakeDatastore rooted at the given sub_path."""
         return FakeDatastore(self._root_path / sub_path)
 
 
@@ -100,7 +106,7 @@ def test_benchmark_experiment() -> None:
         )
 
 
-def test_experiment_iteration() -> None:
+def test_benchmark_experiment_iteration() -> None:
     gen_params = GenParams(
         temperature=0.1,
         top_p=0.5,

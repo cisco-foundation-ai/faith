@@ -30,7 +30,7 @@ from faith._types.config.source import (
 )
 
 
-def test_metadata_with_state_enum() -> None:
+def test_benchmark_config_with_metadata_with_state_enum() -> None:
     assert BenchmarkConfig.from_dict(
         {
             "metadata": {
@@ -52,7 +52,7 @@ def test_metadata_with_state_enum() -> None:
     )
 
 
-def test_benchmark_types() -> None:
+def test_benchmark_config_for_benchmark_types() -> None:
     assert BenchmarkConfig.from_dict(
         {"mcqa_config": {"answer_symbols": ["A", "B", "C"]}}
     ) == BenchmarkConfig(mcqa_config=MCQAConfig(answer_symbols=["A", "B", "C"]))
@@ -64,7 +64,7 @@ def test_benchmark_types() -> None:
     ) == BenchmarkConfig(laqa_config=LAQAConfig(type=LongAnswerType.FREE_FORM))
 
 
-def test_format_config() -> None:
+def test_benchmark_config_with_format_config() -> None:
     assert BenchmarkConfig.from_dict(
         {
             "format": {
@@ -96,7 +96,7 @@ def test_format_config() -> None:
     )
 
 
-def test_source_huggingface() -> None:
+def test_benchmark_config_with_huggingface_source() -> None:
     assert BenchmarkConfig.from_dict(
         {
             "source": {
@@ -124,7 +124,7 @@ def test_source_huggingface() -> None:
     )
 
 
-def test_output_processing_with_answer_formats() -> None:
+def test_benchmark_config_with_output_processing_with_answer_formats() -> None:
     assert BenchmarkConfig.from_dict(
         {
             "output_processing": {
@@ -165,7 +165,7 @@ def test_output_processing_with_answer_formats() -> None:
     )
 
 
-def test_output_processing_with_score_fns() -> None:
+def test_benchmark_config_with_output_processing_with_score_fns() -> None:
     assert BenchmarkConfig.from_dict(
         {
             "output_processing": {
@@ -195,7 +195,7 @@ def test_output_processing_with_score_fns() -> None:
     )
 
 
-def test_full_config() -> None:
+def test_benchmark_config_full_config() -> None:
     """Test a realistic full benchmark config similar to ctibench-rcm."""
     assert BenchmarkConfig.from_dict(
         {
@@ -284,7 +284,7 @@ def test_full_config() -> None:
     )
 
 
-def test_mutually_exclusive_config_types() -> None:
+def test_benchmark_config_mutually_exclusive_config_types() -> None:
     with pytest.raises(
         ValueError,
         match="At most one of mcqa_config, saqa_config, laqa_config may be provided.",

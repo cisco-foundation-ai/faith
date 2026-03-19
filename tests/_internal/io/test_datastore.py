@@ -55,7 +55,7 @@ def test_gcp_cp_args() -> None:
     ]
 
 
-def test_local_data_store() -> None:
+def test_local_datastore() -> None:
     with tempfile.TemporaryDirectory() as temp_dir:
         with DatastoreContext.from_path(str(Path(temp_dir) / "datastore")) as datastore:
             assert datastore.path == Path(temp_dir) / "datastore"

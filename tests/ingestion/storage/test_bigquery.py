@@ -12,7 +12,7 @@ from google.api_core.exceptions import NotFound
 from faith.ingestion.storage.bigquery import METRICS_SCHEMA, BigQueryClient
 
 
-def test_init():
+def test_big_query_client_init():
     """Test client initialization."""
     mock_client = Mock(get_table=Mock(return_value=Mock()))
 
@@ -28,7 +28,7 @@ def test_init():
         assert client.table_ref == "test-project.test_dataset.test_table"
 
 
-def test_schema_structure():
+def test_metrics_schema_structure():
     """Test that schema has expected columns."""
     assert {field.name for field in METRICS_SCHEMA} == {
         "model_key",
@@ -51,7 +51,7 @@ def test_schema_structure():
     }
 
 
-def test_check_metrics_file_exists_false():
+def test_big_query_client_check_metrics_file_exists_false():
     """Test check_metrics_file_exists returns False when file hasn't been ingested."""
     mock_client = Mock(
         query=Mock(return_value=Mock(result=Mock(return_value=Mock(total_rows=0)))),
@@ -66,7 +66,7 @@ def test_check_metrics_file_exists_false():
     assert not client.check_metrics_file_exists("gs://bucket/model/metrics.json")
 
 
-def test_check_metrics_file_exists_true():
+def test_big_query_client_check_metrics_file_exists_true():
     """Test check_metrics_file_exists returns True when file exists."""
     mock_client = Mock(
         query=Mock(return_value=Mock(result=Mock(return_value=Mock(total_rows=1)))),
@@ -81,7 +81,7 @@ def test_check_metrics_file_exists_true():
     assert client.check_metrics_file_exists("gs://bucket/model/metrics.json")
 
 
-def test_insert_metrics_duplicate_check():
+def test_big_query_client_insert_metrics_duplicate_check():
     """Test that insert_metrics raises error for duplicate metrics_file_uri."""
     mock_client = Mock(
         query=Mock(return_value=Mock(result=Mock(return_value=Mock(total_rows=1)))),
@@ -104,7 +104,7 @@ def test_insert_metrics_duplicate_check():
             client.insert_metrics(metrics, check_duplicates=True)
 
 
-def test_insert_metrics_success():
+def test_big_query_client_insert_metrics_success():
     """Test successful metrics insertion."""
     mock_job = Mock(result=Mock(return_value=None), output_rows=2)
     mock_client = Mock(
@@ -140,7 +140,7 @@ def test_insert_metrics_success():
         mock_job.result.assert_called_once()
 
 
-def test_ensure_table_creates_table():
+def test_big_query_client_ensure_table_exists_creates_table():
     """Test that table is created when it doesn't exist."""
     mock_client = Mock(
         get_table=Mock(side_effect=[NotFound("test"), Mock()]),

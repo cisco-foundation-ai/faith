@@ -83,7 +83,7 @@ def test_summarize_experiments_fails_on_existing() -> None:
             assert str(e) == f"Output path {summary_filepath} already exists"
 
 
-def test_resolve_from_flags():
+def test_resolve_bigquery_config_from_flags():
     """Test config resolution from explicit flags."""
     assert _resolve_bigquery_config("my-project", "my-dataset", "my-table") == (
         "my-project",
@@ -92,7 +92,7 @@ def test_resolve_from_flags():
     )
 
 
-def test_resolve_from_env_vars():
+def test_resolve_bigquery_config_from_env_vars():
     """Test config resolution from environment variables."""
     with patch.dict(
         "os.environ",
@@ -109,7 +109,7 @@ def test_resolve_from_env_vars():
         )
 
 
-def test_resolve_flags_override_env():
+def test_resolve_bigquery_config_flags_override_env():
     """Test that explicit flags override environment variables."""
     with patch.dict(
         "os.environ",
@@ -127,19 +127,19 @@ def test_resolve_flags_override_env():
         )
 
 
-def test_resolve_missing_project():
+def test_resolve_bigquery_config_missing_project():
     """Test that missing project raises assertion."""
     with pytest.raises(AssertionError, match="project not specified"):
         _resolve_bigquery_config(None, "dataset", "table")
 
 
-def test_resolve_missing_dataset():
+def test_resolve_bigquery_config_missing_dataset():
     """Test that missing dataset raises assertion."""
     with pytest.raises(AssertionError, match="dataset not specified"):
         _resolve_bigquery_config("project", None, "table")
 
 
-def test_resolve_default_table():
+def test_resolve_bigquery_config_default_table():
     """Test default table name when not specified."""
     with patch.dict(
         "os.environ",

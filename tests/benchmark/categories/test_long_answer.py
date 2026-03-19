@@ -33,7 +33,7 @@ from faith.model.base import BaseModel, PromptList
 from tests.benchmark.categories.fake_record_maker import make_fake_record
 
 
-def test_long_answer_benchmark_logits() -> None:
+def test_la_benchmark_logits() -> None:
     with pytest.raises(
         AssertionError,
         match="Long answer benchmarks do not support logits/next_token generation mode",
@@ -94,7 +94,7 @@ def test_long_answer_benchmark_logits() -> None:
         )
 
 
-def test_long_answer_benchmark_next_token() -> None:
+def test_la_benchmark_next_token() -> None:
     with pytest.raises(
         AssertionError,
         match="Long answer benchmarks do not support logits/next_token generation mode",
@@ -155,7 +155,7 @@ def test_long_answer_benchmark_next_token() -> None:
         )
 
 
-def test_long_answer_benchmark_chat() -> None:
+def test_la_benchmark_chat() -> None:
     benchmark = LABenchmark(
         spec=BenchmarkSpec(
             name="test-foo",
@@ -215,7 +215,7 @@ def test_long_answer_benchmark_chat() -> None:
     assert benchmark.version == __version__
 
 
-def test_long_answer_benchmark_build_dataset() -> None:
+def test_la_benchmark_build_dataset() -> None:
     fake_test_dataset = Dataset.from_dict(
         {
             "question": ["What is the capital of Nepal?", "What is 4+5?"],
@@ -555,7 +555,7 @@ class _FakeJudgeModel(BaseModel):
         )
 
 
-def test_long_answer_benchmark_process_logs_chat() -> None:
+def test_la_benchmark_log_grader_chat() -> None:
     bench_config = BenchmarkConfig(
         laqa_config=LAQAConfig(type=LongAnswerType.FREE_FORM),
         format=FormatConfig(
@@ -737,7 +737,7 @@ SUMMARY: [your summary text]""",
 
 
 @pytest.mark.filterwarnings("ignore::RuntimeWarning")
-def test_long_answer_benchmark_grade_aggregator() -> None:
+def test_la_benchmark_grade_aggregator() -> None:
     bench_config = BenchmarkConfig(
         laqa_config=LAQAConfig(type=LongAnswerType.FREE_FORM),
         format=FormatConfig(

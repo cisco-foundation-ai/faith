@@ -62,7 +62,7 @@ def test_sample_partition_invalid_sample_size() -> None:
         sample_partition(df, len(df) + 1, rng)
 
 
-def test_nshot_sampler() -> None:
+def test_n_shot_sampler() -> None:
     nshot_sampler = NShotSampler(None, SampleRatio(0), np.random.default_rng(seed=521))
     assert nshot_sampler.get_nshot_examples() is None
 

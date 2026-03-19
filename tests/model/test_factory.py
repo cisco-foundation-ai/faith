@@ -8,7 +8,7 @@ from faith._types.model.engine import ModelEngine
 from faith.model.factory import create_model
 
 
-def test_model_engine_create_model() -> None:
+def test_create_model() -> None:
     # Create an OpenAI-based model with a mock OpenAI api client.
     with patch("faith.model.openai.OpenAI"):
         openai_model = create_model(ModelEngine.OPENAI, "fake-0.5-turbo")

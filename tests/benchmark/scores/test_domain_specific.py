@@ -17,13 +17,13 @@ from faith.benchmark.scores.domain_specific import (
 from faith.benchmark.scores.scoring import Score
 
 
-def test_score_fn_enum() -> None:
+def test_domain_specific_score_get_score_fn() -> None:
     assert (
         DomainSpecificScore.CVSS.get_score_fn() is not None
     ), "DomainSpecificScore should return a valid scoring function instance"
 
 
-def test_score_fn_from_configs() -> None:
+def test_domain_specific_score_from_configs() -> None:
     scores = DomainSpecificScore.from_configs(
         cvss_score=ScoreFnConfig(type="cvss"),
         aliases=ScoreFnConfig(
@@ -45,7 +45,7 @@ def test_score_fn_from_configs() -> None:
     assert isinstance(scores["aliases"], AliasAccuracyScore)
 
 
-def test_get_cvss_score() -> None:
+def test_cvss_score_get_cvss_score() -> None:
     # Test valid CVSS vector
     cvss_vector = "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
     score_fn = CVSSScore()
@@ -57,7 +57,7 @@ def test_get_cvss_score() -> None:
         score_fn.get_cvss_score("INVALID:VECTOR")
 
 
-def test_cvssscore() -> None:
+def test_cvss_score() -> None:
     score_fn = CVSSScore()
     label = "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
 
@@ -88,7 +88,7 @@ def test_cvssscore() -> None:
     }, "Score should be 0.0 for None prediction"
 
 
-def test_cvssscore_aggregate() -> None:
+def test_cvss_score_aggregate() -> None:
     score_fn = CVSSScore()
 
     scores = [
@@ -186,7 +186,7 @@ def test_log_scaled_score_aggregate() -> None:
     }
 
 
-def test_alias_accuracy() -> None:
+def test_alias_accuracy_score() -> None:
     score_fn = AliasAccuracyScore(
         {
             "actor1": ["alias1", "alias2"],
@@ -213,7 +213,7 @@ def test_alias_accuracy() -> None:
     }
 
 
-def test_alias_accuracy_aggregate() -> None:
+def test_alias_accuracy_score_aggregate() -> None:
     score_fn = AliasAccuracyScore(
         {
             "actor1": ["alias1", "alias2"],
@@ -231,7 +231,7 @@ def test_alias_accuracy_aggregate() -> None:
     assert aggregated_scores == {"accuracy": pytest.approx(2 / 3)}
 
 
-def test_composite_score_fn_from_configs() -> None:
+def test_composite_score_from_configs() -> None:
     scores = DomainSpecificScore.from_configs(
         weighted_score=ScoreFnConfig(
             type="composite",

@@ -7,7 +7,7 @@ import pytest
 from faith._internal.collections.sequenced_buffer import SequencedBuffer
 
 
-def test_sequence_buffer() -> None:
+def test_sequenced_buffer() -> None:
     buffer = SequencedBuffer[str]()
 
     # Test adding items at the next index
@@ -48,7 +48,7 @@ def test_sequence_buffer() -> None:
     assert buffer.next_in_order() is None
 
 
-def test_sequence_buffer_no_repeated_indices() -> None:
+def test_sequenced_buffer_no_repeated_indices() -> None:
     buffer = SequencedBuffer[complex]()
     buffer.add_at(0, 1 + 2j)
     buffer.add_at(1, 3 + 4j)

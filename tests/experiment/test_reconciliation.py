@@ -101,7 +101,7 @@ def _rec(
         "preserves-input-order",
     ],
 )
-def test_strategy_never(
+def test_reconcile_records_strategy_never(
     existing: list[SampleRecord],
     new: list[SampleRecord],
     expected: list[tuple[RecordStatus, SampleRecord]],
@@ -149,7 +149,7 @@ def test_strategy_never(
         "mixed-all-dirty",
     ],
 )
-def test_strategy_always(
+def test_reconcile_records_strategy_always(
     existing: list[SampleRecord],
     new: list[SampleRecord],
     expected: list[tuple[RecordStatus, SampleRecord]],
@@ -234,12 +234,12 @@ def test_strategy_always(
         "mixed-clean-dirty-and-unmatched",
     ],
 )
-def test_strategy_if_data_hash_differs(
+def test_reconcile_records_strategy_if_hash_differs(
     existing: list[SampleRecord],
     new: list[SampleRecord],
     expected: list[tuple[RecordStatus, SampleRecord]],
 ) -> None:
-    """IF_HASH_DIFFERS: take new only when the data_hash changed."""
+    """IF_HASH_DIFFERS: take new only when the hash changed."""
     assert (
         list(
             new

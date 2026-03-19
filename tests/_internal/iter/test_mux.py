@@ -46,7 +46,7 @@ class Mod7Type(Enum):
         return Mod7Type.OTHER
 
 
-def test_mux_transform() -> None:
+def test_mux_transform_mod7() -> None:
     """Test the MuxTransform with different kinds of transforms."""
     powers_mux = MuxTransform[Mod7Type, int, int](
         {
@@ -117,7 +117,7 @@ class FBType(Enum):
         return FBType.NOOP
 
 
-def test_mux_fizzbuzz() -> None:
+def test_mux_transform_fizzbuzz() -> None:
     # Implement FizzBuzz with a Mux.
     fizzbuzz_mux = MuxTransform[FBType, int | str, int | str](
         {
