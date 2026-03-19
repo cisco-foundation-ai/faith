@@ -8,6 +8,7 @@ from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
+from faith._internal.algo.hash import dict_sha256
 from faith._internal.io.datastore import Datastore
 from faith._types.config.benchmark import BenchmarkConfig
 from faith._types.dataset.sample_ratio import SampleRatio
@@ -74,7 +75,7 @@ class BenchmarkExperiment:
             / str(self._benchmark_spec.prompt_format)
             / str(self._benchmark_spec.generation_mode)
             / f"{str(self._benchmark_spec.n_shot).replace('/', '_')}_shot"
-            / f"gen_params_{self._gen_params.sha256()[-16:]}"
+            / f"gen_params_{dict_sha256(self._gen_params.to_dict())[-16:]}"
         )
 
         # State for regulating the experiment's trials.
@@ -120,7 +121,7 @@ class BenchmarkExperiment:
         trial_path = (
             Path("trials")
             / str(trial_seed)
-            / self.benchmark_spec.sha256()[-16:]
+            / dict_sha256(self.benchmark_spec.to_dict())[-16:]
             / "benchmark-log.json"
         )
         self._trial += 1

@@ -9,38 +9,29 @@ from pathlib import Path
 
 import pytest
 
+from faith._internal.algo.hash import dict_sha256
 from faith._internal.io.json import read_json_file, write_as_json
 from faith._types.model.generation import GenParams
 
 
-def test_gen_params_sha256() -> None:
-    """Test the SHA-256 hash of GenParams."""
-    params = GenParams(
+def test_gen_params_to_dict() -> None:
+    """Test the GenParams dataclass."""
+    dict_repr = GenParams(
         temperature=0.5,
         top_p=0.95,
         max_completion_tokens=150,
         kwargs={"key1": "value1", "key2": 42},
-    )
-    assert (
-        params.sha256()
-        == "033ac5111b83dde7c8464243d49205b55cdcd1d85d4abb151af24bed25b10718"
-    )
-
-
-def test_gen_params_to_dict() -> None:
-    """Test the GenParams dataclass."""
-    params = GenParams(
-        temperature=0.7,
-        top_p=0.9,
-        max_completion_tokens=100,
-        kwargs={"some_key": 10, "other_key": "foo"},
-    )
-    assert params.to_dict() == {
-        "temperature": 0.7,
-        "top_p": 0.9,
-        "max_completion_tokens": 100,
-        "kwargs": {"some_key": 10, "other_key": "foo"},
+    ).to_dict()
+    assert dict_repr == {
+        "temperature": 0.5,
+        "top_p": 0.95,
+        "max_completion_tokens": 150,
+        "kwargs": {"key1": "value1", "key2": 42},
     }
+    assert (
+        dict_sha256(dict_repr)
+        == "033ac5111b83dde7c8464243d49205b55cdcd1d85d4abb151af24bed25b10718"
+    ), f"Hash of gen params has changed: {dict_sha256(dict_repr)}"
 
 
 @pytest.mark.parametrize(

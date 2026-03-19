@@ -21,6 +21,7 @@ from tqdm import tqdm
 from transformers import PreTrainedTokenizerBase
 
 from faith import __version__
+from faith._internal.algo.hash import dict_sha256
 from faith._internal.functools.compose import compose
 from faith._internal.io.datastore import Datastore, DatastoreContext
 from faith._internal.io.json import read_logs_from_json, write_as_json
@@ -123,7 +124,7 @@ class BenchmarkRecordTransform(Mapping[PromptRecord, SampleRecord]):
         return SampleRecord(
             metadata=Metadata(
                 version=self._bench_version,
-                data_hash=element.sha256(),
+                data_hash=dict_sha256(element.to_dict()),
             ),
             data=element,
             model_data=ModelRecord(

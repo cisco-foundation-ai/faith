@@ -10,7 +10,6 @@ from typing import Any
 
 from dataclasses_json import DataClassJsonMixin
 
-from faith._internal.algo.hash import dict_sha256
 from faith._types.enums import CIStrEnum
 
 
@@ -30,7 +29,3 @@ class GenParams(DataClassJsonMixin):
     top_p: float = 1.0
     max_completion_tokens: int = 500
     kwargs: dict[str, Any] = field(default_factory=dict)
-
-    def sha256(self) -> str:
-        """Compute the SHA-256 hash of the generation parameters."""
-        return dict_sha256(self.to_dict())

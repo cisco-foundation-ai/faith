@@ -7,8 +7,6 @@ from typing import Any
 
 from dataclasses_json import DataClassJsonMixin
 
-from faith._internal.algo.hash import dict_sha256
-
 
 @dataclass(frozen=True)
 class PromptRecord(DataClassJsonMixin):
@@ -36,7 +34,3 @@ class PromptRecord(DataClassJsonMixin):
     # Any additional data associated with this example that is stored alongside it
     # for context or as part of subsequent metric computations.
     ancillary_data: dict[str, Any] | None = None
-
-    def sha256(self) -> str:
-        """Compute the SHA-256 hash of this example."""
-        return dict_sha256(self.to_dict())

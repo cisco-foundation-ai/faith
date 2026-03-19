@@ -7,29 +7,9 @@ from pathlib import Path
 
 import pytest
 
+from faith._internal.algo.hash import dict_sha256
 from faith._internal.io.json import read_json_file, write_as_json
 from faith._types.record.prompt_record import PromptRecord
-
-
-def test_prompt_record_sha256() -> None:
-    record = PromptRecord(
-        benchmark_sample_index=6,
-        benchmark_sample_hash="ffffbbbb",
-        subject="analysis",
-        system_prompt=None,
-        instruction="Please evaluate the following limit.",
-        question="What is the limit of sin(x)/x as x approaches 0?",
-        choices=None,
-        label="0",
-        formatted_question="Question: What is the limit of sin(x)/x as x approaches 0?",
-        formatted_answer="Answer: 0",
-        question_prompt="Please evaluate the following limit.\n\nQuestion: What is the limit of sin(x)/x as x approaches 0?",
-        ancillary_data=None,
-    )
-    assert (
-        record.sha256()
-        == "3fd17ec52cb1ca7712af16b588cc50d451309b98dd7d6a147d002f0c9056662e"
-    )
 
 
 def test_prompt_record_to_dict() -> None:
@@ -47,7 +27,8 @@ def test_prompt_record_to_dict() -> None:
         question_prompt="Please evaluate the following limit.\n\nQuestion: What is the limit of sin(x)/x as x approaches 0?",
         ancillary_data=None,
     )
-    assert record.to_dict() == {
+    dict_repr = record.to_dict()
+    assert dict_repr == {
         "benchmark_sample_index": 6,
         "benchmark_sample_hash": "ffffbbbb",
         "subject": "analysis",
@@ -61,6 +42,10 @@ def test_prompt_record_to_dict() -> None:
         "question_prompt": "Please evaluate the following limit.\n\nQuestion: What is the limit of sin(x)/x as x approaches 0?",
         "ancillary_data": None,
     }
+    assert (
+        dict_sha256(dict_repr)
+        == "3fd17ec52cb1ca7712af16b588cc50d451309b98dd7d6a147d002f0c9056662e"
+    ), f"Hash of prompt record has changed: {dict_sha256(dict_repr)}"
 
 
 @pytest.mark.parametrize(

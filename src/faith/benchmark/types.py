@@ -8,7 +8,6 @@ from dataclasses import dataclass, field
 
 from dataclasses_json import DataClassJsonMixin, config
 
-from faith._internal.algo.hash import dict_sha256
 from faith._types.dataset.sample_ratio import SampleRatio
 from faith._types.model.generation import GenerationMode
 from faith._types.model.prompt import PromptFormatter
@@ -28,7 +27,3 @@ class BenchmarkSpec(DataClassJsonMixin):
     n_shot: SampleRatio = field(
         metadata=config(decoder=SampleRatio.from_string, encoder=str)
     )
-
-    def sha256(self) -> str:
-        """Compute the SHA-256 hash of this example."""
-        return dict_sha256(self.to_dict())
