@@ -12,13 +12,14 @@ from faith._types.model.engine import EngineParams, ModelEngine
 from faith._types.model.generation import GenParams
 from faith._types.model.prompt import PromptFormatter
 from faith._types.model.spec import ModelSpec, Reasoning
+from faith.model.config import load_model_config
 
 _CONFIGS_DIR = Path(__file__).parent / "testdata" / "configs"
 
 
 def test_full_config() -> None:
     """All fields specified — assert exact values propagate."""
-    assert ModelSpec.from_file(_CONFIGS_DIR / "full_config.yaml") == ModelSpec(
+    assert load_model_config(_CONFIGS_DIR / "full_config.yaml") == ModelSpec(
         path="meta-llama/Llama-2-7b",
         engine=EngineParams(
             engine_type=ModelEngine.VLLM,
@@ -42,7 +43,7 @@ def test_full_config() -> None:
 
 def test_minimal_config_applies_defaults() -> None:
     """Only required fields — assert all defaults match CLI defaults."""
-    assert ModelSpec.from_file(_CONFIGS_DIR / "minimal_config.yaml") == ModelSpec(
+    assert load_model_config(_CONFIGS_DIR / "minimal_config.yaml") == ModelSpec(
         path="gpt-4o",
         engine=EngineParams(
             engine_type=ModelEngine.OPENAI,
@@ -54,7 +55,7 @@ def test_minimal_config_applies_defaults() -> None:
 
 def test_no_generation_section() -> None:
     """Missing generation section entirely — assert gen param defaults."""
-    assert ModelSpec.from_file(_CONFIGS_DIR / "no_generation.yaml") == ModelSpec(
+    assert load_model_config(_CONFIGS_DIR / "no_generation.yaml") == ModelSpec(
         path="meta-llama/Llama-2-7b",
         engine=EngineParams(
             engine_type=ModelEngine.VLLM,
@@ -69,24 +70,24 @@ def test_no_generation_section() -> None:
 def test_missing_model_path_raises() -> None:
     """Missing model.path — should raise KeyError."""
     with pytest.raises(KeyError, match="path"):
-        ModelSpec.from_file(_CONFIGS_DIR / "missing_path.yaml")
+        load_model_config(_CONFIGS_DIR / "missing_path.yaml")
 
 
 def test_missing_engine_section_raises() -> None:
     """Missing engine section entirely — should raise KeyError."""
     with pytest.raises(KeyError, match="engine"):
-        ModelSpec.from_file(_CONFIGS_DIR / "missing_engine.yaml")
+        load_model_config(_CONFIGS_DIR / "missing_engine.yaml")
 
 
 def test_missing_engine_type_raises() -> None:
     """Missing engine.type — should raise KeyError."""
     with pytest.raises(KeyError, match="engine_type"):
-        ModelSpec.from_file(_CONFIGS_DIR / "missing_engine_type.yaml")
+        load_model_config(_CONFIGS_DIR / "missing_engine_type.yaml")
 
 
 def test_composed_config_with_from_directive() -> None:
     """Engine loaded via !from directive — assert merge works."""
-    assert ModelSpec.from_file(_CONFIGS_DIR / "composed_config.yaml") == ModelSpec(
+    assert load_model_config(_CONFIGS_DIR / "composed_config.yaml") == ModelSpec(
         path="meta-llama/Llama-2-13b",
         engine=EngineParams(
             engine_type=ModelEngine.VLLM,

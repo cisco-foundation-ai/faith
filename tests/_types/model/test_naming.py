@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from faith._internal.io.paths import canonical_segment
+from faith._types.model.naming import canonical_segment
 
 
 def test_canonical_segment() -> None:

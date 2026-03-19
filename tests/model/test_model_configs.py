@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 
 from faith._internal.io.resources import models_root
-from faith._types.model.spec import ModelSpec
+from faith.model.config import load_model_config
 
 # Collect all per-model YAML configs (exclude shared defaults like default_engines).
 _MODELS_DIR = models_root()
@@ -27,7 +27,7 @@ _MODEL_CONFIGS = sorted(
 )
 def test_model_config_loads(config_path: Path) -> None:
     """Each model config YAML should produce a valid ModelSpec."""
-    spec = ModelSpec.from_file(config_path)
+    spec = load_model_config(config_path)
     assert spec.path, f"ModelSpec loaded from {config_path} has empty path"
     assert spec.engine is not None, f"ModelSpec loaded from {config_path} has no engine"
     assert spec.name, f"ModelSpec loaded from {config_path} has empty name"

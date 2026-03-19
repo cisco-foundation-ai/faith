@@ -38,6 +38,7 @@ from faith.cli.flags.arg_value import DefaultValue, TypeWithDefault, UserValueTy
 from faith.cli.flags.token_parsing import parse_begin_end_tokens
 from faith.cli.subcmd.summarize import OutputFormat
 from faith.experiment.params import DataSamplingParams, ExperimentParams
+from faith.model.config import load_model_config
 from faith.model.listing import choice_to_model, model_choices
 
 _cli_parser = argparse.ArgumentParser(
@@ -161,7 +162,7 @@ def _cli_query(args: argparse.Namespace, datastore: Datastore) -> Iterator[Path]
                 )
                 for annotated_config_path in args.model_configs
                 if (
-                    spec := ModelSpec.from_file(
+                    spec := load_model_config(
                         choice_to_model(annotated_config_path.raw_path)
                     )
                 )

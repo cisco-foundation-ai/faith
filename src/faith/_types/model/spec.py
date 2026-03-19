@@ -5,14 +5,12 @@
 """Complete model specification bundling path, engine, and generation parameters."""
 
 from dataclasses import dataclass, field
-from pathlib import Path
 
 from dataclasses_json import DataClassJsonMixin, config
 
-from faith._internal.io.paths import canonical_segment
-from faith._internal.io.yaml import read_extended_yaml_file
 from faith._types.model.engine import EngineParams
 from faith._types.model.generation import GenParams
+from faith._types.model.naming import canonical_segment
 from faith._types.model.prompt import PromptFormatter
 
 
@@ -49,13 +47,3 @@ class ModelSpec(DataClassJsonMixin):
         if not self.name:
             # Bypass frozen=True to set the name based on the path if not provided.
             object.__setattr__(self, "name", canonical_segment(self.path))
-
-    @staticmethod
-    def from_file(config_path: Path) -> "ModelSpec":
-        """Load a ModelSpec from a YAML configuration file."""
-        model_spec_dict = read_extended_yaml_file(config_path).get("model") or {}
-        assert isinstance(
-            model_spec_dict, dict
-        ), f"Model config '{config_path}' must be a YAML mapping."
-
-        return ModelSpec.from_dict(model_spec_dict)
