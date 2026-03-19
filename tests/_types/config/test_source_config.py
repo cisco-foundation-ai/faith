@@ -30,7 +30,9 @@ def test_mutually_exclusive_source_types() -> None:
     ):
         SourceConfig(
             huggingface=HuggingFaceSourceConfig(path="some/path"),
-            git_repo=GitRepoSourceConfig(type=DataFileType.CSV),
+            git_repo=GitRepoSourceConfig(
+                type=DataFileType.CSV, repo_url="http://fake.org/repo.git"
+            ),
         )
     with pytest.raises(
         ValueError,
@@ -38,7 +40,9 @@ def test_mutually_exclusive_source_types() -> None:
     ):
         SourceConfig(
             files=FilesSourceConfig(type=DataFileType.CSV),
-            git_repo=GitRepoSourceConfig(type=DataFileType.CSV),
+            git_repo=GitRepoSourceConfig(
+                type=DataFileType.CSV, repo_url="http://fake.org/repo.git"
+            ),
         )
     with pytest.raises(
         ValueError,
@@ -47,5 +51,7 @@ def test_mutually_exclusive_source_types() -> None:
         SourceConfig(
             huggingface=HuggingFaceSourceConfig(path="some/path"),
             files=FilesSourceConfig(type=DataFileType.CSV),
-            git_repo=GitRepoSourceConfig(type=DataFileType.CSV),
+            git_repo=GitRepoSourceConfig(
+                type=DataFileType.CSV, repo_url="http://fake.org/repo.git"
+            ),
         )

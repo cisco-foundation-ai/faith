@@ -2,10 +2,10 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
-from dataclasses_json import DataClassJsonMixin
+from dataclasses_json import DataClassJsonMixin, config
 
 
 @dataclass(frozen=True)
@@ -33,4 +33,6 @@ class PromptRecord(DataClassJsonMixin):
 
     # Any additional data associated with this example that is stored alongside it
     # for context or as part of subsequent metric computations.
-    ancillary_data: dict[str, Any] | None = None
+    ancillary_data: dict[str, Any] | None = field(
+        default=None, metadata=config(exclude=lambda x: x is None)
+    )

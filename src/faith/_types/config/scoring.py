@@ -21,7 +21,9 @@ class ScoreFnConfig(DataClassJsonMixin):
     """
 
     type: str
-    kwargs: dict[str, Any] = field(default_factory=dict)
+    kwargs: dict[str, Any] = field(
+        default_factory=dict, metadata=config(exclude=lambda x: not x)
+    )
 
 
 def _encode_score_fns(val: dict[str, ScoreFnConfig]) -> dict[str, dict[str, Any]]:
@@ -45,9 +47,17 @@ def _decode_score_fns(val: dict[str, Any]) -> dict[str, ScoreFnConfig]:
 class OutputProcessingConfig(DataClassJsonMixin):
     """Configuration for output processing and answer extraction."""
 
-    primary_metric: str | None = None
-    answer_formats: list[PatternDef] = field(default_factory=list)
+    primary_metric: str | None = field(
+        default=None, metadata=config(exclude=lambda x: x is None)
+    )
+    answer_formats: list[PatternDef] = field(
+        default_factory=list, metadata=config(exclude=lambda x: not x)
+    )
     score_fns: dict[str, ScoreFnConfig] = field(
         default_factory=dict,
-        metadata=config(encoder=_encode_score_fns, decoder=_decode_score_fns),
+        metadata=config(
+            encoder=_encode_score_fns,
+            decoder=_decode_score_fns,
+            exclude=lambda x: not x,
+        ),
     )

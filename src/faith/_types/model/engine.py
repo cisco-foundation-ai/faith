@@ -29,4 +29,6 @@ class EngineParams(DataClassJsonMixin):
     engine_type: ModelEngine = field(metadata=config(decoder=ModelEngine, encoder=str))
     num_gpus: int = 1
     context_length: int = 3500
-    kwargs: dict[str, Any] = field(default_factory=dict)
+    kwargs: dict[str, Any] = field(
+        default_factory=dict, metadata=config(exclude=lambda x: not x)
+    )

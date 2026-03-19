@@ -40,11 +40,10 @@ def test_prompt_record_to_dict() -> None:
         "formatted_question": "Question: What is the limit of sin(x)/x as x approaches 0?",
         "formatted_answer": "Answer: 0",
         "question_prompt": "Please evaluate the following limit.\n\nQuestion: What is the limit of sin(x)/x as x approaches 0?",
-        "ancillary_data": None,
     }
     assert (
         dict_sha256(dict_repr)
-        == "3fd17ec52cb1ca7712af16b588cc50d451309b98dd7d6a147d002f0c9056662e"
+        == "735c2c600a48d2e20bfe6d3f43157253b68c69118bb9298dde889fbf6c59b029"
     ), f"Hash of prompt record has changed: {dict_sha256(dict_repr)}"
 
 

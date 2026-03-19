@@ -185,7 +185,6 @@ def test_short_answer_benchmark_build_dataset() -> None:
                 "formatted_question": "Question: What is the capital of Austria?",
                 "formatted_answer": "Answer: Vienna",
                 "question_prompt": "Please answer the following question.\n\nQuestion: What is the capital of Austria?",
-                "ancillary_data": None,
             },
             {
                 "benchmark_sample_index": 1,
@@ -199,7 +198,6 @@ def test_short_answer_benchmark_build_dataset() -> None:
                 "formatted_question": "Question: What is 1+2?",
                 "formatted_answer": "Answer: 3",
                 "question_prompt": "Please answer the following question.\n\nQuestion: What is 1+2?",
-                "ancillary_data": None,
             },
         ]
 
@@ -255,7 +253,6 @@ def test_short_answer_benchmark_build_dataset() -> None:
                 "formatted_question": "Question: What is the capital of Austria?",
                 "formatted_answer": "Answer: Vienna",
                 "question_prompt": "Please answer the following question.\n\nQuestion: What is the capital of Austria?",
-                "ancillary_data": None,
             },
         ]
 
@@ -310,7 +307,6 @@ def test_short_answer_benchmark_build_dataset() -> None:
                 "formatted_question": "Question: What is 1+2?",
                 "formatted_answer": "Answer: 3",
                 "question_prompt": "Please answer the following question.\n\nQuestion: What is 1+2?",
-                "ancillary_data": None,
             },
         ]
 

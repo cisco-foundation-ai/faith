@@ -66,9 +66,15 @@ class BenchmarkConfig(DataClassJsonMixin):
     output_processing: OutputProcessingConfig = field(
         default_factory=OutputProcessingConfig
     )
-    mcqa_config: MCQAConfig | None = None
-    saqa_config: SAQAConfig | None = None
-    laqa_config: LAQAConfig | None = None
+    mcqa_config: MCQAConfig | None = field(
+        default=None, metadata=config(exclude=lambda x: x is None)
+    )
+    saqa_config: SAQAConfig | None = field(
+        default=None, metadata=config(exclude=lambda x: x is None)
+    )
+    laqa_config: LAQAConfig | None = field(
+        default=None, metadata=config(exclude=lambda x: x is None)
+    )
 
     def __post_init__(self) -> None:
         if (

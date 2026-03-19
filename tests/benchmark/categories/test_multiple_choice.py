@@ -347,7 +347,6 @@ Choices:
             "formatted_question": "Question: What is the capital of Germany?\n\nChoices:\n#A# Madrid\n#B# Berlin\n#C# Paris\n#D# Rome",
             "formatted_answer": "Antwort--> B",
             "question_prompt": "Please analyze and answer the following question in a chat format.\n\nQuestion: What is the capital of Germany?\n\nChoices:\n#A# Madrid\n#B# Berlin\n#C# Paris\n#D# Rome",
-            "ancillary_data": None,
         }
     ]
 
@@ -445,7 +444,6 @@ Choices:
 #B# Generate public keys
 #C# KDF are algorithms used to transform a secret into crucial parameters like keys and Initialization Vectors (IVs)
 #D# Authenticate digital signatures""",
-            "ancillary_data": None,
         }
     ]
 

@@ -26,8 +26,18 @@ class StatsRecord(DataClassJsonMixin):
     answer_format: AnswerFormat = field(
         metadata=config(decoder=AnswerFormat, encoder=str)
     )
-    subject: str | None = None
-    log_probs: dict[str, float] | None = None
-    num_output_tokens: int | None = None
-    max_token_halt: bool | None = None
-    scores: dict[str, Any] | None = None
+    subject: str | None = field(
+        default=None, metadata=config(exclude=lambda x: x is None)
+    )
+    log_probs: dict[str, float] | None = field(
+        default=None, metadata=config(exclude=lambda x: x is None)
+    )
+    num_output_tokens: int | None = field(
+        default=None, metadata=config(exclude=lambda x: x is None)
+    )
+    max_token_halt: bool | None = field(
+        default=None, metadata=config(exclude=lambda x: x is None)
+    )
+    scores: dict[str, Any] | None = field(
+        default=None, metadata=config(exclude=lambda x: x is None)
+    )

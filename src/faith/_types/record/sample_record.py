@@ -30,7 +30,9 @@ class SampleRecord(DataClassJsonMixin):
     metadata: Metadata
     data: PromptRecord
     model_data: ModelRecord
-    stats: StatsRecord | None = None
+    stats: StatsRecord | None = field(
+        default=None, metadata=config(exclude=lambda x: x is None)
+    )
 
 
 class RecordStatus(CIStrEnum):

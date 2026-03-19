@@ -25,11 +25,19 @@ class BenchmarkState(CIStrEnum):
 class MetadataConfig(DataClassJsonMixin):
     """Benchmark metadata."""
 
-    name: str | None = None
-    description: str | None = None
-    license: str | None = None
-    urls: list[str] = field(default_factory=list)
-    categories: list[str] = field(default_factory=list)
+    name: str | None = field(default=None, metadata=config(exclude=lambda x: x is None))
+    description: str | None = field(
+        default=None, metadata=config(exclude=lambda x: x is None)
+    )
+    license: str | None = field(
+        default=None, metadata=config(exclude=lambda x: x is None)
+    )
+    urls: list[str] = field(
+        default_factory=list, metadata=config(exclude=lambda x: not x)
+    )
+    categories: list[str] = field(
+        default_factory=list, metadata=config(exclude=lambda x: not x)
+    )
     state: BenchmarkState = field(
         default=BenchmarkState.ENABLED,
         metadata=config(encoder=str, decoder=BenchmarkState),

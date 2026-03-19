@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from enum import auto
 from typing import Any
 
-from dataclasses_json import DataClassJsonMixin
+from dataclasses_json import DataClassJsonMixin, config
 
 from faith._types.enums import CIStrEnum
 
@@ -28,4 +28,6 @@ class GenParams(DataClassJsonMixin):
     temperature: float = 0.0
     top_p: float = 1.0
     max_completion_tokens: int = 500
-    kwargs: dict[str, Any] = field(default_factory=dict)
+    kwargs: dict[str, Any] = field(
+        default_factory=dict, metadata=config(exclude=lambda x: not x)
+    )

@@ -37,10 +37,8 @@ from tests.benchmark.categories.fake_record_maker import make_fake_record
 class FakeBenchmark(Benchmark):
     """A fake benchmark for testing purposes."""
 
-    def __init__(self, spec: BenchmarkSpec, config: BenchmarkConfig, **kwargs: Any):
-        super().__init__(spec, config, **kwargs)
-
-    def answer_leadin(self, tokenizer: PreTrainedTokenizerBase) -> str:
+    def answer_leadin(self, _tokenizer: PreTrainedTokenizerBase) -> str:
+        """Return the lead-in string for the answer."""
         return "A: "
 
     def answer_token_map(self, _tokenizer: PreTrainedTokenizerBase) -> dict[str, int]:
@@ -49,9 +47,10 @@ class FakeBenchmark(Benchmark):
 
     def build_dataset(
         self,
-        sample_size: int | None = None,
-        randomize_choices: bool = False,
+        _sample_size: int | None = None,
+        _randomize_choices: bool = False,
     ) -> BenchmarkDataset:
+        """Return the dataset for the fake benchmark."""
         return FakeDataset(self.formatter, np.random.default_rng())
 
     def log_grader(
@@ -60,9 +59,11 @@ class FakeBenchmark(Benchmark):
         model_format_config: PatternDef | None = None,
         recompute_stats: bool = False,
     ) -> LogGrader:
+        """Return the log grader for the benchmark."""
         raise NotImplementedError("This method should not be called.")
 
     def grade_aggregator(self) -> GradeAggregator:
+        """Return the grade aggregator for the benchmark."""
         raise NotImplementedError("This method should not be called.")
 
 
@@ -143,14 +144,15 @@ class FakeModel(BaseModel):
 
     @property
     def supported_formats(self) -> set[PromptFormatter]:
+        """Return the set of prompt formats supported by the fake model."""
         return set(list(PromptFormatter))
 
     def query(
         self,
         inputs: PromptList,
-        **kwargs: Any,
+        **_kwargs: Any,
     ) -> Iterable[ChatResponse | GenerationError]:
-        # Simulate a fake response for testing purposes
+        """Simulates a fake response for testing purposes."""
         return [
             ChatResponse(
                 output_text=f"Fake response to: {input_str}",
@@ -172,9 +174,9 @@ class FakeModel(BaseModel):
     def next_token(
         self,
         inputs: PromptList,
-        **kwargs: Any,
+        **_kwargs: Any,
     ) -> Iterable[ChatResponse]:
-        # Simulate a fake response for testing purposes
+        """Simulates a fake response for testing purposes."""
         return [
             ChatResponse(
                 output_text=f"Token {i}",
@@ -196,9 +198,9 @@ class FakeModel(BaseModel):
     def logits(
         self,
         inputs: PromptList,
-        **kwargs: Any,
+        **_kwargs: Any,
     ) -> Iterable[list[list[TokenPred]]]:
-        # Simulate fake logits for testing purposes
+        """Simulates fake logits for testing purposes."""
         return [
             [[TokenPred(token=f"Token {i}", token_id=i, logprob=-1.0, rank=0)]]
             for i in range(len(inputs))
@@ -276,7 +278,6 @@ _ANSWER_TOKEN_MAP: dict[str, int] = {"A": 87, "B": 31, "C": 7, "D": 9, "E": 5}
                         "prompt": _PROMPT_NO_LEADIN_0,
                     },
                     "metadata": ANY,
-                    "stats": None,
                 },
                 {
                     "data": _DATA_RECORD_1,
@@ -285,7 +286,6 @@ _ANSWER_TOKEN_MAP: dict[str, int] = {"A": 87, "B": 31, "C": 7, "D": 9, "E": 5}
                         "prompt": _PROMPT_NO_LEADIN_1,
                     },
                     "metadata": ANY,
-                    "stats": None,
                 },
             ],
         ),
@@ -304,7 +304,6 @@ _ANSWER_TOKEN_MAP: dict[str, int] = {"A": 87, "B": 31, "C": 7, "D": 9, "E": 5}
                         "prompt": _PROMPT_WITH_LEADIN_0,
                     },
                     "metadata": ANY,
-                    "stats": None,
                 },
                 {
                     "data": _DATA_RECORD_1,
@@ -313,7 +312,6 @@ _ANSWER_TOKEN_MAP: dict[str, int] = {"A": 87, "B": 31, "C": 7, "D": 9, "E": 5}
                         "prompt": _PROMPT_WITH_LEADIN_1,
                     },
                     "metadata": ANY,
-                    "stats": None,
                 },
             ],
         ),
@@ -332,7 +330,6 @@ _ANSWER_TOKEN_MAP: dict[str, int] = {"A": 87, "B": 31, "C": 7, "D": 9, "E": 5}
                         "prompt": _PROMPT_WITH_LEADIN_0,
                     },
                     "metadata": ANY,
-                    "stats": None,
                 },
                 {
                     "data": _DATA_RECORD_1,
@@ -341,7 +338,6 @@ _ANSWER_TOKEN_MAP: dict[str, int] = {"A": 87, "B": 31, "C": 7, "D": 9, "E": 5}
                         "prompt": _PROMPT_WITH_LEADIN_1,
                     },
                     "metadata": ANY,
-                    "stats": None,
                 },
             ],
         ),

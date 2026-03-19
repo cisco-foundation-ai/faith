@@ -315,7 +315,6 @@ def test_long_answer_benchmark_build_dataset() -> None:
                 "formatted_question": "Question: What is the capital of Nepal?",
                 "formatted_answer": "Answer: Kathmandu",
                 "question_prompt": "Please respond to the following question.\n\nQuestion: What is the capital of Nepal?",
-                "ancillary_data": None,
             },
             {
                 "benchmark_sample_index": 1,
@@ -329,7 +328,6 @@ def test_long_answer_benchmark_build_dataset() -> None:
                 "formatted_question": "Question: What is 4+5?",
                 "formatted_answer": "Answer: 9",
                 "question_prompt": "Please respond to the following question.\n\nQuestion: What is 4+5?",
-                "ancillary_data": None,
             },
         ]
 
@@ -416,7 +414,6 @@ def test_long_answer_benchmark_build_dataset() -> None:
                 "formatted_question": "Question: What is the capital of Nepal?",
                 "formatted_answer": "Answer: Kathmandu",
                 "question_prompt": "Please respond to the following question.\n\nQuestion: What is the capital of Nepal?",
-                "ancillary_data": None,
             },
         ]
 
@@ -521,7 +518,6 @@ def test_long_answer_benchmark_build_dataset() -> None:
                 "formatted_question": "Question: What is 4+5?",
                 "formatted_answer": "Answer: 9",
                 "question_prompt": "Please respond to the following question.\n\nQuestion: What is 4+5?",
-                "ancillary_data": None,
             },
         ]
 

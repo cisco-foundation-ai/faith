@@ -35,8 +35,10 @@ class Disambiguation(CIStrEnum):
 class CaptureTransform(DataClassJsonMixin):
     """Configuration for transforming regex capture groups."""
 
-    params: list[str] = field(default_factory=list)
-    expr: str | None = None
+    params: list[str] = field(
+        default_factory=list, metadata=config(exclude=lambda x: not x)
+    )
+    expr: str | None = field(default=None, metadata=config(exclude=lambda x: x is None))
 
 
 @dataclass(frozen=True)

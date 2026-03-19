@@ -36,9 +36,15 @@ class ModelSpec(DataClassJsonMixin):
         metadata=config(encoder=str, decoder=PromptFormatter)
     )
     name: str = ""
-    reasoning: Reasoning | None = None
-    response_pattern: str | None = None
-    tokenizer: str | None = None
+    reasoning: Reasoning | None = field(
+        default=None, metadata=config(exclude=lambda x: x is None)
+    )
+    response_pattern: str | None = field(
+        default=None, metadata=config(exclude=lambda x: x is None)
+    )
+    tokenizer: str | None = field(
+        default=None, metadata=config(exclude=lambda x: x is None)
+    )
     generation: GenParams = field(default_factory=GenParams)
 
     def __post_init__(self) -> None:
