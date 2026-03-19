@@ -6,12 +6,12 @@
 
 from typing import Any
 
+from faith._types.benchmark.spec import BenchmarkSpec
 from faith._types.config.benchmark import BenchmarkConfig
 from faith.benchmark.benchmark import Benchmark
 from faith.benchmark.categories.long_answer import LABenchmark
 from faith.benchmark.categories.multiple_choice import MCBenchmark
 from faith.benchmark.categories.short_answer import SABenchmark
-from faith.benchmark.types import BenchmarkSpec
 
 
 def load_benchmark(

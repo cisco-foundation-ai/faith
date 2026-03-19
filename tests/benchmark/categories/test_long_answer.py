@@ -11,6 +11,8 @@ import pytest
 from datasets import Dataset, DatasetDict, Features, Value
 
 from faith import __version__
+from faith._types.benchmark.sample_ratio import SampleRatio
+from faith._types.benchmark.spec import BenchmarkSpec
 from faith._types.config.benchmark import BenchmarkConfig, LAQAConfig, LongAnswerType
 from faith._types.config.format import FormatConfig, InstructionsConfig, PromptConfig
 from faith._types.config.patterns import (
@@ -21,13 +23,11 @@ from faith._types.config.patterns import (
 )
 from faith._types.config.scoring import OutputProcessingConfig, ScoreFnConfig
 from faith._types.config.source import HuggingFaceSourceConfig, SourceConfig
-from faith._types.dataset.sample_ratio import SampleRatio
 from faith._types.model.engine import ModelEngine
 from faith._types.model.generation import GenerationMode
 from faith._types.model.prompt import PromptFormatter
 from faith._types.record.model_response import ChatResponse, GenerationError
 from faith._types.record.stats import StatsRecord
-from faith.benchmark.benchmark import BenchmarkSpec
 from faith.benchmark.categories.long_answer import LABenchmark
 from faith.model.base import BaseModel, PromptList
 from tests.benchmark.categories.fake_record_maker import make_fake_record

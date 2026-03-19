@@ -18,7 +18,7 @@ from dataclasses_json import DataClassJsonMixin
 from faith import __version__ as faith_version
 from faith._internal.io.datastore import DatastoreContext
 from faith._internal.io.json import read_json_file
-from faith.benchmark.types import BenchmarkSpec
+from faith._types.benchmark.spec import BenchmarkSpec
 
 
 @dataclass

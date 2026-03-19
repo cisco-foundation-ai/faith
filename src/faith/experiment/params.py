@@ -10,7 +10,7 @@ from pathlib import Path
 
 from dataclasses_json import DataClassJsonMixin
 
-from faith._types.dataset.sample_ratio import SampleRatio
+from faith._types.benchmark.sample_ratio import SampleRatio
 from faith._types.model.generation import GenerationMode
 
 

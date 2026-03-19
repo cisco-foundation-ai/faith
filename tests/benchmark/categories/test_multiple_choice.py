@@ -8,6 +8,8 @@ from unittest.mock import ANY
 import pytest
 from transformers import AutoTokenizer
 
+from faith._types.benchmark.sample_ratio import SampleRatio
+from faith._types.benchmark.spec import BenchmarkSpec
 from faith._types.config.benchmark import BenchmarkConfig, MCQAConfig
 from faith._types.config.format import FormatConfig, InstructionsConfig, PromptConfig
 from faith._types.config.patterns import (
@@ -24,11 +26,9 @@ from faith._types.config.source import (
     SourceConfig,
     SourceOptionsConfig,
 )
-from faith._types.dataset.sample_ratio import SampleRatio
 from faith._types.model.generation import GenerationMode
 from faith._types.model.prompt import PromptFormatter
 from faith._types.record.stats import StatsRecord
-from faith.benchmark.benchmark import BenchmarkSpec
 from faith.benchmark.categories.multiple_choice import MCBenchmark
 from tests.benchmark.categories.fake_record_maker import make_fake_record
 

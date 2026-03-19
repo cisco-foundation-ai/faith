@@ -7,7 +7,7 @@ import pandas as pd
 import pytest
 
 from faith._internal.algo.sampling import NShotSampler, sample_partition
-from faith._types.dataset.sample_ratio import SampleRatio
+from faith._types.benchmark.sample_ratio import SampleRatio
 
 
 @pytest.mark.parametrize("n", [0, 1, 2, 3, 4, 5])

@@ -2,13 +2,13 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""This module defines the common schema for the QA examples used in benchmarks."""
+"""Provides the BenchmarkSpec type for specifying a benchmark."""
 
 from dataclasses import dataclass, field
 
 from dataclasses_json import DataClassJsonMixin, config
 
-from faith._types.dataset.sample_ratio import SampleRatio
+from faith._types.benchmark.sample_ratio import SampleRatio
 from faith._types.model.generation import GenerationMode
 from faith._types.model.prompt import PromptFormatter
 

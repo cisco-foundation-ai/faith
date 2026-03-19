@@ -19,6 +19,7 @@ from transformers import PreTrainedTokenizerBase
 from faith._internal.algo.hash import dict_sha256
 from faith._internal.algo.sampling import NShotSampler
 from faith._internal.metrics.llm import llm_metadata_metrics, llm_prediction_metrics
+from faith._types.benchmark.spec import BenchmarkSpec
 from faith._types.config.benchmark import BenchmarkConfig
 from faith._types.config.patterns import AnswerFormat, PatternDef
 from faith._types.config.scoring import OutputProcessingConfig
@@ -36,7 +37,6 @@ from faith.benchmark.grading.common_graders import (
 from faith.benchmark.grading.grade_aggregator import GradeAggregator
 from faith.benchmark.grading.log_grader import LogGrader
 from faith.benchmark.scores.scoring import Score
-from faith.benchmark.types import BenchmarkSpec
 
 
 def _load_answer_set(config: BenchmarkConfig) -> frozenset[str]:

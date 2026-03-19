@@ -27,7 +27,7 @@ import colorlog
 from faith._internal.io.datastore import Datastore, DatastoreContext
 from faith._internal.iter.transform import DevNullReducer
 from faith._internal.threading.periodic import PeriodicTaskContext
-from faith._types.dataset.sample_ratio import SampleRatio
+from faith._types.benchmark.sample_ratio import SampleRatio
 from faith._types.model.engine import EngineParams, ModelEngine
 from faith._types.model.generation import GenerationMode, GenParams
 from faith._types.model.prompt import PromptFormatter

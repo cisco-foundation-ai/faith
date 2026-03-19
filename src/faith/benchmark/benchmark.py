@@ -14,6 +14,7 @@ from transformers import PreTrainedTokenizerBase
 
 from faith import __version__
 from faith._internal.algo.sampling import NShotSampler
+from faith._types.benchmark.spec import BenchmarkSpec
 from faith._types.config.benchmark import BenchmarkConfig
 from faith._types.config.patterns import PatternDef
 from faith._types.model.generation import GenerationMode
@@ -22,7 +23,6 @@ from faith.benchmark.dataset.load import load_data, sample_datasets
 from faith.benchmark.formatting.qa import QAFormatter
 from faith.benchmark.grading.grade_aggregator import GradeAggregator
 from faith.benchmark.grading.log_grader import LogGrader
-from faith.benchmark.types import BenchmarkSpec
 
 logger = logging.getLogger(__name__)
 

@@ -11,6 +11,7 @@ import pandas as pd
 from faith._internal.algo.hash import dict_sha256
 from faith._internal.algo.sampling import NShotSampler
 from faith._internal.metrics.llm import llm_basic_metrics, llm_metadata_metrics
+from faith._types.benchmark.spec import BenchmarkSpec
 from faith._types.config.benchmark import BenchmarkConfig, LongAnswerType
 from faith._types.config.patterns import AnswerFormat, PatternDef
 from faith._types.model.generation import GenerationMode
@@ -23,7 +24,6 @@ from faith.benchmark.grading.common_graders import ChatCompletionLogGrader
 from faith.benchmark.grading.grade_aggregator import GradeAggregator
 from faith.benchmark.grading.log_grader import LogGrader
 from faith.benchmark.scores.scoring import Score
-from faith.benchmark.types import BenchmarkSpec
 
 
 class LABenchmark(BaseBenchmark):
