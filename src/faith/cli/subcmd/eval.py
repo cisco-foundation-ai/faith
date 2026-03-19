@@ -11,7 +11,6 @@ from typing import Any
 
 from tqdm import tqdm
 
-from faith._internal.config.model_response import model_response_format_config
 from faith._internal.io.json import read_json_file, read_logs_from_json, write_as_json
 from faith._internal.io.logging import LoggingTransform
 from faith._internal.iter.common import GetAttrTransform
@@ -24,6 +23,7 @@ from faith._internal.metrics.aggregations import (
 from faith._internal.records.sort import SortByTransform
 from faith._internal.types.stats import MetricSummary
 from faith._types.config.benchmark import BenchmarkConfig
+from faith._types.config.patterns import AnswerFormat, Disambiguation, PatternDef
 from faith._types.record.sample_record import SampleRecord
 from faith._types.record.stats import StatsRecord
 from faith.benchmark.benchmark import Benchmark, BenchmarkSpec
@@ -118,6 +118,9 @@ def evaluate_experiment(
 ) -> MetricSummary:
     """Evaluate an experiment from trial logs at the given path."""
     experiment_summary = read_json_file(experiment_path)
+    format_pattern = experiment_summary["experiment_params"]["model"].get(
+        "response_pattern"
+    )
     metrics = compute_experiment_metrics(
         load_benchmark(
             BenchmarkSpec.from_dict(
@@ -134,10 +137,14 @@ def evaluate_experiment(
             ).exists()
         },
         annotate_prediction_stats=record_params.annotate_prediction_stats,
-        model_format_config=model_response_format_config(
-            experiment_summary["experiment_params"]["model"].get(
-                "response_pattern", None
+        model_format_config=(
+            PatternDef(
+                pattern=format_pattern or r"(?s).*",
+                disambiguation=Disambiguation.MATCH_ALL,
+                format_type=AnswerFormat.PROPER,
             )
+            if format_pattern is not None
+            else None
         ),
         recompute_stats=record_params.recompute_stats,
     )
