@@ -5,23 +5,31 @@
 
 import pytest
 
-from faith._internal.records.reconciliation import (
+from faith._types.model.generation import GenerationMode
+from faith._types.record.sample_record import RecordStatus, SampleRecord
+from faith.experiment.reconciliation import (
     ReplacementStrategy,
     reconcile_records,
 )
-from faith._types.record.sample_record import RecordStatus, SampleRecord
 from tests.benchmark.categories.fake_record_maker import make_fake_record
 
 CLEAN = RecordStatus.CLEAN
 DIRTY = RecordStatus.DIRTY
 
 
-def _rec(sample_hash: str, data_hash: str, *, question: str = "") -> SampleRecord:
+def _rec(
+    sample_hash: str,
+    data_hash: str,
+    *,
+    question: str = "",
+    model_stats: dict | None = None,
+) -> SampleRecord:
     """Build a minimal record for testing."""
     return make_fake_record(
         metadata={"data_hash": data_hash, "version": "v0.0.7"},
         data={"benchmark_sample_hash": sample_hash, "question": question},
-        model_data={"prompt": "The quick brown", "answer_symbol_ids": {}},
+        model_data={"prompt": "The quick brown", "answer_symbol_ids": {}}
+        | (model_stats or {}),
     )
 
 
@@ -32,27 +40,54 @@ def _rec(sample_hash: str, data_hash: str, *, question: str = "") -> SampleRecor
         ([], [_rec("a", "h1")], [(DIRTY, _rec("a", "h1"))]),
         ([_rec("a", "h1")], [], []),
         (
-            [_rec("a", "h1", question="old")],
+            [
+                _rec(
+                    "a",
+                    "h1",
+                    question="old",
+                    model_stats={"chat_comp": {"output_text": "foo"}},
+                )
+            ],
             [_rec("a", "h1", question="new")],
-            [(CLEAN, _rec("a", "h1", question="old"))],
+            [
+                (
+                    CLEAN,
+                    _rec(
+                        "a",
+                        "h1",
+                        question="old",
+                        model_stats={"chat_comp": {"output_text": "foo"}},
+                    ),
+                )
+            ],
         ),
         (
             [_rec("a", "h_old", question="old")],
             [_rec("a", "h_new", question="new")],
-            [(CLEAN, _rec("a", "h_old", question="old"))],
+            [(DIRTY, _rec("a", "h_old", question="old"))],
         ),
         (
-            [_rec("a", "h1")],
+            [_rec("a", "h1", model_stats={"next_token": {"output_text": "foo"}})],
             [_rec("a", "h1"), _rec("b", "h2")],
-            [(CLEAN, _rec("a", "h1")), (DIRTY, _rec("b", "h2"))],
+            [(DIRTY, _rec("a", "h1")), (DIRTY, _rec("b", "h2"))],
         ),
         (
-            [_rec("c", "h3"), _rec("a", "h1")],
-            [_rec("a", "h1"), _rec("b", "h2"), _rec("c", "h3")],
             [
-                (CLEAN, _rec("a", "h1")),
+                _rec("c", "h3"),
+                _rec("a", "h1", model_stats={"chat_comp": {"output_text": "foo"}}),
+            ],
+            [
+                _rec("a", "h1"),
+                _rec("b", "h2", model_stats={"next_token": {"output_text": "bar"}}),
+                _rec("c", "h3"),
+            ],
+            [
+                (
+                    CLEAN,
+                    _rec("a", "h1", model_stats={"chat_comp": {"output_text": "foo"}}),
+                ),
                 (DIRTY, _rec("b", "h2")),
-                (CLEAN, _rec("c", "h3")),
+                (DIRTY, _rec("c", "h3")),
             ],
         ),
     ],
@@ -73,7 +108,13 @@ def test_strategy_never(
 ) -> None:
     """NEVER: always keep the existing record when one matches."""
     assert (
-        list(new >> reconcile_records(existing, ReplacementStrategy.NEVER)) == expected
+        list(
+            new
+            >> reconcile_records(
+                existing, ReplacementStrategy.NEVER, GenerationMode.CHAT_COMP
+            )
+        )
+        == expected
     )
 
 
@@ -115,7 +156,13 @@ def test_strategy_always(
 ) -> None:
     """ALWAYS: always take the new record, regardless of match."""
     assert (
-        list(new >> reconcile_records(existing, ReplacementStrategy.ALWAYS)) == expected
+        list(
+            new
+            >> reconcile_records(
+                existing, ReplacementStrategy.ALWAYS, GenerationMode.NEXT_TOKEN
+            )
+        )
+        == expected
     )
 
 
@@ -126,9 +173,32 @@ def test_strategy_always(
         ([], [_rec("a", "h1")], [(DIRTY, _rec("a", "h1"))]),
         ([_rec("a", "h1")], [], []),
         (
-            [_rec("a", "h1", question="old")],
+            [
+                _rec(
+                    "a",
+                    "h1",
+                    question="old",
+                    model_stats={
+                        "logits": [[{"token": "a", "token_id": 0, "logprob": -0.01}]]
+                    },
+                )
+            ],
             [_rec("a", "h1", question="new")],
-            [(CLEAN, _rec("a", "h1", question="old"))],
+            [
+                (
+                    CLEAN,
+                    _rec(
+                        "a",
+                        "h1",
+                        question="old",
+                        model_stats={
+                            "logits": [
+                                [{"token": "a", "token_id": 0, "logprob": -0.01}]
+                            ]
+                        },
+                    ),
+                )
+            ],
         ),
         (
             [_rec("a", "h_old", question="old")],
@@ -137,9 +207,19 @@ def test_strategy_always(
         ),
         (
             [_rec("a", "h1"), _rec("b", "h_old")],
-            [_rec("a", "h1"), _rec("b", "h_new"), _rec("c", "h3")],
             [
-                (CLEAN, _rec("a", "h1")),
+                _rec(
+                    "a",
+                    "h1",
+                    model_stats={
+                        "logits": [[{"token": "a", "token_id": 0, "logprob": -0.01}]]
+                    },
+                ),
+                _rec("b", "h_new"),
+                _rec("c", "h3"),
+            ],
+            [
+                (DIRTY, _rec("a", "h1")),
                 (DIRTY, _rec("b", "h_new")),
                 (DIRTY, _rec("c", "h3")),
             ],
@@ -159,10 +239,15 @@ def test_strategy_if_data_hash_differs(
     new: list[SampleRecord],
     expected: list[tuple[RecordStatus, SampleRecord]],
 ) -> None:
-    """IF_DATA_HASH_DIFFERS: take new only when the data_hash changed."""
+    """IF_HASH_DIFFERS: take new only when the data_hash changed."""
     assert (
         list(
-            new >> reconcile_records(existing, ReplacementStrategy.IF_DATA_HASH_DIFFERS)
+            new
+            >> reconcile_records(
+                existing,
+                ReplacementStrategy.IF_HASH_DIFFERS,
+                GenerationMode.LOGITS,
+            )
         )
         == expected
     )

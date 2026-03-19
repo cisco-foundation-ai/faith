@@ -37,10 +37,6 @@ from faith._internal.multiprocessing.gpu_scheduling import (
     GPUJob,
     run_gpu_jobs_in_parallel,
 )
-from faith._internal.records.reconciliation import (
-    ReplacementStrategy,
-    reconcile_records,
-)
 from faith._internal.records.sort import SortByTransform
 from faith._types.enums import CIEnum
 from faith._types.model.engine import ModelEngine
@@ -54,6 +50,10 @@ from faith.benchmark.benchmark import Benchmark
 from faith.benchmark.listing import choices_to_benchmarks, find_benchmarks
 from faith.experiment.experiment import BenchmarkExperiment
 from faith.experiment.params import DataSamplingParams, ExperimentParams
+from faith.experiment.reconciliation import (
+    ReplacementStrategy,
+    reconcile_records,
+)
 from faith.model.base import BaseModel
 from faith.model.factory import create_model
 
@@ -357,6 +357,7 @@ def _run_single_model(
                     >> reconcile_records(
                         read_trial_log(exp_datastore.path / trial_path),
                         ReplacementStrategy.ALWAYS,
+                        benchmark.generation_mode,
                     )
                     >> MuxTransform(
                         {
