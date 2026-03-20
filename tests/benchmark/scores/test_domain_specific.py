@@ -2,9 +2,12 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+from typing import Any
+
 import pytest
 from cvss.exceptions import CVSS3MalformedError
 
+from faith._types.config.patterns import AnswerFormat, CaptureTransform, PatternDef
 from faith._types.config.scoring import ScoreFnConfig
 from faith.benchmark.scores.domain_specific import (
     AliasAccuracyScore,
@@ -13,8 +16,102 @@ from faith.benchmark.scores.domain_specific import (
     DomainSpecificScore,
     JaccardIndex,
     LogScaledScore,
+    _decode_by_hint,
+    _decode_kwargs_by_hints,
 )
 from faith.benchmark.scores.scoring import Score
+
+_PATTERN_DICT = {"pattern": ".*", "format_type": "proper"}
+_PATTERN_DEF = PatternDef(pattern=".*", format_type=AnswerFormat.PROPER)
+_SCORE_FN_DICT = {"type": "cvss"}
+_SCORE_FN_CFG = ScoreFnConfig(type="cvss")
+
+
+class _StubClass:
+    def __init__(self, patterns: list[PatternDef], name: str, count: int = 0) -> None:
+        pass
+
+
+@pytest.mark.parametrize(
+    "hint, value, expected",
+    [
+        # Direct DataClassJsonMixin subclass
+        (PatternDef, _PATTERN_DICT, _PATTERN_DEF),
+        (ScoreFnConfig, _SCORE_FN_DICT, _SCORE_FN_CFG),
+        # Already decoded — returned as-is
+        (PatternDef, _PATTERN_DEF, _PATTERN_DEF),
+        # Primitives — unchanged
+        (str, "hello", "hello"),
+        (int, 42, 42),
+        (float, 3.14, 3.14),
+        # list[DataClassJsonMixin]
+        (list[PatternDef], [_PATTERN_DICT], [_PATTERN_DEF]),
+        # list[str] — no decoding
+        (list[str], ["a", "b"], ["a", "b"]),
+        # dict[str, DataClassJsonMixin]
+        (dict[str, ScoreFnConfig], {"k": _SCORE_FN_DICT}, {"k": _SCORE_FN_CFG}),
+        # dict[str, float] — no decoding
+        (dict[str, float], {"a": 1.0}, {"a": 1.0}),
+        # dict[str, Any] — no decoding (Any must not match DataClassJsonMixin)
+        (dict[str, Any], {"a": {"nested": True}}, {"a": {"nested": True}}),
+        # Union with DataClassJsonMixin (both orderings)
+        (PatternDef | dict[str, Any], _PATTERN_DICT, _PATTERN_DEF),
+        (dict[str, Any] | PatternDef, _PATTERN_DICT, _PATTERN_DEF),
+        # Optional wrapping (dict[str, ScoreFnConfig] | None)
+        (dict[str, ScoreFnConfig] | None, {"k": _SCORE_FN_DICT}, {"k": _SCORE_FN_CFG}),
+        (dict[str, ScoreFnConfig] | None, None, None),
+        # list of union
+        (list[PatternDef | dict[str, Any]], [_PATTERN_DICT], [_PATTERN_DEF]),
+        # Empty containers
+        (list[PatternDef], [], []),
+        (dict[str, ScoreFnConfig], {}, {}),
+    ],
+    ids=[
+        "direct-dataclass",
+        "direct-scorefnconfig",
+        "already-decoded",
+        "str-passthrough",
+        "int-passthrough",
+        "float-passthrough",
+        "list-dataclass",
+        "list-str-noop",
+        "dict-dataclass",
+        "dict-float-noop",
+        "dict-any-noop",
+        "union-dataclass-first",
+        "union-dataclass-second",
+        "optional-dict-present",
+        "optional-dict-none",
+        "list-union-dataclass",
+        "empty-list",
+        "empty-dict",
+    ],
+)
+def test_decode_by_hint(hint: type, value: Any, expected: Any) -> None:
+    assert _decode_by_hint(hint, value) == expected
+
+
+def test_decode_by_hint_nested_capture_transform() -> None:
+    raw = {
+        "pattern": r"\b(\d+)\b",
+        "format_type": "proper",
+        "capture_transform": {"params": ["x"], "expr": "int(x)"},
+    }
+    result = _decode_by_hint(PatternDef, raw)
+    assert isinstance(result, PatternDef)
+    assert result.capture_transform == CaptureTransform(params=["x"], expr="int(x)")
+
+
+def test_decode_kwargs_by_hints_mixed() -> None:
+    result = _decode_kwargs_by_hints(
+        _StubClass, {"patterns": [_PATTERN_DICT], "name": "test", "count": 5}
+    )
+    assert result == {"patterns": [_PATTERN_DEF], "name": "test", "count": 5}
+
+
+def test_decode_kwargs_by_hints_unknown_kwarg_passthrough() -> None:
+    result = _decode_kwargs_by_hints(_StubClass, {"unknown": {"foo": "bar"}})
+    assert result == {"unknown": {"foo": "bar"}}
 
 
 def test_domain_specific_score_get_score_fn() -> None:
@@ -43,6 +140,52 @@ def test_domain_specific_score_from_configs() -> None:
     assert set(scores.keys()) == {"cvss_score", "aliases"}
     assert isinstance(scores["cvss_score"], CVSSScore)
     assert isinstance(scores["aliases"], AliasAccuracyScore)
+
+
+def test_domain_specific_score_from_configs_with_raw_dict_sub_scores() -> None:
+    scores = DomainSpecificScore.from_configs(
+        weighted=ScoreFnConfig(
+            type="composite",
+            kwargs={
+                "aggregation": "sub_scores.score.s1",
+                "sub_scores": {
+                    "s1": {
+                        "type": "log_scaled_score",
+                        "tolerance": 0.1,
+                        "scaling": 10.0,
+                    },
+                },
+            },
+        )
+    )
+    assert isinstance(scores["weighted"], CompositeScore)
+    assert scores["weighted"]("10", "10")["value"] == pytest.approx(1.0)
+
+
+def test_domain_specific_score_from_configs_with_nested_composite_raw_dicts() -> None:
+    scores = DomainSpecificScore.from_configs(
+        outer=ScoreFnConfig(
+            type="composite",
+            kwargs={
+                "aggregation": "sub_scores.score.inner",
+                "sub_scores": {
+                    "inner": {
+                        "type": "composite",
+                        "aggregation": "sub_scores.score.leaf",
+                        "sub_scores": {
+                            "leaf": {
+                                "type": "log_scaled_score",
+                                "tolerance": 0.1,
+                                "scaling": 10.0,
+                            },
+                        },
+                    },
+                },
+            },
+        )
+    )
+    result = scores["outer"]("10", "10")
+    assert result["value"] == pytest.approx(1.0)
 
 
 def test_cvss_score_get_cvss_score() -> None:

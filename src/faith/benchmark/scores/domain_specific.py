@@ -6,11 +6,14 @@
 
 import logging
 import math
+import types
+import typing
 from collections.abc import Sequence
-from typing import Any, NotRequired, Type, TypedDict
+from typing import Any
 
 import numpy as np
 from cvss import CVSS3, CVSSError
+from dataclasses_json import DataClassJsonMixin
 from jinja2 import Template
 
 from faith._internal.algo.graph import wcc_dict
@@ -27,6 +30,59 @@ from faith.benchmark.scores.scoring import Score, ScoreFn
 from faith.model.factory import create_model
 
 logger = logging.getLogger(__name__)
+
+
+def _decode_by_hint(hint: type, value: Any) -> Any:
+    """Recursively decode a value based on its type hint.
+
+    Handles DataClassJsonMixin subclasses, lists, dicts, and unions thereof.
+    """
+    # pylint: disable=too-many-return-statements
+    origin_type = typing.get_origin(hint)
+    arg_types = typing.get_args(hint)
+
+    # Union types (X | Y, Optional[X]) — try DataClassJsonMixin members first
+    if origin_type is types.UnionType or origin_type is typing.Union:
+        sorted_args = sorted(
+            arg_types,
+            key=lambda a: isinstance(a, type) and issubclass(a, DataClassJsonMixin),
+            reverse=True,
+        )
+        for arg_type in sorted_args:
+            if isinstance(arg_type, type) and issubclass(arg_type, type(None)):
+                continue
+            decoded = _decode_by_hint(arg_type, value)
+            if decoded is not value:
+                return decoded
+        return value
+
+    # list[X]
+    if origin_type is list and arg_types and isinstance(value, list):
+        return [_decode_by_hint(arg_types[0], item) for item in value]
+
+    # dict[K, V]
+    if origin_type is dict and len(arg_types) >= 2 and isinstance(value, dict):
+        return {k: _decode_by_hint(arg_types[1], v) for k, v in value.items()}
+
+    # Direct DataClassJsonMixin subclass
+    if (
+        isinstance(hint, type)
+        and issubclass(hint, DataClassJsonMixin)
+        and isinstance(value, dict)
+        and hasattr(hint, "from_dict")
+    ):
+        return hint.from_dict(value)
+
+    return value
+
+
+def _decode_kwargs_by_hints(cls: type[Any], kwargs: dict[str, Any]) -> dict[str, Any]:
+    """Decode kwargs based on the type hints for the args to the target class's constructor."""
+    hints = typing.get_type_hints(cls.__init__)  # type: ignore[misc]
+    return {
+        key: _decode_by_hint(hints[key], val) if key in hints else val
+        for key, val in kwargs.items()
+    }
 
 
 class CVSSScore(ScoreFn[str]):
@@ -178,18 +234,18 @@ class AliasAccuracyScore(ScoreFn[str]):
         return {"accuracy": float(np.mean([s["value"] for s in scores]))}
 
 
-class _ParsedVerdict(TypedDict):
-    """A TypedDict representing the parsed verdict from an LLM-based judge.
+class _ParsedVerdict(typing.TypedDict):
+    """Represents the parsed verdict from an LLM-based judge.
 
     This is an internal structure used for type checking from the parsed LLM response.
     """
 
     awarded_points: float
-    details: NotRequired[MetricSummary]
+    details: typing.NotRequired[MetricSummary]
 
 
 class LLMJudgeVerdict(Score):
-    """A TypedDict representing the full verdict from an LLM-based judge."""
+    """Represents the full verdict from an LLM-based judge."""
 
     summary_details: dict[str, Any]
     full_response: str
@@ -202,7 +258,7 @@ class LLMJudgeScore(ScoreFn[str]):
         self,
         judge_prompt_template: str,
         judge_model: dict[str, Any],
-        verdict_formats: list[PatternDef | dict[str, Any]],
+        verdict_formats: list[PatternDef],
         llm_score_range: dict[str, float] | None = None,
         attributes: dict[str, Any] | None = None,
         score_range: dict[str, float] | None = None,
@@ -224,11 +280,7 @@ class LLMJudgeScore(ScoreFn[str]):
         )
         self._judge_model_formatter = PromptFormatter.CHAT
         self._judge_generation_kwargs = judge_model.get("generation_kwargs") or {}
-        parsed_formats = [
-            PatternDef.from_dict(vf) if isinstance(vf, dict) else vf
-            for vf in verdict_formats
-        ]
-        self._verdict_matcher = SequentialMatcher(*parsed_formats)
+        self._verdict_matcher = SequentialMatcher(*verdict_formats)
 
     @property
     def _raw_score_range(self) -> tuple[float, float]:
@@ -303,7 +355,7 @@ class LLMJudgeScore(ScoreFn[str]):
 
 
 class SubScores(Score):
-    """A TypedDict representing sub-scores from multiple scoring functions."""
+    """Represents sub-scores from multiple scoring functions."""
 
     sub_scores: dict[str, Score]
 
@@ -318,23 +370,12 @@ class CompositeScore(ScoreFn[Any]):
         aggregation: str,
         attributes: dict[str, Any] | None = None,
         score_range: dict[str, float] | None = None,
-        sub_scores: dict[str, ScoreFnConfig | dict[str, Any]] | None = None,
+        sub_scores: dict[str, ScoreFnConfig] | None = None,
     ) -> None:
         """Initialize the CompositeScore with a dictionary of scoring functions."""
         super().__init__(attributes=attributes, score_range=score_range)
         self._aggregation = aggregation
-        parsed_sub_scores = {
-            name: (
-                cfg
-                if isinstance(cfg, ScoreFnConfig)
-                else ScoreFnConfig(
-                    type=cfg["type"],
-                    kwargs={k: v for k, v in cfg.items() if k != "type"},
-                )
-            )
-            for name, cfg in (sub_scores or {}).items()
-        }
-        self._score_fns = DomainSpecificScore.from_configs(**parsed_sub_scores)
+        self._score_fns = DomainSpecificScore.from_configs(**(sub_scores or {}))
         assert all(
             attr not in self._RESERVED_ATTRIBUTES
             for score_fn in self._score_fns.values()
@@ -402,13 +443,14 @@ class DomainSpecificScore(CIEnum):
     COMPOSITE = (CompositeScore,)  # Composite score from multiple sub-scores.
 
     @property
-    def scoring_cls(self) -> Type[ScoreFn]:
+    def _scoring_cls(self) -> typing.Type[ScoreFn]:
         """Return the scoring class for this score function."""
         return self.value[0]
 
     def get_score_fn(self, **kwargs: Any) -> ScoreFn:
         """Get the scorer instance for this score function."""
-        return self.scoring_cls(**kwargs)
+        decoded = _decode_kwargs_by_hints(self._scoring_cls, kwargs)
+        return self._scoring_cls(**decoded)
 
     @staticmethod
     def from_configs(**score_fn_kwargs: ScoreFnConfig) -> dict[str, ScoreFn]:

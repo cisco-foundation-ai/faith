@@ -16,6 +16,7 @@ from faith._types.config.patterns import PatternDef
 class ScoreFnConfig(DataClassJsonMixin):
     """Configuration for a domain-specific scoring function.
 
+    Serialized as a flat dict: ``{"type": "<name>", ...kwargs}``.
     The ``type`` field identifies which scoring function to use. All remaining
     fields are type-specific kwargs stored in ``kwargs``.
     """
@@ -25,22 +26,21 @@ class ScoreFnConfig(DataClassJsonMixin):
         default_factory=dict, metadata=config(exclude=lambda x: not x)
     )
 
+    @classmethod
+    # pylint: disable=unused-argument
+    def from_dict(
+        cls, kvs: dict[str, Any], infer_missing: bool = False
+    ) -> "ScoreFnConfig":
+        """Decode from the flat format: ``{"type": "<name>", ...kwargs}``."""
+        return cls(
+            type=kvs["type"],
+            kwargs={k: v for k, v in kvs.items() if k != "type"},
+        )
 
-def _encode_score_fns(val: dict[str, ScoreFnConfig]) -> dict[str, dict[str, Any]]:
-    return {k: {"type": v.type, **v.kwargs} for k, v in val.items()}
-
-
-def _decode_score_fn(val: dict[str, Any] | ScoreFnConfig) -> ScoreFnConfig:
-    if isinstance(val, ScoreFnConfig):
-        return val
-    return ScoreFnConfig(
-        type=val["type"],
-        kwargs={k: v for k, v in val.items() if k != "type"},
-    )
-
-
-def _decode_score_fns(val: dict[str, Any]) -> dict[str, ScoreFnConfig]:
-    return {k: _decode_score_fn(v) for k, v in val.items()}
+    # pylint: disable-next=unused-argument
+    def to_dict(self, encode_json: bool = False) -> dict[str, Any]:
+        """Encode to the flat format: ``{"type": "<name>", ...kwargs}``."""
+        return {"type": self.type, **self.kwargs}
 
 
 @dataclass(frozen=True)
@@ -56,8 +56,8 @@ class OutputProcessingConfig(DataClassJsonMixin):
     score_fns: dict[str, ScoreFnConfig] = field(
         default_factory=dict,
         metadata=config(
-            encoder=_encode_score_fns,
-            decoder=_decode_score_fns,
+            encoder=lambda val: {k: v.to_dict() for k, v in val.items()},
+            decoder=lambda val: {k: ScoreFnConfig.from_dict(v) for k, v in val.items()},
             exclude=lambda x: not x,
         ),
     )
