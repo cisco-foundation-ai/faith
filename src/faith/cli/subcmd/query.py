@@ -179,7 +179,7 @@ def _run_single_model(
                     "benchmark": experiment.benchmark_spec.to_dict(),
                     "model": model_spec.to_dict(),
                 },
-                "benchmark_config": experiment.benchmark_config,
+                "benchmark_config": experiment.benchmark_config.to_dict(),
                 "trial_records": {},
             }
 
