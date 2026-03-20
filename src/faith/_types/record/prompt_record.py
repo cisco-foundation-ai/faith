@@ -7,6 +7,8 @@ from typing import Any
 
 from dataclasses_json import DataClassJsonMixin, config
 
+from faith._types.record.stats import Labeling
+
 
 @dataclass(frozen=True)
 class PromptRecord(DataClassJsonMixin):
@@ -22,7 +24,7 @@ class PromptRecord(DataClassJsonMixin):
     instruction: str | None
     question: str
     choices: dict[str, str] | None  # Maps symbols (e.g., 'A', 'B') to their choice.
-    label: str | None  # aka the "answer" or "ground truth".
+    label: Labeling | None  # aka the "answer" or "ground truth".
 
     # Formatted question and answer.
     formatted_question: str
