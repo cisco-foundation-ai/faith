@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from faith._internal.iter.common import GetAttrTransform
+from faith._internal.iter.common import Functor, GetAttrTransform
 
 
 class _TestObject:
@@ -30,4 +30,18 @@ def test_get_attr_transform() -> None:
         "obj-2",
         "obj-3",
         "obj-4",
+    ]
+
+
+def test_functor() -> None:
+    """Test the Functor to ensure it correctly applies a function to each element."""
+    assert not list([] >> Functor[int, int](lambda x: x * 2))
+
+    numbers = [1, 2, 3, 4, 5]
+    assert list(numbers >> Functor[int, int](lambda x: x * 2)) == [
+        2,
+        4,
+        6,
+        8,
+        10,
     ]

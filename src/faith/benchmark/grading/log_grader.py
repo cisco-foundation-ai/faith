@@ -27,11 +27,9 @@ class LogGrader(IsoTransform[SampleRecord]):
     def __init__(
         self,
         output_processing_config: OutputProcessingConfig,
-        recompute_stats: bool,
     ):
         """Initialize the logs grader."""
         super().__init__()
-        self._recompute_stats = recompute_stats
         self._score_fns = DomainSpecificScore.from_configs(
             **output_processing_config.score_fns
         )
@@ -47,12 +45,6 @@ class LogGrader(IsoTransform[SampleRecord]):
         if log_is_empty:
             logger.error("Benchmark logs are empty!")
 
-    def _markup_entry(self, log_entry: SampleRecord) -> SampleRecord:
-        """Markup a single log entry with the computed statistics / scores."""
-        if not log_entry.stats or self._recompute_stats:
-            return self._markup_entry_impl(log_entry)
-        return log_entry
-
     def _custom_scores(
         self, label: Labeling | None, pred: Labeling | None, **kwargs: Any
     ) -> dict[str, Score] | None:
@@ -65,5 +57,5 @@ class LogGrader(IsoTransform[SampleRecord]):
         }
 
     @abstractmethod
-    def _markup_entry_impl(self, log_entry: SampleRecord) -> SampleRecord:
+    def _markup_entry(self, log_entry: SampleRecord) -> SampleRecord:
         """Markup a single log entry with the computed statistics / scores."""

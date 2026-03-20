@@ -14,48 +14,38 @@ from collections.abc import Iterable, Iterator, Sequence
 from datetime import datetime
 from functools import partial
 from pathlib import Path
-from typing import Type
 from zoneinfo import ZoneInfo
 
 from tqdm import tqdm
-from transformers import PreTrainedTokenizerBase
 
 from faith import __version__
-from faith._internal.algo.hash import dict_sha256
 from faith._internal.functools.compose import compose
 from faith._internal.io.datastore import Datastore, DatastoreContext
 from faith._internal.io.json import read_logs_from_json, write_as_json
 from faith._internal.io.logging import LoggingTransform
 from faith._internal.iter.mux import MuxTransform
-from faith._internal.iter.transform import (
-    DevNullReducer,
-    IdentityTransform,
-    IsoTransform,
-    Mapping,
-)
+from faith._internal.iter.transform import DevNullReducer, IdentityTransform
 from faith._internal.multiprocessing.gpu_scheduling import (
     GPUJob,
     run_gpu_jobs_in_parallel,
 )
-from faith._internal.records.sort import SortByTransform
-from faith._types.enums import CIEnum
 from faith._types.model.engine import ModelEngine
-from faith._types.model.generation import GenerationMode, GenParams
+from faith._types.model.generation import GenerationMode
 from faith._types.model.spec import ModelSpec
-from faith._types.record.model_record import ModelRecord
-from faith._types.record.model_response import ChatResponse, GenerationError
-from faith._types.record.prompt_record import PromptRecord
-from faith._types.record.sample_record import Metadata, RecordStatus, SampleRecord
-from faith.benchmark.benchmark import Benchmark
+from faith._types.record.sample_record import (
+    RecordStatus,
+    SampleRecord,
+)
 from faith.benchmark.listing import choices_to_benchmarks, find_benchmarks
 from faith.experiment.experiment import BenchmarkExperiment
 from faith.experiment.params import DataSamplingParams, ExperimentParams
-from faith.experiment.reconciliation import (
-    ReplacementStrategy,
-    reconcile_records,
-)
-from faith.model.base import BaseModel
 from faith.model.factory import create_model
+from faith.record_pipelines.formatting import SampleFormatter
+from faith.record_pipelines.hashing import HashModelDataTransform
+from faith.record_pipelines.params import RecordHandlingParams
+from faith.record_pipelines.prediction import model_querier
+from faith.record_pipelines.reconciliation import record_reconciler
+from faith.record_pipelines.sorting import SortByTransform
 
 logger = logging.getLogger(__name__)
 
@@ -90,165 +80,11 @@ def read_trial_log(trial_log_path: Path) -> Iterable[SampleRecord]:
     return []  # No records if the log file doesn't exist yet.
 
 
-class BenchmarkRecordTransform(Mapping[PromptRecord, SampleRecord]):
-    """Transform that converts PromptRecords into log records for querying the model."""
-
-    def __init__(self, benchmark: Benchmark, tokenizer: PreTrainedTokenizerBase | None):
-        self._bench_formatter = benchmark.formatter
-        self._bench_version = benchmark.version
-
-        # Create the lead-in string for the answer portion of the prompt.
-        self._answer_leadin = None
-        if benchmark.generation_mode in [
-            GenerationMode.LOGITS,
-            GenerationMode.NEXT_TOKEN,
-        ]:
-            assert (
-                tokenizer is not None
-            ), f"Model tokenizer required for {str(benchmark.generation_mode)}."
-            self._answer_leadin = benchmark.answer_leadin(tokenizer)
-
-        # Translate the answer symbols to the model's tokenizer's token IDs.
-        self._answer_symbol_ids = {}
-        if benchmark.generation_mode == GenerationMode.LOGITS:
-            assert hasattr(
-                benchmark, "answer_token_map"
-            ), "Token map required for logits generation."
-            assert (
-                tokenizer is not None
-            ), "Model tokenizer is required for logits generation."
-            self._answer_symbol_ids = benchmark.answer_token_map(tokenizer)
-
-    def _map_fn(self, element: PromptRecord) -> SampleRecord:
-        """Map a PromptRecord into a log record containing the data and metadata for querying."""
-        return SampleRecord(
-            metadata=Metadata(
-                version=self._bench_version,
-                data_hash=dict_sha256(element.to_dict()),
-            ),
-            data=element,
-            model_data=ModelRecord(
-                prompt=self._bench_formatter.render_conversation(
-                    element, self._answer_leadin
-                ),
-                answer_symbol_ids=self._answer_symbol_ids,
-            ),
-            stats=None,
-        )
-
-
-def model_querier(
-    model: BaseModel,
-    generation_mode: GenerationMode,
-    gen_params: GenParams,
-) -> IsoTransform[SampleRecord]:
-    """Create a transform that queries the model according to the specified generation mode."""
-    mode_map = {
-        GenerationMode.LOGITS: _ModelMethod.LOGITS,
-        GenerationMode.NEXT_TOKEN: _ModelMethod.NEXT_TOKEN,
-        GenerationMode.CHAT_COMP: _ModelMethod.GENERATION,
-    }
-    return mode_map[generation_mode].create_transform(model, gen_params)
-
-
-class _PredictionTransform(IsoTransform[SampleRecord]):
-    """Base class for prediction transforms that generate model outputs."""
-
-    def __init__(self, model: BaseModel, gen_params: GenParams):
-        """Initialize the prediction transform for a model."""
-        super().__init__()
-        self._model = model
-        self._gen_params = gen_params
-
-
-class _LogitsTransform(_PredictionTransform):
-    """Transform for generating logits from a model."""
-
-    def __call__(self, records: Iterable[SampleRecord]) -> Iterable[SampleRecord]:
-        """Generate the next-token logits for each input in `records`."""
-        inputs = list(records)
-        logit_responses = self._model.logits(
-            inputs=[example.model_data.prompt for example in inputs],
-            temperature=self._gen_params.temperature,
-            top_p=self._gen_params.top_p,
-            **self._gen_params.kwargs,
-        )
-        for record, logit_response in zip(inputs, logit_responses):
-            if isinstance(logit_response, list):
-                record.model_data.logits = logit_response
-            elif isinstance(logit_response, GenerationError):
-                record.model_data.error = logit_response
-            yield record
-
-
-class _NextTokenTransform(_PredictionTransform):
-    """Transform for generating next token predictions from a model."""
-
-    def __call__(self, records: Iterable[SampleRecord]) -> Iterable[SampleRecord]:
-        """Generate next token predictions for each input in `records`."""
-        inputs = list(records)
-        responses = self._model.next_token(
-            inputs=[example.model_data.prompt for example in inputs],
-            temperature=self._gen_params.temperature,
-            top_p=self._gen_params.top_p,
-            **self._gen_params.kwargs,
-        )
-        for record, response in zip(inputs, responses):
-            if isinstance(response, ChatResponse):
-                record.model_data.next_token = response
-            elif isinstance(response, GenerationError):
-                record.model_data.error = response
-            yield record
-
-
-class _GenerationTransform(_PredictionTransform):
-    """Transform for generating chat completions from a model."""
-
-    def __call__(self, records: Iterable[SampleRecord]) -> Iterable[SampleRecord]:
-        """Generate chat completion responses for each input in `records`."""
-        inputs = list(records)
-        responses = self._model.query(
-            inputs=[example.model_data.prompt for example in inputs],
-            temperature=self._gen_params.temperature,
-            max_completion_tokens=self._gen_params.max_completion_tokens,
-            top_p=self._gen_params.top_p,
-            **self._gen_params.kwargs,
-        )
-        for record, response in zip(inputs, responses):
-            if isinstance(response, ChatResponse):
-                record.model_data.chat_comp = response
-            elif isinstance(response, GenerationError):
-                record.model_data.error = response
-            yield record
-
-
-class _ModelMethod(CIEnum):
-    """Enumeration of model methods for generating predictions.
-
-    Each enum value corresponds to a specific generative method of the model,
-    allowing for flexible handling of different prediction types.
-    """
-
-    LOGITS = (_LogitsTransform,)
-    NEXT_TOKEN = (_NextTokenTransform,)
-    GENERATION = (_GenerationTransform,)
-
-    @property
-    def transform_cls(self) -> Type[_PredictionTransform]:
-        """Return the transform class for this model method."""
-        return self.value[0]
-
-    def create_transform(
-        self, model: BaseModel, gen_params: GenParams
-    ) -> IsoTransform[SampleRecord]:
-        """Create an instance of the transform for the model and generation parameters."""
-        return self.transform_cls(model, gen_params)
-
-
 def _run_single_model(
     model_spec: ModelSpec,
     exp_params: ExperimentParams,
     sampling_params: DataSamplingParams,
+    record_params: RecordHandlingParams,
     datastore: Datastore,
 ) -> Iterator[Path]:
     """
@@ -259,6 +95,7 @@ def _run_single_model(
             and generation parameters.
         exp_params: Experiment parameters
         sampling_params: Data sampling parameters
+        record_params: Record handling parameters
         datastore: The datastore to use for storing experiment results.
 
     Yields:
@@ -353,22 +190,23 @@ def _run_single_model(
                 trial_start_time = time.perf_counter()
                 _ = (
                     benchmark.build_dataset(**sampling_params.to_dict()).iter_data()
-                    >> BenchmarkRecordTransform(benchmark, model.tokenizer)
-                    >> reconcile_records(
+                    >> SampleFormatter(benchmark, model.tokenizer)
+                    >> record_reconciler(
                         read_trial_log(exp_datastore.path / trial_path),
-                        ReplacementStrategy.ALWAYS,
+                        record_params.replacement_strategy,
                         benchmark.generation_mode,
                     )
                     >> MuxTransform(
                         {
-                            # Pass through clean records unchanged.
-                            RecordStatus.CLEAN: IdentityTransform[SampleRecord](),
-                            # For dirty records, query the model and update the record.
-                            RecordStatus.DIRTY: model_querier(
+                            # Pass through fresh records unchanged.
+                            RecordStatus.FRESH: IdentityTransform[SampleRecord](),
+                            # For stale records, query the model and update the record.
+                            RecordStatus.STALE: model_querier(
                                 model, benchmark.generation_mode, model_spec.generation
                             ),
                         }
                     )
+                    >> HashModelDataTransform()
                     >> SortByTransform[int]("data", "benchmark_sample_index")
                     >> LoggingTransform[SampleRecord](exp_datastore.path / trial_path)
                     >> DevNullReducer[SampleRecord]()
@@ -395,6 +233,7 @@ def run_experiment_queries(
     model_specs: Sequence[ModelSpec],
     exp_params: ExperimentParams,
     sampling_params: DataSamplingParams,
+    record_params: RecordHandlingParams,
     datastore: Datastore,
     parallelize_models: bool = True,
 ) -> Iterator[Path]:
@@ -424,6 +263,7 @@ def run_experiment_queries(
                         model_spec=model_spec,
                         exp_params=exp_params,
                         sampling_params=sampling_params,
+                        record_params=record_params,
                         datastore=datastore,
                     ),
                     need=model_spec.engine.num_gpus,
@@ -447,6 +287,7 @@ def run_experiment_queries(
                 model_spec=model_spec,
                 exp_params=exp_params,
                 sampling_params=sampling_params,
+                record_params=record_params,
                 datastore=datastore,
             )
 

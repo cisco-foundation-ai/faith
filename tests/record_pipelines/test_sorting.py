@@ -4,7 +4,7 @@
 
 import pytest
 
-from faith._internal.records.sort import SortByTransform
+from faith.record_pipelines.sorting import SortByTransform
 from tests.benchmark.categories.fake_record_maker import make_fake_record
 
 

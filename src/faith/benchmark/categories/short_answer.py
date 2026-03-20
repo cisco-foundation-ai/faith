@@ -82,12 +82,11 @@ class SABenchmark(BaseBenchmark):
         self,
         *,
         model_format_config: PatternDef | None = None,
-        recompute_stats: bool = False,
     ) -> LogGrader:
         """Fetch a log grader for this benchmark."""
         if self.generation_mode == GenerationMode.CHAT_COMP:
             return ChatCompletionLogGrader(
-                self._config.output_processing, model_format_config, recompute_stats
+                self._config.output_processing, model_format_config
             )
         raise ValueError(
             f"Unsupported generation mode: {self.generation_mode} for short answer log grading."

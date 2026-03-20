@@ -418,6 +418,15 @@ def test_sa_benchmark_log_grader_chat() -> None:
                 model_data={"error": {"title": "No response from model"}},
             ),
             make_fake_record(
+                data={"label": "bbb"},
+                model_data={
+                    "chat_comp": {
+                        "answer_text": "<answer>B</answer>",
+                        "output_text": "<answer>B</answer>",
+                        "num_output_tokens": 2,
+                        "max_token_halt": False,
+                    }
+                },
                 stats=StatsRecord(
                     label="aaa",
                     prediction="b",
@@ -466,10 +475,11 @@ def test_sa_benchmark_log_grader_chat() -> None:
             max_token_halt=False,
         ),
         StatsRecord(
-            label="aaa",
+            label="bbb",
             prediction="b",
-            answer_format=AnswerFormat.PROPER,
-            subject="esperanto",
+            answer_format=AnswerFormat.IMPROPER,
+            num_output_tokens=2,
+            max_token_halt=False,
         ),
     ]
 

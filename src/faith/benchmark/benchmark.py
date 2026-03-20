@@ -103,7 +103,6 @@ class Benchmark(ABC):
         self,
         *,
         model_format_config: PatternDef | None = None,
-        recompute_stats: bool = False,
     ) -> LogGrader:
         """Fetch a log grader for this benchmark."""
 

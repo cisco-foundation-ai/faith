@@ -641,7 +641,6 @@ Choices:
             disambiguation=Disambiguation.MATCH_ALL,
             format_type=AnswerFormat.PROPER,
         ),
-        recompute_stats=True,
     )
 
     assert [log.stats for log in [] >> next_token_log_grader] == []
@@ -760,6 +759,14 @@ Choices:
                 },
             ),
             make_fake_record(
+                model_data={
+                    "chat_comp": {
+                        "answer_text": "Antwort--> C",
+                        "output_text": "Antwort--> C",
+                        "num_output_tokens": 8,
+                        "max_token_halt": False,
+                    }
+                },
                 stats=StatsRecord(
                     label="B",
                     prediction="C",
@@ -788,9 +795,11 @@ Choices:
             max_token_halt=False,
         ),
         StatsRecord(
-            label="B",
+            label=None,
             prediction="C",
-            answer_format=AnswerFormat.IMPROPER,
+            answer_format=AnswerFormat.PROPER,
+            num_output_tokens=8,
+            max_token_halt=False,
         ),
         StatsRecord(
             label="B",

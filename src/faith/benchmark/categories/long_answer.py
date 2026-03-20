@@ -69,7 +69,6 @@ class LABenchmark(BaseBenchmark):
         self,
         *,
         model_format_config: PatternDef | None = None,
-        recompute_stats: bool = False,
     ) -> LogGrader:
         """Fetch a log grader for this benchmark."""
         if (
@@ -79,7 +78,6 @@ class LABenchmark(BaseBenchmark):
             return ChatCompletionLogGrader(
                 self._config.output_processing,
                 model_format_config,
-                recompute_stats,
             )
         raise ValueError(
             f"Unsupported generation mode: {self.generation_mode} for long answer log grading."

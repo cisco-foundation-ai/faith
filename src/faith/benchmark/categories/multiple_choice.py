@@ -167,16 +167,15 @@ class MCBenchmark(BaseBenchmark):
         self,
         *,
         model_format_config: PatternDef | None = None,
-        recompute_stats: bool = False,
     ) -> LogGrader:
         """Fetch a log grader for this benchmark."""
         op_cfg = self._config.output_processing
         if self.generation_mode == GenerationMode.LOGITS:
-            return LogitsLogGrader(op_cfg, recompute_stats)
+            return LogitsLogGrader(op_cfg)
         if self.generation_mode == GenerationMode.NEXT_TOKEN:
-            return NextTokenLogGrader(op_cfg, recompute_stats, self.answer_set)
+            return NextTokenLogGrader(op_cfg, self.answer_set)
         if self.generation_mode == GenerationMode.CHAT_COMP:
-            return ChatCompletionLogGrader(op_cfg, model_format_config, recompute_stats)
+            return ChatCompletionLogGrader(op_cfg, model_format_config)
         raise ValueError(
             f"Unsupported generation mode: {self.generation_mode} for multiple-choice log grading."
         )

@@ -6,7 +6,9 @@ from pathlib import Path
 
 import pytest
 
-from faith.cli.subcmd.eval import RecordHandlingParams, evaluate_experiment
+from faith._types.record.sample_record import ReplacementStrategy
+from faith.cli.subcmd.eval import evaluate_experiment
+from faith.record_pipelines.params import RecordHandlingParams
 
 
 @pytest.mark.filterwarnings("ignore::RuntimeWarning")
@@ -18,8 +20,7 @@ def test_evaluate_experiment() -> None:
         / "bench_1"
         / "experiment.json",
         record_params=RecordHandlingParams(
-            annotate_prediction_stats=False,
-            recompute_stats=False,
+            replacement_strategy=ReplacementStrategy.NEVER,
         ),
     ) == {
         "stats": {

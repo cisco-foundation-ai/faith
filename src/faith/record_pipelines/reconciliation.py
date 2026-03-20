@@ -3,21 +3,15 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from collections.abc import Iterable
-from enum import auto
 
 from faith._internal.iter.join import LeftJoinTransform
 from faith._internal.iter.transform import Mapping, Transform
-from faith._types.enums import CIStrEnum
 from faith._types.model.generation import GenerationMode
-from faith._types.record.sample_record import RecordStatus, SampleRecord
-
-
-class ReplacementStrategy(CIStrEnum):
-    """Defines the strategy to use when reconciling matching records."""
-
-    NEVER = auto()
-    ALWAYS = auto()
-    IF_HASH_DIFFERS = auto()
+from faith._types.record.sample_record import (
+    RecordStatus,
+    ReplacementStrategy,
+    SampleRecord,
+)
 
 
 class _RecordReconciliation(
@@ -58,38 +52,38 @@ class _RecordReconciliation(
 
 
 class _RecordStatusTransform(Mapping[SampleRecord, tuple[RecordStatus, SampleRecord]]):
-    """A transform that labels each record as CLEAN or DIRTY based on whether it has the required model response field."""
+    """A transform that labels each record as FRESH or STALE based on whether it has the required model response field."""
 
     def __init__(self, mode: GenerationMode):
         self._mode = mode
 
     def _map_fn(self, element: SampleRecord) -> tuple[RecordStatus, SampleRecord]:
-        """Label the record as CLEAN or DIRTY based on the presence of the required model response field."""
+        """Label the record as FRESH or STALE based on the presence of the required model response field."""
         return (self._record_status(element), element)
 
     def _record_status(self, record: SampleRecord) -> RecordStatus:
         """Determine the status of a record based on the presence of the required model response field."""
         if self._mode == GenerationMode.LOGITS:
             return (
-                RecordStatus.CLEAN if record.model_data.logits else RecordStatus.DIRTY
+                RecordStatus.FRESH if record.model_data.logits else RecordStatus.STALE
             )
         if self._mode == GenerationMode.NEXT_TOKEN:
             return (
-                RecordStatus.CLEAN
+                RecordStatus.FRESH
                 if record.model_data.next_token
-                else RecordStatus.DIRTY
+                else RecordStatus.STALE
             )
         if self._mode == GenerationMode.CHAT_COMP:
             return (
-                RecordStatus.CLEAN
+                RecordStatus.FRESH
                 if record.model_data.chat_comp
-                else RecordStatus.DIRTY
+                else RecordStatus.STALE
             )
 
-        return RecordStatus.DIRTY
+        return RecordStatus.STALE
 
 
-def reconcile_records(
+def record_reconciler(
     existing: Iterable[SampleRecord],
     strategy: ReplacementStrategy,
     mode: GenerationMode,

@@ -21,6 +21,9 @@ class Metadata(DataClassJsonMixin):
     data_hash: str | None = field(
         default=None, metadata=config(exclude=lambda x: x is None)
     )
+    model_data_hash: str | None = field(
+        default=None, metadata=config(exclude=lambda x: x is None)
+    )
 
 
 @dataclass
@@ -36,7 +39,15 @@ class SampleRecord(DataClassJsonMixin):
 
 
 class RecordStatus(CIStrEnum):
-    """Indicates whether a record is clean (unchanged) or dirty (new or updated)."""
+    """Indicates whether a record is fresh (unchanged) or stale (new or updated)."""
 
-    CLEAN = auto()
-    DIRTY = auto()
+    FRESH = auto()
+    STALE = auto()
+
+
+class ReplacementStrategy(CIStrEnum):
+    """Defines the strategy to use when reconciling matching records."""
+
+    NEVER = auto()
+    ALWAYS = auto()
+    IF_HASH_DIFFERS = auto()

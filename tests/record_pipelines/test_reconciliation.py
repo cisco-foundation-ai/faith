@@ -6,15 +6,16 @@
 import pytest
 
 from faith._types.model.generation import GenerationMode
-from faith._types.record.sample_record import RecordStatus, SampleRecord
-from faith.experiment.reconciliation import (
+from faith._types.record.sample_record import (
+    RecordStatus,
     ReplacementStrategy,
-    reconcile_records,
+    SampleRecord,
 )
+from faith.record_pipelines.reconciliation import record_reconciler
 from tests.benchmark.categories.fake_record_maker import make_fake_record
 
-CLEAN = RecordStatus.CLEAN
-DIRTY = RecordStatus.DIRTY
+FRESH = RecordStatus.FRESH
+STALE = RecordStatus.STALE
 
 
 def _rec(
@@ -37,7 +38,7 @@ def _rec(
     "existing, new, expected",
     [
         ([], [], []),
-        ([], [_rec("a", "h1")], [(DIRTY, _rec("a", "h1"))]),
+        ([], [_rec("a", "h1")], [(STALE, _rec("a", "h1"))]),
         ([_rec("a", "h1")], [], []),
         (
             [
@@ -51,7 +52,7 @@ def _rec(
             [_rec("a", "h1", question="new")],
             [
                 (
-                    CLEAN,
+                    FRESH,
                     _rec(
                         "a",
                         "h1",
@@ -64,12 +65,12 @@ def _rec(
         (
             [_rec("a", "h_old", question="old")],
             [_rec("a", "h_new", question="new")],
-            [(DIRTY, _rec("a", "h_old", question="old"))],
+            [(STALE, _rec("a", "h_old", question="old"))],
         ),
         (
             [_rec("a", "h1", model_stats={"next_token": {"output_text": "foo"}})],
             [_rec("a", "h1"), _rec("b", "h2")],
-            [(DIRTY, _rec("a", "h1")), (DIRTY, _rec("b", "h2"))],
+            [(STALE, _rec("a", "h1")), (STALE, _rec("b", "h2"))],
         ),
         (
             [
@@ -83,11 +84,11 @@ def _rec(
             ],
             [
                 (
-                    CLEAN,
+                    FRESH,
                     _rec("a", "h1", model_stats={"chat_comp": {"output_text": "foo"}}),
                 ),
-                (DIRTY, _rec("b", "h2")),
-                (DIRTY, _rec("c", "h3")),
+                (STALE, _rec("b", "h2")),
+                (STALE, _rec("c", "h3")),
             ],
         ),
     ],
@@ -101,7 +102,7 @@ def _rec(
         "preserves-input-order",
     ],
 )
-def test_reconcile_records_strategy_never(
+def test_record_reconciler_strategy_never(
     existing: list[SampleRecord],
     new: list[SampleRecord],
     expected: list[tuple[RecordStatus, SampleRecord]],
@@ -110,7 +111,7 @@ def test_reconcile_records_strategy_never(
     assert (
         list(
             new
-            >> reconcile_records(
+            >> record_reconciler(
                 existing, ReplacementStrategy.NEVER, GenerationMode.CHAT_COMP
             )
         )
@@ -122,22 +123,22 @@ def test_reconcile_records_strategy_never(
     "existing, new, expected",
     [
         ([], [], []),
-        ([], [_rec("a", "h1")], [(DIRTY, _rec("a", "h1"))]),
+        ([], [_rec("a", "h1")], [(STALE, _rec("a", "h1"))]),
         ([_rec("a", "h1")], [], []),
         (
             [_rec("a", "h1", question="old")],
             [_rec("a", "h1", question="new")],
-            [(DIRTY, _rec("a", "h1", question="new"))],
+            [(STALE, _rec("a", "h1", question="new"))],
         ),
         (
             [_rec("a", "h_old", question="old")],
             [_rec("a", "h_new", question="new")],
-            [(DIRTY, _rec("a", "h_new", question="new"))],
+            [(STALE, _rec("a", "h_new", question="new"))],
         ),
         (
             [_rec("a", "h1", question="old")],
             [_rec("a", "h1", question="new"), _rec("b", "h2")],
-            [(DIRTY, _rec("a", "h1", question="new")), (DIRTY, _rec("b", "h2"))],
+            [(STALE, _rec("a", "h1", question="new")), (STALE, _rec("b", "h2"))],
         ),
     ],
     ids=[
@@ -146,10 +147,10 @@ def test_reconcile_records_strategy_never(
         "empty-new-stream",
         "match-same-hash",
         "match-different-hash",
-        "mixed-all-dirty",
+        "mixed-all-stale",
     ],
 )
-def test_reconcile_records_strategy_always(
+def test_record_reconciler_strategy_always(
     existing: list[SampleRecord],
     new: list[SampleRecord],
     expected: list[tuple[RecordStatus, SampleRecord]],
@@ -158,7 +159,7 @@ def test_reconcile_records_strategy_always(
     assert (
         list(
             new
-            >> reconcile_records(
+            >> record_reconciler(
                 existing, ReplacementStrategy.ALWAYS, GenerationMode.NEXT_TOKEN
             )
         )
@@ -170,7 +171,7 @@ def test_reconcile_records_strategy_always(
     "existing, new, expected",
     [
         ([], [], []),
-        ([], [_rec("a", "h1")], [(DIRTY, _rec("a", "h1"))]),
+        ([], [_rec("a", "h1")], [(STALE, _rec("a", "h1"))]),
         ([_rec("a", "h1")], [], []),
         (
             [
@@ -186,7 +187,7 @@ def test_reconcile_records_strategy_always(
             [_rec("a", "h1", question="new")],
             [
                 (
-                    CLEAN,
+                    FRESH,
                     _rec(
                         "a",
                         "h1",
@@ -203,7 +204,7 @@ def test_reconcile_records_strategy_always(
         (
             [_rec("a", "h_old", question="old")],
             [_rec("a", "h_new", question="new")],
-            [(DIRTY, _rec("a", "h_new", question="new"))],
+            [(STALE, _rec("a", "h_new", question="new"))],
         ),
         (
             [_rec("a", "h1"), _rec("b", "h_old")],
@@ -219,9 +220,9 @@ def test_reconcile_records_strategy_always(
                 _rec("c", "h3"),
             ],
             [
-                (DIRTY, _rec("a", "h1")),
-                (DIRTY, _rec("b", "h_new")),
-                (DIRTY, _rec("c", "h3")),
+                (STALE, _rec("a", "h1")),
+                (STALE, _rec("b", "h_new")),
+                (STALE, _rec("c", "h3")),
             ],
         ),
     ],
@@ -231,10 +232,10 @@ def test_reconcile_records_strategy_always(
         "empty-new-stream",
         "match-same-hash",
         "match-different-hash",
-        "mixed-clean-dirty-and-unmatched",
+        "mixed-fresh-stale-and-unmatched",
     ],
 )
-def test_reconcile_records_strategy_if_hash_differs(
+def test_record_reconciler_strategy_if_hash_differs(
     existing: list[SampleRecord],
     new: list[SampleRecord],
     expected: list[tuple[RecordStatus, SampleRecord]],
@@ -243,7 +244,7 @@ def test_reconcile_records_strategy_if_hash_differs(
     assert (
         list(
             new
-            >> reconcile_records(
+            >> record_reconciler(
                 existing,
                 ReplacementStrategy.IF_HASH_DIFFERS,
                 GenerationMode.LOGITS,

@@ -23,7 +23,7 @@ from faith.benchmark.grading.log_grader import LogGrader
 class LogitsLogGrader(LogGrader):
     """A log grader for multiple choice benchmarks that log the next-token logits."""
 
-    def _markup_entry_impl(self, log_entry: SampleRecord) -> SampleRecord:
+    def _markup_entry(self, log_entry: SampleRecord) -> SampleRecord:
         """Markup a single log entry with the computed statistics / scores."""
         label: str | None = log_entry.data.label
         extracted_pred: str | None = None
@@ -82,17 +82,16 @@ class NextTokenLogGrader(LogGrader):
     def __init__(
         self,
         output_processing_config: OutputProcessingConfig,
-        recompute_stats: bool,
         answer_set: frozenset[str],
     ):
         """Initialize the next token log grader."""
-        super().__init__(output_processing_config, recompute_stats)
+        super().__init__(output_processing_config)
         assert (
             len(answer_set) > 0
         ), "A non-empty answer set must be provided for next token log grader."
         self._answer_set = answer_set
 
-    def _markup_entry_impl(self, log_entry: SampleRecord) -> SampleRecord:
+    def _markup_entry(self, log_entry: SampleRecord) -> SampleRecord:
         """Markup a single log entry with the computed statistics / scores."""
         label: Labeling | None = log_entry.data.label
         extracted_pred: Labeling | None = None
@@ -124,10 +123,9 @@ class ChatCompletionLogGrader(LogGrader):
         self,
         output_processing_config: OutputProcessingConfig,
         model_format_config: PatternDef | None,
-        recompute_stats: bool,
     ):
         """Initialize the chat completion log grader."""
-        super().__init__(output_processing_config, recompute_stats)
+        super().__init__(output_processing_config)
         self._answer_matcher: Matcher[Any] = (
             SimpleMatcher(model_format_config)
             if model_format_config is not None
@@ -136,7 +134,7 @@ class ChatCompletionLogGrader(LogGrader):
         if answer_formats := output_processing_config.answer_formats:
             self._answer_matcher |= SequentialMatcher(*answer_formats)
 
-    def _markup_entry_impl(self, log_entry: SampleRecord) -> SampleRecord:
+    def _markup_entry(self, log_entry: SampleRecord) -> SampleRecord:
         """Markup a single log entry with the computed statistics / scores."""
         label: Labeling | None = log_entry.data.label
         extracted_answer: Labeling | None = None

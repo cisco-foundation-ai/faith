@@ -32,6 +32,7 @@ from faith._types.model.engine import EngineParams, ModelEngine
 from faith._types.model.generation import GenerationMode, GenParams
 from faith._types.model.prompt import PromptFormatter
 from faith._types.model.spec import ModelSpec, Reasoning
+from faith._types.record.sample_record import ReplacementStrategy
 from faith.benchmark.listing import benchmark_choices
 from faith.cli.flags.annotated_path import AnnotatedPath
 from faith.cli.flags.arg_value import DefaultValue, TypeWithDefault, UserValueType
@@ -58,6 +59,7 @@ def _cli_query(args: argparse.Namespace, datastore: Datastore) -> Iterator[Path]
     # main CLI script makes autocompletion slow.
     # pylint: disable=import-outside-toplevel
     from faith.cli.subcmd.query import run_experiment_queries
+    from faith.record_pipelines.params import RecordHandlingParams
 
     # Build the list of model specs from both --model-paths and --model-configs.
     model_specs: list[ModelSpec] = []
@@ -75,10 +77,9 @@ def _cli_query(args: argparse.Namespace, datastore: Datastore) -> Iterator[Path]
         ]
     }
     if args.model_paths:
-        if args.prompt_format is None:
-            raise RuntimeError(
-                "error: --prompt-format is required when using --model-paths."
-            )
+        assert (
+            args.prompt_format is not None
+        ), "error: --prompt-format is required when using --model-paths."
         global_engine = EngineParams(
             engine_type=args.model_engine,
             num_gpus=args.num_gpus.value,
@@ -170,10 +171,9 @@ def _cli_query(args: argparse.Namespace, datastore: Datastore) -> Iterator[Path]
             ]
         )
 
-    if not model_specs:
-        raise RuntimeError(
-            "error: at least one model must be specified via either --model-paths or --model-configs."
-        )
+    assert (
+        model_specs
+    ), "error: at least one model must be specified via either --model-paths or --model-configs."
 
     return run_experiment_queries(
         model_specs,
@@ -187,6 +187,9 @@ def _cli_query(args: argparse.Namespace, datastore: Datastore) -> Iterator[Path]
         ),
         DataSamplingParams(
             sample_size=args.sample_size,
+        ),
+        RecordHandlingParams(
+            replacement_strategy=args.replacement_strategy,
         ),
         datastore,
         parallelize_models=args.experimental_parallelize_models,
@@ -369,12 +372,28 @@ def _add_datastore_args(parser: argparse.ArgumentParser) -> None:
     )
 
 
+def _add_record_handling_args(parser: argparse.ArgumentParser) -> None:
+    """Add arguments for record handling to `parser`."""
+    group = parser.add_argument_group(
+        "record handling", "Arguments for determining record staleness and replacement."
+    )
+
+    group.add_argument(
+        "--replacement-strategy",
+        type=ReplacementStrategy,
+        default=ReplacementStrategy.NEVER,
+        choices=list(ReplacementStrategy),
+        help="Strategy for replacing existing records in benchmark logs when processing them.",
+    )
+
+
 _query_cmd_parser = _cli_subparsers.add_parser(
     "query", help="Query the model(s) on the questions from the benchmark(s)."
 )
 _add_experiment_args(_query_cmd_parser)
 _add_model_args(_query_cmd_parser)
 _add_datastore_args(_query_cmd_parser)
+_add_record_handling_args(_query_cmd_parser)
 _query_cmd_parser.set_defaults(func=_query_main)
 
 #######################################
@@ -390,7 +409,8 @@ def _eval_main(args: argparse.Namespace) -> None:
     # pylint: disable=import-outside-toplevel
     from tqdm import tqdm
 
-    from faith.cli.subcmd.eval import RecordHandlingParams, evaluate_experiment
+    from faith.cli.subcmd.eval import evaluate_experiment
+    from faith.record_pipelines.params import RecordHandlingParams
 
     experiment_paths = (
         args.experiment_path.glob("**/experiment.json")
@@ -404,29 +424,10 @@ def _eval_main(args: argparse.Namespace) -> None:
         evaluate_experiment(
             experiment_path,
             RecordHandlingParams(
-                annotate_prediction_stats=args.cache_prediction_stats,
-                recompute_stats=args.force_compute_stats,
+                replacement_strategy=args.replacement_strategy,
             ),
             metrics_output_path=experiment_path.parent / "metrics.json",
         )
-
-
-def _add_eval_args(parser: argparse.ArgumentParser) -> None:
-    """Add arguments for the eval configuration to `parser`."""
-    group = parser.add_argument_group("eval", "Arguments for metrics configuration")
-
-    group.add_argument(
-        "--cache-prediction-stats",
-        action=argparse.BooleanOptionalAction,
-        default=True,
-        help="Whether to store prediction statistics in the original logs to avoid recomputing in the future; this is recommended when using GPT-4o to extract predictions.",
-    )
-    group.add_argument(
-        "--force-compute-stats",
-        action=argparse.BooleanOptionalAction,
-        default=False,
-        help="Forces recomputation of stats even if they are already present in the logs.",
-    )
 
 
 def _add_logs_source_args(parser: argparse.ArgumentParser) -> None:
@@ -447,7 +448,7 @@ def _add_logs_source_args(parser: argparse.ArgumentParser) -> None:
 _eval_parser = _cli_subparsers.add_parser(
     "eval", help="Compute metrics from query responses for each model & benchmark."
 )
-_add_eval_args(_eval_parser)
+_add_record_handling_args(_eval_parser)
 _add_logs_source_args(_eval_parser)
 _eval_parser.set_defaults(func=_eval_main)
 
@@ -546,8 +547,9 @@ def _run_all_main(args: argparse.Namespace) -> None:
     # sub-command has different dependencies and importing them as part of the
     # main CLI script makes autocompletion slow.
     # pylint: disable=import-outside-toplevel
-    from faith.cli.subcmd.eval import RecordHandlingParams, evaluate_experiment
+    from faith.cli.subcmd.eval import evaluate_experiment
     from faith.cli.subcmd.summarize import summarize_experiments
+    from faith.record_pipelines.params import RecordHandlingParams
 
     with DatastoreContext.from_path(args.datastore_location) as datastore:
         with PeriodicTaskContext(
@@ -557,8 +559,7 @@ def _run_all_main(args: argparse.Namespace) -> None:
                 evaluate_experiment(
                     experiment_path,
                     RecordHandlingParams(
-                        annotate_prediction_stats=args.cache_prediction_stats,
-                        recompute_stats=args.force_compute_stats,
+                        replacement_strategy=args.replacement_strategy,
                     ),
                     metrics_output_path=experiment_path.parent / "metrics.json",
                 )
@@ -573,7 +574,7 @@ _run_all_parser = _cli_subparsers.add_parser(
 _add_experiment_args(_run_all_parser)
 _add_model_args(_run_all_parser)
 _add_datastore_args(_run_all_parser)
-_add_eval_args(_run_all_parser)
+_add_record_handling_args(_run_all_parser)
 _add_summarize_args(_run_all_parser)
 _run_all_parser.set_defaults(func=_run_all_main)
 

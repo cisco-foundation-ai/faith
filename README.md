@@ -478,10 +478,11 @@ The `eval` subcommand computes metrics over a set of benchmark's logs.
 <details>
 <summary>Eval Behavior Flags</summary>
 
-- `--cache-prediction-stats` [bool]: whether to store prediction statistics
-  in the original logs to avoid recomputing in the future. [Default: true]
-- `--force-compute-stats` [bool]: forces recomputation of stats even
-  if they are already present in the logs. [Default: false]
+- `--stats-replacement-strategy` [never|always|if_hash_differs]: strategy for
+  replacing existing stats in logs. 'never' keeps existing stats and only computes
+  missing ones; 'always' recomputes all stats; 'if_hash_differs' recomputes stats
+  when the data or model data have changed since stats were last computed.
+  [Default: never]
 
 </details>
 
