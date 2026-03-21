@@ -381,7 +381,7 @@ def _add_record_handling_args(parser: argparse.ArgumentParser) -> None:
     group.add_argument(
         "--replacement-strategy",
         type=ReplacementStrategy,
-        default=ReplacementStrategy.NEVER,
+        default=ReplacementStrategy.IF_HASH_DIFFERS,
         choices=list(ReplacementStrategy),
         help="Strategy for replacing existing records in benchmark logs when processing them.",
     )
