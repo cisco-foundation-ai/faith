@@ -27,7 +27,7 @@ from faith._types.config.benchmark import BenchmarkConfig, ShortAnswerType
 from faith._types.config.patterns import AnswerFormat, PatternDef
 from faith._types.config.scoring import OutputProcessingConfig
 from faith._types.model.generation import GenerationMode
-from faith._types.record.prompt_record import PromptRecord
+from faith._types.record.prompt import PromptRecord
 from faith._types.record.stats import MetricSummary, SingleLabelSeq
 from faith.benchmark.benchmark import BaseBenchmark
 from faith.benchmark.dataset.dataset import BenchmarkDataset

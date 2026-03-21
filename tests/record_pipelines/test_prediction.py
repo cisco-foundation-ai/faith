@@ -11,7 +11,7 @@ from transformers import PreTrainedTokenizerBase
 from faith._types.model.generation import GenerationMode, GenParams
 from faith._types.model.prompt import PromptFormatter
 from faith._types.record.model_response import ChatResponse, GenerationError, TokenPred
-from faith._types.record.sample_record import SampleRecord
+from faith._types.record.sample import SampleRecord
 from faith.model.base import BaseModel, PromptList
 from faith.record_pipelines.prediction import model_querier
 from tests.benchmark.categories.fake_record_maker import make_fake_record

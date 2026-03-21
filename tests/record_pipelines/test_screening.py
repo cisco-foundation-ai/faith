@@ -5,7 +5,7 @@
 
 from faith._internal.iter.common import Functor
 from faith._types.config.patterns import AnswerFormat
-from faith._types.record.sample_record import RecordStatus, ReplacementStrategy
+from faith._types.record.sample import RecordStatus, ReplacementStrategy
 from faith._types.record.stats import StatsRecord
 from faith.record_pipelines.screening import stats_screener
 from tests.benchmark.categories.fake_record_maker import make_fake_record

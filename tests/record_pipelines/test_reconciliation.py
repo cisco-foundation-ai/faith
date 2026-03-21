@@ -6,11 +6,7 @@
 import pytest
 
 from faith._types.model.generation import GenerationMode
-from faith._types.record.sample_record import (
-    RecordStatus,
-    ReplacementStrategy,
-    SampleRecord,
-)
+from faith._types.record.sample import RecordStatus, ReplacementStrategy, SampleRecord
 from faith.record_pipelines.reconciliation import record_reconciler
 from tests.benchmark.categories.fake_record_maker import make_fake_record
 

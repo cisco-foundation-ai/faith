@@ -7,11 +7,7 @@ from collections.abc import Iterable
 from faith._internal.iter.join import LeftJoinTransform
 from faith._internal.iter.transform import Mapping, Transform
 from faith._types.model.generation import GenerationMode
-from faith._types.record.sample_record import (
-    RecordStatus,
-    ReplacementStrategy,
-    SampleRecord,
-)
+from faith._types.record.sample import RecordStatus, ReplacementStrategy, SampleRecord
 
 
 class _RecordReconciliation(

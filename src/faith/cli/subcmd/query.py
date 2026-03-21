@@ -32,10 +32,7 @@ from faith._internal.multiprocessing.gpu_scheduling import (
 from faith._types.model.engine import ModelEngine
 from faith._types.model.generation import GenerationMode
 from faith._types.model.spec import ModelSpec
-from faith._types.record.sample_record import (
-    RecordStatus,
-    SampleRecord,
-)
+from faith._types.record.sample import RecordStatus, SampleRecord
 from faith.benchmark.listing import choices_to_benchmarks, find_benchmarks
 from faith.experiment.experiment import BenchmarkExperiment
 from faith.experiment.params import DataSamplingParams, ExperimentParams

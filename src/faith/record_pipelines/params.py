@@ -4,7 +4,7 @@
 
 from dataclasses import dataclass
 
-from faith._types.record.sample_record import ReplacementStrategy
+from faith._types.record.sample import ReplacementStrategy
 
 
 @dataclass(frozen=True)

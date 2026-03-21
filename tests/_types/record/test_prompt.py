@@ -9,7 +9,7 @@ import pytest
 
 from faith._internal.algo.hash import dict_sha256
 from faith._internal.io.json import read_json_file, write_as_json
-from faith._types.record.prompt_record import PromptRecord
+from faith._types.record.prompt import PromptRecord
 
 
 def test_prompt_record_to_dict() -> None:

@@ -22,7 +22,7 @@ from faith._types.config.format import FormatConfig, InstructionsConfig, PromptC
 from faith._types.config.patterns import PatternDef
 from faith._types.model.generation import GenerationMode
 from faith._types.model.prompt import PromptFormatter
-from faith._types.record.prompt_record import PromptRecord
+from faith._types.record.prompt import PromptRecord
 from faith.benchmark.benchmark import Benchmark, BenchmarkDataset
 from faith.benchmark.formatting.qa import QAFormatter
 from faith.benchmark.grading.grade_aggregator import GradeAggregator

@@ -9,7 +9,7 @@ from faith._internal.iter.transform import IsoTransform
 from faith._types.enums import CIEnum
 from faith._types.model.generation import GenerationMode, GenParams
 from faith._types.record.model_response import ChatResponse, GenerationError
-from faith._types.record.sample_record import SampleRecord
+from faith._types.record.sample import SampleRecord
 from faith.model.base import BaseModel
 
 

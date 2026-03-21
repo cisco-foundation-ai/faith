@@ -4,11 +4,7 @@
 
 from faith._internal.algo.hash import dict_sha256
 from faith._internal.iter.transform import Mapping, Transform
-from faith._types.record.sample_record import (
-    RecordStatus,
-    ReplacementStrategy,
-    SampleRecord,
-)
+from faith._types.record.sample import RecordStatus, ReplacementStrategy, SampleRecord
 
 
 class _CullStaleStats(Mapping[SampleRecord, SampleRecord]):

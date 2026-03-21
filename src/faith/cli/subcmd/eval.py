@@ -18,7 +18,7 @@ from faith._internal.metrics.aggregations import (
 from faith._types.benchmark.spec import BenchmarkSpec
 from faith._types.config.benchmark import BenchmarkConfig
 from faith._types.config.patterns import AnswerFormat, Disambiguation, PatternDef
-from faith._types.record.sample_record import ReplacementStrategy
+from faith._types.record.sample import ReplacementStrategy
 from faith._types.record.stats import MetricSummary
 from faith.benchmark.benchmark import Benchmark
 from faith.benchmark.load import load_benchmark

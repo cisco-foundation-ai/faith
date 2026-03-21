@@ -10,11 +10,7 @@ from faith._internal.io.logging import LoggingTransform
 from faith._internal.iter.common import GetAttrTransform
 from faith._internal.iter.mux import MuxTransform
 from faith._internal.iter.transform import IdentityTransform
-from faith._types.record.sample_record import (
-    RecordStatus,
-    ReplacementStrategy,
-    SampleRecord,
-)
+from faith._types.record.sample import RecordStatus, ReplacementStrategy, SampleRecord
 from faith._types.record.stats import StatsRecord
 from faith.benchmark.grading.log_grader import LogGrader
 from faith.record_pipelines.screening import stats_screener

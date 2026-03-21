@@ -4,7 +4,7 @@
 
 from faith._internal.algo.hash import dict_sha256
 from faith._internal.iter.transform import IsoMapping
-from faith._types.record.sample_record import SampleRecord
+from faith._types.record.sample import SampleRecord
 
 
 class HashModelDataTransform(IsoMapping[SampleRecord]):

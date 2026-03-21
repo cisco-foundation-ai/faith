@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from faith._types.record.sample_record import ReplacementStrategy
+from faith._types.record.sample import ReplacementStrategy
 from faith.cli.subcmd.eval import evaluate_experiment
 from faith.record_pipelines.params import RecordHandlingParams
 

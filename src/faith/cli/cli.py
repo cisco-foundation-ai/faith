@@ -32,7 +32,7 @@ from faith._types.model.engine import EngineParams, ModelEngine
 from faith._types.model.generation import GenerationMode, GenParams
 from faith._types.model.prompt import PromptFormatter
 from faith._types.model.spec import ModelSpec, Reasoning
-from faith._types.record.sample_record import ReplacementStrategy
+from faith._types.record.sample import ReplacementStrategy
 from faith.benchmark.listing import benchmark_choices
 from faith.cli.flags.annotated_path import AnnotatedPath
 from faith.cli.flags.arg_value import DefaultValue, TypeWithDefault, UserValueType

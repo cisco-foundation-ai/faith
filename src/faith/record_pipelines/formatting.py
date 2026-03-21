@@ -7,9 +7,9 @@ from transformers import PreTrainedTokenizerBase
 from faith._internal.algo.hash import dict_sha256
 from faith._internal.iter.transform import Mapping
 from faith._types.model.generation import GenerationMode
-from faith._types.record.model_record import ModelRecord
-from faith._types.record.prompt_record import PromptRecord
-from faith._types.record.sample_record import Metadata, SampleRecord
+from faith._types.record.model import ModelRecord
+from faith._types.record.prompt import PromptRecord
+from faith._types.record.sample import Metadata, SampleRecord
 from faith.benchmark.benchmark import Benchmark
 
 

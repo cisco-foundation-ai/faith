@@ -15,7 +15,7 @@ from faith._types.benchmark.spec import BenchmarkSpec
 from faith._types.config.benchmark import BenchmarkConfig, LongAnswerType
 from faith._types.config.patterns import AnswerFormat, PatternDef
 from faith._types.model.generation import GenerationMode
-from faith._types.record.prompt_record import PromptRecord
+from faith._types.record.prompt import PromptRecord
 from faith._types.record.stats import MetricSummary
 from faith.benchmark.benchmark import BaseBenchmark
 from faith.benchmark.dataset.dataset import BenchmarkDataset

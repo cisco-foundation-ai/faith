@@ -15,7 +15,7 @@ from faith._internal.algo.matching import (
 )
 from faith._types.config.patterns import AnswerFormat, PatternDef
 from faith._types.config.scoring import OutputProcessingConfig
-from faith._types.record.sample_record import SampleRecord
+from faith._types.record.sample import SampleRecord
 from faith._types.record.stats import Labeling, StatsRecord
 from faith.benchmark.grading.log_grader import LogGrader
 
@@ -25,11 +25,13 @@ class LogitsLogGrader(LogGrader):
 
     def _markup_entry(self, log_entry: SampleRecord) -> SampleRecord:
         """Markup a single log entry with the computed statistics / scores."""
-        label: str | None = log_entry.data.label
+        label: Labeling | None = log_entry.data.label
         extracted_pred: str | None = None
         answer_format = AnswerFormat.INVALID
         log_probs: dict[str, float] | None = None
         if label is not None and (logits := log_entry.model_data.logits):
+            assert isinstance(label, str), "LogitsLogGrader only supports string labels"
+
             # TODO(https://github.com/cisco-foundation-ai/faith/issues/26):
             # Handle multiple logits entries; currently assumes only one entry.
             first_token_logits = logits[0] if len(logits) > 0 else []
