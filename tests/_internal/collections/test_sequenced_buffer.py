@@ -13,39 +13,35 @@ def test_sequenced_buffer() -> None:
     # Test adding items at the next index
     buffer.add_at(0, "foo")
     assert len(buffer) == 1
-    assert buffer.next_in_order() == "foo"
+    assert list(buffer.yield_in_order()) == ["foo"]
     assert len(buffer) == 0
 
     # Test adding items at subsequent indices
     buffer.add_at(2, "bar")
     assert len(buffer) == 1
-    assert buffer.next_in_order() is None
+    assert not list(buffer.yield_in_order())
     assert len(buffer) == 1
 
     buffer.add_at(4, "baz")
     assert len(buffer) == 2
-    assert buffer.next_in_order() is None
+    assert not list(buffer.yield_in_order())
     assert len(buffer) == 2
 
     # Fill in the gap at index 1.
     buffer.add_at(1, "qux")
-    assert buffer.next_in_order() == "qux"
-    assert len(buffer) == 2
-    assert buffer.next_in_order() == "bar"
+    assert list(buffer.yield_in_order()) == ["qux", "bar"]
     assert len(buffer) == 1
-    assert buffer.next_in_order() is None
+    assert not list(buffer.yield_in_order())
     assert len(buffer) == 1
 
     # Fill in the gap at index 3.
     buffer.add_at(3, "foo")
-    assert buffer.next_in_order() == "foo"
-    assert len(buffer) == 1
-    assert buffer.next_in_order() == "baz"
+    assert list(buffer.yield_in_order()) == ["foo", "baz"]
     assert len(buffer) == 0
 
     # Buffer should be empty now
+    assert not list(buffer.yield_in_order())
     assert len(buffer) == 0
-    assert buffer.next_in_order() is None
 
 
 def test_sequenced_buffer_no_repeated_indices() -> None:
@@ -56,13 +52,10 @@ def test_sequenced_buffer_no_repeated_indices() -> None:
     with pytest.raises(AssertionError, match="Item at index 1 already exists"):
         buffer.add_at(1, 5 + 6j)
 
-    assert buffer.next_in_order() == 1 + 2j
+    assert list(buffer.yield_in_order()) == [1 + 2j, 3 + 4j]
+    assert len(buffer) == 0
 
     with pytest.raises(
         AssertionError, match="Adding item at prior index 0 is not allowed"
     ):
         buffer.add_at(0, 7 + 8j)
-
-    assert buffer.next_in_order() == 3 + 4j
-    assert buffer.next_in_order() is None
-    assert len(buffer) == 0

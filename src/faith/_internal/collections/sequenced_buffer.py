@@ -8,8 +8,11 @@ The `SequencedBuffer` class is a specialized collection for collecting items
 out of order and returning them in sequence. It is useful for aligning outputs
 created by a set of threads or processes that may not complete in the order
 they were started.
+
+This class is NOT thread-safe, so it should be used in a single-threaded context.
 """
 
+from collections.abc import Iterable
 from heapq import heappop, heappush
 from typing import Generic, TypeVar
 
@@ -42,13 +45,12 @@ class SequencedBuffer(Generic[_T]):
         ), f"Item at index {index} already exists."
         heappush(self._queue, (index, item))
 
-    def next_in_order(self) -> _T | None:
-        """Return the next item in order, or None if the next item is not available."""
-        if not self._queue or self._queue[0][0] != self._next_index:
-            return None
-        _, item = heappop(self._queue)
-        self._next_index += 1
-        return item
+    def yield_in_order(self) -> Iterable[_T]:
+        """Return ordered items starting from the next index, until an item is missing."""
+        while self._queue and self._queue[0][0] == self._next_index:
+            _, item = heappop(self._queue)
+            self._next_index += 1
+            yield item
 
     def __len__(self) -> int:
         """Return the number of items remaining in the buffer."""
