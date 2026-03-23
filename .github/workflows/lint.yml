@@ -22,6 +22,7 @@ jobs:
     permissions:
       contents: read
       packages: read
+      pull-requests: write
       statuses: write
     steps:
       - name: 🔒 harden runner
@@ -49,7 +50,7 @@ jobs:
           TRIVY_CONFIG_FILE: ".trivy.yml"
           YAML_CONFIG_FILE: ".yamllint.yml"
           MULTI_STATUS: false
-          VALIDATE_ALL_CODEBASE: false
+          VALIDATE_ALL_CODEBASE: true
           VALIDATE_BIOME_FORMAT: false
           VALIDATE_BIOME_LINT: false
           VALIDATE_JSCPD: false # TODO: Enable this once we configure jscpd.
