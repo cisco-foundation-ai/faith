@@ -4,15 +4,16 @@
 
 """This module provides functions to compute common metrics for scoring LLMs."""
 
-from typing import Any, Iterator, Sequence
+from collections.abc import Iterator, Sequence
+from typing import Any
 
 import numpy as np
 
-from faith._internal.algo.matching import AnswerFormat
 from faith._internal.metrics.aggregations import cross_count
 from faith._internal.metrics.multilabel import micro_f1_score
-from faith._internal.metrics.types import MultiLabelSeq, SingleLabelSeq
-from faith._internal.types.validation import assert_same_length
+from faith._internal.metrics.validation import assert_same_length
+from faith._types.config.patterns import AnswerFormat
+from faith._types.record.stats import MetricSummary, MultiLabelSeq, SingleLabelSeq
 
 
 def _accuracy(stats: Iterator[tuple[str | None, str | None, bool]]) -> np.float64:
@@ -22,7 +23,7 @@ def _accuracy(stats: Iterator[tuple[str | None, str | None, bool]]) -> np.float6
 
 def _label_metrics(
     label: MultiLabelSeq | SingleLabelSeq, labelset: frozenset[str] | None
-) -> dict[str, Any]:
+) -> MetricSummary:
     """Helper function to compute general metrics about the label."""
     return {"query_count": len(label)} | (
         {
@@ -74,7 +75,7 @@ def _per_subject_metrics(
     prediction: SingleLabelSeq,
     answer_format: Sequence[AnswerFormat],
     subject: SingleLabelSeq | None,
-) -> dict[str, Any]:
+) -> MetricSummary:
     subject_list = subject or []
     unique_subjects = sorted(["" if s is None else s for s in set(subject_list)])
     if len(unique_subjects) <= 1:
@@ -116,7 +117,7 @@ def _per_subject_metrics(
 
 def llm_metadata_metrics(
     num_output_tokens: Sequence[int], max_token_halt: Sequence[bool]
-) -> dict[str, Any]:
+) -> MetricSummary:
     """Helper function to compute metadata metrics for LLM responses."""
     assert_same_length(
         num_output_tokens=num_output_tokens, max_token_halt=max_token_halt
@@ -133,25 +134,20 @@ def llm_prediction_metrics(
     answer_format: Sequence[AnswerFormat],
     subject: SingleLabelSeq | None,
     labelset: frozenset[str] | None,
-) -> dict[str, Any]:
+) -> MetricSummary:
     """Helper function to compute core metrics an llm's sufficient statistics."""
-    if subject is None:
-        assert_same_length(
-            label=label, prediction=prediction, answer_format=answer_format
-        )
-    else:
-        assert_same_length(
-            label=label,
-            prediction=prediction,
-            answer_format=answer_format,
-            subject=subject,
-        )
+    assert_same_length(
+        label=label,
+        prediction=prediction,
+        answer_format=answer_format,
+        subject=subject,
+    )
     assert all(
         lab is None or isinstance(lab, str) for lab in label
-    ), "All labels must be strings."
+    ), "All labels must be string or None."
     assert all(
         pred is None or isinstance(pred, str) for pred in prediction
-    ), "All predictions must be strings."
+    ), "All predictions must be string or None."
 
     return (
         _label_metrics(label, labelset)
@@ -177,7 +173,7 @@ def llm_multilabel_metrics(
     label: MultiLabelSeq,
     prediction: MultiLabelSeq,
     answer_format: Sequence[AnswerFormat],
-) -> dict[str, Any]:
+) -> MetricSummary:
     """Helper function to compute core metrics for multilabel llm's sufficient statistics."""
     assert_same_length(label=label, prediction=prediction, answer_format=answer_format)
     disallowed_labels = [
@@ -220,7 +216,7 @@ def llm_basic_metrics(
     label: SingleLabelSeq,
     prediction: SingleLabelSeq,
     answer_format: Sequence[AnswerFormat],
-) -> dict[str, Any]:
+) -> MetricSummary:
     """Helper function to compute domain-specific metrics from predictions based on the expected label."""
     assert_same_length(label=label, prediction=prediction, answer_format=answer_format)
     assert all(

@@ -5,34 +5,28 @@
 """Core functionality for computing aggregate metrics from benchmark trials."""
 
 from collections.abc import ValuesView
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
 
 from tqdm import tqdm
 
-from faith._internal.config.model_response import model_response_format_config
 from faith._internal.io.json import read_json_file, write_as_json
-from faith._internal.io.logging import LoggingTransform
-from faith._internal.iter.transform import IdentityTransform
 from faith._internal.metrics.aggregations import (
     agg_breakdown_counts,
     agg_trial_stats,
     is_breakdown_dict,
 )
-from faith.benchmark.benchmark import BenchmarkSpec
+from faith._types.benchmark.spec import BenchmarkSpec
+from faith._types.config.benchmark import BenchmarkConfig
+from faith._types.config.patterns import AnswerFormat, Disambiguation, PatternDef
+from faith._types.record.sample import ReplacementStrategy
+from faith._types.record.stats import MetricSummary
+from faith.benchmark.benchmark import Benchmark
 from faith.benchmark.load import load_benchmark
+from faith.record_pipelines.grading import grade_trial_records
+from faith.record_pipelines.params import RecordHandlingParams
 
 
-@dataclass
-class RecordHandlingParams:
-    """Parameters defining the behavior of metrics computation and logging."""
-
-    annotate_prediction_stats: bool
-    recompute_stats: bool
-
-
-def _agg_trials(tms: ValuesView[dict[str, Any]]) -> dict[str, Any]:
+def _agg_trials(tms: ValuesView[MetricSummary]) -> MetricSummary:
     """Aggregate statistics from a collection of trial metrics dictionaries `tms`."""
     num_trials = len(tms)
     total_queries = sum(tm.get("query_count", 0) for tm in tms)
@@ -67,53 +61,71 @@ def _agg_trials(tms: ValuesView[dict[str, Any]]) -> dict[str, Any]:
 
 
 def compute_experiment_metrics(
+    benchmark: Benchmark,
+    trial_logs: dict[str, Path],
+    *,
+    replacement_strategy: ReplacementStrategy = ReplacementStrategy.NEVER,
+    model_format_config: PatternDef | None = None,
+) -> MetricSummary:
+    """Compute a benchmark experiment's metrics from its trial logs."""
+    per_trial_metrics = {
+        trial_key: trial_metrics
+        for trial_key, trial_log_filepath in tqdm(
+            trial_logs.items(), desc="Processing trials", unit="trial", leave=False
+        )
+        if (
+            trial_metrics := grade_trial_records(
+                benchmark.log_grader(model_format_config=model_format_config),
+                trial_log_filepath,
+                replacement_strategy=replacement_strategy,
+            )
+            >> benchmark.grade_aggregator()
+        ).get("query_count", 0)
+        > 0
+    }
+    return {
+        "per_trial_metrics": per_trial_metrics,
+        "stats": _agg_trials(per_trial_metrics.values()),
+    }
+
+
+def evaluate_experiment(
     experiment_path: Path,
     record_params: RecordHandlingParams,
-) -> dict[str, Any]:
-    """Compute metrics for the experiment at the given path."""
+    *,
+    metrics_output_path: Path | None = None,
+) -> MetricSummary:
+    """Evaluate an experiment from trial logs at the given path."""
     experiment_summary = read_json_file(experiment_path)
-    benchmark_spec = BenchmarkSpec.from_dict(
-        experiment_summary["experiment_params"]["benchmark"]
+    format_pattern = experiment_summary["experiment_params"]["model"].get(
+        "response_pattern"
     )
-    benchmark = load_benchmark(benchmark_spec, experiment_summary["benchmark_config"])
-    model_format_config = experiment_summary["experiment_params"]["model"].get(
-        "response_format", model_response_format_config()
-    )
-
-    log_grader = benchmark.log_grader(
-        model_format_config, recompute_stats=record_params.recompute_stats
-    )
-    grade_aggregator = benchmark.grade_aggregator()
-
-    experiment_metrics: dict[str, Any] = {
-        "per_trial_metrics": {
-            trial_key: trial_metrics
-            for trial_key, trial_metadata in tqdm(
-                experiment_summary["trial_records"].items(),
-                desc="Processing trials",
-                unit="trial",
-                leave=False,
-            )
+    metrics = compute_experiment_metrics(
+        load_benchmark(
+            BenchmarkSpec.from_dict(
+                experiment_summary["experiment_params"]["benchmark"]
+            ),
+            BenchmarkConfig.from_dict(experiment_summary["benchmark_config"]),
+        ),
+        {
+            trial_key: trial_log_filepath
+            for trial_key, trial_metadata in experiment_summary["trial_records"].items()
             if (
                 trial_log_filepath := experiment_path.parent
                 / trial_metadata["trial_log_path"]
             ).exists()
-            and (
-                trial_metrics := read_json_file(trial_log_filepath)
-                >> log_grader
-                >> (
-                    LoggingTransform(trial_log_filepath)
-                    if record_params.annotate_prediction_stats
-                    else IdentityTransform[dict[str, Any]]()
-                )
-                >> grade_aggregator
-            ).get("query_count", 0)
-            > 0
-        }
-    }
-    experiment_metrics["stats"] = _agg_trials(
-        experiment_metrics["per_trial_metrics"].values()
+        },
+        replacement_strategy=record_params.replacement_strategy,
+        model_format_config=(
+            PatternDef(
+                pattern=format_pattern or r"(?s).*",
+                disambiguation=Disambiguation.MATCH_ALL,
+                format_type=AnswerFormat.PROPER,
+            )
+            if format_pattern is not None
+            else None
+        ),
     )
-
-    write_as_json(experiment_path.parent / "metrics.json", experiment_metrics)
-    return experiment_metrics
+    if metrics_output_path is not None:
+        write_as_json(metrics_output_path, metrics)
+    return metrics

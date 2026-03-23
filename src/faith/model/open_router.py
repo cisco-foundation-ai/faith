@@ -1,0 +1,63 @@
+# Copyright 2025 Cisco Systems, Inc. and its affiliates
+#
+# SPDX-License-Identifier: Apache-2.0
+
+"""OpenRouter API model implementation of a model backend."""
+
+import os
+from typing import Any
+
+from openrouter import OpenRouter
+
+from faith._types.model.spec import Reasoning
+from faith._types.record.model_response import ChatResponse, GenerationError
+from faith.model.api_model import APIBasedModel
+
+
+class OpenRouterModel(APIBasedModel):
+    """A model that uses the OpenRouter API to generate responses."""
+
+    def __init__(
+        self,
+        name_or_path: str,
+        num_log_probs: int | None = None,
+        reasoning_spec: Reasoning | None = None,
+        api_num_threads: int = 5,
+        api_max_attempts: int = 10,
+        api_retry_sleep_secs: float = 1.0,
+        **_kwargs: Any,
+    ):
+        """Initialize the OpenRouter API backend with the given parameters."""
+        super().__init__(
+            name_or_path,
+            num_log_probs=num_log_probs,
+            reasoning_spec=reasoning_spec,
+            api_num_threads=api_num_threads,
+            api_max_attempts=api_max_attempts,
+            api_retry_sleep_secs=api_retry_sleep_secs,
+        )
+        self._client = OpenRouter(api_key=os.getenv("OPENROUTER_API_KEY", ""))
+
+    def _query_api(
+        self, messages: list[dict[str, str]], **gen_params: Any
+    ) -> ChatResponse:
+        """Helper function to call the OpenRouter API for a single message."""
+        response = self._client.chat.send(
+            model=self.name_or_path, messages=messages, **gen_params
+        )
+        return ChatResponse(
+            output_text=response.choices[0].message.content,
+            num_output_tokens=int(response.usage.completion_tokens),
+            num_prompt_tokens=int(response.usage.prompt_tokens),
+            num_request_tokens=int(response.usage.prompt_tokens),
+            response_text=response.choices[0].message.content,
+            num_response_tokens=int(response.usage.completion_tokens),
+            answer_text=response.choices[0].message.content,
+            num_answer_tokens=int(response.usage.completion_tokens),
+            max_token_halt=response.choices[0].finish_reason == "length",
+        )
+
+    @staticmethod
+    def _handle_query_error(exception: BaseException) -> GenerationError:
+        """Handle exceptions raised when calling the API and return a GenerationError."""
+        return GenerationError(title="OpenRouter API Error", details=str(exception))

@@ -2,9 +2,13 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+from typing import Any
+
 import pytest
 from cvss.exceptions import CVSS3MalformedError
 
+from faith._types.config.patterns import AnswerFormat, CaptureTransform, PatternDef
+from faith._types.config.scoring import ScoreFnConfig
 from faith.benchmark.scores.domain_specific import (
     AliasAccuracyScore,
     CompositeScore,
@@ -12,44 +16,179 @@ from faith.benchmark.scores.domain_specific import (
     DomainSpecificScore,
     JaccardIndex,
     LogScaledScore,
+    _decode_by_hint,
+    _decode_kwargs_by_hints,
 )
-from faith.benchmark.scores.types import Score
+from faith.benchmark.scores.scoring import Score
+
+_PATTERN_DICT = {"pattern": ".*", "format_type": "proper"}
+_PATTERN_DEF = PatternDef(pattern=".*", format_type=AnswerFormat.PROPER)
+_SCORE_FN_DICT = {"type": "cvss"}
+_SCORE_FN_CFG = ScoreFnConfig(type="cvss")
 
 
-def test_score_fn_enum() -> None:
-    # Test valid score function names
-    assert DomainSpecificScore.from_string("cvss") == DomainSpecificScore.CVSS
-    assert str(DomainSpecificScore.CVSS) == "cvss"
+class _StubClass:
+    def __init__(self, patterns: list[PatternDef], name: str, count: int = 0) -> None:
+        pass
+
+
+@pytest.mark.parametrize(
+    "hint, value, expected",
+    [
+        # Direct DataClassJsonMixin subclass
+        (PatternDef, _PATTERN_DICT, _PATTERN_DEF),
+        (ScoreFnConfig, _SCORE_FN_DICT, _SCORE_FN_CFG),
+        # Already decoded — returned as-is
+        (PatternDef, _PATTERN_DEF, _PATTERN_DEF),
+        # Primitives — unchanged
+        (str, "hello", "hello"),
+        (int, 42, 42),
+        (float, 3.14, 3.14),
+        # list[DataClassJsonMixin]
+        (list[PatternDef], [_PATTERN_DICT], [_PATTERN_DEF]),
+        # list[str] — no decoding
+        (list[str], ["a", "b"], ["a", "b"]),
+        # dict[str, DataClassJsonMixin]
+        (dict[str, ScoreFnConfig], {"k": _SCORE_FN_DICT}, {"k": _SCORE_FN_CFG}),
+        # dict[str, float] — no decoding
+        (dict[str, float], {"a": 1.0}, {"a": 1.0}),
+        # dict[str, Any] — no decoding (Any must not match DataClassJsonMixin)
+        (dict[str, Any], {"a": {"nested": True}}, {"a": {"nested": True}}),
+        # Union with DataClassJsonMixin (both orderings)
+        (PatternDef | dict[str, Any], _PATTERN_DICT, _PATTERN_DEF),
+        (dict[str, Any] | PatternDef, _PATTERN_DICT, _PATTERN_DEF),
+        # Optional wrapping (dict[str, ScoreFnConfig] | None)
+        (dict[str, ScoreFnConfig] | None, {"k": _SCORE_FN_DICT}, {"k": _SCORE_FN_CFG}),
+        (dict[str, ScoreFnConfig] | None, None, None),
+        # list of union
+        (list[PatternDef | dict[str, Any]], [_PATTERN_DICT], [_PATTERN_DEF]),
+        # Empty containers
+        (list[PatternDef], [], []),
+        (dict[str, ScoreFnConfig], {}, {}),
+    ],
+    ids=[
+        "direct-dataclass",
+        "direct-scorefnconfig",
+        "already-decoded",
+        "str-passthrough",
+        "int-passthrough",
+        "float-passthrough",
+        "list-dataclass",
+        "list-str-noop",
+        "dict-dataclass",
+        "dict-float-noop",
+        "dict-any-noop",
+        "union-dataclass-first",
+        "union-dataclass-second",
+        "optional-dict-present",
+        "optional-dict-none",
+        "list-union-dataclass",
+        "empty-list",
+        "empty-dict",
+    ],
+)
+def test_decode_by_hint(hint: type, value: Any, expected: Any) -> None:
+    assert _decode_by_hint(hint, value) == expected
+
+
+def test_decode_by_hint_nested_capture_transform() -> None:
+    raw = {
+        "pattern": r"\b(\d+)\b",
+        "format_type": "proper",
+        "capture_transform": {"params": ["x"], "expr": "int(x)"},
+    }
+    result = _decode_by_hint(PatternDef, raw)
+    assert isinstance(result, PatternDef)
+    assert result.capture_transform == CaptureTransform(params=["x"], expr="int(x)")
+
+
+def test_decode_kwargs_by_hints_mixed() -> None:
+    result = _decode_kwargs_by_hints(
+        _StubClass, {"patterns": [_PATTERN_DICT], "name": "test", "count": 5}
+    )
+    assert result == {"patterns": [_PATTERN_DEF], "name": "test", "count": 5}
+
+
+def test_decode_kwargs_by_hints_unknown_kwarg_passthrough() -> None:
+    result = _decode_kwargs_by_hints(_StubClass, {"unknown": {"foo": "bar"}})
+    assert result == {"unknown": {"foo": "bar"}}
+
+
+def test_domain_specific_score_get_score_fn() -> None:
     assert (
         DomainSpecificScore.CVSS.get_score_fn() is not None
     ), "DomainSpecificScore should return a valid scoring function instance"
 
-    # Test invalid score function name
-    with pytest.raises(ValueError):
-        DomainSpecificScore.from_string("invalid_score_fn")
 
-
-def test_score_fn_from_configs() -> None:
+def test_domain_specific_score_from_configs() -> None:
     scores = DomainSpecificScore.from_configs(
-        cvss_score={"type": "cvss"},
-        aliases={
-            "type": "alias_accuracy",
-            "alias_map": {
-                "Benjamin Franklin": [
-                    "Silence Dogood",
-                    "Anthony Afterwit",
-                    "Benevolus",
-                ],
-                "Samuel Clemens": ["Mark Twain"],
+        cvss_score=ScoreFnConfig(type="cvss"),
+        aliases=ScoreFnConfig(
+            type="alias_accuracy",
+            kwargs={
+                "alias_map": {
+                    "Benjamin Franklin": [
+                        "Silence Dogood",
+                        "Anthony Afterwit",
+                        "Benevolus",
+                    ],
+                    "Samuel Clemens": ["Mark Twain"],
+                },
             },
-        },
+        ),
     )
     assert set(scores.keys()) == {"cvss_score", "aliases"}
     assert isinstance(scores["cvss_score"], CVSSScore)
     assert isinstance(scores["aliases"], AliasAccuracyScore)
 
 
-def test_get_cvss_score() -> None:
+def test_domain_specific_score_from_configs_with_raw_dict_sub_scores() -> None:
+    scores = DomainSpecificScore.from_configs(
+        weighted=ScoreFnConfig(
+            type="composite",
+            kwargs={
+                "aggregation": "sub_scores.score.s1",
+                "sub_scores": {
+                    "s1": {
+                        "type": "log_scaled_score",
+                        "tolerance": 0.1,
+                        "scaling": 10.0,
+                    },
+                },
+            },
+        )
+    )
+    assert isinstance(scores["weighted"], CompositeScore)
+    assert scores["weighted"]("10", "10")["value"] == pytest.approx(1.0)
+
+
+def test_domain_specific_score_from_configs_with_nested_composite_raw_dicts() -> None:
+    scores = DomainSpecificScore.from_configs(
+        outer=ScoreFnConfig(
+            type="composite",
+            kwargs={
+                "aggregation": "sub_scores.score.inner",
+                "sub_scores": {
+                    "inner": {
+                        "type": "composite",
+                        "aggregation": "sub_scores.score.leaf",
+                        "sub_scores": {
+                            "leaf": {
+                                "type": "log_scaled_score",
+                                "tolerance": 0.1,
+                                "scaling": 10.0,
+                            },
+                        },
+                    },
+                },
+            },
+        )
+    )
+    result = scores["outer"]("10", "10")
+    assert result["value"] == pytest.approx(1.0)
+
+
+def test_cvss_score_get_cvss_score() -> None:
     # Test valid CVSS vector
     cvss_vector = "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
     score_fn = CVSSScore()
@@ -61,7 +200,7 @@ def test_get_cvss_score() -> None:
         score_fn.get_cvss_score("INVALID:VECTOR")
 
 
-def test_cvssscore() -> None:
+def test_cvss_score() -> None:
     score_fn = CVSSScore()
     label = "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
 
@@ -92,7 +231,7 @@ def test_cvssscore() -> None:
     }, "Score should be 0.0 for None prediction"
 
 
-def test_cvssscore_aggregate() -> None:
+def test_cvss_score_aggregate() -> None:
     score_fn = CVSSScore()
 
     scores = [
@@ -190,7 +329,7 @@ def test_log_scaled_score_aggregate() -> None:
     }
 
 
-def test_alias_accuracy() -> None:
+def test_alias_accuracy_score() -> None:
     score_fn = AliasAccuracyScore(
         {
             "actor1": ["alias1", "alias2"],
@@ -217,7 +356,7 @@ def test_alias_accuracy() -> None:
     }
 
 
-def test_alias_accuracy_aggregate() -> None:
+def test_alias_accuracy_score_aggregate() -> None:
     score_fn = AliasAccuracyScore(
         {
             "actor1": ["alias1", "alias2"],
@@ -235,16 +374,22 @@ def test_alias_accuracy_aggregate() -> None:
     assert aggregated_scores == {"accuracy": pytest.approx(2 / 3)}
 
 
-def test_composite_score_fn_from_configs() -> None:
+def test_composite_score_from_configs() -> None:
     scores = DomainSpecificScore.from_configs(
-        weighted_score={
-            "type": "composite",
-            "aggregation": "sub_scores.weight.cvss_score * sub_scores.score.cvss_score + sub_scores.weight.jaccard_index * sub_scores.score.jaccard_index",
-            "sub_scores": {
-                "cvss_score": {"type": "cvss", "attributes": {"weight": 0.7}},
-                "jaccard_index": {"type": "jaccard", "attributes": {"weight": 0.3}},
+        weighted_score=ScoreFnConfig(
+            type="composite",
+            kwargs={
+                "aggregation": "sub_scores.weight.cvss_score * sub_scores.score.cvss_score + sub_scores.weight.jaccard_index * sub_scores.score.jaccard_index",
+                "sub_scores": {
+                    "cvss_score": ScoreFnConfig(
+                        type="cvss", kwargs={"attributes": {"weight": 0.7}}
+                    ),
+                    "jaccard_index": ScoreFnConfig(
+                        type="jaccard", kwargs={"attributes": {"weight": 0.3}}
+                    ),
+                },
             },
-        }
+        )
     )
     assert set(scores.keys()) == {"weighted_score"}
     assert isinstance(scores["weighted_score"], CompositeScore)
@@ -253,14 +398,16 @@ def test_composite_score_fn_from_configs() -> None:
         ValueError, match="Invalid aggregation expression for composite score"
     ):
         DomainSpecificScore.from_configs(
-            invalid_composite={
-                "type": "composite",
-                "aggregation": "sum(sub_scores.score[k] * sub_scores.weight[k] for k in sub_scores.score.keys())",
-                "sub_scores": {
-                    "cvss_score": {"type": "cvss"},
-                    "jaccard_index": {"type": "jaccard"},
+            invalid_composite=ScoreFnConfig(
+                type="composite",
+                kwargs={
+                    "aggregation": "sum(sub_scores.score[k] * sub_scores.weight[k] for k in sub_scores.score.keys())",
+                    "sub_scores": {
+                        "cvss_score": ScoreFnConfig(type="cvss"),
+                        "jaccard_index": ScoreFnConfig(type="jaccard"),
+                    },
                 },
-            }
+            )
         )
 
 
@@ -268,8 +415,12 @@ def test_composite_score() -> None:
     score_fn = CompositeScore(
         aggregation="0.7 * sub_scores.score.log_1 + 0.3 * sub_scores.score.log_2",
         sub_scores={
-            "log_1": {"type": "log_scaled_score", "tolerance": 0.1, "scaling": 10.0},
-            "log_2": {"type": "log_scaled_score", "tolerance": 0.5, "scaling": 2.0},
+            "log_1": ScoreFnConfig(
+                type="log_scaled_score", kwargs={"tolerance": 0.1, "scaling": 10.0}
+            ),
+            "log_2": ScoreFnConfig(
+                type="log_scaled_score", kwargs={"tolerance": 0.5, "scaling": 2.0}
+            ),
         },
     )
     assert score_fn("100", None) == {
@@ -306,18 +457,14 @@ def test_composite_score() -> None:
     attr_weight_score_fn = CompositeScore(
         aggregation="sum(sub_scores.score[k] * sub_scores.weight[k] for k in sub_scores.score.keys()) / sum(sub_scores.weight.values())",
         sub_scores={
-            "log_1": {
-                "type": "log_scaled_score",
-                "tolerance": 0.1,
-                "scaling": 10.0,
-                "attributes": {"weight": 3},
-            },
-            "log_2": {
-                "type": "log_scaled_score",
-                "tolerance": 0.5,
-                "scaling": 2.0,
-                "attributes": {"weight": 1},
-            },
+            "log_1": ScoreFnConfig(
+                type="log_scaled_score",
+                kwargs={"tolerance": 0.1, "scaling": 10.0, "attributes": {"weight": 3}},
+            ),
+            "log_2": ScoreFnConfig(
+                type="log_scaled_score",
+                kwargs={"tolerance": 0.5, "scaling": 2.0, "attributes": {"weight": 1}},
+            ),
         },
     )
     assert attr_weight_score_fn("100", None) == {
@@ -356,8 +503,12 @@ def test_composite_score_aggregate() -> None:
     score_fn = CompositeScore(
         aggregation="0.7 * sub_scores.score.log_1 + 0.3 * sub_scores.score.log_2",
         sub_scores={
-            "log_1": {"type": "log_scaled_score", "tolerance": 0.1, "scaling": 10.0},
-            "log_2": {"type": "log_scaled_score", "tolerance": 0.5, "scaling": 2.0},
+            "log_1": ScoreFnConfig(
+                type="log_scaled_score", kwargs={"tolerance": 0.1, "scaling": 10.0}
+            ),
+            "log_2": ScoreFnConfig(
+                type="log_scaled_score", kwargs={"tolerance": 0.5, "scaling": 2.0}
+            ),
         },
     )
 

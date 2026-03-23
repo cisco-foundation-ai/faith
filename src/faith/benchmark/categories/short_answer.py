@@ -8,14 +8,13 @@ This module provides the `SABenchmark` class for short answer benchmarks, which
 extends the `Benchmark` class to handle short answer question-answering tasks.
 """
 
-from enum import Enum
-from typing import Any, Sequence
+from collections.abc import Sequence
+from typing import Any
 
 import numpy as np
 import pandas as pd
 
 from faith._internal.algo.hash import dict_sha256
-from faith._internal.algo.matching import AnswerFormat
 from faith._internal.algo.sampling import NShotSampler
 from faith._internal.metrics.llm import (
     llm_basic_metrics,
@@ -23,27 +22,20 @@ from faith._internal.metrics.llm import (
     llm_multilabel_metrics,
     llm_prediction_metrics,
 )
-from faith._internal.metrics.types import SingleLabelSeq
-from faith._internal.types.flags import GenerationMode
+from faith._types.benchmark.spec import BenchmarkSpec
+from faith._types.config.benchmark import BenchmarkConfig, ShortAnswerType
+from faith._types.config.patterns import AnswerFormat, PatternDef
+from faith._types.config.scoring import OutputProcessingConfig
+from faith._types.model.generation import GenerationMode
+from faith._types.record.prompt import PromptRecord
+from faith._types.record.stats import MetricSummary, SingleLabelSeq
 from faith.benchmark.benchmark import BaseBenchmark
 from faith.benchmark.dataset.dataset import BenchmarkDataset
-from faith.benchmark.formatting.qa import QAFormatter, QARecord
+from faith.benchmark.formatting.qa import QAFormatter
 from faith.benchmark.grading.common_graders import ChatCompletionLogGrader
 from faith.benchmark.grading.grade_aggregator import GradeAggregator
 from faith.benchmark.grading.log_grader import LogGrader
-from faith.benchmark.scores.types import Score
-from faith.benchmark.types import BenchmarkSpec
-
-
-class ShortAnswerType(Enum):
-    """Enum for validation types for short answer benchmarks."""
-
-    # Short answer benchmarks where each answer is treated as a set of labels.
-    LABEL_SET = "label_set"
-    # Short answer benchmarks where each answer is treated as a single string label.
-    STRING_MATCH = "string_match"
-    # Short answer benchmarks where each answer is scored by domain-specific scores.
-    DOMAIN_SPECIFIC = "domain_specific"
+from faith.benchmark.scores.scoring import Score
 
 
 class SABenchmark(BaseBenchmark):
@@ -53,17 +45,20 @@ class SABenchmark(BaseBenchmark):
     # there is no current reason to implement an answer lead-in, which is
     # difficult to implement since short answer benchmarks do not have answer sets.
 
-    def __init__(self, spec: BenchmarkSpec, config: dict[str, Any], **kwargs: Any):
+    def __init__(self, spec: BenchmarkSpec, config: BenchmarkConfig, **kwargs: Any):
         """Initializes the SABenchmark with the given specification and configuration."""
-        super().__init__(spec=spec, config=config, **kwargs)
+        super().__init__(spec, config, **kwargs)
         assert spec.generation_mode not in [
             GenerationMode.LOGITS,
             GenerationMode.NEXT_TOKEN,
         ], "Short answer benchmarks do not support logits/next_token generation mode since short answers may be multiple tokens."
-        self._answer_type = ShortAnswerType(self._config["saqa_config"]["type"])
+        assert (
+            self._config.saqa_config is not None
+        ), "SAQAConfig is required for short answer benchmarks."
+        self._answer_type = self._config.saqa_config.type
         if self._answer_type == ShortAnswerType.DOMAIN_SPECIFIC:
             assert (
-                len(self._config.get("output_processing", {}).get("score_fns", {})) > 0
+                len(self._config.output_processing.score_fns) > 0
             ), "Domain-specific short answer benchmarks must have at least one score function defined."
 
     def _build_dataset(
@@ -84,19 +79,22 @@ class SABenchmark(BaseBenchmark):
         )
 
     def log_grader(
-        self, model_format_config: dict[str, Any], recompute_stats: bool = False
+        self,
+        *,
+        model_format_config: PatternDef | None = None,
     ) -> LogGrader:
         """Fetch a log grader for this benchmark."""
-        op_cfg = self._config["output_processing"]
-        if self.generation_mode == GenerationMode.CHAT_COMPLETION:
-            return ChatCompletionLogGrader(op_cfg, model_format_config, recompute_stats)
+        if self.generation_mode == GenerationMode.CHAT_COMP:
+            return ChatCompletionLogGrader(
+                self._config.output_processing, model_format_config
+            )
         raise ValueError(
-            f"Unsupported generation mode: {self.generation_mode} for multiple-choice log grading."
+            f"Unsupported generation mode: {self.generation_mode} for short answer log grading."
         )
 
     def grade_aggregator(self) -> GradeAggregator:
         """Fetch a grade aggregator for this benchmark."""
-        return SAMetricsAggregator(self._config["output_processing"], self._answer_type)
+        return SAMetricsAggregator(self._config.output_processing, self._answer_type)
 
 
 class SABenchmarkDataset(BenchmarkDataset):
@@ -106,7 +104,7 @@ class SABenchmarkDataset(BenchmarkDataset):
         self,
         formatter: QAFormatter,
         benchmark_data: pd.DataFrame,
-        nshot_samlper: NShotSampler,
+        nshot_sampler: NShotSampler,
         rng: np.random.Generator,
         ancillary_columns: frozenset[str] = frozenset(),
     ):
@@ -114,7 +112,7 @@ class SABenchmarkDataset(BenchmarkDataset):
         super().__init__(
             formatter,
             benchmark_data,
-            nshot_samlper,
+            nshot_sampler,
             rng,
             required_columns=frozenset({"question", "answer"}),
             ancillary_columns=ancillary_columns,
@@ -122,8 +120,11 @@ class SABenchmarkDataset(BenchmarkDataset):
         )
 
     def _format_qa(
-        self, index: int, sample: pd.Series, examples: Sequence[QARecord] | None = None
-    ) -> QARecord:
+        self,
+        index: int,
+        sample: pd.Series,
+        examples: Sequence[PromptRecord] | None = None,
+    ) -> PromptRecord:
         """Format a sample into a question-answer record."""
         return self._formatter.render_qa_record(
             index=index,
@@ -132,7 +133,7 @@ class SABenchmarkDataset(BenchmarkDataset):
             raw_answer=sample["answer"],
             examples=examples,
             choice_map=None,  # Short answer benchmarks are not enumerable.
-            subject=sample.get("subject", None),
+            subject=sample.get("subject"),
             ancillary_data=self._extract_ancillary_data(sample),
         )
 
@@ -141,13 +142,15 @@ class SAMetricsAggregator(GradeAggregator):
     """The `GradeAggregator` for short answer benchmarks."""
 
     def __init__(
-        self, output_processing_config: dict[str, Any], answer_type: ShortAnswerType
+        self,
+        output_processing_config: OutputProcessingConfig,
+        answer_type: ShortAnswerType,
     ):
         """Initializes the SAMetricsAggregator with the given score function definitions."""
         super().__init__(output_processing_config)
         self._answer_type = answer_type
 
-    def _aggregate(self, **kwargs: Sequence[Any]) -> dict[str, Any]:
+    def _aggregate(self, **kwargs: Sequence[Any]) -> MetricSummary:
         """Computes the metrics for this benchmark for its collected sufficient statistics.
 
         Args:
@@ -157,13 +160,13 @@ class SAMetricsAggregator(GradeAggregator):
         Returns:
             Dictionary containing computed metrics.
         """
-        label: Sequence[Any] = kwargs.get("label", [])
-        prediction: Sequence[Any] = kwargs.get("prediction", [])
-        answer_format: Sequence[AnswerFormat] = kwargs.get("answer_format", [])
-        scores: Sequence[dict[str, Score]] = kwargs.get("scores", [])
-        subject: SingleLabelSeq | None = kwargs.get("subject", None)
-        num_output_tokens: Sequence[int] | None = kwargs.get("num_output_tokens", None)
-        max_token_halt: Sequence[bool] | None = kwargs.get("max_token_halt", None)
+        label: Sequence[Any] = kwargs.get("label") or []
+        prediction: Sequence[Any] = kwargs.get("prediction") or []
+        answer_format: Sequence[AnswerFormat] = kwargs.get("answer_format") or []
+        scores: Sequence[dict[str, Score]] = kwargs.get("scores") or []
+        subject: SingleLabelSeq | None = kwargs.get("subject")
+        num_output_tokens: Sequence[int] | None = kwargs.get("num_output_tokens")
+        max_token_halt: Sequence[bool] | None = kwargs.get("max_token_halt")
 
         agg_scores = self._aggregate_scores(scores)  # Compute aggregate custom scores.
         llm_metadata = (

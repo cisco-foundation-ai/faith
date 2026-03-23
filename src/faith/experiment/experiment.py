@@ -4,16 +4,20 @@
 
 """Defines the `BenchmarkExperiment`, which manages an experiment for a benchmark."""
 
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
 
-from faith._internal.types.flags import GenerationMode, SampleRatio
+from faith._internal.algo.hash import dict_sha256
+from faith._internal.io.datastore import Datastore
+from faith._types.benchmark.sample_ratio import SampleRatio
+from faith._types.benchmark.spec import BenchmarkSpec
+from faith._types.config.benchmark import BenchmarkConfig
+from faith._types.model.generation import GenerationMode, GenParams
+from faith._types.model.prompt import PromptFormatter
 from faith.benchmark.benchmark import Benchmark
 from faith.benchmark.config import load_config_from_path
-from faith.benchmark.formatting.prompt import PromptFormatter
 from faith.benchmark.load import load_benchmark
-from faith.benchmark.types import BenchmarkSpec
-from faith.model.params import GenParams
 
 
 class BenchmarkExperiment:
@@ -34,7 +38,7 @@ class BenchmarkExperiment:
         n_shot: SampleRatio,
         model_name: str,
         gen_params: GenParams,
-        datastore_path: Path,
+        root_datastore: Datastore,
         num_trials: int,
         initial_seed: int,
         **kwargs: Any,
@@ -50,7 +54,7 @@ class BenchmarkExperiment:
 
         # State that specifies and configures the benchmark.
         self._benchmark_config = load_config_from_path(self._benchmark_dir)
-        benchmark_name = self._benchmark_config.get("metadata", {}).get("name", None)
+        benchmark_name = self._benchmark_config.metadata.name
         assert benchmark_name, "Benchmark config missing field `metadata.name`."
         self._benchmark_spec = BenchmarkSpec(
             name=benchmark_name,
@@ -60,18 +64,27 @@ class BenchmarkExperiment:
         )
         self._benchmark_kwargs = kwargs
 
-        # State that specifes the model.
+        # State that specifies the model.
         self._model_name = model_name
         self._gen_params = gen_params
 
-        # State for regulating the experiment and its trials.
-        self._datastore_path = datastore_path
+        # Build the experiment's sub-datastore.
+        self._datastore = root_datastore.sub_store(
+            Path(self._benchmark_spec.name)
+            / self._model_name
+            / str(self._benchmark_spec.prompt_format)
+            / str(self._benchmark_spec.generation_mode)
+            / f"{str(self._benchmark_spec.n_shot).replace('/', '_')}_shot"
+            / f"gen_params_{dict_sha256(self._gen_params.to_dict())[-16:]}"
+        )
+
+        # State for regulating the experiment's trials.
         self._num_trials = num_trials
         self._initial_seed = initial_seed
         self._trial = 0
 
     @property
-    def benchmark_config(self) -> dict[str, Any]:
+    def benchmark_config(self) -> BenchmarkConfig:
         """Returns the benchmark configuration loaded from its directory."""
         return self._benchmark_config
 
@@ -81,17 +94,9 @@ class BenchmarkExperiment:
         return self._benchmark_spec
 
     @property
-    def experiment_dir(self) -> Path:
-        """Returns the path of the datastore for this experiment."""
-        return (
-            self._datastore_path
-            / self._benchmark_spec.name
-            / self._model_name
-            / str(self._benchmark_spec.prompt_format)
-            / str(self._benchmark_spec.generation_mode)
-            / f"{str(self._benchmark_spec.n_shot).replace('/', '_')}_shot"
-            / f"gen_params_{self._gen_params.sha256()[-16:]}"
-        )
+    def datastore(self) -> Datastore:
+        """Returns the datastore for this experiment."""
+        return self._datastore
 
     def __iter__(self) -> Iterator[tuple[Benchmark, Path]]:
         """Return an iterator over the benchmark trials."""
@@ -116,7 +121,7 @@ class BenchmarkExperiment:
         trial_path = (
             Path("trials")
             / str(trial_seed)
-            / self.benchmark_spec.sha256()[-16:]
+            / dict_sha256(self.benchmark_spec.to_dict())[-16:]
             / "benchmark-log.json"
         )
         self._trial += 1

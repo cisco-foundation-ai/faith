@@ -44,6 +44,7 @@ jobs:
           PYTHON_FLAKE8_CONFIG_FILE: ".flake8"
           PYTHON_ISORT_CONFIG_FILE: ".isort.cfg"
           PYTHON_PYLINT_CONFIG_FILE: ".python-lint"
+          PYTHON_MYPY_CONFIG_FILE: ".mypy.ini"
           PYTHON_RUFF_CONFIG_FILE: ".ruff.toml"
           TRIVY_CONFIG_FILE: ".trivy.yml"
           YAML_CONFIG_FILE: ".yamllint.yml"

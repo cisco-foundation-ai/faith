@@ -45,6 +45,6 @@ benchmark: !from
               # Some questions are labeled as "English" but have Chinese chars.
               # We filter these out to ensure we only include English questions.
               df["language"].eq("English") &
-              ~df["question"].str.contains(r'[\u4e00-\u9fff]', regex=True) &
+              ~df["question"].str.contains('[\u4e00-\u9fff]', regex=True) &
               df["label"].str.strip().str.upper().isin(["A", "B", "C", "D"])
           ][["question", "choices", "answer"]]

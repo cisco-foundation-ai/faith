@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 write_to = "src/faith/_version.py"
 
 [tool.setuptools.package-data]
-benchmarks = ["__benchmarks__/**/*.csv", "__benchmarks__/**/*.yaml"]
+benchmarks = ["__benchmarks__/**/*.csv", "__benchmarks__/**/*.yaml", "__models__/**/*.yaml"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
@@ -29,17 +29,17 @@ dependencies = [
   "colorlog==6.10.1",
   "cvss==3.6",
   "dataclasses-json==0.6.7",
-  "datasets==4.5.0",
+  "datasets==4.8.3",
   "GitPython==3.1.46",
   "jinja2==3.1.6",
   "numpy==2.2.6",
-  "orjson==3.11.5",
-  "pandas==2.3.3",
+  "orjson==3.11.7",
+  "pandas==3.0.1",
   "pyyaml==6.0.3",
   "scikit-learn==1.8.0",
-  "simpleeval==1.0.3",
-  "tqdm==4.67.1",
-  "transformers==4.57.5",
+  "simpleeval==1.0.7",
+  "tqdm==4.67.3",
+  "transformers==4.57.6",
 ]
 authors = [
   {name = "Baturay Saglam"},
@@ -55,27 +55,38 @@ keywords = ["benchmarks", "cybersecurity", "evaluations", "llm"]
 
 [project.optional-dependencies]
 openai = [
-  "openai==2.15.0",
+  "openai==2.24.0",
+]
+openrouter = [
+  "openrouter==0.7.11",
+]
+sagemaker = [
+  "boto3==1.42.72",
 ]
 vllm = [
-  "bitsandbytes==0.49.1",
-  "torch==2.9.0",
-  "vllm[flashinfer,fastsafetensors]==0.13.0",
+  "bitsandbytes==0.49.2",
+  "torch==2.10.0",
+  "vllm[flashinfer,fastsafetensors]==0.17.1",
 ]
 all-engines = [
-  "cisco-foundation-ai-test-harness[openai, vllm]",
+  "cisco-foundation-ai-test-harness[openai, openrouter, sagemaker, vllm]",
 ]
 metrics = [
-  "tabulate==0.9.0",
+  "tabulate==0.10.0",
+]
+bigquery = [
+  "google-cloud-bigquery==3.40.1",
+  "google-cloud-storage==3.10.0",
 ]
 all = [
-  "cisco-foundation-ai-test-harness[all-engines, metrics]",
+  "cisco-foundation-ai-test-harness[all-engines, metrics, bigquery]",
 ]
 test = [
   "cisco-foundation-ai-test-harness[all]",
   "pytest==9.0.2",
   "pytest-cov==7.0.0",
   "pytest-custom_exit_code==0.3.0",
+  "pytest-unordered==0.7.0",
 ]
 
 [project.scripts]

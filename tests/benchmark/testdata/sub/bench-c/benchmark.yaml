@@ -10,3 +10,6 @@ benchmark:
       name: "bench-c"
       description: "A fake external benchmark."
       state: enabled
+  output_processing: !from
+    '$BENCHMARKS_ROOT/output-processing-template.yaml["output_processing"]':
+      primary_metric: "accuracy.mean"

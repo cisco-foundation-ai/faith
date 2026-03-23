@@ -6,12 +6,39 @@ from pathlib import Path
 
 import pytest
 
-from faith._internal.io.benchmarks import benchmarks_root
-from faith._internal.types.flags import GenerationMode, SampleRatio
-from faith.benchmark.formatting.prompt import PromptFormatter
-from faith.benchmark.types import BenchmarkSpec
+from faith._internal.io.datastore import Datastore
+from faith._internal.io.resources import benchmarks_root
+from faith._types.benchmark.sample_ratio import SampleRatio
+from faith._types.benchmark.spec import BenchmarkSpec
+from faith._types.model.generation import GenerationMode, GenParams
+from faith._types.model.prompt import PromptFormatter
 from faith.experiment.experiment import BenchmarkExperiment
-from faith.model.params import GenParams
+
+
+class FakeDatastore(Datastore):
+    """A fake datastore implementation for testing purposes."""
+
+    def __init__(self, root_path: Path):
+        """Initialize the FakeDatastore with a root path."""
+        self._root_path = root_path
+
+    @property
+    def path(self) -> Path:
+        """The path of the datastore is just the root path for testing."""
+        return self._root_path
+
+    # pylint: disable-next=unused-argument
+    def pull(self, *, raise_on_error: bool = False) -> Path:
+        """Fake pull just returns the root path."""
+        return self._root_path
+
+    # pylint: disable-next=unused-argument
+    def push(self, *, raise_on_error: bool = False) -> None:
+        """Fake push does nothing."""
+
+    def sub_store(self, sub_path: Path) -> Datastore:
+        """Return a new FakeDatastore rooted at the given sub_path."""
+        return FakeDatastore(self._root_path / sub_path)
 
 
 def test_benchmark_experiment() -> None:
@@ -25,22 +52,22 @@ def test_benchmark_experiment() -> None:
     # Test initialization with valid parameters
     experiment = BenchmarkExperiment(
         benchmark_path=benchmarks_root() / "for-unit-test-only",
-        generation_mode=GenerationMode.CHAT_COMPLETION,
+        generation_mode=GenerationMode.CHAT_COMP,
         prompt_format=PromptFormatter.CHAT,
         n_shot=SampleRatio(5),
         model_name="example_model",
         gen_params=gen_params,
-        datastore_path=Path("/tmp"),
+        root_datastore=FakeDatastore(Path("/tmp")),
         num_trials=3,
         initial_seed=3,
     )
-    assert experiment.benchmark_config["metadata"]["name"] == "for-unit-test-only"
-    assert str(experiment.experiment_dir).startswith(
+    assert experiment.benchmark_config.metadata.name == "for-unit-test-only"
+    assert str(experiment.datastore.path).startswith(
         "/tmp/for-unit-test-only/example_model/chat/chat_comp/5_shot/gen_params_"
     )
     assert experiment.benchmark_spec == BenchmarkSpec(
         name="for-unit-test-only",
-        generation_mode=GenerationMode.CHAT_COMPLETION,
+        generation_mode=GenerationMode.CHAT_COMP,
         prompt_format=PromptFormatter.CHAT,
         n_shot=SampleRatio(5),
     )
@@ -58,7 +85,7 @@ def test_benchmark_experiment() -> None:
             n_shot=SampleRatio(0),
             model_name="example_model",
             gen_params=gen_params,
-            datastore_path=Path("/tmp"),
+            root_datastore=FakeDatastore(Path("/tmp")),
             num_trials=3,
             initial_seed=81,
         )
@@ -73,13 +100,13 @@ def test_benchmark_experiment() -> None:
             n_shot=SampleRatio(1, 4),
             model_name="example_model",
             gen_params=gen_params,
-            datastore_path=Path("/tmp"),
+            root_datastore=FakeDatastore(Path("/tmp")),
             num_trials=0,
             initial_seed=27,
         )
 
 
-def test_experiment_iteration() -> None:
+def test_benchmark_experiment_iteration() -> None:
     gen_params = GenParams(
         temperature=0.1,
         top_p=0.5,
@@ -88,12 +115,12 @@ def test_experiment_iteration() -> None:
     )
     experiment = BenchmarkExperiment(
         benchmark_path=benchmarks_root() / "for-unit-test-only",
-        generation_mode=GenerationMode.CHAT_COMPLETION,
+        generation_mode=GenerationMode.CHAT_COMP,
         prompt_format=PromptFormatter.CHAT,
         n_shot=SampleRatio(5),
         model_name="example_model",
         gen_params=gen_params,
-        datastore_path=Path("/tmp"),
+        root_datastore=FakeDatastore(Path("/tmp")),
         num_trials=2,
         initial_seed=375,
     )

@@ -20,12 +20,12 @@ SUPER_LINTER_ENV_FLAGS := $(shell yq eval \
     "$(GITHUB_WORKFLOW_FILE)")
 
 # Define the version of super-linter to use.
-SUPER_LINTER_VERSION := "v8.2.0"
+SUPER_LINTER_VERSION := "v8.5.0"
 
 # Get the absolute path to the root of the main git repository.
 GIT_MAIN := $(shell git rev-parse --path-format=absolute --git-common-dir | sed 's/\/\.git//')
 
-lint: check_installed_docker check_installed_yq
+lint_all: check_installed_docker check_installed_yq
 	@[ ! -n "$$(git status --porcelain)" ] || \
 		( \
 			echo "Error: There are uncommitted changes. Please commit or stash them before running superlint."; \
@@ -36,7 +36,7 @@ lint: check_installed_docker check_installed_yq
 		-e DEFAULT_BRANCH=main \
 		-e LOG_LEVEL=NOTICE \
 		-e RUN_LOCAL=true \
-		-e VALIDATE_ALL_CODEBASE=false \
+		-e VALIDATE_ALL_CODEBASE=true \
 		-v "$(shell pwd):/tmp/lint" \
 		-v "$(GIT_MAIN):$(GIT_MAIN)" \
 		ghcr.io/super-linter/super-linter:$(SUPER_LINTER_VERSION)

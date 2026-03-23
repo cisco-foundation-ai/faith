@@ -8,14 +8,14 @@ from openai.types import CompletionUsage
 from openai.types.chat import ChatCompletion, ChatCompletionMessage
 from openai.types.chat.chat_completion import Choice
 
-from faith.benchmark.formatting.prompt import PromptFormatter
-from faith.model.base import ChatResponse, GenerationError
+from faith._types.model.prompt import PromptFormatter
+from faith._types.record.model_response import ChatResponse, GenerationError
 from faith.model.openai import OpenAIModel
 
 
 @patch("faith.model.openai.OpenAI", spec=True)
 def test_openai_model(mock_openai_client_class: Mock) -> None:
-    # Initialize the OpenAI model with a mock API key
+    # Initialize the OpenAI model with a mock API key.
     model = OpenAIModel("fake_model")
     mock_openai_client_class.assert_called_once_with(api_key=None)
 
@@ -23,7 +23,7 @@ def test_openai_model(mock_openai_client_class: Mock) -> None:
     assert model.name_or_path == "fake_model"
     assert model.supported_formats == {PromptFormatter.CHAT}
 
-    # Test a simple generation call (mocked)
+    # Test a simple generation call (mocked).
     mock_openai_instance = mock_openai_client_class.return_value
     mock_openai_instance.chat.completions.create.return_value = ChatCompletion(
         id="chatcmpl-1234567890",
@@ -45,21 +45,14 @@ def test_openai_model(mock_openai_client_class: Mock) -> None:
     response = model.query(inputs=[[{"role": "user", "content": "Hallo?"}]])
     assert list(response) == [
         ChatResponse(
-            prompt_token_ids=None,
-            num_prompt_tokens=2,
-            prompt_text=None,
-            output_token_ids=None,
-            num_output_tokens=5,
             output_text="Bin dabei!",
-            request_token_ids=None,
+            num_output_tokens=5,
+            num_prompt_tokens=2,
             num_request_tokens=2,
-            request_text=None,
-            response_token_ids=None,
-            num_response_tokens=5,
             response_text="Bin dabei!",
-            answer_token_ids=None,
-            num_answer_tokens=5,
+            num_response_tokens=5,
             answer_text="Bin dabei!",
+            num_answer_tokens=5,
             max_token_halt=False,
         )
     ]
@@ -98,21 +91,14 @@ def test_openai_model_retry(mock_openai_client_class: Mock) -> None:
 
     assert list(response) == [
         ChatResponse(
-            prompt_token_ids=None,
-            num_prompt_tokens=2,
-            prompt_text=None,
-            output_token_ids=None,
-            num_output_tokens=5,
             output_text="Bin dabei!",
-            request_token_ids=None,
+            num_output_tokens=5,
+            num_prompt_tokens=2,
             num_request_tokens=2,
-            request_text=None,
-            response_token_ids=None,
-            num_response_tokens=5,
             response_text="Bin dabei!",
-            answer_token_ids=None,
-            num_answer_tokens=5,
+            num_response_tokens=5,
             answer_text="Bin dabei!",
+            num_answer_tokens=5,
             max_token_halt=False,
         )
     ]

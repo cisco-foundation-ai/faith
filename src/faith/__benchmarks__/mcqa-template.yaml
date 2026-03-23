@@ -38,6 +38,7 @@ instructions: !from &mcqa_instructions
       {%- endfor %}.
 output_processing: !from &mcqa_output_processing
   '$BENCHMARKS_ROOT/output-processing-template.yaml["output_processing"]':
+    primary_metric: "accuracy.mean"
     # These answer formats are designed to capture the answer in various common formats.
     # They include proper and improper formats, with different patterns to match.
     answer_formats:
@@ -45,31 +46,31 @@ output_processing: !from &mcqa_output_processing
         capture_transform:
           params: ["x"]
           expr: "x.upper()"
-        match_disambiguation: "match_if_unique"
+        disambiguation: "match_if_unique"
         format_type: "proper"
       - pattern: '(?i)\banswer\s+is:?\s+(?:\(|\*\*)?([A-Z])\b'
         capture_transform:
           params: ["x"]
           expr: "x.upper()"
-        match_disambiguation: "match_if_unique"
+        disambiguation: "match_if_unique"
         format_type: "improper"
       - pattern: '\(([A-Z])\)'
         capture_transform:
           params: ["x"]
           expr: "x.upper()"
-        match_disambiguation: "match_if_singular"
+        disambiguation: "match_if_singular"
         format_type: "improper"
       - pattern: '(?i)\boption\s+([A-Z])\b'
         capture_transform:
           params: ["x"]
           expr: "x.upper()"
-        match_disambiguation: "match_if_singular"
+        disambiguation: "match_if_singular"
         format_type: "improper"
       - pattern: '(?i)^\W*([A-Z])\W*$' # Single letter answer
         capture_transform:
           params: ["x"]
           expr: "x.upper()"
-        match_disambiguation: "match_if_singular"
+        disambiguation: "match_if_singular"
         format_type: "improper"
 mcqa_common_benchmark:
   mcqa_config: *mcqa_config

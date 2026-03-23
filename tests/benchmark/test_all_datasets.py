@@ -7,20 +7,21 @@ import pandas as pd
 import pytest
 
 from faith._internal.algo.hash import dict_sha256
-from faith._internal.io.benchmarks import benchmarks_root
-from faith._internal.types.flags import GenerationMode, SampleRatio
+from faith._internal.io.resources import benchmarks_root
+from faith._types.benchmark.sample_ratio import SampleRatio
+from faith._types.benchmark.spec import BenchmarkSpec
+from faith._types.model.generation import GenerationMode
+from faith._types.model.prompt import PromptFormatter
 from faith.benchmark.benchmark import Benchmark
 from faith.benchmark.config import load_config_from_path
-from faith.benchmark.formatting.prompt import PromptFormatter
 from faith.benchmark.load import load_benchmark
-from faith.benchmark.types import BenchmarkSpec
 
 
 def load_benchmark_for_test(name: str) -> Benchmark:
     """Load a benchmark with a standard spec for coarse testing purposes."""
     benchmark_spec = BenchmarkSpec(
         name=name,
-        generation_mode=GenerationMode.CHAT_COMPLETION,
+        generation_mode=GenerationMode.CHAT_COMP,
         prompt_format=PromptFormatter.CHAT,
         n_shot=SampleRatio(0),
     )

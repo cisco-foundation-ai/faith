@@ -1,0 +1,12 @@
+# Copyright 2025 Cisco Systems, Inc. and its affiliates
+#
+# SPDX-License-Identifier: Apache-2.0
+
+---
+instruct:
+  temperature: 0.3
+  max_completion_tokens: 5000
+
+reasoning:
+  temperature: 0.6
+  max_completion_tokens: 10000

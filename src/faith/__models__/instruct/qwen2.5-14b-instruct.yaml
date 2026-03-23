@@ -1,0 +1,11 @@
+# Copyright 2025 Cisco Systems, Inc. and its affiliates
+#
+# SPDX-License-Identifier: Apache-2.0
+
+---
+model:
+  path: Qwen/Qwen2.5-14B-Instruct
+  name: qwen2.5-14b-instruct
+  prompt_format: "chat"
+  engine: !from '$MODELS_ROOT/default_engines.yaml["vllm-engine"]'
+  generation: !from '$MODELS_ROOT/default_generation.yaml["instruct"]'

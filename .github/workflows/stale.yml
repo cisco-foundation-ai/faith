@@ -18,7 +18,7 @@ permissions: read-all
 jobs:
   mark-stale:
     # Call reusable workflow file
-    uses: cisco-ospo/.github/.github/workflows/_stale.yml@main
+    uses: cisco-ospo/.github/.github/workflows/_stale.yml@c4668d5c4678f539295df629f7a48d4677808aa8
     permissions:
       contents: read
       issues: write

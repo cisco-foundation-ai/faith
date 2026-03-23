@@ -2,13 +2,13 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from typing import Sequence
+from collections.abc import Sequence
 
 import numpy as np
 import pytest
 
 from faith._internal.metrics.multilabel import _tags_to_matrix, micro_f1_score
-from faith._internal.metrics.types import MultiLabelSeq
+from faith._types.record.stats import MultiLabelSeq
 
 
 @pytest.mark.parametrize(

@@ -9,7 +9,7 @@ from typing import Any
 import numpy as np
 import pytest
 
-from faith._internal.io.json import read_json_file, read_json_logs, write_as_json
+from faith._internal.io.json import read_json_file, read_logs_from_json, write_as_json
 
 
 def test_read_json_file() -> None:
@@ -40,18 +40,19 @@ def test_read_json_file_nonexistent() -> None:
         read_json_file(Path("non_existent_file.json"))
 
 
-def test_read_json_logs() -> None:
-    """Test reading a JSON logs file."""
+@pytest.mark.parametrize(
+    "test_data",
+    [
+        [],
+        [{"name": "test_record_1", "value": 1}, {"name": "test_record_2", "value": 2}],
+    ],
+)
+def test_read_logs_from_json(test_data: list[dict[str, Any]]) -> None:
+    """Test reading a JSON log file of records."""
     with tempfile.NamedTemporaryFile(delete=True) as temp_file:
         temp_path = Path(temp_file.name)
-        test_data = [
-            {"name": "test_record_1", "value": 1},
-            {"name": "test_record_2", "value": 2},
-        ]
         write_as_json(temp_path, test_data)
-
-        logs = read_json_logs(temp_path)
-        assert logs == test_data, f"Expected {test_data}, but got {logs}"
+        assert read_logs_from_json(temp_path) == test_data
 
 
 @pytest.mark.parametrize(

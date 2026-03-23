@@ -6,8 +6,9 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from faith.benchmark.formatting.prompt import PromptFormatter
-from faith.model.base import ChatResponse, TokenPred
+from faith._types.model.prompt import PromptFormatter
+from faith._types.model.spec import Reasoning
+from faith._types.record.model_response import ChatResponse, TokenPred
 from faith.model.vllm import VLLMModel, _remove_longest_common_prefix
 
 
@@ -77,7 +78,7 @@ def test_vllm_model_init_with_reasoning_tokens_as_strings(
     model = VLLMModel(
         name_or_path="test-model",
         tokenizer_name_or_path="test-tokenizer",
-        reasoning_tokens=("<think>", "</think>"),
+        reasoning_spec=Reasoning(start_delimiter="<think>", end_delimiter="</think>"),
     )
 
     # Test that the model has been initialized with the correct reasoning tokens.
@@ -98,7 +99,7 @@ def test_vllm_model_init_with_reasoning_tokens_as_ids(_mock_llm_class: Mock) -> 
     model = VLLMModel(
         name_or_path="test-model",
         tokenizer_name_or_path="test-tokenizer",
-        reasoning_tokens=([100], [101]),
+        reasoning_spec=Reasoning(start_delimiter=[100], end_delimiter=[101]),
     )
 
     # Test that the model has been initialized with the correct reasoning tokens.
@@ -196,21 +197,13 @@ def test_vllm_model_next_token(_mock_llm_class: Mock) -> None:
     # Test query and check resulting ChatResponse object derived from the mock outputs.
     assert list(model.next_token(["Test input"], temperature=0.0)) == [
         ChatResponse(
-            prompt_token_ids=None,
-            num_prompt_tokens=3,
-            prompt_text=None,
-            output_token_ids=None,
-            num_output_tokens=1,
             output_text="next",
-            request_token_ids=None,
+            num_output_tokens=1,
+            num_prompt_tokens=3,
             num_request_tokens=3,
-            request_text=None,
-            response_token_ids=None,
             num_response_tokens=1,
-            response_text=None,
-            answer_token_ids=None,
-            num_answer_tokens=1,
             answer_text="decoded_output",
+            num_answer_tokens=1,
             max_token_halt=True,
         )
     ]
@@ -260,21 +253,13 @@ def test_vllm_model_query(_mock_llm_class: Mock) -> None:
     # Test query and check resulting ChatResponse object derived from the mock outputs.
     assert list(model.query(["Test input"], max_completion_tokens=10)) == [
         ChatResponse(
-            prompt_token_ids=None,
-            num_prompt_tokens=3,
-            prompt_text=None,
-            output_token_ids=None,
-            num_output_tokens=5,
             output_text="This is a full response",
-            request_token_ids=None,
+            num_output_tokens=5,
+            num_prompt_tokens=3,
             num_request_tokens=3,
-            request_text=None,
-            response_token_ids=None,
             num_response_tokens=5,
-            response_text=None,
-            answer_token_ids=None,
-            num_answer_tokens=5,
             answer_text="output_text",
+            num_answer_tokens=5,
             max_token_halt=False,
         )
     ]
@@ -372,7 +357,7 @@ def test_vllm_model_query_with_reasoning_tokens(_mock_llm_class: Mock) -> None:
     model = VLLMModel(
         name_or_path="test-model",
         tokenizer_name_or_path="test-tokenizer",
-        reasoning_tokens=([100], [101, 7]),
+        reasoning_spec=Reasoning(start_delimiter=[100], end_delimiter=[101, 7]),
     )
 
     # Test query and check resulting ChatResponse object derived from the mock outputs.

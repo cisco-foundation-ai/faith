@@ -2,8 +2,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+from collections.abc import Sequence
 from numbers import Number
-from typing import Sequence
 
 import pytest
 

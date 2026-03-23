@@ -1,0 +1,11 @@
+# Copyright 2025 Cisco Systems, Inc. and its affiliates
+#
+# SPDX-License-Identifier: Apache-2.0
+
+---
+model:
+  path: meta-llama/Llama-3.1-70B-Instruct
+  name: llama-3.1-70b-instruct
+  prompt_format: "chat"
+  engine: !from '$MODELS_ROOT/default_engines.yaml["vllm-engine"]'
+  generation: !from '$MODELS_ROOT/default_generation.yaml["instruct"]'

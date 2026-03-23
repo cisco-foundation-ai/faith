@@ -3,22 +3,39 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from pathlib import Path
-from typing import cast
 from unittest.mock import ANY
 
 import pytest
 from transformers import AutoTokenizer
 
-from faith._internal.algo.matching import AnswerFormat
-from faith._internal.types.flags import GenerationMode, SampleRatio
-from faith.benchmark.benchmark import BenchmarkSpec
+from faith._types.benchmark.sample_ratio import SampleRatio
+from faith._types.benchmark.spec import BenchmarkSpec
+from faith._types.config.benchmark import BenchmarkConfig, MCQAConfig
+from faith._types.config.format import FormatConfig, InstructionsConfig, PromptConfig
+from faith._types.config.patterns import (
+    AnswerFormat,
+    CaptureTransform,
+    Disambiguation,
+    PatternDef,
+)
+from faith._types.config.scoring import OutputProcessingConfig
+from faith._types.config.source import (
+    DataFileType,
+    FilesSourceConfig,
+    GitRepoSourceConfig,
+    SourceConfig,
+    SourceOptionsConfig,
+)
+from faith._types.model.generation import GenerationMode
+from faith._types.model.prompt import PromptFormatter
+from faith._types.record.stats import StatsRecord
 from faith.benchmark.categories.multiple_choice import MCBenchmark
-from faith.benchmark.formatting.prompt import PromptFormatter
+from tests.benchmark.categories.fake_record_maker import make_fake_record
 
 TEST_ROOT_DIR = Path(__file__).parent.absolute()
 
 
-def test_multiple_choice_benchmark() -> None:
+def test_mc_benchmark() -> None:
     benchmark = MCBenchmark(
         spec=BenchmarkSpec(
             name="test-bar",
@@ -26,27 +43,27 @@ def test_multiple_choice_benchmark() -> None:
             prompt_format=PromptFormatter.CHAT,
             n_shot=SampleRatio(0),
         ),
-        config={
-            "mcqa_config": {"answer_symbols": ["A", "B"]},
-            "format": {
-                "instructions": {
-                    "system_prompt_template": "You are a compassionate comptroller.",
-                    "base_inst_template": "Please analyze and answer the following question.",
-                    "chat_inst_template": "Please analyze and answer the following question in a chat format.",
-                },
-                "prompt": {
-                    "question_template": """Question: {{ question }}
+        config=BenchmarkConfig(
+            mcqa_config=MCQAConfig(answer_symbols=["A", "B"]),
+            format=FormatConfig(
+                instructions=InstructionsConfig(
+                    system_prompt_template="You are a compassionate comptroller.",
+                    base_inst_template="Please analyze and answer the following question.",
+                    chat_inst_template="Please analyze and answer the following question in a chat format.",
+                ),
+                prompt=PromptConfig(
+                    question_template="""Question: {{ question }}
 
 Choices:
 {% for choice_letter, choice in choice_map.items() -%}
 #{{ choice_letter }}# {{ choice }}{% if not loop.last %}
 {% endif %}{% endfor -%}
 """,
-                    "answer_template": "Antwort--> {{ answer }}",
-                    "prompt_template": "{{ instruction }}\n\n{{ question }}",
-                },
-            },
-        },
+                    answer_template="Antwort--> {{ answer }}",
+                    prompt_template="{{ instruction }}\n\n{{ question }}",
+                ),
+            ),
+        ),
     )
 
     assert benchmark.answer_set == {"A", "B"}
@@ -54,7 +71,7 @@ Choices:
 
 
 @pytest.mark.slow
-def test_multiple_choice_benchmark_answer_leadin() -> None:
+def test_mc_benchmark_answer_leadin() -> None:
     benchmark = MCBenchmark(
         spec=BenchmarkSpec(
             name="test-bar",
@@ -62,27 +79,27 @@ def test_multiple_choice_benchmark_answer_leadin() -> None:
             prompt_format=PromptFormatter.CHAT,
             n_shot=SampleRatio(0),
         ),
-        config={
-            "mcqa_config": {"answer_symbols": ["A", "B"]},
-            "format": {
-                "instructions": {
-                    "system_prompt_template": "You are a compassionate comptroller.",
-                    "base_inst_template": "Please analyze and answer the following question.",
-                    "chat_inst_template": "Please analyze and answer the following question in a chat format.",
-                },
-                "prompt": {
-                    "question_template": """Question: {{ question }}
+        config=BenchmarkConfig(
+            mcqa_config=MCQAConfig(answer_symbols=["A", "B"]),
+            format=FormatConfig(
+                instructions=InstructionsConfig(
+                    system_prompt_template="You are a compassionate comptroller.",
+                    base_inst_template="Please analyze and answer the following question.",
+                    chat_inst_template="Please analyze and answer the following question in a chat format.",
+                ),
+                prompt=PromptConfig(
+                    question_template="""Question: {{ question }}
 
 Choices:
 {% for choice_letter, choice in choice_map.items() -%}
 #{{ choice_letter }}# {{ choice }}{% if not loop.last %}
 {% endif %}{% endfor -%}
 """,
-                    "answer_template": "Antwort--> {{ answer }}",
-                    "prompt_template": "{{ instruction }}\n\n{{ question }}",
-                },
-            },
-        },
+                    answer_template="Antwort--> {{ answer }}",
+                    prompt_template="{{ instruction }}\n\n{{ question }}",
+                ),
+            ),
+        ),
     )
 
     tokenizer = AutoTokenizer.from_pretrained("fdtn-ai/Foundation-Sec-8B")
@@ -90,7 +107,7 @@ Choices:
 
 
 @pytest.mark.slow
-def test_multiple_choice_benchmark_answer_leadin_multiple_answer_vars() -> None:
+def test_mc_benchmark_answer_leadin_multiple_answer_vars() -> None:
     benchmark = MCBenchmark(
         spec=BenchmarkSpec(
             name="test-bar",
@@ -98,27 +115,27 @@ def test_multiple_choice_benchmark_answer_leadin_multiple_answer_vars() -> None:
             prompt_format=PromptFormatter.CHAT,
             n_shot=SampleRatio(0),
         ),
-        config={
-            "mcqa_config": {"answer_symbols": ["A", "B"]},
-            "format": {
-                "instructions": {
-                    "system_prompt_template": "You are a compassionate comptroller.",
-                    "base_inst_template": "Please analyze and answer the following question.",
-                    "chat_inst_template": "Please analyze and answer the following question in a chat format.",
-                },
-                "prompt": {
-                    "question_template": """Question: {{ question }}
+        config=BenchmarkConfig(
+            mcqa_config=MCQAConfig(answer_symbols=["A", "B"]),
+            format=FormatConfig(
+                instructions=InstructionsConfig(
+                    system_prompt_template="You are a compassionate comptroller.",
+                    base_inst_template="Please analyze and answer the following question.",
+                    chat_inst_template="Please analyze and answer the following question in a chat format.",
+                ),
+                prompt=PromptConfig(
+                    question_template="""Question: {{ question }}
 
 Choices:
 {% for choice_letter, choice in choice_map.items() -%}
 #{{ choice_letter }}# {{ choice }}{% if not loop.last %}
 {% endif %}{% endfor -%}
 """,
-                    "answer_template": "{{ answer }}, uhm... final answer is {{ answer }}",
-                    "prompt_template": "{{ instruction }}\n\n{{ question }}",
-                },
-            },
-        },
+                    answer_template="{{ answer }}, uhm... final answer is {{ answer }}",
+                    prompt_template="{{ instruction }}\n\n{{ question }}",
+                ),
+            ),
+        ),
     )
 
     tokenizer = AutoTokenizer.from_pretrained("fdtn-ai/Foundation-Sec-8B")
@@ -129,7 +146,7 @@ Choices:
 
 
 @pytest.mark.slow
-def test_multiple_choice_benchmark_answer_token_map() -> None:
+def test_mc_benchmark_answer_token_map() -> None:
     benchmark = MCBenchmark(
         spec=BenchmarkSpec(
             name="test-bar",
@@ -137,27 +154,27 @@ def test_multiple_choice_benchmark_answer_token_map() -> None:
             prompt_format=PromptFormatter.CHAT,
             n_shot=SampleRatio(0),
         ),
-        config={
-            "mcqa_config": {"answer_symbols": ["A", "B", "C", "D", "E", "F"]},
-            "format": {
-                "instructions": {
-                    "system_prompt_template": "You are a compassionate comptroller.",
-                    "base_inst_template": "Please analyze and answer the following question.",
-                    "chat_inst_template": "Please analyze and answer the following question in a chat format.",
-                },
-                "prompt": {
-                    "question_template": """Question: {{ question }}
+        config=BenchmarkConfig(
+            mcqa_config=MCQAConfig(answer_symbols=["A", "B", "C", "D", "E", "F"]),
+            format=FormatConfig(
+                instructions=InstructionsConfig(
+                    system_prompt_template="You are a compassionate comptroller.",
+                    base_inst_template="Please analyze and answer the following question.",
+                    chat_inst_template="Please analyze and answer the following question in a chat format.",
+                ),
+                prompt=PromptConfig(
+                    question_template="""Question: {{ question }}
 
 Choices:
 {% for choice_letter, choice in choice_map.items() -%}
 #{{ choice_letter }}# {{ choice }}{% if not loop.last %}
 {% endif %}{% endfor -%}
 """,
-                    "answer_template": "Antwort--> {{ answer }}",
-                    "prompt_template": "{{ instruction }}\n\n{{ question }}",
-                },
-            },
-        },
+                    answer_template="Antwort--> {{ answer }}",
+                    prompt_template="{{ instruction }}\n\n{{ question }}",
+                ),
+            ),
+        ),
     )
 
     tokenizer = AutoTokenizer.from_pretrained("fdtn-ai/Foundation-Sec-8B")
@@ -180,7 +197,7 @@ Choices:
     }
 
 
-def test_multiple_choice_benchmark_build_dataset() -> None:
+def test_mc_benchmark_build_dataset() -> None:
     benchmark_1shot = MCBenchmark(
         spec=BenchmarkSpec(
             name="test-bar",
@@ -188,35 +205,35 @@ def test_multiple_choice_benchmark_build_dataset() -> None:
             prompt_format=PromptFormatter.CHAT,
             n_shot=SampleRatio(1),
         ),
-        config={
-            "mcqa_config": {"answer_symbols": ["A", "B", "C"]},
-            "format": {
-                "instructions": {
-                    "system_prompt_template": "You are a compassionate comptroller.",
-                    "base_inst_template": "Please analyze and answer the following question.",
-                    "chat_inst_template": "Please analyze and answer the following question in a chat format.",
-                },
-                "prompt": {
-                    "question_template": """Question: {{ question }}
+        config=BenchmarkConfig(
+            mcqa_config=MCQAConfig(answer_symbols=["A", "B", "C"]),
+            format=FormatConfig(
+                instructions=InstructionsConfig(
+                    system_prompt_template="You are a compassionate comptroller.",
+                    base_inst_template="Please analyze and answer the following question.",
+                    chat_inst_template="Please analyze and answer the following question in a chat format.",
+                ),
+                prompt=PromptConfig(
+                    question_template="""Question: {{ question }}
 
 Choices:
 {% for choice_letter, choice in choice_map.items() -%}
 #{{ choice_letter }}# {{ choice }}{% if not loop.last %}
 {% endif %}{% endfor -%}
 """,
-                    "answer_template": "Antwort--> {{ answer }}",
-                    "prompt_template": "{{ instruction }}\n\n{{ question }}",
-                },
-            },
-            "source": {
-                "ancillary_columns": ["bonus"],
-                "files": {
-                    "type": "csv",
-                    "benchmark_data_paths": ["data/fake_mc_dataset.csv"],
-                    "holdout_data_paths": ["data/fake_mc_holdout_dataset.csv"],
-                },
-                "options": {
-                    "dataframe_transform_expr": """df.assign(
+                    answer_template="Antwort--> {{ answer }}",
+                    prompt_template="{{ instruction }}\n\n{{ question }}",
+                ),
+            ),
+            source=SourceConfig(
+                ancillary_columns=["bonus"],
+                files=FilesSourceConfig(
+                    type=DataFileType.CSV,
+                    benchmark_data_paths=["data/fake_mc_dataset.csv"],
+                    holdout_data_paths=["data/fake_mc_holdout_dataset.csv"],
+                ),
+                options=SourceOptionsConfig(
+                    dataframe_transform_expr="""df.assign(
     question=df["question"].str.strip(),
     answer=df["answer"].str.strip().str.upper(),
     choices=[
@@ -225,16 +242,16 @@ Choices:
     ],
     bonus=df["other"].str.strip(),
 )[["question", "choices", "answer", "bonus"]]""",
-                },
-            },
-        },
+                ),
+            ),
+        ),
         path=TEST_ROOT_DIR,
         seed=123,
     )
     dataset_1shot = benchmark_1shot.build_dataset()
 
     # Compare the questions as dictionaries.
-    assert [q.to_dict() for q in dataset_1shot.iter_data()] == [
+    assert [rec.to_dict() for rec in dataset_1shot.iter_data()] == [
         {
             "benchmark_sample_index": 0,
             "benchmark_sample_hash": ANY,
@@ -273,34 +290,34 @@ Choices:
             prompt_format=PromptFormatter.CHAT,
             n_shot=SampleRatio(0),
         ),
-        config={
-            "mcqa_config": {"answer_symbols": ["A", "B", "C", "D"]},
-            "format": {
-                "instructions": {
-                    "system_prompt_template": "You are a compassionate comptroller.",
-                    "base_inst_template": "Please analyze and answer the following question.",
-                    "chat_inst_template": "Please analyze and answer the following question in a chat format.",
-                },
-                "prompt": {
-                    "question_template": """Question: {{ question }}
+        config=BenchmarkConfig(
+            mcqa_config=MCQAConfig(answer_symbols=["A", "B", "C", "D"]),
+            format=FormatConfig(
+                instructions=InstructionsConfig(
+                    system_prompt_template="You are a compassionate comptroller.",
+                    base_inst_template="Please analyze and answer the following question.",
+                    chat_inst_template="Please analyze and answer the following question in a chat format.",
+                ),
+                prompt=PromptConfig(
+                    question_template="""Question: {{ question }}
 
 Choices:
 {% for choice_letter, choice in choice_map.items() -%}
 #{{ choice_letter }}# {{ choice }}{% if not loop.last %}
 {% endif %}{% endfor -%}
 """,
-                    "answer_template": "Antwort--> {{ answer }}",
-                    "prompt_template": "{{ instruction }}\n\n{{ question }}",
-                },
-            },
-            "source": {
-                "files": {
-                    "type": "json",
-                    "benchmark_data_paths": ["data/*.json"],
-                    "selected_columns": ["questions", "metadata"],
-                },
-                "options": {
-                    "dataframe_transform_expr": """df.assign(
+                    answer_template="Antwort--> {{ answer }}",
+                    prompt_template="{{ instruction }}\n\n{{ question }}",
+                ),
+            ),
+            source=SourceConfig(
+                files=FilesSourceConfig(
+                    type=DataFileType.JSON,
+                    benchmark_data_paths=["data/*.json"],
+                    selected_columns=["questions", "metadata"],
+                ),
+                options=SourceOptionsConfig(
+                    dataframe_transform_expr="""df.assign(
     question=df["question"].str.strip(),
     answer=df["answer"].str.strip().str.upper(),
     choices=[
@@ -308,16 +325,16 @@ Choices:
         for lst in df[sorted(col for col in df.columns if col.startswith("options."))].values.tolist()
     ],
 )[["question", "choices", "answer"]]""",
-                },
-            },
-        },
+                ),
+            ),
+        ),
         path=TEST_ROOT_DIR,
         seed=123,
     )
     dataset_0shot = benchmark_0shot.build_dataset(randomize_choices=True, sample_size=1)
 
     # Compare the questions as dictionaries.
-    assert [q.to_dict() for q in dataset_0shot.iter_data()] == [
+    assert [rec.to_dict() for rec in dataset_0shot.iter_data()] == [
         {
             "benchmark_sample_index": 0,
             "benchmark_sample_hash": ANY,
@@ -330,7 +347,6 @@ Choices:
             "formatted_question": "Question: What is the capital of Germany?\n\nChoices:\n#A# Madrid\n#B# Berlin\n#C# Paris\n#D# Rome",
             "formatted_answer": "Antwort--> B",
             "question_prompt": "Please analyze and answer the following question in a chat format.\n\nQuestion: What is the capital of Germany?\n\nChoices:\n#A# Madrid\n#B# Berlin\n#C# Paris\n#D# Rome",
-            "ancillary_data": None,
         }
     ]
 
@@ -339,7 +355,7 @@ Choices:
 # public git repository we have is CyberMetric; migrate this test to use our own
 # repository when it is public.
 @pytest.mark.slow
-def test_multiple_choice_benchmark_from_git_repo() -> None:
+def test_mc_benchmark_from_git_repo() -> None:
     # Source a benchmark from our git repository at a specific commit.
     benchmark_0shot = MCBenchmark(
         spec=BenchmarkSpec(
@@ -348,37 +364,37 @@ def test_multiple_choice_benchmark_from_git_repo() -> None:
             prompt_format=PromptFormatter.CHAT,
             n_shot=SampleRatio(0),
         ),
-        config={
-            "mcqa_config": {"answer_symbols": ["A", "B", "C", "D"]},
-            "format": {
-                "instructions": {
-                    "system_prompt_template": "You are a compassionate comptroller.",
-                    "base_inst_template": "Please analyze and answer the following question.",
-                    "chat_inst_template": "Please analyze and answer the following question in a chat format.",
-                },
-                "prompt": {
-                    "question_template": """Question: {{ question }}
+        config=BenchmarkConfig(
+            mcqa_config=MCQAConfig(answer_symbols=["A", "B", "C", "D"]),
+            format=FormatConfig(
+                instructions=InstructionsConfig(
+                    system_prompt_template="You are a compassionate comptroller.",
+                    base_inst_template="Please analyze and answer the following question.",
+                    chat_inst_template="Please analyze and answer the following question in a chat format.",
+                ),
+                prompt=PromptConfig(
+                    question_template="""Question: {{ question }}
 
 Choices:
 {% for choice_letter, choice in choice_map.items() -%}
 #{{ choice_letter }}# {{ choice }}{% if not loop.last %}
 {% endif %}{% endfor -%}
 """,
-                    "answer_template": "Antwort--> {{ answer }}",
-                    "prompt_template": "{{ instruction }}\n\n{{ question }}",
-                },
-            },
-            "source": {
-                "git_repo": {
-                    "repo_url": "https://github.com/cybermetric/CyberMetric.git",
-                    "branch": "main",
-                    "commit": "2f5818bd2c19350cd6cfae028b75499ebe4ffd29",
-                    "type": "json",
-                    "benchmark_data_paths": ["CyberMetric-80-v1.json"],
-                    "selected_columns": ["questions"],
-                },
-                "options": {
-                    "dataframe_transform_expr": """df.assign(
+                    answer_template="Antwort--> {{ answer }}",
+                    prompt_template="{{ instruction }}\n\n{{ question }}",
+                ),
+            ),
+            source=SourceConfig(
+                git_repo=GitRepoSourceConfig(
+                    repo_url="https://github.com/cybermetric/CyberMetric.git",
+                    branch="main",
+                    commit="2f5818bd2c19350cd6cfae028b75499ebe4ffd29",
+                    type=DataFileType.JSON,
+                    benchmark_data_paths=["CyberMetric-80-v1.json"],
+                    selected_columns=["questions"],
+                ),
+                options=SourceOptionsConfig(
+                    dataframe_transform_expr="""df.assign(
     question=df["question"].str.strip(),
     answer=df["solution"].str.strip().str.upper(),
     choices=[
@@ -388,15 +404,15 @@ Choices:
         ].values.tolist()
     ],
 )[["question", "choices", "answer"]]""",
-                },
-            },
-        },
+                ),
+            ),
+        ),
         seed=123,
     )
     dataset_0shot = benchmark_0shot.build_dataset(randomize_choices=True, sample_size=1)
 
     # Compare the questions as dictionaries.
-    assert [q.to_dict() for q in dataset_0shot.iter_data()] == [
+    assert [rec.to_dict() for rec in dataset_0shot.iter_data()] == [
         {
             "benchmark_sample_index": 1,
             "benchmark_sample_hash": ANY,
@@ -428,49 +444,52 @@ Choices:
 #B# Generate public keys
 #C# KDF are algorithms used to transform a secret into crucial parameters like keys and Initialization Vectors (IVs)
 #D# Authenticate digital signatures""",
-            "ancillary_data": None,
         }
     ]
 
 
-def test_multiple_choice_benchmark_log_grader() -> None:
-    bench_config = {
-        "mcqa_config": {"answer_symbols": ["A", "B"]},
-        "format": {
-            "instructions": {
-                "system_prompt_template": "You are a compassionate comptroller.",
-                "base_inst_template": "Please analyze and answer the following question.",
-                "chat_inst_template": "Please analyze and answer the following question in a chat format.",
-            },
-            "prompt": {
-                "question_template": """Question: {{ question }}
+def test_mc_benchmark_log_grader() -> None:
+    bench_config = BenchmarkConfig(
+        mcqa_config=MCQAConfig(answer_symbols=["A", "B"]),
+        format=FormatConfig(
+            instructions=InstructionsConfig(
+                system_prompt_template="You are a compassionate comptroller.",
+                base_inst_template="Please analyze and answer the following question.",
+                chat_inst_template="Please analyze and answer the following question in a chat format.",
+            ),
+            prompt=PromptConfig(
+                question_template="""Question: {{ question }}
 
 Choices:
 {% for choice_letter, choice in choice_map.items() -%}
 #{{ choice_letter }}# {{ choice }}{% if not loop.last %}
 {% endif %}{% endfor -%}
 """,
-                "answer_template": "Antwort--> {{ answer }}",
-                "prompt_template": "{{ instruction }}\n\n{{ question }}",
-            },
-        },
-        "output_processing": {
-            "answer_formats": [
-                {
-                    "pattern": r"Antwort-->\s*([A-Z])",
-                    "capture_transform": {"params": ["x"], "expr": "x.strip().upper()"},
-                    "match_disambiguation": "match_first",
-                    "format_type": "proper",
-                },
-                {
-                    "pattern": r"Answer:\s+([A-Z])",
-                    "capture_transform": {"params": ["x"], "expr": "x.strip().upper()"},
-                    "match_disambiguation": "match_last",
-                    "format_type": "improper",
-                },
+                answer_template="Antwort--> {{ answer }}",
+                prompt_template="{{ instruction }}\n\n{{ question }}",
+            ),
+        ),
+        output_processing=OutputProcessingConfig(
+            answer_formats=[
+                PatternDef(
+                    pattern=r"Antwort-->\s*([A-Z])",
+                    capture_transform=CaptureTransform(
+                        params=["x"], expr="x.strip().upper()"
+                    ),
+                    disambiguation=Disambiguation.MATCH_FIRST,
+                    format_type=AnswerFormat.PROPER,
+                ),
+                PatternDef(
+                    pattern=r"Answer:\s+([A-Z])",
+                    capture_transform=CaptureTransform(
+                        params=["x"], expr="x.strip().upper()"
+                    ),
+                    disambiguation=Disambiguation.MATCH_LAST,
+                    format_type=AnswerFormat.IMPROPER,
+                ),
             ],
-        },
-    }
+        ),
+    )
 
     # Test for a benchmark with logits generation mode.
     benchmark_logits = MCBenchmark(
@@ -483,131 +502,127 @@ Choices:
         config=bench_config,
     )
     logits_log_grader = benchmark_logits.log_grader(
-        model_format_config={
-            "pattern": r"(?s)(.*)",
-            "match_disambiguation": "match_all",
-            "format_type": "proper",
-        }
+        model_format_config=PatternDef(
+            pattern=r"(?s)(.*)",
+            disambiguation=Disambiguation.MATCH_ALL,
+            format_type=AnswerFormat.PROPER,
+        )
     )
 
-    assert [log["stats"] for log in [] >> logits_log_grader] == []
+    assert [log.stats for log in [] >> logits_log_grader] == []
     assert [
-        log["stats"]
+        log.stats
         for log in [
-            {
-                "data": {"label": "A"},
-                "model_data": {
+            make_fake_record(
+                data={"label": "A"},
+                model_data={
                     "logits": [
                         [
-                            {"token_id": 1, "logprob": -2.0},
-                            {"token_id": 0, "logprob": -1.5},
-                            {"token_id": 27, "logprob": -1.0},
+                            {"token": "A", "token_id": 1, "logprob": -2.0},
+                            {"token": "B", "token_id": 0, "logprob": -1.5},
+                            {"token": "XZ", "token_id": 27, "logprob": -1.0},
                         ]
                     ],
                     "answer_symbol_ids": {"A": 1, "B": 0},
                 },
-            },
+            ),
         ]
         >> logits_log_grader
     ] == [
-        {
-            "answer_format": AnswerFormat.PROPER,
-            "label": "A",
-            "log_probs": {
+        StatsRecord(
+            label="A",
+            prediction="B",
+            answer_format=AnswerFormat.PROPER,
+            log_probs={
                 "label": pytest.approx(-2.0),
                 "max_other_symbol": pytest.approx(-1.5),
                 "max_other_token": pytest.approx(-1.0),
             },
-            "prediction": "B",
-            "subject": None,
-        }
+        ),
     ]
     assert [
-        log["stats"]
+        log.stats
         for log in [
-            {
-                "data": {"label": "A", "subject": "frankenfood"},
-                "model_data": {
+            make_fake_record(
+                data={"label": "A", "subject": "frankenfood"},
+                model_data={
                     "logits": [
                         [
-                            {"token_id": 1, "logprob": -0.5},
-                            {"token_id": 0, "logprob": -1.5},
-                            {"token_id": 27, "logprob": -2.5},
+                            {"token": "A", "token_id": 1, "logprob": -0.5},
+                            {"token": "B", "token_id": 0, "logprob": -1.5},
+                            {"token": "XZ", "token_id": 27, "logprob": -2.5},
                         ]
                     ],
                     "answer_symbol_ids": {"A": 1, "B": 0},
                 },
-            },
-            {
-                "data": {"label": "B"},
-                "model_data": {
+            ),
+            make_fake_record(
+                data={"label": "B"},
+                model_data={
                     "logits": [
                         [
-                            {"token_id": 3, "logprob": -1.0},
-                            {"token_id": 0, "logprob": -1.5},
+                            {"token": "C", "token_id": 3, "logprob": -1.0},
+                            {"token": "B", "token_id": 0, "logprob": -1.5},
                         ]
                     ],
                     "answer_symbol_ids": {"A": 1, "B": 0},
                 },
-            },
-            {
-                "data": {"label": "A"},
-                "model_data": {
+            ),
+            make_fake_record(
+                data={"label": "A"},
+                model_data={
                     "logits": [
                         [
-                            {"token_id": 7, "logprob": -2.0},
-                            {"token_id": 11, "logprob": -3.25},
+                            {"token": "TH", "token_id": 7, "logprob": -2.0},
+                            {"token": "CZ", "token_id": 11, "logprob": -3.25},
                         ]
                     ],
                     "answer_symbol_ids": {"A": 1, "B": 0},
                 },
-            },
-            {
-                "data": {"label": "A"},
-                "model_data": {"error": {"title": "Oopsy"}},
-            },
+            ),
+            make_fake_record(
+                data={"label": "A"},
+                model_data={"error": {"title": "Oopsy"}},
+            ),
         ]
         >> logits_log_grader
     ] == [
-        {
-            "answer_format": AnswerFormat.PROPER,
-            "label": "A",
-            "log_probs": {
+        StatsRecord(
+            label="A",
+            prediction="A",
+            answer_format=AnswerFormat.PROPER,
+            subject="frankenfood",
+            log_probs={
                 "label": pytest.approx(-0.5),
                 "max_other_symbol": pytest.approx(-1.5),
                 "max_other_token": pytest.approx(-1.5),
             },
-            "prediction": "A",
-            "subject": "frankenfood",
-        },
-        {
-            "answer_format": AnswerFormat.PROPER,
-            "label": "B",
-            "log_probs": {
+        ),
+        StatsRecord(
+            label="B",
+            prediction="B",
+            answer_format=AnswerFormat.PROPER,
+            log_probs={
                 "label": pytest.approx(-1.5),
                 "max_other_symbol": pytest.approx(float("-inf")),
                 "max_other_token": pytest.approx(-1.0),
             },
-            "prediction": "B",
-            "subject": None,
-        },
-        {
-            "answer_format": AnswerFormat.INVALID,
-            "label": "A",
-            "log_probs": {
+        ),
+        StatsRecord(
+            label="A",
+            prediction=None,
+            answer_format=AnswerFormat.INVALID,
+            log_probs={
                 "label": pytest.approx(float("-inf")),
                 "max_other_symbol": pytest.approx(float("-inf")),
                 "max_other_token": pytest.approx(-2.0),
             },
-            "prediction": None,
-            "subject": None,
-        },
-        {
-            "answer_format": AnswerFormat.INVALID,
-            "label": "A",
-            "prediction": None,
-            "subject": None,
-        },
+        ),
+        StatsRecord(
+            label="A",
+            prediction=None,
+            answer_format=AnswerFormat.INVALID,
+        ),
     ]
 
     # Test for a benchmark with next token generation mode.
@@ -621,289 +636,296 @@ Choices:
         config=bench_config,
     )
     next_token_log_grader = benchmark_next_token.log_grader(
-        model_format_config={
-            "pattern": r"(?s)(.*)",
-            "match_disambiguation": "match_all",
-            "format_type": "proper",
-        },
-        recompute_stats=True,
+        model_format_config=PatternDef(
+            pattern=r"(?s)(.*)",
+            disambiguation=Disambiguation.MATCH_ALL,
+            format_type=AnswerFormat.PROPER,
+        ),
     )
 
-    assert [log["stats"] for log in [] >> next_token_log_grader] == []
+    assert [log.stats for log in [] >> next_token_log_grader] == []
     assert [
-        log["stats"]
+        log.stats
         for log in [
-            {
-                "data": {"label": "A"},
-                "model_data": {"next_token": {"output_text": " A"}},
-            },
+            make_fake_record(
+                data={"label": "A"},
+                model_data={"next_token": {"output_text": " A"}},
+            ),
         ]
         >> next_token_log_grader
     ] == [
-        {
-            "answer_format": AnswerFormat.PROPER,
-            "label": "A",
-            "prediction": "A",
-            "subject": None,
-        }
+        StatsRecord(
+            label="A",
+            prediction="A",
+            answer_format=AnswerFormat.PROPER,
+        ),
     ]
     assert [
-        log["stats"]
-        for log in cast(
-            list[dict],
-            [
-                {
-                    "data": {"label": "B", "subject": "octothorpes"},
-                    "model_data": {"next_token": {"output_text": "B"}},
-                    "stats": {
-                        "label": "B",
-                        "prediction": "C",
-                        "answer_format": AnswerFormat.IMPROPER,
-                    },
-                },
-                {
-                    "data": {"label": "A"},
-                    "model_data": {"next_token": {"output_text": " B"}},
-                },
-                {
-                    "data": {"label": "B"},
-                    "model_data": {"next_token": {"output_text": "B or A"}},
-                },
-                {
-                    "data": {"label": "A", "subject": "octothorpes"},
-                    "model_data": {"next_token": {"output_text": "I don't know"}},
-                },
-                {
-                    "data": {"label": "A", "subject": "octothorpes"},
-                    "model_data": {"error": {"title": "Oopie"}},
-                },
-            ],
-        )
+        log.stats
+        for log in [
+            make_fake_record(
+                data={"label": "B", "subject": "octothorpes"},
+                model_data={"next_token": {"output_text": "B"}},
+                stats=StatsRecord(
+                    label="B",
+                    prediction="C",
+                    answer_format=AnswerFormat.IMPROPER,
+                ),
+            ),
+            make_fake_record(
+                data={"label": "A"},
+                model_data={"next_token": {"output_text": " B"}},
+            ),
+            make_fake_record(
+                data={"label": "B"},
+                model_data={"next_token": {"output_text": "B or A"}},
+            ),
+            make_fake_record(
+                data={"label": "A", "subject": "octothorpes"},
+                model_data={"next_token": {"output_text": "I don't know"}},
+            ),
+            make_fake_record(
+                data={"label": "A", "subject": "octothorpes"},
+                model_data={"error": {"title": "Oopie"}},
+            ),
+        ]
         >> next_token_log_grader
     ] == [
-        {
-            "answer_format": AnswerFormat.PROPER,
-            "label": "B",
-            "prediction": "B",
-            "subject": "octothorpes",
-        },
-        {
-            "answer_format": AnswerFormat.PROPER,
-            "label": "A",
-            "prediction": "B",
-            "subject": None,
-        },
-        {
-            "answer_format": AnswerFormat.PROPER,
-            "label": "B",
-            "prediction": "B",
-            "subject": None,
-        },
-        {
-            "answer_format": AnswerFormat.INVALID,
-            "label": "A",
-            "prediction": None,
-            "subject": "octothorpes",
-        },
-        {
-            "answer_format": AnswerFormat.INVALID,
-            "label": "A",
-            "prediction": None,
-            "subject": "octothorpes",
-        },
+        StatsRecord(
+            label="B",
+            prediction="B",
+            answer_format=AnswerFormat.PROPER,
+            subject="octothorpes",
+        ),
+        StatsRecord(
+            label="A",
+            prediction="B",
+            answer_format=AnswerFormat.PROPER,
+        ),
+        StatsRecord(
+            label="B",
+            prediction="B",
+            answer_format=AnswerFormat.PROPER,
+        ),
+        StatsRecord(
+            label="A",
+            prediction=None,
+            answer_format=AnswerFormat.INVALID,
+            subject="octothorpes",
+        ),
+        StatsRecord(
+            label="A",
+            prediction=None,
+            answer_format=AnswerFormat.INVALID,
+            subject="octothorpes",
+        ),
     ]
 
     # Test for a benchmark with chat-completion generation mode.
     benchmark_chat = MCBenchmark(
         spec=BenchmarkSpec(
             name="test-bar",
-            generation_mode=GenerationMode.CHAT_COMPLETION,
+            generation_mode=GenerationMode.CHAT_COMP,
             prompt_format=PromptFormatter.CHAT,
             n_shot=SampleRatio(0),
         ),
         config=bench_config,
     )
     chat_log_grader = benchmark_chat.log_grader(
-        model_format_config={
-            "pattern": r"(?s)(?:\s*:think-on:.*:think-off:(?!.*:think-off:)|\s*:think-on:*)?(.*)",
-            "match_disambiguation": "match_all",
-            "format_type": "proper",
-        }
+        model_format_config=PatternDef(
+            pattern=(
+                r"(?s)"
+                r"(?:\s*:think-on:.*:think-off:(?!.*:think-off:)|\s*:think-on:*)"
+                r"?(.*)"
+            ),
+            disambiguation=Disambiguation.MATCH_ALL,
+            format_type=AnswerFormat.PROPER,
+        )
     )
 
-    assert [log["stats"] for log in [] >> chat_log_grader] == []
+    assert [log.stats for log in [] >> chat_log_grader] == []
     assert [
-        log["stats"]
-        for log in cast(
-            list[dict],
-            [
-                {
-                    "data": {"label": "A"},
-                    "model_data": {
-                        "chat_comp": {
-                            "output_text": "Antwort--> A",
-                            "num_output_tokens": 3,
-                            "max_token_halt": False,
-                        }
-                    },
-                },
-                {
-                    "stats": {
-                        "answer_format": "improper",
-                        "label": "B",
-                        "prediction": "C",
+        log.stats
+        for log in [
+            make_fake_record(
+                data={"label": "A"},
+                model_data={
+                    "chat_comp": {
+                        "answer_text": "Antwort--> A",
+                        "output_text": "Antwort--> A",
+                        "num_output_tokens": 3,
+                        "max_token_halt": False,
                     }
                 },
-                {
-                    "data": {"label": "B"},
-                    "model_data": {
-                        "chat_comp": {
-                            "output_text": "uhm... I have no earthly idea",
-                            "num_output_tokens": 7,
-                            "max_token_halt": True,
-                        },
+            ),
+            make_fake_record(
+                model_data={
+                    "chat_comp": {
+                        "answer_text": "Antwort--> C",
+                        "output_text": "Antwort--> C",
+                        "num_output_tokens": 8,
+                        "max_token_halt": False,
+                    }
+                },
+                stats=StatsRecord(
+                    label="B",
+                    prediction="C",
+                    answer_format=AnswerFormat.IMPROPER,
+                ),
+            ),
+            make_fake_record(
+                data={"label": "B"},
+                model_data={
+                    "chat_comp": {
+                        "answer_text": "uhm... I have no earthly idea",
+                        "output_text": "uhm... I have no earthly idea",
+                        "num_output_tokens": 7,
+                        "max_token_halt": True,
                     },
                 },
-            ],
-        )
+            ),
+        ]
         >> chat_log_grader
     ] == [
-        {
-            "answer_format": AnswerFormat.PROPER,
-            "label": "A",
-            "max_token_halt": False,
-            "num_output_tokens": 3,
-            "prediction": "A",
-            "subject": None,
-        },
-        {
-            "answer_format": AnswerFormat.IMPROPER,
-            "label": "B",
-            "prediction": "C",
-        },
-        {
-            "answer_format": AnswerFormat.INVALID,
-            "label": "B",
-            "max_token_halt": True,
-            "num_output_tokens": 7,
-            "prediction": None,
-            "subject": None,
-        },
+        StatsRecord(
+            label="A",
+            prediction="A",
+            answer_format=AnswerFormat.PROPER,
+            num_output_tokens=3,
+            max_token_halt=False,
+        ),
+        StatsRecord(
+            label=None,
+            prediction="C",
+            answer_format=AnswerFormat.PROPER,
+            num_output_tokens=8,
+            max_token_halt=False,
+        ),
+        StatsRecord(
+            label="B",
+            prediction=None,
+            answer_format=AnswerFormat.INVALID,
+            num_output_tokens=7,
+            max_token_halt=True,
+        ),
     ]
     assert [
-        log["stats"]
+        log.stats
         for log in [
-            {
-                "data": {"label": "A"},
-                "model_data": {
+            make_fake_record(
+                data={"label": "A"},
+                model_data={
                     "chat_comp": {
+                        "answer_text": "Antwort--> A",
                         "output_text": "Antwort--> A",
                         "num_output_tokens": 4,
                         "max_token_halt": False,
                     }
                 },
-            },
-            {
-                "data": {"label": "B"},
-                "model_data": {
+            ),
+            make_fake_record(
+                data={"label": "B"},
+                model_data={
                     "chat_comp": {
+                        "answer_text": ":think-on:I think the answer is B or A.:think-off:Guessing...\n\nAnswer: A",
                         "output_text": ":think-on:I think the answer is B or A.:think-off:Guessing...\n\nAnswer: A",
                         "num_output_tokens": 17,
                         "max_token_halt": True,
                     }
                 },
-            },
-            {
-                "data": {"label": "A"},
-                "model_data": {
+            ),
+            make_fake_record(
+                data={"label": "A"},
+                model_data={
                     "chat_comp": {
+                        "answer_text": "If I had to guess, I would say A",
                         "output_text": "If I had to guess, I would say A",
                         "num_output_tokens": 10,
                         "max_token_halt": False,
                     },
                 },
-            },
-            {
-                "data": {"label": "A"},
-                "model_data": {"error": {"title": "Oops"}},
-            },
+            ),
+            make_fake_record(
+                data={"label": "A"},
+                model_data={"error": {"title": "Oops"}},
+            ),
         ]
         >> chat_log_grader
     ] == [
-        {
-            "answer_format": AnswerFormat.PROPER,
-            "label": "A",
-            "max_token_halt": False,
-            "num_output_tokens": 4,
-            "prediction": "A",
-            "subject": None,
-        },
-        {
-            "answer_format": AnswerFormat.IMPROPER,
-            "label": "B",
-            "max_token_halt": True,
-            "num_output_tokens": 17,
-            "prediction": "A",
-            "subject": None,
-        },
-        {
-            "answer_format": AnswerFormat.INVALID,
-            "label": "A",
-            "max_token_halt": False,
-            "num_output_tokens": 10,
-            "prediction": None,
-            "subject": None,
-        },
-        {
-            "answer_format": AnswerFormat.INVALID,
-            "label": "A",
-            "max_token_halt": False,
-            "num_output_tokens": 0,
-            "prediction": None,
-            "subject": None,
-        },
+        StatsRecord(
+            label="A",
+            prediction="A",
+            answer_format=AnswerFormat.PROPER,
+            num_output_tokens=4,
+            max_token_halt=False,
+        ),
+        StatsRecord(
+            label="B",
+            prediction="A",
+            answer_format=AnswerFormat.IMPROPER,
+            num_output_tokens=17,
+            max_token_halt=True,
+        ),
+        StatsRecord(
+            label="A",
+            prediction=None,
+            answer_format=AnswerFormat.INVALID,
+            num_output_tokens=10,
+            max_token_halt=False,
+        ),
+        StatsRecord(
+            label="A",
+            prediction=None,
+            answer_format=AnswerFormat.INVALID,
+            num_output_tokens=0,
+            max_token_halt=False,
+        ),
     ]
 
 
 @pytest.mark.filterwarnings("ignore::RuntimeWarning")
-def test_multiple_choice_benchmark_grade_aggregator_logits() -> None:
-    bench_config = {
-        "mcqa_config": {"answer_symbols": ["A", "B"]},
-        "format": {
-            "instructions": {
-                "system_prompt_template": "You are a compassionate comptroller.",
-                "base_inst_template": "Please analyze and answer the following question.",
-                "chat_inst_template": "Please analyze and answer the following question in a chat format.",
-            },
-            "prompt": {
-                "question_template": """Question: {{ question }}
+def test_mc_benchmark_grade_aggregator_logits() -> None:
+    bench_config = BenchmarkConfig(
+        mcqa_config=MCQAConfig(answer_symbols=["A", "B"]),
+        format=FormatConfig(
+            instructions=InstructionsConfig(
+                system_prompt_template="You are a compassionate comptroller.",
+                base_inst_template="Please analyze and answer the following question.",
+                chat_inst_template="Please analyze and answer the following question in a chat format.",
+            ),
+            prompt=PromptConfig(
+                question_template="""Question: {{ question }}
 
 Choices:
 {% for choice_letter, choice in choice_map.items() -%}
 #{{ choice_letter }}# {{ choice }}{% if not loop.last %}
 {% endif %}{% endfor -%}
 """,
-                "answer_template": "Antwort--> {{ answer }}",
-                "prompt_template": "{{ instruction }}\n\n{{ question }}",
-            },
-        },
-        "output_processing": {
-            "answer_formats": [
-                {
-                    "pattern": r"Antwort-->\s*([A-Z])",
-                    "capture_transform": {"params": ["x"], "expr": "x.strip().upper()"},
-                    "match_disambiguation": "match_first",
-                    "format_type": "proper",
-                },
-                {
-                    "pattern": r"Answer:\s+([A-Z])",
-                    "capture_transform": {"params": ["x"], "expr": "x.strip().upper()"},
-                    "match_disambiguation": "match_last",
-                    "format_type": "improper",
-                },
+                answer_template="Antwort--> {{ answer }}",
+                prompt_template="{{ instruction }}\n\n{{ question }}",
+            ),
+        ),
+        output_processing=OutputProcessingConfig(
+            answer_formats=[
+                PatternDef(
+                    pattern=r"Antwort-->\s*([A-Z])",
+                    capture_transform=CaptureTransform(
+                        params=["x"], expr="x.strip().upper()"
+                    ),
+                    disambiguation=Disambiguation.MATCH_FIRST,
+                    format_type=AnswerFormat.PROPER,
+                ),
+                PatternDef(
+                    pattern=r"Answer:\s+([A-Z])",
+                    capture_transform=CaptureTransform(
+                        params=["x"], expr="x.strip().upper()"
+                    ),
+                    disambiguation=Disambiguation.MATCH_LAST,
+                    format_type=AnswerFormat.IMPROPER,
+                ),
             ],
-        },
-    }
+        ),
+    )
 
     benchmark_chat = MCBenchmark(
         spec=BenchmarkSpec(
@@ -946,63 +968,52 @@ Choices:
         "weighted_avg_f1": pytest.approx(float("nan"), nan_ok=True),
     }
 
-    assert cast(
-        list[dict],
-        [
-            {
-                "stats": {
-                    "label": "A",
-                    "log_probs": {
-                        "label": -2.0,
-                        "max_other_symbol": -1.5,
-                        "max_other_token": -1.0,
-                    },
-                    "prediction": "B",
-                    "answer_format": AnswerFormat.PROPER,
-                    "subject": "bumbershoots",
-                }
+    assert [
+        StatsRecord(
+            label="A",
+            log_probs={
+                "label": -2.0,
+                "max_other_symbol": -1.5,
+                "max_other_token": -1.0,
             },
-            {
-                "stats": {
-                    "label": "B",
-                    "log_probs": {
-                        "label": -0.5,
-                        "max_other_symbol": -1.5,
-                        "max_other_token": -1.0,
-                    },
-                    "prediction": "B",
-                    "answer_format": AnswerFormat.PROPER,
-                    "subject": "bumbershoots",
-                }
+            prediction="B",
+            answer_format=AnswerFormat.PROPER,
+            subject="bumbershoots",
+        ),
+        StatsRecord(
+            label="B",
+            log_probs={
+                "label": -0.5,
+                "max_other_symbol": -1.5,
+                "max_other_token": -1.0,
             },
-            {
-                "stats": {
-                    "label": "B",
-                    "log_probs": {
-                        "label": -1.5,
-                        "max_other_symbol": -1.0,
-                        "max_other_token": float("-inf"),
-                    },
-                    "prediction": "A",
-                    "answer_format": AnswerFormat.IMPROPER,
-                    "subject": "blabberdash",
-                }
+            prediction="B",
+            answer_format=AnswerFormat.PROPER,
+            subject="bumbershoots",
+        ),
+        StatsRecord(
+            label="B",
+            log_probs={
+                "label": -1.5,
+                "max_other_symbol": -1.0,
+                "max_other_token": float("-inf"),
             },
-            {
-                "stats": {
-                    "label": "A",
-                    "log_probs": {
-                        "label": float("-inf"),
-                        "max_other_symbol": float("-inf"),
-                        "max_other_token": -0.25,
-                    },
-                    "prediction": None,
-                    "answer_format": AnswerFormat.INVALID,
-                    "subject": "blabberdash",
-                }
+            prediction="A",
+            answer_format=AnswerFormat.IMPROPER,
+            subject="blabberdash",
+        ),
+        StatsRecord(
+            label="A",
+            log_probs={
+                "label": float("-inf"),
+                "max_other_symbol": float("-inf"),
+                "max_other_token": -0.25,
             },
-        ],
-    ) >> metric_aggregator == {
+            prediction=None,
+            answer_format=AnswerFormat.INVALID,
+            subject="blabberdash",
+        ),
+    ] >> metric_aggregator == {
         "accuracy": pytest.approx(1 / 4),
         "accuracy_per_subject": {
             "bumbershoots": pytest.approx(1 / 2),
@@ -1052,49 +1063,53 @@ Choices:
 
 
 @pytest.mark.filterwarnings("ignore::RuntimeWarning")
-def test_multiple_choice_benchmark_grade_aggregator_chat() -> None:
-    bench_config = {
-        "mcqa_config": {"answer_symbols": ["A", "B"]},
-        "format": {
-            "instructions": {
-                "system_prompt_template": "You are a compassionate comptroller.",
-                "base_inst_template": "Please analyze and answer the following question.",
-                "chat_inst_template": "Please analyze and answer the following question in a chat format.",
-            },
-            "prompt": {
-                "question_template": """Question: {{ question }}
+def test_mc_benchmark_grade_aggregator_chat() -> None:
+    bench_config = BenchmarkConfig(
+        mcqa_config=MCQAConfig(answer_symbols=["A", "B"]),
+        format=FormatConfig(
+            instructions=InstructionsConfig(
+                system_prompt_template="You are a compassionate comptroller.",
+                base_inst_template="Please analyze and answer the following question.",
+                chat_inst_template="Please analyze and answer the following question in a chat format.",
+            ),
+            prompt=PromptConfig(
+                question_template="""Question: {{ question }}
 
 Choices:
 {% for choice_letter, choice in choice_map.items() -%}
 #{{ choice_letter }}# {{ choice }}{% if not loop.last %}
 {% endif %}{% endfor -%}
 """,
-                "answer_template": "Antwort--> {{ answer }}",
-                "prompt_template": "{{ instruction }}\n\n{{ question }}",
-            },
-        },
-        "output_processing": {
-            "answer_formats": [
-                {
-                    "pattern": r"Antwort-->\s*([A-Z])",
-                    "capture_transform": {"params": ["x"], "expr": "x.strip().upper()"},
-                    "match_disambiguation": "match_first",
-                    "format_type": "proper",
-                },
-                {
-                    "pattern": r"Answer:\s+([A-Z])",
-                    "capture_transform": {"params": ["x"], "expr": "x.strip().upper()"},
-                    "match_disambiguation": "match_last",
-                    "format_type": "improper",
-                },
+                answer_template="Antwort--> {{ answer }}",
+                prompt_template="{{ instruction }}\n\n{{ question }}",
+            ),
+        ),
+        output_processing=OutputProcessingConfig(
+            answer_formats=[
+                PatternDef(
+                    pattern=r"Antwort-->\s*([A-Z])",
+                    capture_transform=CaptureTransform(
+                        params=["x"], expr="x.strip().upper()"
+                    ),
+                    disambiguation=Disambiguation.MATCH_FIRST,
+                    format_type=AnswerFormat.PROPER,
+                ),
+                PatternDef(
+                    pattern=r"Answer:\s+([A-Z])",
+                    capture_transform=CaptureTransform(
+                        params=["x"], expr="x.strip().upper()"
+                    ),
+                    disambiguation=Disambiguation.MATCH_LAST,
+                    format_type=AnswerFormat.IMPROPER,
+                ),
             ],
-        },
-    }
+        ),
+    )
 
     benchmark_chat = MCBenchmark(
         spec=BenchmarkSpec(
             name="test-bar",
-            generation_mode=GenerationMode.CHAT_COMPLETION,
+            generation_mode=GenerationMode.CHAT_COMP,
             prompt_format=PromptFormatter.CHAT,
             n_shot=SampleRatio(0),
         ),
@@ -1133,36 +1148,30 @@ Choices:
     }
 
     assert [
-        {
-            "stats": {
-                "label": "A",
-                "max_token_halt": False,
-                "num_output_tokens": 3,
-                "prediction": "B",
-                "answer_format": AnswerFormat.PROPER,
-                "subject": "bumbershoots",
-            }
-        },
-        {
-            "stats": {
-                "label": "B",
-                "max_token_halt": False,
-                "num_output_tokens": 41,
-                "prediction": "B",
-                "answer_format": AnswerFormat.PROPER,
-                "subject": "bumbershoots",
-            }
-        },
-        {
-            "stats": {
-                "label": "B",
-                "max_token_halt": False,
-                "num_output_tokens": 4,
-                "prediction": "A",
-                "answer_format": AnswerFormat.IMPROPER,
-                "subject": "blabberdash",
-            }
-        },
+        StatsRecord(
+            label="A",
+            max_token_halt=False,
+            num_output_tokens=3,
+            prediction="B",
+            answer_format=AnswerFormat.PROPER,
+            subject="bumbershoots",
+        ),
+        StatsRecord(
+            label="B",
+            max_token_halt=False,
+            num_output_tokens=41,
+            prediction="B",
+            answer_format=AnswerFormat.PROPER,
+            subject="bumbershoots",
+        ),
+        StatsRecord(
+            label="B",
+            max_token_halt=False,
+            num_output_tokens=4,
+            prediction="A",
+            answer_format=AnswerFormat.IMPROPER,
+            subject="blabberdash",
+        ),
     ] >> metric_aggregator == {
         "accuracy": pytest.approx(1 / 3),
         "accuracy_per_subject": {

@@ -4,17 +4,18 @@
 
 """Library of functions for summarizing the metrics from benchmark experiments."""
 
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Sequence
 
 import pandas as pd
 
 from faith._internal.io.json import read_json_file
+from faith._types.record.stats import MetricSummary
 
 
 def _build_experiment_record(
     exp_path: Path, metric_path: Path, selected_stats: Sequence[str]
-) -> dict[str, Any]:
+) -> MetricSummary:
     """Build a record for a single benchmark experiment."""
     assert (
         exp_path.parent == metric_path.parent
@@ -33,7 +34,7 @@ def _build_experiment_record(
     } | {
         f"{stat}_{substat}": value
         for stat in selected_stats
-        for substat, value in metrics["stats"].get(stat, {}).items()
+        for substat, value in (metrics["stats"].get(stat) or {}).items()
     }
 
 

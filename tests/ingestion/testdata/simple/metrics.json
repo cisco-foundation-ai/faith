@@ -1,0 +1,14 @@
+{
+  "stats": {
+    "accuracy": {
+      "mean": 0.8875,
+      "std": 0.0096,
+      "min": 0.8625,
+      "max": 0.9
+    },
+    "weighted_avg_f1": {
+      "mean": 0.8866,
+      "std": 0.01
+    }
+  }
+}

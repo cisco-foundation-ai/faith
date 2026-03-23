@@ -5,13 +5,15 @@
 """Base class `BenchmarkDataset` for all benchmark datasets."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Iterator, Sequence
+from collections.abc import Iterator, Sequence
+from typing import Any
 
 import numpy as np
 import pandas as pd
 
 from faith._internal.algo.sampling import NShotSampler
-from faith.benchmark.formatting.qa import QAFormatter, QARecord
+from faith._types.record.prompt import PromptRecord
+from faith.benchmark.formatting.qa import QAFormatter
 
 
 class BenchmarkDataset(ABC):
@@ -41,27 +43,30 @@ class BenchmarkDataset(ABC):
         self._benchmark_data = benchmark_data
         self._nshot_sampler = nshot_sampler
         self._rng = rng
-        self._ancilliary_columns = ancillary_columns
+        self._ancillary_columns = ancillary_columns
 
     def _extract_ancillary_data(self, sample: pd.Series) -> dict[str, Any] | None:
         """Get the ancillary columns for the benchmark dataset."""
-        if not self._ancilliary_columns:
+        if not self._ancillary_columns:
             return None
-        return {col: sample.get(col, None) for col in self._ancilliary_columns}
+        return {col: sample.get(col) for col in self._ancillary_columns}
 
-    def _get_nshot_examples(self) -> Sequence[QARecord]:
+    def _get_nshot_examples(self) -> Sequence[PromptRecord]:
         """Get the n-shot examples for the prompt."""
         if (nshot_data := self._nshot_sampler.get_nshot_examples()) is not None:
             return [self._format_qa(i, sample) for i, sample in nshot_data.iterrows()]
         return []
 
-    def iter_data(self) -> Iterator[QARecord]:
-        """Iterates over the benchmark dataset, yielding each example as an QARecord object."""
+    def iter_data(self) -> Iterator[PromptRecord]:
+        """Iterates over the benchmark dataset, yielding each example as a PromptRecord."""
         for index, sample in self._benchmark_data.iterrows():
             yield self._format_qa(index, sample, self._get_nshot_examples())
 
     @abstractmethod
     def _format_qa(
-        self, index: int, sample: pd.Series, examples: Sequence[QARecord] | None = None
-    ) -> QARecord:
+        self,
+        index: int,
+        sample: pd.Series,
+        examples: Sequence[PromptRecord] | None = None,
+    ) -> PromptRecord:
         """Format an indexed sample (with examples) into a question-answer record."""

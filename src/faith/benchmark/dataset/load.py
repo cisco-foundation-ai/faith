@@ -5,9 +5,8 @@
 """Load benchmark datasets from various sources and transform them into a standard schema."""
 
 import tempfile
-from enum import Enum
+from collections.abc import Iterable, Sequence
 from pathlib import Path
-from typing import Any, Iterable, Sequence
 
 import git
 import numpy as np
@@ -16,44 +15,30 @@ from datasets import load_dataset
 
 from faith._internal.algo.sampling import sample_partition
 from faith._internal.parsing.expr import evaluate_expr
-from faith._internal.types.flags import SampleRatio
+from faith._types.benchmark.sample_ratio import SampleRatio
+from faith._types.config.source import (
+    DataFileType,
+    FilesSourceConfig,
+    GitRepoSourceConfig,
+    SourceConfig,
+)
 
 # The maximum comprehension length to allow for data transforms.
 MCL_FOR_TRANSFORMS = 10_000_000
 
 
-class _DataFileType(Enum):
-    """Enum for the type of data files."""
-
-    CSV = "csv"
-    JSON = "json"
-    JSONL = "jsonl"
-
-    def __str__(self) -> str:
-        """Return the string representation of the enum."""
-        return self.value
-
-    @staticmethod
-    def from_string(s: str) -> "_DataFileType":
-        """Convert a string to an _DataFileType enum."""
-        try:
-            return _DataFileType[s.upper()]
-        except KeyError as e:
-            raise ValueError(f"Unknown data file type: {s}") from e
-
-
 def _load_data_files(
     file_glob: Iterable[Path],
-    file_type: _DataFileType,
+    file_type: DataFileType,
     selected_columns: Sequence[str] | None,
 ) -> pd.DataFrame:
     """Load all data files from a glob pattern and return a concatenated DataFrame."""
     dfs: list[pd.DataFrame] = []
-    if file_type == _DataFileType.CSV:
+    if file_type == DataFileType.CSV:
         dfs = [pd.read_csv(file) for file in file_glob]
-    elif file_type == _DataFileType.JSON:
+    elif file_type == DataFileType.JSON:
         dfs = [pd.read_json(file) for file in file_glob]
-    elif file_type == _DataFileType.JSONL:
+    elif file_type == DataFileType.JSONL:
         dfs = [pd.read_json(file, lines=True) for file in file_glob]
     assert len(dfs) > 0, f"No {str(file_type)} files found."
     raw_df = pd.concat(dfs, ignore_index=True)
@@ -61,7 +46,7 @@ def _load_data_files(
     # If specified, filter the DataFrame to only include selected columns.
     #
     # TODO(https://github.com/RobustIntelligence/faith/issues/195): The inner
-    # normalization for JSON files is a workaround for the unusual stucture of
+    # normalization for JSON files is a workaround for the unusual structure of
     # Cybermetric's JSON files, which have nested dictionaries;
     # we should consider a more robust solution in the future.
     if selected_columns is not None:
@@ -69,7 +54,7 @@ def _load_data_files(
             [
                 (
                     pd.json_normalize(raw_df[col])
-                    if file_type == _DataFileType.JSON
+                    if file_type == DataFileType.JSON
                     else raw_df[col]
                 )
                 for col in selected_columns
@@ -83,7 +68,7 @@ def _load_data_files(
 def _load_data_from_local_paths(
     base_path: Path,
     rel_globs: list[str],
-    file_type: _DataFileType,
+    file_type: DataFileType,
     selected_columns: Sequence[str] | None,
 ) -> pd.DataFrame | None:
     """Load data files from local paths specified by the relative glob patterns."""
@@ -99,45 +84,42 @@ def _load_data_from_local_paths(
 
 
 def _load_local_data_source(
-    base_path: Path, files_cfg: dict[str, Any]
+    base_path: Path, files_cfg: FilesSourceConfig
 ) -> tuple[pd.DataFrame, pd.DataFrame | None]:
     """Load the benchmark datasets from local files."""
-    file_type = _DataFileType.from_string(files_cfg["type"])
-    selected_columns = files_cfg.get("selected_columns", None)
-
     benchmark_df = _load_data_from_local_paths(
         base_path,
-        files_cfg.get("benchmark_data_paths", None)
-        or [glob for glob in [files_cfg.get("path_glob", None)] if glob is not None],
-        file_type,
-        selected_columns,
+        files_cfg.benchmark_data_paths
+        or [glob for glob in [files_cfg.path_glob] if glob is not None],
+        files_cfg.type,
+        files_cfg.selected_columns,
     )
     assert benchmark_df is not None, "No files for benchmark data were specified/found."
 
     holdout_df = _load_data_from_local_paths(
         base_path,
-        files_cfg.get("holdout_data_paths", None) or [],
-        file_type,
-        selected_columns,
+        files_cfg.holdout_data_paths or [],
+        files_cfg.type,
+        files_cfg.selected_columns,
     )
 
     return benchmark_df, holdout_df
 
 
 def _load_git_data_source(
-    git_repo_cfg: dict[str, Any],
+    git_repo_cfg: GitRepoSourceConfig,
 ) -> tuple[pd.DataFrame, pd.DataFrame | None]:
     """Load the benchmark datasets from a git repository."""
     with tempfile.TemporaryDirectory() as tmpdirname:
         tmp_path = Path(tmpdirname)
         # Clone the git repository to a temporary directory and load selected data.
         repo = git.Repo.clone_from(
-            git_repo_cfg["repo_url"],
+            git_repo_cfg.repo_url,
             tmp_path,
-            branch=git_repo_cfg.get("branch", None) or "main",
+            branch=git_repo_cfg.branch or "main",
         )
-        if git_repo_cfg.get("commit", None) is not None:
-            repo.git.checkout(git_repo_cfg["commit"])
+        if git_repo_cfg.commit is not None:
+            repo.git.checkout(git_repo_cfg.commit)
         assert (
             len(repo.heads) == 1
         ), f"Expected a single branch, but found {len(repo.heads)} branches."
@@ -147,35 +129,33 @@ def _load_git_data_source(
 def _load_data_source(
     benchmark_name: str,
     benchmark_path: Path | None,
-    source_cfg: dict[str, Any],
+    source_cfg: SourceConfig,
 ) -> tuple[pd.DataFrame, pd.DataFrame | None]:
     """Load the benchmark datasets from the specified source configuration."""
-    if "huggingface" in source_cfg:
-        hf_config = source_cfg["huggingface"]
-        ds = load_dataset(hf_config["path"], hf_config.get("subset_name", None))
+    if source_cfg.huggingface is not None:
+        hf_config = source_cfg.huggingface
+        ds = load_dataset(hf_config.path, hf_config.subset_name)
         split = ds
-        if hf_config.get("test_split", None) is not None:
-            split = ds[hf_config["test_split"]]
+        if hf_config.test_split is not None:
+            split = ds[hf_config.test_split]
         df = split.to_pandas()
 
         # Use the dev split, if specified, for few-shot prompting.
-        if hf_config.get("dev_split", None) is not None:
-            return df, ds[hf_config["dev_split"]].to_pandas()
+        if hf_config.dev_split is not None:
+            return df, ds[hf_config.dev_split].to_pandas()
         return df, None
-    if "files" in source_cfg:
+    if source_cfg.files is not None:
         assert benchmark_path is not None, "Benchmark path must be specified."
-        return _load_local_data_source(benchmark_path, source_cfg["files"])
-    if "git_repo" in source_cfg:
-        return _load_git_data_source(source_cfg["git_repo"])
+        return _load_local_data_source(benchmark_path, source_cfg.files)
+    if source_cfg.git_repo is not None:
+        return _load_git_data_source(source_cfg.git_repo)
     raise ValueError(
         f"Unsupported source configuration for benchmark {benchmark_name}:\n{source_cfg}"
     )
 
 
 def load_data(
-    benchmark_name: str,
-    benchmark_path: Path | None,
-    source_cfg: dict[str, Any],
+    benchmark_name: str, benchmark_path: Path | None, source_cfg: SourceConfig
 ) -> tuple[pd.DataFrame, pd.DataFrame | None]:
     """Load the benchmark dataset and transform it into a standard format."""
     df, dev_df = _load_data_source(
@@ -186,7 +166,9 @@ def load_data(
 
     # The benchmark-specific transform function is either loaded from the registry
     # or specified in the source configuration options.
-    if dt_expr := source_cfg.get("options", {}).get("dataframe_transform_expr", None):
+    if dt_expr := (
+        source_cfg.options.dataframe_transform_expr if source_cfg.options else None
+    ):
         df = evaluate_expr(
             dt_expr, names={"df": df}, max_comprehension_length=MCL_FOR_TRANSFORMS
         )

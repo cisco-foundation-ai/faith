@@ -2,42 +2,40 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from typing import Iterable
+from collections.abc import Iterable
 
 from faith._internal.iter.transform import (
     DevNullReducer,
     IdentityTransform,
-    IsoTransform,
+    IsoMapping,
+    Mapping,
     Reducer,
     Transform,
 )
 
 
-class SquareTransform(IsoTransform[int]):
+class SquareTransform(IsoMapping[int]):
     """A simple transform that squares each integer in the generator."""
 
-    def __call__(self, it: Iterable[int]) -> Iterable[int]:
-        """Yield the square of each integer from the input generator."""
-        for item in it:
-            yield item * item
+    def _map_fn(self, element: int) -> int:
+        """Return the square of the integer."""
+        return element * element
 
 
-class IncrementTransform(IsoTransform[int]):
+class IncrementTransform(IsoMapping[int]):
     """A simple transform that increments each integer in the generator."""
 
-    def __call__(self, it: Iterable[int]) -> Iterable[int]:
-        """Yield each integer incremented by one from the input generator."""
-        for item in it:
-            yield item + 1
+    def _map_fn(self, element: int) -> int:
+        """Return the integer incremented by one."""
+        return element + 1
 
 
-class ToStringTransform(Transform[int, str]):
+class ToStringTransform(Mapping[int, str]):
     """A transform that converts each integer to a string."""
 
-    def __call__(self, it: Iterable[int]) -> Iterable[str]:
-        """Yield the string representation of each integer from the input generator."""
-        for item in it:
-            yield str(item)
+    def _map_fn(self, element: int) -> str:
+        """Return the string representation of the integer."""
+        return str(element)
 
 
 class SumReducer(Reducer[int, int]):

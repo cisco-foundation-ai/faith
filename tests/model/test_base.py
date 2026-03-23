@@ -4,7 +4,7 @@
 
 import pytest
 
-from faith.benchmark.formatting.prompt import PromptFormatter
+from faith._types.model.prompt import PromptFormatter
 from faith.model.base import BaseModel, _is_message_list, _is_string_list
 
 

@@ -2,32 +2,28 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from enum import Enum
-from typing import Any, Sequence, cast
+from collections.abc import Sequence
+from typing import Any
 
 import numpy as np
 import pandas as pd
 
 from faith._internal.algo.hash import dict_sha256
-from faith._internal.algo.matching import AnswerFormat, SimpleMatcher
 from faith._internal.algo.sampling import NShotSampler
 from faith._internal.metrics.llm import llm_basic_metrics, llm_metadata_metrics
-from faith._internal.types.flags import GenerationMode
+from faith._types.benchmark.spec import BenchmarkSpec
+from faith._types.config.benchmark import BenchmarkConfig, LongAnswerType
+from faith._types.config.patterns import AnswerFormat, PatternDef
+from faith._types.model.generation import GenerationMode
+from faith._types.record.prompt import PromptRecord
+from faith._types.record.stats import MetricSummary
 from faith.benchmark.benchmark import BaseBenchmark
 from faith.benchmark.dataset.dataset import BenchmarkDataset
-from faith.benchmark.formatting.qa import QAFormatter, QARecord
+from faith.benchmark.formatting.qa import QAFormatter
+from faith.benchmark.grading.common_graders import ChatCompletionLogGrader
 from faith.benchmark.grading.grade_aggregator import GradeAggregator
 from faith.benchmark.grading.log_grader import LogGrader
-from faith.benchmark.scores.types import Score
-from faith.benchmark.types import BenchmarkSpec
-
-
-class LongAnswerType(Enum):
-    """Enum for validation types for long answer benchmarks."""
-
-    # Long answer benchmarks where each answer is free-form text
-    # to be evaluated by an LLM.
-    FREE_FORM = "free_form"
+from faith.benchmark.scores.scoring import Score
 
 
 class LABenchmark(BaseBenchmark):
@@ -37,16 +33,19 @@ class LABenchmark(BaseBenchmark):
     # there is no current reason to implement an answer lead-in, which is
     # difficult to implement since long answer benchmarks do not have answer sets.
 
-    def __init__(self, spec: BenchmarkSpec, config: dict[str, Any], **kwargs: Any):
+    def __init__(self, spec: BenchmarkSpec, config: BenchmarkConfig, **kwargs: Any):
         """Initializes the LABenchmark with the given specification and configuration."""
-        super().__init__(spec=spec, config=config, **kwargs)
+        super().__init__(spec, config, **kwargs)
         assert spec.generation_mode not in [
             GenerationMode.LOGITS,
             GenerationMode.NEXT_TOKEN,
         ], "Long answer benchmarks do not support logits/next_token generation mode since long answers may be multiple tokens."
-        self._answer_type = LongAnswerType(self._config["laqa_config"]["type"])
         assert (
-            len(self._config.get("output_processing", {}).get("score_fns", {})) > 0
+            self._config.laqa_config is not None
+        ), "LAQAConfig is required for long answer benchmarks."
+        self._answer_type = self._config.laqa_config.type
+        assert (
+            len(self._config.output_processing.score_fns) > 0
         ), "Long answer benchmarks must have at least one score function defined."
 
     def _build_dataset(
@@ -61,38 +60,42 @@ class LABenchmark(BaseBenchmark):
         return LABenchmarkDataset(
             formatter=self.formatter,
             benchmark_data=benchmark_data,
-            nshot_samlper=nshot_sampler,
+            nshot_sampler=nshot_sampler,
             rng=rng,
             ancillary_columns=ancillary_columns,
         )
 
     def log_grader(
-        self, model_format_config: dict[str, Any], recompute_stats: bool = False
+        self,
+        *,
+        model_format_config: PatternDef | None = None,
     ) -> LogGrader:
         """Fetch a log grader for this benchmark."""
-        op_cfg = self._config["output_processing"]
         if (
-            self.generation_mode == GenerationMode.CHAT_COMPLETION
+            self.generation_mode == GenerationMode.CHAT_COMP
             and self._answer_type == LongAnswerType.FREE_FORM
         ):
-            return LALogGrader(op_cfg, model_format_config, recompute_stats)
+            return ChatCompletionLogGrader(
+                self._config.output_processing,
+                model_format_config,
+            )
         raise ValueError(
             f"Unsupported generation mode: {self.generation_mode} for long answer log grading."
         )
 
     def grade_aggregator(self) -> GradeAggregator:
         """Fetch a grade aggregator for this benchmark."""
-        return LAMetricsAggregator(self._config["output_processing"])
+        return LAMetricsAggregator(self._config.output_processing)
 
 
 class LABenchmarkDataset(BenchmarkDataset):
-    """Static dataset for short answer benchmarks."""
+    """Static dataset for long answer benchmarks."""
 
     def __init__(
         self,
         formatter: QAFormatter,
         benchmark_data: pd.DataFrame,
-        nshot_samlper: NShotSampler,
+        nshot_sampler: NShotSampler,
         rng: np.random.Generator,
         ancillary_columns: frozenset[str] = frozenset(),
     ):
@@ -100,7 +103,7 @@ class LABenchmarkDataset(BenchmarkDataset):
         super().__init__(
             formatter,
             benchmark_data,
-            nshot_samlper,
+            nshot_sampler,
             rng,
             required_columns=frozenset({"question"}),
             ancillary_columns=ancillary_columns,
@@ -108,74 +111,28 @@ class LABenchmarkDataset(BenchmarkDataset):
         )
 
     def _format_qa(
-        self, index: int, sample: pd.Series, examples: Sequence[QARecord] | None = None
-    ) -> QARecord:
+        self,
+        index: int,
+        sample: pd.Series,
+        examples: Sequence[PromptRecord] | None = None,
+    ) -> PromptRecord:
         """Format a sample into a question-answer record."""
         return self._formatter.render_qa_record(
             index=index,
             sample_hash=dict_sha256(sample.to_dict()),
             raw_question=sample["question"],
-            raw_answer=sample.get("answer", None),
+            raw_answer=sample.get("answer"),
             examples=examples,
             choice_map=None,  # Long answer benchmarks are not enumerable.
-            subject=sample.get("subject", None),
+            subject=sample.get("subject"),
             ancillary_data=self._extract_ancillary_data(sample),
         )
-
-
-class LALogGrader(LogGrader):
-    """A log grader for long-answer chat completions."""
-
-    def __init__(
-        self,
-        output_processing_config: dict[str, Any],
-        model_format_config: dict[str, Any],
-        recompute_stats: bool,
-    ):
-        """Initialize the judge-based log grader."""
-        super().__init__(output_processing_config, model_format_config, recompute_stats)
-        self._answer_extractor = SimpleMatcher(model_format_config)
-
-    def _markup_entry_impl(self, log_entry: dict[str, Any]) -> dict[str, Any]:
-        """Markup a single log entry with the computed statistics / scores."""
-        correct_answer = cast(str, log_entry["data"]["label"])
-        gen_answer: str | None = None
-        answer_format = AnswerFormat.INVALID
-        # TODO(https://github.com/RobustIntelligence/faith/issues/286): Remove the use
-        # of 'output_text' once we fully migrate to 'answer_text' at the next major
-        # release.
-        if (chat_comp := log_entry["model_data"].get("chat_comp", {})) and (
-            answer_text := chat_comp.get("answer_text", None)
-            or chat_comp.get("output_text", None)
-        ):
-            gen_answer, answer_format = (
-                self._answer_extractor(answer_text),
-                AnswerFormat.PROPER,
-            )
-
-        log_entry["stats"] = {
-            "label": correct_answer,
-            "prediction": gen_answer,
-            "answer_format": answer_format,
-            "subject": log_entry["data"].get("subject", None),
-            "num_output_tokens": log_entry["model_data"]
-            .get("chat_comp", {})
-            .get("num_output_tokens", 0),
-            "max_token_halt": log_entry["model_data"]
-            .get("chat_comp", {})
-            .get("max_token_halt", False),
-        } | self._custom_scores(
-            correct_answer,
-            gen_answer,
-            ancillary_data=log_entry["data"].get("ancillary_data", None),
-        )
-        return log_entry
 
 
 class LAMetricsAggregator(GradeAggregator):
     """The `GradeAggregator` for long answer benchmarks."""
 
-    def _aggregate(self, **kwargs: Sequence[Any]) -> dict[str, Any]:
+    def _aggregate(self, **kwargs: Sequence[Any]) -> MetricSummary:
         """Computes the metrics for this benchmark for its collected sufficient statistics.
 
         Args:
@@ -186,12 +143,12 @@ class LAMetricsAggregator(GradeAggregator):
         Returns:
             Dictionary containing computed metrics.
         """
-        label: Sequence[Any] = kwargs.get("label", [])
-        prediction: Sequence[Any] = kwargs.get("prediction", [])
-        answer_format: Sequence[AnswerFormat] = kwargs.get("answer_format", [])
-        scores: Sequence[dict[str, Score]] = kwargs.get("scores", [])
-        num_output_tokens: Sequence[int] | None = kwargs.get("num_output_tokens", None)
-        max_token_halt: Sequence[bool] | None = kwargs.get("max_token_halt", None)
+        label: Sequence[Any] = kwargs.get("label") or []
+        prediction: Sequence[Any] = kwargs.get("prediction") or []
+        answer_format: Sequence[AnswerFormat] = kwargs.get("answer_format") or []
+        scores: Sequence[dict[str, Score]] = kwargs.get("scores") or []
+        num_output_tokens: Sequence[int] | None = kwargs.get("num_output_tokens")
+        max_token_halt: Sequence[bool] | None = kwargs.get("max_token_halt")
 
         return (
             self._aggregate_scores(scores)  # Compute aggregate custom scores.

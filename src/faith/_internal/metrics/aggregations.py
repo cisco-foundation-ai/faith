@@ -5,8 +5,9 @@
 """Set of functions for aggregating statistics over a set of trials of a benchmark."""
 
 from collections import defaultdict
+from collections.abc import Sequence
 from numbers import Number
-from typing import Any, Sequence, TypeAlias, TypeVar, cast
+from typing import Any, NoReturn, TypeAlias, TypeVar, cast
 
 import numpy as np
 
@@ -23,7 +24,7 @@ def is_breakdown_dict(obj: Any) -> bool:
     )
 
 
-def _raise_inconsistent_types() -> float:
+def _raise_inconsistent_types() -> NoReturn:
     raise ValueError("Cannot aggregate counts for non-numeric or non-dict values.")
 
 
@@ -58,7 +59,7 @@ def agg_trial_stats(
             k: agg_trial_stats([x[k] for x in dstats if k in x])
             for k in set().union(*[x.keys() for x in dstats])
         }
-    return _raise_inconsistent_types()
+    _raise_inconsistent_types()
 
 
 def _agg_stats(stats_list: Sequence[Number]) -> BreakdownDict:

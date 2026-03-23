@@ -5,7 +5,8 @@
 """Provides an abstract base class for transformations on iterators."""
 
 from abc import ABC, abstractmethod
-from typing import Generic, Iterable, TypeVar
+from collections.abc import Iterable
+from typing import Generic, TypeVar
 
 # Generic I/O TypeVars for a Transform.
 _IN = TypeVar("_IN")
@@ -34,19 +35,35 @@ class _TransformCompose(Transform[_IN, _OTHER], Generic[_IN, _OUT, _OTHER]):
 
     def __init__(self, first: Transform[_IN, _OUT], second: Transform[_OUT, _OTHER]):
         """Initialize with two transforms."""
-        self.first = first
-        self.second = second
+        self._first = first
+        self._second = second
 
     def __call__(self, src: Iterable[_IN]) -> Iterable[_OTHER]:
         """Apply the first transform and then the second transform."""
-        return src >> self.first >> self.second
+        return src >> self._first >> self._second
 
 
 class IsoTransform(Transform[_IN, _IN], Generic[_IN]):
     """A transform with the same input and output types."""
 
 
-class IdentityTransform(IsoTransform[_IN], Generic[_IN]):
+class Mapping(Transform[_IN, _OUT], Generic[_IN, _OUT]):
+    """A transform that applies a per-element function to each item in the iterator."""
+
+    @abstractmethod
+    def _map_fn(self, element: _IN) -> _OUT:
+        """Map a single element to an output element."""
+
+    def __call__(self, src: Iterable[_IN]) -> Iterable[_OUT]:
+        """Apply `_map_fn` to each item in the `src` iterator."""
+        return (self._map_fn(element) for element in src)
+
+
+class IsoMapping(Mapping[_IN, _IN], IsoTransform[_IN], Generic[_IN]):
+    """An elementwise transform that maps from and to the same type."""
+
+
+class IdentityTransform(IsoMapping[_IN], Generic[_IN]):
     """A transform that returns items from an iterator as is."""
 
     def __rrshift__(self, src: Iterable[_IN]) -> Iterable[_IN]:
@@ -54,9 +71,9 @@ class IdentityTransform(IsoTransform[_IN], Generic[_IN]):
         # Simplify chaining in the >> operator by excising identities.
         return src
 
-    def __call__(self, src: Iterable[_IN]) -> Iterable[_IN]:
-        """Identity transform that returns items from the `src` iterator as is."""
-        yield from src
+    def _map_fn(self, element: _IN) -> _IN:
+        """Map each `element` to itself."""
+        return element
 
 
 class Reducer(ABC, Generic[_IN, _OUT]):

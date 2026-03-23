@@ -61,6 +61,7 @@ benchmark:
       prompt_template: !from '$BENCHMARKS_ROOT/prompting-template.yaml["prompting"]["prompt_template"]'
   output_processing: !from
     '$BENCHMARKS_ROOT/output-processing-template.yaml["output_processing"]':
+      primary_metric: "accuracy.mean"
       answer_formats:
         # Note: We accept two different '-' characters because GPT-OSS is so
         # prone to using a unicode `\u2011` hyphen instead of the ASCII `-`.
@@ -69,11 +70,11 @@ benchmark:
           capture_transform:
             params: ["x"]
             expr: "x.upper().replace('‑', '-')"
-          match_disambiguation: "match_if_unique"
+          disambiguation: "match_if_unique"
           format_type: "proper"
         - pattern: '(?i)\b(?:cwe|id):\s+(\d+)\b'
           capture_transform:
             params: ["x"]
             expr: 'f"CWE-{x}"'
-          match_disambiguation: "match_if_unique"
+          disambiguation: "match_if_unique"
           format_type: "improper"

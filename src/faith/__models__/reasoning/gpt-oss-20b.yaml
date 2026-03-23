@@ -1,0 +1,14 @@
+# Copyright 2025 Cisco Systems, Inc. and its affiliates
+#
+# SPDX-License-Identifier: Apache-2.0
+
+---
+model:
+  path: openai/gpt-oss-20b
+  name: gpt-oss-20b
+  prompt_format: "chat"
+  reasoning:
+    start_delimiter: [200006, 173781, 200005, 35644, 200008]
+    end_delimiter: [200007, 200006, 173781, 200005, 17196, 200008]
+  engine: !from '$MODELS_ROOT/default_engines.yaml["vllm-engine"]'
+  generation: !from '$MODELS_ROOT/default_generation.yaml["reasoning"]'

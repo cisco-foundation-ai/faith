@@ -1,0 +1,9 @@
+# Copyright 2025 Cisco Systems, Inc. and its affiliates
+#
+# SPDX-License-Identifier: Apache-2.0
+
+---
+model:
+  path: "meta-llama/Llama-2-13b"
+  prompt_format: base
+  engine: !from 'base_engine.yaml["vllm_defaults"]'

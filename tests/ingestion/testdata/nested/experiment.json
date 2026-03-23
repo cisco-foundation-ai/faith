@@ -1,0 +1,46 @@
+{
+  "benchmark_config": {
+    "metadata": {
+      "name": "ctibench-mcqa"
+    },
+    "output_processing": {
+      "primary_metric": "accuracy.mean"
+    }
+  },
+  "experiment_params": {
+    "benchmark": {
+      "generation_mode": "chat_comp",
+      "n_shot": "0",
+      "name": "ctibench-mcqa",
+      "prompt_format": "chat"
+    },
+    "model": {
+      "name": "Llama-3.1-8B-Instruct",
+      "path": "meta-llama/Llama-3.1-8B-Instruct",
+      "engine": {
+        "context_length": 3500,
+        "engine_type": "vllm",
+        "kwargs": {},
+        "num_gpus": 1
+      },
+      "generation": {
+        "kwargs": {},
+        "max_completion_tokens": 1024,
+        "temperature": 0.3,
+        "top_p": 1.0
+      }
+    }
+  },
+  "metadata": {
+    "run_args": [
+      "/usr/local/bin/faith",
+      "run-all",
+      "--num-trials",
+      "10",
+      "--seed",
+      "42",
+      "--sample-size",
+      "100"
+    ]
+  }
+}

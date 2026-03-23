@@ -4,11 +4,12 @@
 
 """A module for executing functions in separate threads."""
 
+from collections.abc import Iterable
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Callable, Generic, Iterable, TypeVar
+from typing import Callable, Generic, TypeVar
 
+from faith._internal.collections.sequenced_buffer import SequencedBuffer
 from faith._internal.iter.transform import Transform
-from faith._internal.types.collections import SequencedBuffer
 
 _IN = TypeVar("_IN")
 _OUT = TypeVar("_OUT")
@@ -39,17 +40,14 @@ class ForkAndMergeTransform(Transform[_IN, _OUT], Generic[_IN, _OUT]):
             }
 
             for future in as_completed(futures):
-                exception = future.exception()
-                if exception:
-                    # If an exception occurred, handle it with the provided handler.
-                    buffer.add_at(futures[future], self._exception_handler(exception))
-                else:
-                    # Add the next completed future.
-                    buffer.add_at(futures[future], future.result())
+                ex = future.exception()
+                buffer.add_at(
+                    futures[future],
+                    self._exception_handler(ex) if ex else future.result(),
+                )
 
                 # Yield all available outputs from the buffer.
-                while output := buffer.next_in_order():
-                    yield output
+                yield from buffer.yield_in_order()
             assert (
                 len(buffer) == 0
             ), "Internal Error: Buffer not fully populated; disparate items remain."

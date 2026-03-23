@@ -8,7 +8,8 @@ This module provides the `MCBenchmark` class for multiple choice benchmarks, whi
 extends the `Benchmark` class to handle multiple choice question-answering tasks.
 """
 
-from typing import Any, Sequence
+from collections.abc import Sequence
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -16,14 +17,18 @@ from sklearn.metrics import confusion_matrix, f1_score
 from transformers import PreTrainedTokenizerBase
 
 from faith._internal.algo.hash import dict_sha256
-from faith._internal.algo.matching import AnswerFormat
 from faith._internal.algo.sampling import NShotSampler
 from faith._internal.metrics.llm import llm_metadata_metrics, llm_prediction_metrics
-from faith._internal.metrics.types import SingleLabelSeq
-from faith._internal.types.flags import GenerationMode
+from faith._types.benchmark.spec import BenchmarkSpec
+from faith._types.config.benchmark import BenchmarkConfig
+from faith._types.config.patterns import AnswerFormat, PatternDef
+from faith._types.config.scoring import OutputProcessingConfig
+from faith._types.model.generation import GenerationMode
+from faith._types.record.prompt import PromptRecord
+from faith._types.record.stats import MetricSummary, SingleLabelSeq
 from faith.benchmark.benchmark import BaseBenchmark
 from faith.benchmark.dataset.dataset import BenchmarkDataset
-from faith.benchmark.formatting.qa import QAFormatter, QARecord
+from faith.benchmark.formatting.qa import QAFormatter
 from faith.benchmark.grading.common_graders import (
     ChatCompletionLogGrader,
     LogitsLogGrader,
@@ -31,20 +36,22 @@ from faith.benchmark.grading.common_graders import (
 )
 from faith.benchmark.grading.grade_aggregator import GradeAggregator
 from faith.benchmark.grading.log_grader import LogGrader
-from faith.benchmark.scores.types import Score
-from faith.benchmark.types import BenchmarkSpec
+from faith.benchmark.scores.scoring import Score
 
 
-def _load_answer_set(config: dict[str, Any]) -> frozenset[str]:
+def _load_answer_set(config: BenchmarkConfig) -> frozenset[str]:
     """Get the space of all answer symbols from the benchmark's config.
 
     Args:
-        config: The configuration dictionary for the benchmark.
+        config: The configuration for the benchmark.
 
     Returns:
         The set of answer symbols for the benchmark.
     """
-    answer_symbols = config["mcqa_config"]["answer_symbols"]
+    assert (
+        config.mcqa_config is not None
+    ), "MCQAConfig is required for multiple choice benchmarks."
+    answer_symbols = config.mcqa_config.answer_symbols
     assert isinstance(
         answer_symbols, list
     ), f"Choices must be a list, but got {type(answer_symbols)}"
@@ -70,10 +77,9 @@ def _load_answer_set(config: dict[str, Any]) -> frozenset[str]:
 class MCBenchmark(BaseBenchmark):
     """A benchmark for multiple choice question-answering tasks."""
 
-    def __init__(self, spec: BenchmarkSpec, config: dict[str, Any], **kwargs: Any):
+    def __init__(self, spec: BenchmarkSpec, config: BenchmarkConfig, **kwargs: Any):
         """Initializes the multiple choice benchmark with the given specification."""
-        super().__init__(spec=spec, config=config, **kwargs)
-
+        super().__init__(spec, config, **kwargs)
         self._answer_symbols = _load_answer_set(self._config)
 
     @property
@@ -110,8 +116,8 @@ class MCBenchmark(BaseBenchmark):
             symbol: self.formatter.render_answer(symbol) for symbol in self.answer_set
         }
         tokenizations = {
-            symbol: tokenizer.encode(ans, add_special_tokens=False)
-            for symbol, ans in answers.items()
+            symbol: tokenizer.encode(answer, add_special_tokens=False)
+            for symbol, answer in answers.items()
         }
         assert (
             len(set(map(len, tokenizations.values()))) == 1
@@ -158,25 +164,25 @@ class MCBenchmark(BaseBenchmark):
         )
 
     def log_grader(
-        self, model_format_config: dict[str, Any], recompute_stats: bool = False
+        self,
+        *,
+        model_format_config: PatternDef | None = None,
     ) -> LogGrader:
         """Fetch a log grader for this benchmark."""
-        op_cfg = self._config["output_processing"]
+        op_cfg = self._config.output_processing
         if self.generation_mode == GenerationMode.LOGITS:
-            return LogitsLogGrader(op_cfg, model_format_config, recompute_stats)
+            return LogitsLogGrader(op_cfg)
         if self.generation_mode == GenerationMode.NEXT_TOKEN:
-            return NextTokenLogGrader(
-                op_cfg, model_format_config, recompute_stats, self.answer_set
-            )
-        if self.generation_mode == GenerationMode.CHAT_COMPLETION:
-            return ChatCompletionLogGrader(op_cfg, model_format_config, recompute_stats)
+            return NextTokenLogGrader(op_cfg, self.answer_set)
+        if self.generation_mode == GenerationMode.CHAT_COMP:
+            return ChatCompletionLogGrader(op_cfg, model_format_config)
         raise ValueError(
             f"Unsupported generation mode: {self.generation_mode} for multiple-choice log grading."
         )
 
     def grade_aggregator(self) -> GradeAggregator:
         """Fetch a grade aggregator for this benchmark."""
-        return MCMetricsAggregator(self._config["output_processing"], self.answer_set)
+        return MCMetricsAggregator(self._config.output_processing, self.answer_set)
 
 
 class MCBenchmarkDataset(BenchmarkDataset):
@@ -248,8 +254,11 @@ class MCBenchmarkDataset(BenchmarkDataset):
         return permuted_choices, permuted_symbol
 
     def _format_qa(
-        self, index: int, sample: pd.Series, examples: Sequence[QARecord] | None = None
-    ) -> QARecord:
+        self,
+        index: int,
+        sample: pd.Series,
+        examples: Sequence[PromptRecord] | None = None,
+    ) -> PromptRecord:
         """Format a sample into a question-answer pair."""
         choice_map, correct_symbol = self._map_choices(sample)
         return self._formatter.render_qa_record(
@@ -259,7 +268,7 @@ class MCBenchmarkDataset(BenchmarkDataset):
             raw_answer=correct_symbol,
             examples=examples,
             choice_map=choice_map,
-            subject=sample.get("subject", None),
+            subject=sample.get("subject"),
             ancillary_data=self._extract_ancillary_data(sample),
         )
 
@@ -269,14 +278,14 @@ class MCMetricsAggregator(GradeAggregator):
 
     def __init__(
         self,
-        output_processing_config: dict[str, Any],
+        output_processing_config: OutputProcessingConfig,
         answer_set: frozenset[str],
     ):
         """Initialize the metrics aggregator for multiple choice benchmarks."""
         super().__init__(output_processing_config)
         self._answer_list = sorted(list(answer_set))
 
-    def _aggregate(self, **kwargs: Sequence[Any]) -> dict[str, Any]:
+    def _aggregate(self, **kwargs: Sequence[Any]) -> MetricSummary:
         """Computes the metrics for this benchmark for its collected sufficient statistics.
 
         Args:
@@ -286,13 +295,13 @@ class MCMetricsAggregator(GradeAggregator):
         Returns:
             Dictionary containing computed metrics.
         """
-        label: SingleLabelSeq = kwargs.get("label", [])
-        prediction: SingleLabelSeq = kwargs.get("prediction", [])
-        answer_format: Sequence[AnswerFormat] = kwargs.get("answer_format", [])
-        scores: Sequence[dict[str, Score]] = kwargs.get("scores", [])
-        subject: SingleLabelSeq | None = kwargs.get("subject", None)
-        num_output_tokens: Sequence[int] | None = kwargs.get("num_output_tokens", None)
-        max_token_halt: Sequence[bool] | None = kwargs.get("max_token_halt", None)
+        label: SingleLabelSeq = kwargs.get("label") or []
+        prediction: SingleLabelSeq = kwargs.get("prediction") or []
+        answer_format: Sequence[AnswerFormat] = kwargs.get("answer_format") or []
+        scores: Sequence[dict[str, Score]] = kwargs.get("scores") or []
+        subject: SingleLabelSeq | None = kwargs.get("subject")
+        num_output_tokens: Sequence[int] | None = kwargs.get("num_output_tokens")
+        max_token_halt: Sequence[bool] | None = kwargs.get("max_token_halt")
 
         stringified_preds = [p if p is not None else "" for p in prediction]
         extended_answers = self._answer_list + [""]

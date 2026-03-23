@@ -24,7 +24,8 @@ cybersecurity benchmarks:
 
 FAITH uses [vLLM](https://github.com/vllm-project/vllm) for querying
 [HuggingFace](https://huggingface.co/) models as well as providing
-API-based querying for [OpenAI models](https://platform.openai.com/docs/models).
+API-based querying for [OpenAI models](https://platform.openai.com/docs/models)
+and models available through [OpenRouter](https://openrouter.ai/).
 
 ## Getting Started
 
@@ -94,9 +95,18 @@ for FAITH are:
   Note: Benchmarking OpenAI models will be billed to your OpenAI account;
   you must export your OpenAI key as the environment variable `OPENAI_API_KEY`
   to query models using their API.
+- `openrouter`: installs dependencies to query models via
+  [OpenRouter](https://openrouter.ai/), which provides access to many models
+  (e.g., Anthropic Claude, Google Gemini) through a unified API.
+  Note: You must export your OpenRouter key as the environment variable
+  `OPENROUTER_API_KEY` to query models using their API.
 - `vllm`: installs dependencies to run models with
   [vLLM](https://docs.vllm.ai/en/latest/).
   This can run many models from HuggingFace.
+- `sagemaker`: installs dependencies to query models deployed on
+  [AWS SageMaker](https://aws.amazon.com/sagemaker/) endpoints.
+  Note: You must configure AWS credentials and specify the AWS region
+  via the `aws_region` engine parameter or `AWS_REGION` environment variable.
 - `all-engines`: installs dependencies to run models with all of the
   following model engine backends [large install].
 - `metrics`: installs the dependencies required
@@ -126,8 +136,8 @@ clone the repository and checkout the desired commit/branch.
 You can then install directly from your local repository:
 
 ```shell
-python -m venv .venv && source .venv/bin/activate && pip install --upgrade pip
-pip install -e '.[<EXTRAS>]'
+uv venv .venv && source .venv/bin/activate
+uv pip install -e '.[<EXTRAS>]'
 ```
 
 See above for the `<EXTRAS>` packages.
@@ -135,9 +145,8 @@ See above for the `<EXTRAS>` packages.
 #### Package for a Remote Computer
 
 ```shell
-python -m venv .venv && source .venv/bin/activate && pip install --upgrade pip
-pip install build
-python -m build . --sdist
+uv venv .venv && source .venv/bin/activate
+uv build --sdist
 ```
 
 This will create a distribution in the folder `dist/`
@@ -145,14 +154,14 @@ from which you can install the package.
 
 #### For Development
 
-When installing for devolopment purposes, you can install the package in
+When installing for development purposes, you can install the package in
 editable mode from source. Installing in this way allows you to make alterations
 and re-run faith without re-installing.
 This may require altering SCM's versioning:
 
 ```shell
-python -m venv .venv && source .venv/bin/activate && pip install --upgrade pip
-SETUPTOOLS_SCM_PRETEND_VERSION=0.0.0 pip install -e '.[<EXTRAS>]'
+uv venv .venv && source .venv/bin/activate
+SETUPTOOLS_SCM_PRETEND_VERSION=0.0.0 uv pip install -e '.[<EXTRAS>]'
 ```
 
 See above for the `<EXTRAS>` packages.
@@ -201,9 +210,18 @@ You can then use the following commands:
     Note: Benchmarking OpenAI models will be billed to your OpenAI account;
     you must export your OpenAI key as the environment variable `OPENAI_API_KEY`
     to query models using their API.
+  - `openrouter`: installs dependencies to query models via
+    [OpenRouter](https://openrouter.ai/).
+    Note: You must export your OpenRouter key as the environment variable
+    `OPENROUTER_API_KEY` to query models using their API.
   - `vllm`: installs dependencies to run models with
     [vLLM](https://docs.vllm.ai/en/latest/).
     This can run many models from HuggingFace.
+  - `sagemaker`: installs dependencies to query models deployed on
+    [AWS SageMaker](https://aws.amazon.com/sagemaker/) endpoints.
+    Note: You must configure AWS credentials and specify the AWS region
+    via the `aws_region` engine parameter or `AWS_REGION` environment variable.
+    The `--model-paths` argument should specify the SageMaker endpoint name.
 - `faith eval`: analyze benchmark runs. Requires the `[metrics]` option
   when you install the FAITH package.
 - `faith summarize`: aggregate benchmark stats. Requires the `[metrics]` option
@@ -214,7 +232,7 @@ See the commands below for how to run each of these commands.
 ## Command Summary
 
 The primary way to run FAITH's benchmarks is through the `faith` command,
-which is installed in your `venv` through **pip**.
+which is installed in your `venv`.
 This command has the following subcommands and flags:
 
 ### The `query` subcommand
@@ -230,13 +248,20 @@ which need to be processed by subsequent commands.
 - `--model-paths` [list[Path|Name]]: a list of model paths / names you want
   to query. All the listed models must be of the same model-type.
   You must provide the required credentials for your models by exporting
-  environment variables. [Required]
+  environment variables. [Required unless --model-configs is provided]
   - Note: You can annotate each path with `@name=<NAME>` to give
     a shortened name for the model in the benchmarking logs.
   - Note: You can annotate each path with `@tokenizer=Path/Name`
     to specify an alternative tokenizer to use with the model.
-- `--model-engine` [`openai`, `vllm`]: the backend engine to drive the model.
-  [Required]
+- `--model-configs` [list[Path]]: paths to YAML model configuration files.
+  Each file fully specifies a model's path, engine, and generation parameters,
+  enabling per-model configuration without relying on shared CLI flags.
+  See [Model Config Files](#model-config-files) below for the YAML format.
+  [Required unless --model-paths is provided]
+  - Note: You can annotate each path with `@num_gpus=<N>` to override
+    the number of GPUs specified in the config file.
+- `--model-engine` [`openai`, `openrouter`, `sagemaker`, `vllm`]:
+  the backend engine to drive the model. [Required with --model-paths]
 - `--num-gpus` [int]: the number of GPUs used by vLLM for querying LLMs.
   [Default: 1]
 - `--model-context-len` [int]: the context length for the models.
@@ -251,7 +276,7 @@ which need to be processed by subsequent commands.
 #### Model Engine Flags
 
 Each framework (OpenAI, vLLM, etc.) use a number of custom key-word-args
-when instatiating their clients. We support (limited) ability to set these
+when instantiating their clients. We support (limited) ability to set these
 key-word-args from the command-line through the flag `--engine-kwargs`
 followed by a list of key-value pairs of the form:
 
@@ -277,6 +302,130 @@ which also takes a list of key-value pairs, like:
 --generation-kwargs reasoning_effort='"high"'
 ```
 
+#### OpenRouter Models
+
+To assess models available through [OpenRouter](https://openrouter.ai/),
+set the `OPENROUTER_API_KEY` environment variable and use the `openrouter`
+engine type. The `--model-paths` argument should specify the OpenRouter model
+identifier (e.g. `anthropic/claude-3.5-sonnet`, `google/gemini-pro`).
+
+The following engine kwargs are supported:
+
+- `api_num_threads`: Number of concurrent API threads (default: 5).
+- `api_max_attempts`: Maximum number of retry attempts (default: 10).
+- `api_retry_sleep_secs`: Sleep duration between retries in seconds (default: 1.0).
+
+#### SageMaker Models
+
+To assess models hosted on SageMaker, you can configure the following engine kwargs:
+
+```shell
+--engine-kwargs aws_region='"us-west-2"' api_num_threads=10 api_max_attempts=5 endpoint_timeout_secs=120 inference_component_name='"my-component"'
+```
+
+- `aws_region`: AWS region for the SageMaker endpoint
+  (or alternatively set the `AWS_REGION` env var).
+- `api_num_threads`: Number of concurrent API threads (default: 5).
+- `api_max_attempts`: Maximum number of retry attempts (default: 10).
+- `api_retry_sleep_secs`: Sleep duration between retries in seconds (default: 1.0).
+- `endpoint_timeout_secs`: Timeout for endpoint calls in seconds (default: 60).
+- `inference_component_name`: Optional inference component name for multi-model
+  endpoints.
+- `request_body_expr`: Custom python expression for building the request body.
+  This expression takes `messages` (a list of chat-completion messages) and
+  `gen_params` (a dictionary of model generation parameters) as arguments,
+  and the expression must return an object encodeable as JSON (e.g. a dictionary).
+- `response_parsing_expr`: Custom expression for parsing the response body.
+  This expression parses the body and must evaluate to a dictionary with
+  these (optional) fields:
+  - `num_prompt_tokens` [int]: the number of tokens in the prompt.
+  - `output_text` [str]: the text generated by the model.
+  - `num_output_tokens` [int]: the number of tokens in the generated text.
+  - `max_token_halt` [bool]: whether the output was halted due to a max-token limit.
+
+#### Model Config Files
+
+Instead of specifying model parameters through individual CLI flags
+(which apply uniformly to all models), you can use `--model-configs`
+to provide a complete specification of each model's configuration.
+This is especially useful when benchmarking multiple models that require
+different engine or generation settings, and for creating reproducible
+model assessments.
+
+Each YAML config file must have a top-level `model:` key containing
+the model specification. The only required fields are `model.path`
+and `model.engine.engine_type`; all other fields have defaults.
+
+**Config File Schema:**
+
+```yaml
+model:
+  name: "" # display name (defaults to model path segment)
+  path: "" # model path or name [REQUIRED]
+  response_pattern: null # regex pattern for extracting responses
+  tokenizer: null # custom tokenizer path (optional)
+  engine:
+    engine_type: "" # the type of model engine [REQUIRED]
+    num_gpus: 1 # number of GPUs (default: 1)
+    context_length: 3500 # context length (default: 3500)
+    kwargs: {} # additional keyword arguments for the engine
+  generation:
+    temperature: 0.0 # sampling temperature (default: 0.0)
+    top_p: 1.0 # top-p sampling (default: 1.0)
+    max_completion_tokens: 500 # max new tokens (default: 500)
+    kwargs: {} # additional keyword arguments for generation
+  reasoning: # reasoning delimiters (optional)
+    start_delimiter: "<think>"
+    end_delimiter: "</think>"
+```
+
+**Example for an OpenAI model**:
+
+```yaml
+model:
+  path: "gpt-4.1-2025-04-14"
+  engine:
+    engine_type: openai
+    context_length: 8192
+    kwargs:
+      api_num_threads: 25
+  generation:
+    temperature: 0.3
+    max_completion_tokens: 5000
+```
+
+**Example for an OpenRouter model**:
+
+```yaml
+model:
+  path: "anthropic/claude-3.5-sonnet"
+  engine:
+    engine_type: openrouter
+    context_length: 8192
+    kwargs:
+      api_num_threads: 10
+  generation:
+    temperature: 0.3
+    max_completion_tokens: 2000
+```
+
+**Example for a VLLM model**:
+
+```yaml
+model:
+  name: "gpt-oss-20b"
+  path: "openai/gpt-oss-20b"
+  engine:
+    engine_type: vllm
+    context_length: 8192
+  generation:
+    temperature: 0.6
+    max_completion_tokens: 10000
+  reasoning:
+    start_delimiter: [200006, 173781, 200005, 35644, 200008]
+    end_delimiter: [200007, 200006, 173781, 200005, 17196, 200008]
+```
+
 </details>
 
 <details>
@@ -293,7 +442,7 @@ which also takes a list of key-value pairs, like:
 - `--prompt-format` [`base`, `chat`]: the prompt format to use for the model.
   [Required]
 - `--n-shot` [list[int]]: the number of in-context examples per question.
-  [Defalut: 0]
+  [Default: 0]
 - `--num-trials` [int]: the number of trials to run for the benchmark.
   [Default: 1]
 - `--seed` [int]: the random seed for reproducibility. [Default: 373,363]
@@ -329,16 +478,17 @@ The `eval` subcommand computes metrics over a set of benchmark's logs.
 <details>
 <summary>Eval Behavior Flags</summary>
 
-- `--cache-prediction-stats` [bool]: whether to store prediction statistics
-  in the original logs to avoid recomputing in the future. [Default: true]
-- `--force-compute-stats` [bool]: forces recomputation of stats even
-  if they are already present in the logs. [Default: false]
+- `--stats-replacement-strategy` [never|always|if_hash_differs]: strategy for
+  replacing existing stats in logs. 'never' keeps existing stats and only computes
+  missing ones; 'always' recomputes all stats; 'if_hash_differs' recomputes stats
+  when the data or model data have changed since stats were last computed.
+  [Default: never]
 
 </details>
 
 ### The `summarize` subcommand
 
-The `summarize` (or `digest`) subcommand coallates all benchmark metrics
+The `summarize` (or `digest`) subcommand collates all benchmark metrics
 in a given directory into a summary table.
 
 <details>
@@ -426,8 +576,8 @@ Files in the benchmark directory:
 - **metrics.json** - A file with metrics summarizing all trials as well as
   aggregate statistics for the entire run.
 
-The `trials` sub-folder contains a record of all benchmark query/reponses in the
-course of the run. Its subfolder structure contains a `trial-seed` and
+The `trials` sub-folder contains a record of all benchmark query/responses in
+the course of the run. Its subfolder structure contains a `trial-seed` and
 `benchmark-trial-hash` both of which are identifiers for the trial -- the seed
 allows you to compare similar trials (exactly the same base questions) across
 runs, whereas the hash is useful when you want to compare exactly the same LLM
@@ -439,7 +589,7 @@ The file for each trial is:
 - **benchmark-log.json**: a list of records for every query-response executed
   from the benchmark on the model.
 
-### Dowloading Metrics Only
+### Downloading Metrics Only
 
 For the purposes of examining a benchmark,
 you only need the metrics files from that benchmark.
@@ -478,7 +628,7 @@ faith query --custom-benchmarks ${HOME}/my-custom-benchmark@name=my-bench \
 
 This will query the `fdtn-ai/Foundation-Sec-8B-Instruct` model
 over a sample of 25 questions from this custom benchmark
-and save resuts to the local folder `out/`.
+and save results to the local folder `out/`.
 
 ### Structure of a Benchmark Config
 

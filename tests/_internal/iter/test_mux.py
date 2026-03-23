@@ -2,8 +2,10 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+from collections.abc import Iterable
 from enum import Enum
-from typing import Iterable
+
+from pytest_unordered import unordered
 
 from faith._internal.iter.mux import MuxTransform
 from faith._internal.iter.transform import IdentityTransform, IsoTransform
@@ -44,7 +46,7 @@ class Mod7Type(Enum):
         return Mod7Type.OTHER
 
 
-def test_mux_transform() -> None:
+def test_mux_transform_mod7() -> None:
     """Test the MuxTransform with different kinds of transforms."""
     powers_mux = MuxTransform[Mod7Type, int, int](
         {
@@ -60,11 +62,15 @@ def test_mux_transform() -> None:
     assert list([(Mod7Type.TWO_FOUR, 4)] >> powers_mux) == [16]
     assert list(
         reversed(list((Mod7Type.from_int(i), i) for i in range(7))) >> powers_mux
-    ) == [6, 125, 16, 27, 4, 1, 0]
-    assert list(((Mod7Type.from_int(i), i) for i in range(10_000)) >> powers_mux) == [
-        i**2 if i % 7 in [2, 4] else (i**3 if i % 7 in [3, 5] else i)
-        for i in range(10_000)
-    ]
+    ) == unordered([6, 125, 16, 27, 4, 1, 0])
+    assert list(
+        ((Mod7Type.from_int(i), i) for i in range(10_000)) >> powers_mux
+    ) == unordered(
+        [
+            i**2 if i % 7 in [2, 4] else (i**3 if i % 7 in [3, 5] else i)
+            for i in range(10_000)
+        ]
+    )
 
 
 class FizzTransform(IsoTransform[int | str]):
@@ -111,7 +117,7 @@ class FBType(Enum):
         return FBType.NOOP
 
 
-def test_mux_fizzbuzz() -> None:
+def test_mux_transform_fizzbuzz() -> None:
     # Implement FizzBuzz with a Mux.
     fizzbuzz_mux = MuxTransform[FBType, int | str, int | str](
         {
@@ -122,35 +128,39 @@ def test_mux_fizzbuzz() -> None:
         }
     )
 
-    assert list(((FBType.from_int(i), i) for i in range(1, 31)) >> fizzbuzz_mux) == [
-        1,
-        2,
-        "fizz",
-        4,
-        "buzz",
-        "fizz",
-        7,
-        8,
-        "fizz",
-        "buzz",
-        11,
-        "fizz",
-        13,
-        14,
-        "fizzbuzz",
-        16,
-        17,
-        "fizz",
-        19,
-        "buzz",
-        "fizz",
-        22,
-        23,
-        "fizz",
-        "buzz",
-        26,
-        "fizz",
-        28,
-        29,
-        "fizzbuzz",
-    ]
+    assert list(
+        ((FBType.from_int(i), i) for i in range(1, 31)) >> fizzbuzz_mux
+    ) == unordered(
+        [
+            1,
+            2,
+            "fizz",
+            4,
+            "buzz",
+            "fizz",
+            7,
+            8,
+            "fizz",
+            "buzz",
+            11,
+            "fizz",
+            13,
+            14,
+            "fizzbuzz",
+            16,
+            17,
+            "fizz",
+            19,
+            "buzz",
+            "fizz",
+            22,
+            23,
+            "fizz",
+            "buzz",
+            26,
+            "fizz",
+            28,
+            29,
+            "fizzbuzz",
+        ]
+    )

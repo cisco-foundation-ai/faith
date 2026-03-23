@@ -67,18 +67,19 @@ benchmark:
       prompt_template: !from '$BENCHMARKS_ROOT/prompting-template.yaml["prompting"]["prompt_template"]'
   output_processing: !from
     '$BENCHMARKS_ROOT/output-processing-template.yaml["output_processing"]':
+      primary_metric: "mean_cvss_score.mean"
       answer_formats:
         - pattern: '(?i)(cvss:3\.\d(?:/\w+:\w+)+)\b'
           capture_transform:
             params: ["x"]
             expr: "x.strip().upper()"
-          match_disambiguation: "match_if_unique"
+          disambiguation: "match_if_unique"
           format_type: "proper"
         - pattern: '(?i)((?:/\w+:\w+){2,})\b'
           capture_transform:
             params: ["x"]
             expr: '"CVSS:3.0" + x.strip().upper()'
-          match_disambiguation: "match_if_unique"
+          disambiguation: "match_if_unique"
           format_type: "improper"
       score_fns:
         cvss_score:

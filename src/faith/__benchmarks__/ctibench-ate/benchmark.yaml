@@ -613,12 +613,13 @@ benchmark:
           **Text**
   output_processing: !from
     '$BENCHMARKS_ROOT/output-processing-template.yaml["output_processing"]':
+      primary_metric: "accuracy.mean"
       answer_formats:
         - pattern: '(?i)\banswer\s*:\s*((?:t\d+,\s*)*t\d+)\b'
           capture_transform:
             params: ["x"]
             expr: 'tuple(i.strip().upper() for i in x.split(","))'
-          match_disambiguation: "match_if_unique"
+          disambiguation: "match_if_unique"
           format_type: "proper"
       score_fns:
         jaccard_index:
