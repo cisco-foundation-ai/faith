@@ -137,16 +137,22 @@ class LAMetricsAggregator(GradeAggregator):
 
         Args:
             **kwargs: Keyword arguments containing metrics data.
-                Expected keys: 'label', 'prediction', 'answer_format',
-                    'scores', 'judgement'.
+                Expected keys: 'label', 'prediction', 'answer_format', 'scores'.
 
         Returns:
             Dictionary containing computed metrics.
         """
-        label: Sequence[Any] = kwargs.get("label") or []
-        prediction: Sequence[Any] = kwargs.get("prediction") or []
+        # Fields answer_format, label, and prediction are required to be the same-length
+        # but label and prediction may be missing for a given model or benchmark.
+        # In this case, we fill in missing label/prediction values with None.
         answer_format: Sequence[AnswerFormat] = kwargs.get("answer_format") or []
-        scores: Sequence[dict[str, Score]] = kwargs.get("scores") or []
+        label: Sequence[Any] = kwargs.get("label") or ([None] * len(answer_format))
+        prediction: Sequence[Any] = kwargs.get("prediction") or (
+            [None] * len(answer_format)
+        )
+
+        # These fields may be missing entirely and are ignored when absent.
+        scores: Sequence[dict[str, Score]] | None = kwargs.get("scores")
         num_output_tokens: Sequence[int] | None = kwargs.get("num_output_tokens")
         max_token_halt: Sequence[bool] | None = kwargs.get("max_token_halt")
 

@@ -49,6 +49,8 @@ class GradeAggregator(Reducer[StatsRecord | None, MetricSummary]):
         for stats in stats_logs:
             for key in ({f.name for f in fields(stats)} if stats else set()):
                 transposed_stats[key].append(getattr(stats, key))
+
+        # Remove any fields whose all values are all None.
         return {
             k: v for k, v in transposed_stats.items() if any(x is not None for x in v)
         }
@@ -90,16 +92,18 @@ class GradeAggregator(Reducer[StatsRecord | None, MetricSummary]):
             },
         }
 
-    def _aggregate_scores(self, scores: Sequence[dict[str, Score]]) -> dict[str, float]:
+    def _aggregate_scores(
+        self, scores: Sequence[dict[str, Score]] | None
+    ) -> dict[str, float]:
         # Convert the scores into a dictionary of lists for each score function.
         scores_dict: dict[str, list[Score]] = {n: [] for n in self._score_fns.keys()}
-        for score in scores:
+        for score in scores or []:
             for name, value in score.items():
                 assert (
                     name in self._score_fns
                 ), f"Score '{name}' is not defined in the benchmark's score functions: {list(self._score_fns.keys())}."
                 scores_dict[name].append(value)
-        assert_same_length(expected_length=len(scores), **scores_dict)
+        assert_same_length(expected_length=len(scores) if scores else 0, **scores_dict)
 
         # Aggregate the scores for each score function using its aggregation methods.
         return {
