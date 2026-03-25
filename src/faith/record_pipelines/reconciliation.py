@@ -87,7 +87,11 @@ def record_reconciler(
     """Creates a transform that reconciles a new record stream with existing records."""
     return (
         LeftJoinTransform(
-            existing, on_key=lambda record: record.data.benchmark_sample_hash
+            existing,
+            on_key=lambda record: (
+                record.data.benchmark_sample_index,
+                record.data.benchmark_sample_hash,
+            ),
         )
         | _RecordReconciliation(strategy, mode)
         | _RecordStatusTransform(mode)
