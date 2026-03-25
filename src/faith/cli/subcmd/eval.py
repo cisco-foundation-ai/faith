@@ -74,10 +74,15 @@ def compute_experiment_metrics(
             trial_logs.items(), desc="Processing trials", unit="trial", leave=False
         )
         if (
-            trial_metrics := grade_trial_records(
-                benchmark.log_grader(model_format_config=model_format_config),
-                trial_log_filepath,
-                replacement_strategy=replacement_strategy,
+            trial_metrics := tqdm(
+                grade_trial_records(
+                    benchmark.log_grader(model_format_config=model_format_config),
+                    trial_log_filepath,
+                    replacement_strategy=replacement_strategy,
+                ),
+                desc="Grading trial logs",
+                unit=" records",
+                leave=False,
             )
             >> benchmark.grade_aggregator()
         ).get("query_count", 0)
