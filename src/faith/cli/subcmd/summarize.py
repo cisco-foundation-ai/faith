@@ -34,6 +34,7 @@ def summarize_experiments(
     experiment_path: Path,
     selected_stats: Sequence[str],
     summary_filepath: Path | None,
+    *,
     bigquery_project: str | None = None,
     bigquery_dataset: str | None = None,
     bigquery_table: str | None = None,

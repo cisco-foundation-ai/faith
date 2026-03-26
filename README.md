@@ -503,8 +503,7 @@ in a given directory into a summary table.
 <details>
 <summary>Summarize Behavior Flags</summary>
 
-- `--stats` [list[string]]: The stats to summarize.
-  This should be a comma-separated list of metric names.
+- `--stats` [list[string]]: The names of the stats to summarize.
 - `--summary-filepath` [Path]: The path to the output directory
   where the summary will be saved. [Default: None]
 
