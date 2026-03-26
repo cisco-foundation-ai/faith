@@ -111,6 +111,8 @@ for FAITH are:
   following model engine backends [large install].
 - `metrics`: installs the dependencies required
   to compute metrics from the benchmark logs.
+- `bigquery`: installs dependencies to ingest metrics to BigQuery
+  for centralized storage and analytics.
 - `all`: installs all the above dependencies for querying and evaluating
   any supported model [large install].
 - `test`: install the `all` dependencies
@@ -225,7 +227,7 @@ You can then use the following commands:
 - `faith eval`: analyze benchmark runs. Requires the `[metrics]` option
   when you install the FAITH package.
 - `faith summarize`: aggregate benchmark stats. Requires the `[metrics]` option
-  when you install the FAITH package.
+  for table/csv output, or `[bigquery]` for BigQuery ingestion.
 
 See the commands below for how to run each of these commands.
 
@@ -489,7 +491,8 @@ The `eval` subcommand computes metrics over a set of benchmark's logs.
 ### The `summarize` subcommand
 
 The `summarize` (or `digest`) subcommand collates all benchmark metrics
-in a given directory into a summary table.
+in a given directory into a summary table. You can output to console/CSV (default)
+or ingest directly to BigQuery for advanced analytics.
 
 <details>
 <summary>Required Flags</summary>
@@ -503,9 +506,58 @@ in a given directory into a summary table.
 <details>
 <summary>Summarize Behavior Flags</summary>
 
-- `--stats` [list[string]]: The names of the stats to summarize.
+- `--output-format` [`table`, `csv`, `bigquery`]: Output format for the summary.
+  - `table`: Print summary to console (default)
+  - `csv`: Save summary as CSV file
+  - `bigquery`: Ingest metrics to BigQuery for analytics
+- `--stats` [list[string]]: The stats to summarize (for table/csv output).
+  This should be a comma-separated list of metric names.
 - `--summary-filepath` [Path]: The path to the output directory
-  where the summary will be saved. [Default: None]
+  where the summary will be saved (for csv output). [Default: None]
+
+</details>
+
+<details>
+<summary>BigQuery Output Flags</summary>
+
+These flags are used when `--output-format bigquery`:
+
+- `--bigquery-project` [string]: GCP project ID for BigQuery.
+  Can also be set via `FAITH_BIGQUERY_PROJECT` environment variable.
+- `--bigquery-dataset` [string]: BigQuery dataset name.
+  Can also be set via `FAITH_BIGQUERY_DATASET` environment variable.
+- `--bigquery-table` [string]: BigQuery table name. [Default: metrics]
+  Can also be set via `FAITH_BIGQUERY_TABLE` environment variable.
+
+**Quick Setup:**
+
+```bash
+# One-time setup
+export FAITH_BIGQUERY_PROJECT=my-project
+export FAITH_BIGQUERY_DATASET=faith_results
+bq mk --dataset ${FAITH_BIGQUERY_PROJECT}:${FAITH_BIGQUERY_DATASET}
+
+# Ingest results
+pip install faith[bigquery]
+faith summarize --experiment-path gs://my-bucket/results \
+  --output-format bigquery
+```
+
+**What you can do with BigQuery:**
+
+- Build leaderboards comparing models across benchmarks
+- Track performance over time
+- Query metrics with SQL for custom analysis
+- Create interactive dashboards in Looker Studio
+
+**Learn more:**
+
+- [docs/bigquery/quickstart.md](docs/bigquery/quickstart.md) - Setup guide
+- [docs/bigquery/schema.md](docs/bigquery/schema.md) - Table reference
+- [docs/bigquery/dashboards.md](docs/bigquery/dashboards.md) - Dashboard
+  cookbook
+- [docs/bigquery/queries/](docs/bigquery/queries/) and
+  [docs/bigquery/views/](docs/bigquery/views/) - SQL examples
 
 </details>
 
