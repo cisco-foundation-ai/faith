@@ -27,9 +27,10 @@ benchmark:
         test_split: "test"
     options:
       dataframe_transform_expr: |
-        df.rename(columns={"Description": "question", "GT": "answer"})[
-            ["question", "answer"]
-        ]
+        df.rename(columns={"Description": "question", "GT": "answer"}).drop(
+            # Drop rows that are duplicates of other rows.
+            [243, 419, 453, 531, 600, 602, 681, 689, 691, 763, 776, 788],
+        )[["question", "answer"]]
   saqa_config:
     type: "domain_specific"
   format:

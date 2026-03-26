@@ -47,6 +47,9 @@ benchmark:
                     .astype(str)
             ).tolist(),
             answer=df["GT"].str.strip().str.upper(),
+        ).drop(
+            # Drop rows that are duplicates of other rows.
+            [243, 453, 531, 600, 602, 681, 689, 691, 776, 788],
         )[["question", "answer"]]
   saqa_config:
     type: "string_match"
