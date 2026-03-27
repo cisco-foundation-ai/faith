@@ -7,5 +7,7 @@ model:
   path: microsoft/phi-4
   name: phi-4
   prompt_format: "chat"
-  engine: !from '$MODELS_ROOT/default_engines.yaml["vllm-engine"]'
+  engine: !from
+    '$MODELS_ROOT/default_engines.yaml["vllm-engine"]':
+      context_length: 16384
   generation: !from '$MODELS_ROOT/default_generation.yaml["instruct"]'

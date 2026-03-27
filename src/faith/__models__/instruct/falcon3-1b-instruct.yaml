@@ -7,5 +7,7 @@ model:
   path: tiiuae/Falcon3-1B-Instruct
   name: falcon3-1b-instruct
   prompt_format: "chat"
-  engine: !from '$MODELS_ROOT/default_engines.yaml["vllm-engine"]'
+  engine: !from
+    '$MODELS_ROOT/default_engines.yaml["vllm-engine"]':
+      context_length: 8192
   generation: !from '$MODELS_ROOT/default_generation.yaml["instruct"]'
