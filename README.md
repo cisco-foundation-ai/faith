@@ -17,10 +17,24 @@ cybersecurity domain. FAITH currently runs benchmarks for the following
 cybersecurity benchmarks:
 
 - [CTIBench](https://arxiv.org/abs/2406.07599)
+  - `ctibench-ate`: Attack Technique Extraction — identify MITRE ATT&CK
+    techniques from threat descriptions.
+  - `ctibench-mcqa`: Multiple Choice Questions on Cyber Threat Intelligence.
+  - `ctibench-rcm`: Root Cause Mapping — map CVE descriptions to CWE IDs.
+  - `ctibench-taa`: Threat Actor Attribution — attribute cyber incidents
+    to known threat actors.
+  - `ctibench-vsp`: Vulnerability Severity Prediction — predict CVSS vector strings.
 - [CyberMetric](https://arxiv.org/abs/2402.07688)
+  - `cybermetric-80`, `cybermetric-500`, `cybermetric-2000`, `cybermetric-10000`:
+    Subsets of 80, 500, 2,000, and ~10,000 multiple-choice cybersecurity questions.
 - [MMLU](https://arxiv.org/abs/2009.03300)
+  - `mmlu-all`: Full MMLU benchmark (~14,000 questions across 57 subjects).
+  - `mmlu-security`: Computer security subset (100 questions).
 - [SecBench](https://arxiv.org/abs/2412.20787)
+  - `secbench-mcqa-eng`: English multiple-choice questions from SecBench.
+  - `secbench-mcqa-eng-reasoning`: English reasoning-focused subset.
 - [SecEval](https://xuanwuai.github.io/SecEval/)
+  - `seceval`: ~1,000 multiple-choice computer security questions.
 
 FAITH uses [vLLM](https://github.com/vllm-project/vllm) for querying
 [HuggingFace](https://huggingface.co/) models as well as providing
@@ -38,7 +52,7 @@ vLLM can be installed to run on CPU-only machines, but we do not
 support this directly. Querying models on CPU-only machines may be very
 slow. However, for API-based querying (e.g. OpenAI), GPUs are not required.
 
-FAITH can run with Python 3.10 - 3.12, but we recommend using Python 3.12.
+FAITH can run with Python 3.11 - 3.12, but we recommend using Python 3.12.
 We also recommend using cloud storage for storing and combining benchmarks.
 
 #### Configuring a Remote VM to Run FAITH
@@ -168,7 +182,7 @@ SETUPTOOLS_SCM_PRETEND_VERSION=0.0.0 uv pip install -e '.[<EXTRAS>]'
 
 See above for the `<EXTRAS>` packages.
 
-### Step 2: Open Long-Lived Sessions for Benchmarking
+### Open Long-Lived Sessions for Benchmarking
 
 Benchmarks can take a lot of time to run. To ensure your session isn't lost
 due to network disconnect, you should run your benchmarks in a long-lived
@@ -191,7 +205,7 @@ You can manually disconnect by typing `ctrl-a d`. You can scroll within a
 session by typing `ctrl-a ESC`. If your SSH session is frozen you can try
 to disconnect from it by typing `~ .`.
 
-### Step 3: Run Benchmark Commands
+### Run Benchmark Commands
 
 Once connected to `REMOTE` in a long-lived session, load your virtual
 environment:
@@ -428,6 +442,23 @@ model:
     end_delimiter: [200007, 200006, 173781, 200005, 17196, 200008]
 ```
 
+#### Built-in Model Configs
+
+FAITH ships with pre-configured model configs that can be used directly with
+the `--model-configs` flag by name (e.g. `--model-configs instruct/phi-4`).
+These configs include tuned engine and generation parameters for each model.
+
+**Instruct models:** `instruct/foundation-sec-8b-instruct`,
+`instruct/llama-3.1-8b-instruct`, `instruct/llama-3.1-70b-instruct`,
+`instruct/gpt-4.1-2025-04-14`, `instruct/phi-4`,
+`instruct/qwen2.5-7b-instruct`, and others.
+
+**Reasoning models:** `reasoning/foundation-sec-8b-reasoning`,
+`reasoning/o3-2025-04-16`, `reasoning/gpt-oss-20b`, and others.
+
+Default engine and generation parameters are defined in
+`default_engines.yaml` and `default_generation.yaml` within the package.
+
 </details>
 
 <details>
@@ -563,10 +594,11 @@ faith summarize --experiment-path gs://my-bucket/results \
 
 ### The `run-all` subcommand
 
-The `run-all` (or `qed`) subcommand sequentially runs the `query`, `metric`
+The `run-all` (or `qed`) subcommand sequentially runs the `query`, `eval`
 and `summarize` stages. It uses the **Model Flags**, **Experiment Flags**,
 and `--datastore-location` flag from `query`, the **Eval Behavior Flags**
-from `eval` and the **Summary Behavior Flags** from `summarize`.
+from `eval`, the **Summarize Behavior Flags** and **BigQuery Output Flags**
+from `summarize`.
 
 ## Benchmark Results
 
@@ -575,7 +607,17 @@ e.g. a GCP bucket.
 
 ### Benchmark Upload
 
-TODO(blaine)
+When using a GCP URI (beginning with `gs://`) as the `--datastore-location`,
+benchmark logs are automatically uploaded to GCP during the run.
+
+To manually upload local benchmark results to GCP, you can use:
+
+```sh
+gcloud storage rsync -R -J -P ~/benchmarks/<BENCHMARK> gs://<BENCHMARK_PATH>
+```
+
+replacing `<BENCHMARK>` with your local benchmark directory
+and `<BENCHMARK_PATH>` with the destination path in your GCP bucket.
 
 ### Benchmark Download
 
@@ -738,6 +780,37 @@ the final dataframe must have the following columns:
   implied order given in choices.
 
 #### Modifying Data with the `dataframe_transform_expr`
+
+The `dataframe_transform_expr` field in the `source.options` section of a
+benchmark config allows you to transform the loaded dataset into the required
+column format. The expression is a Python expression that receives a pandas
+DataFrame `df` and a boolean `is_dev` (indicating whether the data is the
+primary/dev split), and must return a transformed DataFrame.
+
+For example, to rename columns and drop duplicate rows:
+
+```yaml
+source:
+  options:
+    dataframe_transform_expr: |
+      df.rename(columns={"Description": "question", "GT": "answer"}).drop(
+          [243, 419],
+      )[["question", "answer"]]
+```
+
+Or to convert numerical answers to letter choices:
+
+```yaml
+source:
+  options:
+    dataframe_transform_expr: |
+      df.assign(
+          answer=[chr(65 + x) for x in df["answer"].tolist()],
+      )[["question", "subject", "choices", "answer"]]
+```
+
+The final DataFrame must contain the required columns for the benchmark type
+(see [Required Columns](#required-columns-of-the-loaded-data) above).
 
 ## Roadmap
 
