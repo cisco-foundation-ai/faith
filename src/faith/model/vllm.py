@@ -4,7 +4,6 @@
 
 """Provides the VLLM model backend for executing inference with VLLM supported models."""
 
-import contextlib
 import gc
 import logging
 from collections.abc import Iterable
@@ -68,23 +67,15 @@ class _VLLMBackend(BaseModel):
 
     def __del__(self) -> None:
         """Clean up the model and distributed environment used by VLLM."""
-        # Clean up the model and distributed environment from
-        # https://github.com/vllm-project/vllm/issues/1908
+        # Delete the model first so VLLM's own LLMEngine.__del__ can gracefully
+        # shut down workers via model_executor.shutdown().
+        if hasattr(self, "_model"):
+            del self._model
+
+        # Tear down distributed state after the engine has stopped.
         destroy_model_parallel()
         destroy_distributed_environment()
 
-        # Only delete the model if it was correctly initialized; if there was an
-        # error during initialization, the model may not exist, but __del__ is still
-        # called on exit.
-        if hasattr(self, "_model"):
-            if hasattr(self._model, "llm_engine"):
-                if hasattr(self._model.llm_engine, "model_executor"):
-                    if hasattr(self._model.llm_engine.model_executor, "driver_worker"):
-                        del self._model.llm_engine.model_executor.driver_worker
-                    del self._model.llm_engine.model_executor
-            del self._model
-        with contextlib.suppress(AssertionError):
-            torch.distributed.destroy_process_group()
         gc.collect()
         torch.cuda.empty_cache()
         logger.info("Model and distributed environment cleaned up.")
