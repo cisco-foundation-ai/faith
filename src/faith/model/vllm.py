@@ -67,7 +67,10 @@ class _VLLMBackend(BaseModel):
 
     def __del__(self) -> None:
         """Clean up the model and distributed environment used by VLLM."""
-        # Delete the model first so VLLM's own LLMEngine.__del__ can gracefully
+        # Clean up the model and distributed environment from
+        # https://github.com/vllm-project/vllm/issues/1908
+
+        # First delete the model so VLLM's own LLMEngine.__del__ can gracefully
         # shut down workers via model_executor.shutdown().
         if hasattr(self, "_model"):
             del self._model
