@@ -73,12 +73,12 @@ def test_ctibench_rcm() -> None:
     """Test the CTIbench RCM benchmark."""
     benchmark = load_benchmark_for_test("ctibench-rcm")
     dataset = benchmark.build_dataset()
-    assert len(list(dataset.iter_data())) == 1000
+    assert len(list(dataset.iter_data())) == 990
 
     # The hash acts as a watermark for the benchmark data to ensure it hasn't changed.
     assert (
         hash_dataframe(dataset._benchmark_data)
-        == "cc894426cb94e83873f8fc330c079125d8785ad93cf70608b6ba62274c516ecd"
+        == "9d1da1ce5e4dc1fd2ec77f5a57b6b25463bb714651d53b985240f531c64c604f"
     )
 
 
@@ -101,12 +101,12 @@ def test_ctibench_vsp() -> None:
     """Test the CTIbench VSP benchmark."""
     benchmark = load_benchmark_for_test("ctibench-vsp")
     dataset = benchmark.build_dataset()
-    assert len(list(dataset.iter_data())) == 1000
+    assert len(list(dataset.iter_data())) == 988
 
     # The hash acts as a watermark for the benchmark data to ensure it hasn't changed.
     assert (
         hash_dataframe(dataset._benchmark_data)
-        == "b8839d6188c57523267b42404c7e2115a0300b91f5fe813d6338edcceab941de"
+        == "b1988f28773615ec4e12593d95d56871de214d777920719dbd2548fa35591683"
     )
 
 
@@ -171,12 +171,12 @@ def test_mmlu_all() -> None:
     """Test the MMLU-all benchmark."""
     benchmark = load_benchmark_for_test("mmlu-all")
     dataset = benchmark.build_dataset()
-    assert len(list(dataset.iter_data())) == 14042
+    assert len(list(dataset.iter_data())) == 14015
 
     # The hash acts as a watermark for the benchmark data to ensure it hasn't changed.
     assert (
         hash_dataframe(dataset._benchmark_data)
-        == "403f569ac6e88884964c53339f0a613c6f2c6e0e04d99001110767143291b800"
+        == "bd20fcebde9cb6d7bc6ae56636acf87be600a7189a2c4e7eb14c68bb2c693eb9"
     )
 
 
@@ -199,12 +199,12 @@ def test_secbench_mcqa_eng() -> None:
     """Test the SecBench MCQA English benchmark."""
     benchmark = load_benchmark_for_test("secbench-mcqa-eng")
     dataset = benchmark.build_dataset()
-    assert len(list(dataset.iter_data())) == 595
+    assert len(list(dataset.iter_data())) == 587
 
     # The hash acts as a watermark for the benchmark data to ensure it hasn't changed.
     assert (
         hash_dataframe(dataset._benchmark_data)
-        == "31be71026da26cd4559e76ea043f8922d634427f5f3e26e3ce350f1bf56d7fb9"
+        == "75bf308c332ded5aab7159d2a9a06f48c19ee93be8f294dbc8944f43feadbec9"
     )
 
 

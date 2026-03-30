@@ -4,24 +4,18 @@
 
 """Provides `LogGrader` for grading / scoring benchmark logs."""
 
-import logging
 from abc import abstractmethod
-from collections.abc import Iterable
 from typing import Any
 
-from tqdm import tqdm
-
-from faith._internal.iter.transform import IsoTransform
+from faith._internal.iter.transform import IsoMapping
 from faith._types.config.scoring import OutputProcessingConfig
 from faith._types.record.sample import SampleRecord
 from faith._types.record.stats import Labeling
 from faith.benchmark.scores.domain_specific import DomainSpecificScore
 from faith.benchmark.scores.scoring import Score
 
-logger = logging.getLogger(__name__)
 
-
-class LogGrader(IsoTransform[SampleRecord]):
+class LogGrader(IsoMapping[SampleRecord]):
     """Base class for log graders that process and grade benchmark logs."""
 
     def __init__(
@@ -34,16 +28,9 @@ class LogGrader(IsoTransform[SampleRecord]):
             **output_processing_config.score_fns
         )
 
-    def __call__(self, logs: Iterable[SampleRecord]) -> Iterable[SampleRecord]:
-        """Process the logs and return the graded logs."""
-        log_is_empty = True
-        for log_entry in tqdm(
-            logs, desc="Marking up logs", unit="entries", leave=False
-        ):
-            log_is_empty = False
-            yield self._markup_entry(log_entry)
-        if log_is_empty:
-            logger.error("Benchmark logs are empty!")
+    def _map_fn(self, element: SampleRecord) -> SampleRecord:
+        """Process a log record and annotate with its computed statistics / scores."""
+        return self._markup_entry(element)
 
     def _custom_scores(
         self, label: Labeling | None, pred: Labeling | None, **kwargs: Any

@@ -37,4 +37,7 @@ benchmark: !from
           df.assign(
               # Convert numerical answers to letter choices starting from 'A'.
               answer=[chr(65 + x) for x in df["answer"].tolist()],
+          ).drop(
+              # Drop rows that are duplicates of other rows.
+              [53] if is_dev else [1385, 1420, 1427, 1428, 1435, 1445, 1446, 1458, 1459, 1462, 1466, 2354, 4955, 5040, 5109, 5185, 5210, 5283, 5310, 5312, 5353, 5392, 5426, 12982, 13061, 13155, 13648],
           )[["question", "subject", "choices", "answer"]]

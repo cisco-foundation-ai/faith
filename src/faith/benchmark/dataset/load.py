@@ -154,6 +154,29 @@ def _load_data_source(
     )
 
 
+def _make_hashable(val):
+    """Recursively convert unhashable types (lists, dicts, sets) into hashable equivalents (tuples, frozensets)."""
+    if isinstance(val, list):
+        return tuple(_make_hashable(v) for v in val)
+    if isinstance(val, dict):
+        return tuple(sorted((k, _make_hashable(v)) for k, v in val.items()))
+    if isinstance(val, set):
+        return frozenset(_make_hashable(v) for v in val)
+    return val
+
+
+def _has_duplicates(df: pd.DataFrame) -> bool:
+    """Determine if `df` has duplicate rows, accounting for unhashable types."""
+
+    hashable_df = df.copy()
+    for col in df.columns:
+        hashable_df[col] = df[col].apply(_make_hashable)
+
+    # Get only rows that are duplicated (keep=False marks ALL duplicates)
+    dup_mask = hashable_df.duplicated(keep=False)
+    return dup_mask.any()
+
+
 def load_data(
     benchmark_name: str, benchmark_path: Path | None, source_cfg: SourceConfig
 ) -> tuple[pd.DataFrame, pd.DataFrame | None]:
@@ -170,12 +193,14 @@ def load_data(
         source_cfg.options.dataframe_transform_expr if source_cfg.options else None
     ):
         df = evaluate_expr(
-            dt_expr, names={"df": df}, max_comprehension_length=MCL_FOR_TRANSFORMS
+            dt_expr,
+            names={"df": df, "is_dev": False},
+            max_comprehension_length=MCL_FOR_TRANSFORMS,
         )
         if dev_df is not None:
             dev_df = evaluate_expr(
                 dt_expr,
-                names={"df": dev_df},
+                names={"df": dev_df, "is_dev": True},
                 max_comprehension_length=MCL_FOR_TRANSFORMS,
             )
 
@@ -195,6 +220,12 @@ def load_data(
             dev_df[col] = dev_df[col].apply(
                 lambda x: x.tolist() if isinstance(x, np.ndarray) else x
             )
+
+    # Ensure there are no duplicate rows across the benchmark and dev datasets.
+    combined_df = (
+        pd.concat([df, dev_df], ignore_index=True) if dev_df is not None else df
+    )
+    assert not _has_duplicates(combined_df), "Duplicate rows in datasets"
 
     return df, dev_df
 

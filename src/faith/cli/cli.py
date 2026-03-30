@@ -494,7 +494,7 @@ def _add_summarize_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         default=[],
         nargs="*",
-        help="The stats to summarize (for table/csv output). This should be a comma-separated list of metric names.",
+        help="The names of the stats to summarize (for table/csv output).",
     )
     group.add_argument(
         "--summary-filepath",
@@ -564,7 +564,13 @@ def _run_all_main(args: argparse.Namespace) -> None:
                     metrics_output_path=experiment_path.parent / "metrics.json",
                 )
             summarize_experiments(
-                OutputFormat.TABLE, datastore.path, args.stats, args.summary_filepath
+                args.output_format,
+                datastore.path,
+                args.stats,
+                args.summary_filepath,
+                bigquery_project=args.bigquery_project,
+                bigquery_dataset=args.bigquery_dataset,
+                bigquery_table=args.bigquery_table,
             )
 
 
