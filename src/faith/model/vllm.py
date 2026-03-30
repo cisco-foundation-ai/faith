@@ -66,10 +66,10 @@ class _VLLMBackend(BaseModel):
         self._tokenizer = self._model.get_tokenizer()
 
     def __del__(self) -> None:
-        """Clean up the model and distributed environment used by VLLM."""
-        # Clean up the model and distributed environment from
-        # https://github.com/vllm-project/vllm/issues/1908
+        """Clean up the model and distributed environment used by VLLM.
 
+        See: https://github.com/vllm-project/vllm/issues/1908 for details.
+        """
         # First delete the model so VLLM's own LLMEngine.__del__ can gracefully
         # shut down workers via model_executor.shutdown().
         if hasattr(self, "_model"):
