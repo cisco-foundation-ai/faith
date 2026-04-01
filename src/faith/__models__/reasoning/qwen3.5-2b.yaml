@@ -4,11 +4,11 @@
 
 ---
 model:
-  path: fdtn-ai/Foundation-Sec-8B-Reasoning
-  name: foundation-sec-8b-reasoning
+  path: Qwen/Qwen3.5-2B
+  name: qwen3.5-2b
   prompt_format: "chat"
   reasoning:
-    start_delimiter: [128267]
-    end_delimiter: [128268]
+    start_delimiter: [248068]
+    end_delimiter: [248069]
   engine: !from '$MODELS_ROOT/default_engines.yaml["vllm-engine"]'
-  generation: !from '$MODELS_ROOT/default_generation.yaml["reasoning"]'
+  generation: !from '$MODELS_ROOT/default_generation.yaml["instruct"]'
