@@ -129,7 +129,9 @@ def test_gcp_datastore_file_pull_and_push() -> None:
                     dest.replace(fake_gcp_addr, str(temp_path)),
                 ],
             ),
-            DatastoreContext.from_path("gs://test/fake-ds/bar.txt") as datastore,
+            DatastoreContext.from_path(
+                "gs://test/fake-ds/bar.txt", expect_exists=True
+            ) as datastore,
         ):
             assert datastore.pull().read_text() == _EXPECTED_BAR_TXT_CONTENT
             datastore.push()
@@ -158,7 +160,9 @@ def test_gcp_datastore_file_pull_failure() -> None:
         # Mock the rsync command arguments to always fail.
         patch("faith._internal.io.datastore._gcp_is_file", return_value=True),
         patch("faith._internal.io.datastore._gcp_cp_args", return_value=["false"]),
-        DatastoreContext.from_path("gs://test/fake-ds/bar.txt") as datastore,
+        DatastoreContext.from_path(
+            "gs://test/fake-ds/bar.txt", expect_exists=True
+        ) as datastore,
     ):
         # Test that pull does not raise when raise_on_error=False (default).
         assert datastore.pull() is not None

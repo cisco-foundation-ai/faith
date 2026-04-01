@@ -118,9 +118,12 @@ class Datastore(ABC):
 class _LocalDatastore(Datastore):
     """A class to represent a local datastore."""
 
-    def __init__(self, path: Path):
+    def __init__(self, path: Path, *, expect_exists: bool = False):
         """Initialize the local datastore at a given path."""
+        if expect_exists and not path.exists():
+            raise FileNotFoundError(f"Expected datastore path '{path}' does not exist.")
         self._path = path
+        self._expect_exists = expect_exists
 
     @property
     def path(self) -> Path:
@@ -143,20 +146,26 @@ class _LocalDatastore(Datastore):
     def sub_store(self, sub_path: Path) -> Datastore:
         """Return a sub-store for the given `sub_path`."""
         local_path = Datastore.sub_path(self.path, sub_path)
-        return _LocalDatastore(local_path)
+        return _LocalDatastore(local_path, expect_exists=self._expect_exists)
 
 
 class _GCPDatastore(Datastore):
     """A GCP-based data store that uses `gsutil rsync` to synchronize data."""
 
-    def __init__(self, remote_path: str, local_path: Path):
+    def __init__(
+        self, remote_path: str, local_path: Path, *, expect_exists: bool = False
+    ):
         """Initialize the datastore with a given remote path/url."""
         assert remote_path.startswith(
             "gs://"
         ), "GCP datastore location must start with 'gs://'."
         self._local_path = local_path
+        self._expect_exists = expect_exists
         _bucket_path = Path(remote_path[5:])  # Remove 'gs://' prefix
-        self._filename = _bucket_path.name if _gcp_is_file(remote_path) else None
+        if expect_exists:
+            self._filename = _bucket_path.name if _gcp_is_file(remote_path) else None
+        else:
+            self._filename = None
         self._bucket_path = _bucket_path.parent if self._filename else _bucket_path
 
     @property
@@ -213,18 +222,22 @@ class _GCPDatastore(Datastore):
     def sub_store(self, sub_path: Path) -> Datastore:
         """Return a sub-store for the given `sub_path`."""
         remote_sub_path = Datastore.sub_path(self._bucket_path, sub_path)
-        return _GCPDatastore(_gcp_url(remote_sub_path), self.path / sub_path)
+        return _GCPDatastore(
+            _gcp_url(remote_sub_path),
+            self.path / sub_path,
+            expect_exists=self._expect_exists,
+        )
 
 
 class DatastoreContext(ABC):
     """An abstract base class for a datastore context manager."""
 
     @staticmethod
-    def from_path(path: str) -> "DatastoreContext":
+    def from_path(path: str, *, expect_exists: bool = False) -> "DatastoreContext":
         """Return a DatastoreContext instance for the given path/url."""
         if path.startswith("gs://"):
-            return _GCPDatastoreContext(path)
-        return _LocalDatastoreContext(path)
+            return _GCPDatastoreContext(path, expect_exists=expect_exists)
+        return _LocalDatastoreContext(path, expect_exists=expect_exists)
 
     @abstractmethod
     def __enter__(self) -> Datastore:
@@ -243,13 +256,14 @@ class DatastoreContext(ABC):
 class _LocalDatastoreContext(DatastoreContext):
     """A context manager for managing the resources for a local datastore."""
 
-    def __init__(self, path: str):
+    def __init__(self, path: str, *, expect_exists: bool = False):
         """Initialize the _LocalDatastoreContext with a given path."""
         self._path = Path(path)
+        self._expect_exists = expect_exists
 
     def __enter__(self) -> Datastore:
         """Create and return a local datastore for the context."""
-        return _LocalDatastore(self._path)
+        return _LocalDatastore(self._path, expect_exists=self._expect_exists)
 
     def __exit__(
         self,
@@ -292,12 +306,15 @@ class _RemoteDatastoreContext(DatastoreContext):
 class _GCPDatastoreContext(_RemoteDatastoreContext):
     """A context manager for managing remote GCP datastores."""
 
-    def __init__(self, gcp_addr: str):
+    def __init__(self, gcp_addr: str, *, expect_exists: bool = False):
         """Initialize the _GCPDatastoreContext with a given gcp bucket address."""
         assert gcp_addr.startswith("gs://"), "GCP path must start with 'gs://'."
         super().__init__()
         self._gcp_addr = gcp_addr
+        self._expect_exists = expect_exists
 
     def create(self, local_path: Path) -> Datastore:
         """Create and return a GCP datastore for its gcp bucket address."""
-        return _GCPDatastore(self._gcp_addr, local_path)
+        return _GCPDatastore(
+            self._gcp_addr, local_path, expect_exists=self._expect_exists
+        )

@@ -120,7 +120,7 @@ def _process_metrics_file(metrics_path: Path):
             f"Missing experiment.json for {metrics_path}. Expected: {experiment_file}"
         )
 
-    with DatastoreContext.from_path(str(experiment_file)) as ds:
+    with DatastoreContext.from_path(str(experiment_file), expect_exists=True) as ds:
         experiment_data = read_json_file(ds.pull())
     experiment_config = parse_experiment_config(experiment_data)
     primary_metric_name = parse_primary_metric(experiment_data)

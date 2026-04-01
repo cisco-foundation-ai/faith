@@ -14,6 +14,7 @@ from collections.abc import Iterable, Iterator, Sequence
 from datetime import datetime
 from functools import partial
 from pathlib import Path
+from types import TracebackType
 from zoneinfo import ZoneInfo
 
 from tqdm import tqdm
@@ -77,6 +78,39 @@ def read_trial_log(trial_log_path: Path) -> Iterable[SampleRecord]:
     return []  # No records if the log file doesn't exist yet.
 
 
+class _ResolvedModelPath:
+    """Context manager that resolves a model spec to a usable name or local path.
+
+    For remote (GCS) models, downloads to a temporary directory and provides
+    the local path. For local paths and model names (e.g. HuggingFace
+    identifiers), provides the path string directly.
+    """
+
+    def __init__(self, model_spec: ModelSpec):
+        self._spec = model_spec
+        self._ds_ctx: DatastoreContext | None = None
+
+    def __enter__(self) -> str:
+        if self._spec.is_remote:
+            self._ds_ctx = DatastoreContext.from_path(
+                self._spec.path, expect_exists=True
+            )
+            ds = self._ds_ctx.__enter__()
+            ds.pull(raise_on_error=True)
+            return str(ds.path)
+        return self._spec.path
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> bool | None:
+        if self._ds_ctx is not None:
+            return self._ds_ctx.__exit__(exc_type, exc_val, exc_tb)
+        return False
+
+
 def _run_single_model(
     model_spec: ModelSpec,
     exp_params: ExperimentParams,
@@ -105,12 +139,11 @@ def _run_single_model(
         )
 
     # Initialize the model from its annotated path.
-    with DatastoreContext.from_path(model_spec.path) as model_datastore:
-        model_datastore.pull(raise_on_error=True)
+    with _ResolvedModelPath(model_spec) as name_or_path:
         try:
             model = create_model(
                 model_spec.engine.engine_type,
-                name_or_path=str(model_datastore.path),
+                name_or_path=name_or_path,
                 tokenizer_name_or_path=model_spec.tokenizer,
                 num_gpus=model_spec.engine.num_gpus,
                 seed=exp_params.initial_seed,

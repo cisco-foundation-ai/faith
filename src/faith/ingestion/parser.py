@@ -232,7 +232,7 @@ def parse_metrics_file(
     Raises:
         FileNotFoundError: If metrics.json doesn't exist
     """
-    with DatastoreContext.from_path(str(metrics_path)) as ds:
+    with DatastoreContext.from_path(str(metrics_path), expect_exists=True) as ds:
         return parse_metrics_data(
             read_json_file(ds.pull()),
             _derive_file_uri(metrics_path),

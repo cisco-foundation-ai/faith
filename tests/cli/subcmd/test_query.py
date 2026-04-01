@@ -19,6 +19,7 @@ from faith._types.model.prompt import PromptFormatter
 from faith._types.model.spec import ModelSpec
 from faith._types.record.sample import ReplacementStrategy, SampleRecord
 from faith.cli.subcmd.query import (
+    _ResolvedModelPath,
     _run_single_model,
     current_timestamp,
     get_command_output,
@@ -74,6 +75,35 @@ def test_read_trial_log(tmp_path: Path) -> None:
     write_as_json(log_path, [MINIMAL_SAMPLE_RECORD])
 
     assert list(read_trial_log(log_path)) == [MINIMAL_SAMPLE_RECORD]
+
+
+@pytest.mark.parametrize("path", ["meta-llama/Llama-2-7b", "/local/model"])
+def test_resolved_model_path_non_remote(path: str) -> None:
+    spec = ModelSpec(
+        path=path,
+        engine=EngineParams(engine_type=ModelEngine.OPENAI),
+        prompt_format=PromptFormatter.CHAT,
+    )
+    with _ResolvedModelPath(spec) as resolved:
+        assert resolved == path
+
+
+def test_resolved_model_path_remote() -> None:
+    mock_ds = Mock(path=Path("/tmp/local"))
+    spec = ModelSpec(
+        path="gs://bucket/model",
+        engine=EngineParams(engine_type=ModelEngine.VLLM),
+        prompt_format=PromptFormatter.CHAT,
+    )
+    with patch(
+        "faith.cli.subcmd.query.DatastoreContext.from_path",
+        return_value=Mock(
+            __enter__=Mock(return_value=mock_ds), __exit__=Mock(return_value=False)
+        ),
+    ):
+        with _ResolvedModelPath(spec) as resolved:
+            assert resolved == "/tmp/local"
+            mock_ds.pull.assert_called_once_with(raise_on_error=True)
 
 
 def test_run_single_model_creation_failure(tmp_path: Path) -> None:
