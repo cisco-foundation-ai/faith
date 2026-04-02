@@ -6,8 +6,8 @@ from pathlib import Path
 
 import pytest
 
-from faith._internal.io.datastore import Datastore
 from faith._internal.io.resources import benchmarks_root
+from faith._internal.io.store import Store
 from faith._types.benchmark.sample_ratio import SampleRatio
 from faith._types.benchmark.spec import BenchmarkSpec
 from faith._types.model.generation import GenerationMode, GenParams
@@ -15,11 +15,11 @@ from faith._types.model.prompt import PromptFormatter
 from faith.experiment.experiment import BenchmarkExperiment
 
 
-class FakeDatastore(Datastore):
-    """A fake datastore implementation for testing purposes."""
+class FakeStore(Store):
+    """A fake store implementation for testing purposes."""
 
     def __init__(self, root_path: Path):
-        """Initialize the FakeDatastore with a root path."""
+        """Initialize the FakeStore with a root path."""
         self._root_path = root_path
 
     @property
@@ -36,9 +36,9 @@ class FakeDatastore(Datastore):
     def push(self, *, raise_on_error: bool = False) -> None:
         """Fake push does nothing."""
 
-    def sub_store(self, sub_path: Path) -> Datastore:
-        """Return a new FakeDatastore rooted at the given sub_path."""
-        return FakeDatastore(self._root_path / sub_path)
+    def sub_store(self, sub_path: Path) -> Store:
+        """Return a new FakeStore rooted at the given sub_path."""
+        return FakeStore(self._root_path / sub_path)
 
 
 def test_benchmark_experiment() -> None:
@@ -57,7 +57,7 @@ def test_benchmark_experiment() -> None:
         n_shot=SampleRatio(5),
         model_name="example_model",
         gen_params=gen_params,
-        root_datastore=FakeDatastore(Path("/tmp")),
+        root_datastore=FakeStore(Path("/tmp")),
         num_trials=3,
         initial_seed=3,
     )
@@ -85,7 +85,7 @@ def test_benchmark_experiment() -> None:
             n_shot=SampleRatio(0),
             model_name="example_model",
             gen_params=gen_params,
-            root_datastore=FakeDatastore(Path("/tmp")),
+            root_datastore=FakeStore(Path("/tmp")),
             num_trials=3,
             initial_seed=81,
         )
@@ -100,7 +100,7 @@ def test_benchmark_experiment() -> None:
             n_shot=SampleRatio(1, 4),
             model_name="example_model",
             gen_params=gen_params,
-            root_datastore=FakeDatastore(Path("/tmp")),
+            root_datastore=FakeStore(Path("/tmp")),
             num_trials=0,
             initial_seed=27,
         )
@@ -120,7 +120,7 @@ def test_benchmark_experiment_iteration() -> None:
         n_shot=SampleRatio(5),
         model_name="example_model",
         gen_params=gen_params,
-        root_datastore=FakeDatastore(Path("/tmp")),
+        root_datastore=FakeStore(Path("/tmp")),
         num_trials=2,
         initial_seed=375,
     )

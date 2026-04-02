@@ -14,16 +14,15 @@ from collections.abc import Iterable, Iterator, Sequence
 from datetime import datetime
 from functools import partial
 from pathlib import Path
-from types import TracebackType
 from zoneinfo import ZoneInfo
 
 from tqdm import tqdm
 
 from faith import __version__
 from faith._internal.functools.compose import compose
-from faith._internal.io.datastore import Datastore, DatastoreContext
 from faith._internal.io.json import read_logs_from_json, write_as_json
 from faith._internal.io.logging import LoggingTransform
+from faith._internal.io.store import Store
 from faith._internal.iter.mux import MuxTransform
 from faith._internal.iter.transform import DevNullReducer, IdentityTransform
 from faith._internal.multiprocessing.gpu_scheduling import (
@@ -38,6 +37,7 @@ from faith.benchmark.listing import choices_to_benchmarks, find_benchmarks
 from faith.experiment.experiment import BenchmarkExperiment
 from faith.experiment.params import DataSamplingParams, ExperimentParams
 from faith.model.factory import create_model
+from faith.model.resolver import ResolvedModelPath
 from faith.record_pipelines.formatting import SampleFormatter
 from faith.record_pipelines.hashing import HashModelDataTransform
 from faith.record_pipelines.params import RecordHandlingParams
@@ -78,45 +78,12 @@ def read_trial_log(trial_log_path: Path) -> Iterable[SampleRecord]:
     return []  # No records if the log file doesn't exist yet.
 
 
-class _ResolvedModelPath:
-    """Context manager that resolves a model spec to a usable name or local path.
-
-    For remote (GCS) models, downloads to a temporary directory and provides
-    the local path. For local paths and model names (e.g. HuggingFace
-    identifiers), provides the path string directly.
-    """
-
-    def __init__(self, model_spec: ModelSpec):
-        self._spec = model_spec
-        self._ds_ctx: DatastoreContext | None = None
-
-    def __enter__(self) -> str:
-        if self._spec.is_remote:
-            self._ds_ctx = DatastoreContext.from_path(
-                self._spec.path, expect_exists=True
-            )
-            ds = self._ds_ctx.__enter__()
-            ds.pull(raise_on_error=True)
-            return str(ds.path)
-        return self._spec.path
-
-    def __exit__(
-        self,
-        exc_type: type[BaseException] | None,
-        exc_val: BaseException | None,
-        exc_tb: TracebackType | None,
-    ) -> bool | None:
-        if self._ds_ctx is not None:
-            return self._ds_ctx.__exit__(exc_type, exc_val, exc_tb)
-        return False
-
-
 def _run_single_model(
     model_spec: ModelSpec,
     exp_params: ExperimentParams,
     sampling_params: DataSamplingParams,
     record_params: RecordHandlingParams,
-    datastore: Datastore,
+    datastore: Store,
 ) -> Iterator[Path]:
     """
     Run benchmarks for a single model.
@@ -139,7 +106,7 @@ def _run_single_model(
         )
 
     # Initialize the model from its annotated path.
-    with _ResolvedModelPath(model_spec) as name_or_path:
+    with ResolvedModelPath(model_spec) as name_or_path:
         try:
             model = create_model(
                 model_spec.engine.engine_type,
@@ -264,7 +231,7 @@ def run_experiment_queries(
     exp_params: ExperimentParams,
     sampling_params: DataSamplingParams,
     record_params: RecordHandlingParams,
-    datastore: Datastore,
+    datastore: Store,
     parallelize_models: bool = True,
 ) -> Iterator[Path]:
     """Query over given benchmarks for all specified models and generation parameters."""
