@@ -11,4 +11,4 @@ model:
     start_delimiter: [248068]
     end_delimiter: [248069]
   engine: !from '$MODELS_ROOT/default_engines.yaml["vllm-engine"]'
-  generation: !from '$MODELS_ROOT/default_generation.yaml["instruct"]'
+  generation: !from '$MODELS_ROOT/default_generation.yaml["reasoning"]'
