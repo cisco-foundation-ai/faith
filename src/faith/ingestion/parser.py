@@ -16,8 +16,8 @@ from typing import Any
 from dataclasses_json import DataClassJsonMixin
 
 from faith import __version__ as faith_version
-from faith._internal.io.datastore import DatastoreContext
 from faith._internal.io.json import read_json_file
+from faith._internal.io.resource_provider import ResourceProvider
 from faith._types.benchmark.spec import BenchmarkSpec
 
 
@@ -232,9 +232,9 @@ def parse_metrics_file(
     Raises:
         FileNotFoundError: If metrics.json doesn't exist
     """
-    with DatastoreContext.from_path(str(metrics_path)) as ds:
+    with ResourceProvider(str(metrics_path)) as path:
         return parse_metrics_data(
-            read_json_file(ds.pull()),
+            read_json_file(path),
             _derive_file_uri(metrics_path),
             experiment_config,
             primary_metric_name,

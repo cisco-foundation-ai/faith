@@ -20,9 +20,9 @@ from tqdm import tqdm
 
 from faith import __version__
 from faith._internal.functools.compose import compose
-from faith._internal.io.datastore import Datastore, DatastoreContext
 from faith._internal.io.json import read_logs_from_json, write_as_json
 from faith._internal.io.logging import LoggingTransform
+from faith._internal.io.store import Store
 from faith._internal.iter.mux import MuxTransform
 from faith._internal.iter.transform import DevNullReducer, IdentityTransform
 from faith._internal.multiprocessing.gpu_scheduling import (
@@ -37,6 +37,7 @@ from faith.benchmark.listing import choices_to_benchmarks, find_benchmarks
 from faith.experiment.experiment import BenchmarkExperiment
 from faith.experiment.params import DataSamplingParams, ExperimentParams
 from faith.model.factory import create_model
+from faith.model.resolver import ResolvedModelPath
 from faith.record_pipelines.formatting import SampleFormatter
 from faith.record_pipelines.hashing import HashModelDataTransform
 from faith.record_pipelines.params import RecordHandlingParams
@@ -82,7 +83,7 @@ def _run_single_model(
     exp_params: ExperimentParams,
     sampling_params: DataSamplingParams,
     record_params: RecordHandlingParams,
-    datastore: Datastore,
+    datastore: Store,
 ) -> Iterator[Path]:
     """
     Run benchmarks for a single model.
@@ -105,12 +106,11 @@ def _run_single_model(
         )
 
     # Initialize the model from its annotated path.
-    with DatastoreContext.from_path(model_spec.path) as model_datastore:
-        model_datastore.pull(raise_on_error=True)
+    with ResolvedModelPath(model_spec) as name_or_path:
         try:
             model = create_model(
                 model_spec.engine.engine_type,
-                name_or_path=str(model_datastore.path),
+                name_or_path=name_or_path,
                 tokenizer_name_or_path=model_spec.tokenizer,
                 num_gpus=model_spec.engine.num_gpus,
                 seed=exp_params.initial_seed,
@@ -231,7 +231,7 @@ def run_experiment_queries(
     exp_params: ExperimentParams,
     sampling_params: DataSamplingParams,
     record_params: RecordHandlingParams,
-    datastore: Datastore,
+    datastore: Store,
     parallelize_models: bool = True,
 ) -> Iterator[Path]:
     """Query over given benchmarks for all specified models and generation parameters."""

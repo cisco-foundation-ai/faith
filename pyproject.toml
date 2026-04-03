@@ -66,7 +66,7 @@ sagemaker = [
 vllm = [
   "bitsandbytes==0.49.2",
   "torch==2.10.0",
-  "vllm[flashinfer,fastsafetensors]==0.17.1",
+  "vllm[flashinfer,fastsafetensors]==0.18.1",
 ]
 all-engines = [
   "cisco-foundation-ai-test-harness[openai, openrouter, sagemaker, vllm]",

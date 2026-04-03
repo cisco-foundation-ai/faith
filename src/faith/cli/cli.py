@@ -24,7 +24,7 @@ from typing import Any
 import argcomplete
 import colorlog
 
-from faith._internal.io.datastore import Datastore, DatastoreContext
+from faith._internal.io.store import Store, StoreContext
 from faith._internal.iter.transform import DevNullReducer
 from faith._internal.threading.periodic import PeriodicTaskContext
 from faith._types.benchmark.sample_ratio import SampleRatio
@@ -52,7 +52,7 @@ _cli_subparsers = _cli_parser.add_subparsers(required=True)
 ########################################
 
 
-def _cli_query(args: argparse.Namespace, datastore: Datastore) -> Iterator[Path]:
+def _cli_query(args: argparse.Namespace, datastore: Store) -> Iterator[Path]:
     """Helper function to run the query sub-command over the CLI arguments."""
     # We disable the import-outside-toplevel pylint rule here since each
     # sub-command has different dependencies and importing them as part of the
@@ -198,7 +198,7 @@ def _cli_query(args: argparse.Namespace, datastore: Datastore) -> Iterator[Path]
 
 def _query_main(args: argparse.Namespace) -> None:
     """Query model(s) over the questions in one or more benchmarks."""
-    with DatastoreContext.from_path(args.datastore_location) as datastore:
+    with StoreContext.from_path(args.datastore_location) as datastore:
         with PeriodicTaskContext(
             partial(datastore.push, raise_on_error=False), interval=150
         ):
@@ -551,7 +551,7 @@ def _run_all_main(args: argparse.Namespace) -> None:
     from faith.cli.subcmd.summarize import summarize_experiments
     from faith.record_pipelines.params import RecordHandlingParams
 
-    with DatastoreContext.from_path(args.datastore_location) as datastore:
+    with StoreContext.from_path(args.datastore_location) as datastore:
         with PeriodicTaskContext(
             partial(datastore.push, raise_on_error=False), interval=150
         ):

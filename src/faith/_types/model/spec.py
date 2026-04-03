@@ -47,6 +47,11 @@ class ModelSpec(DataClassJsonMixin):
     )
     generation: GenParams = field(default_factory=GenParams)
 
+    @property
+    def is_remote(self) -> bool:
+        """Return True if the model path refers to a remote resource."""
+        return self.path.startswith("gs://")
+
     def __post_init__(self) -> None:
         """Validate the ModelSpec after initialization."""
         assert self.path, "Model path must be a non-empty string."

@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from faith._internal.algo.hash import dict_sha256
-from faith._internal.io.datastore import Datastore
+from faith._internal.io.store import Store
 from faith._types.benchmark.sample_ratio import SampleRatio
 from faith._types.benchmark.spec import BenchmarkSpec
 from faith._types.config.benchmark import BenchmarkConfig
@@ -38,7 +38,7 @@ class BenchmarkExperiment:
         n_shot: SampleRatio,
         model_name: str,
         gen_params: GenParams,
-        root_datastore: Datastore,
+        root_datastore: Store,
         num_trials: int,
         initial_seed: int,
         **kwargs: Any,
@@ -94,7 +94,7 @@ class BenchmarkExperiment:
         return self._benchmark_spec
 
     @property
-    def datastore(self) -> Datastore:
+    def datastore(self) -> Store:
         """Returns the datastore for this experiment."""
         return self._datastore
 

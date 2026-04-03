@@ -9,9 +9,9 @@ from enum import auto
 from pathlib import Path
 from typing import Sequence
 
-from faith._internal.io.datastore import DatastoreContext
 from faith._internal.io.json import read_json_file
 from faith._internal.io.pandas import safe_df_to_csv
+from faith._internal.io.resource_provider import ResourceProvider
 from faith._types.enums import CIStrEnum
 from faith.experiment.summarize import build_summary
 from faith.ingestion.parser import (
@@ -120,8 +120,8 @@ def _process_metrics_file(metrics_path: Path):
             f"Missing experiment.json for {metrics_path}. Expected: {experiment_file}"
         )
 
-    with DatastoreContext.from_path(str(experiment_file)) as ds:
-        experiment_data = read_json_file(ds.pull())
+    with ResourceProvider(str(experiment_file)) as path:
+        experiment_data = read_json_file(path)
     experiment_config = parse_experiment_config(experiment_data)
     primary_metric_name = parse_primary_metric(experiment_data)
     return parse_metrics_file(metrics_path, experiment_config, primary_metric_name)

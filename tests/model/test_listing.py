@@ -50,6 +50,14 @@ ALL_REASONING = [
     "reasoning/gpt-oss-120b",
     "reasoning/gpt-oss-20b",
     "reasoning/o3-2025-04-16",
+    "reasoning/qwen3.5-0.8b",
+    "reasoning/qwen3.5-122b-a10b",
+    "reasoning/qwen3.5-27b",
+    "reasoning/qwen3.5-2b",
+    "reasoning/qwen3.5-35b-a3b",
+    "reasoning/qwen3.5-397b-a17b-fp8",
+    "reasoning/qwen3.5-4b",
+    "reasoning/qwen3.5-9b",
 ]
 
 ALL_MODELS = ALL_INSTRUCT + ALL_REASONING
