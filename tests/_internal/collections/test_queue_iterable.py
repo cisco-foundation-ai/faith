@@ -56,12 +56,13 @@ def test_queue_iterable_put_after_close_raises() -> None:
 
 def test_queue_iterable_extra_close_raises() -> None:
     """Calling close more times than expected raises RuntimeError."""
+    # pylint: disable=protected-access
     qi: QueueIterable[str] = QueueIterable()
-    qi.close()
+    qi._close()
     with pytest.raises(
         RuntimeError, match="close\\(\\) called more times than expected"
     ):
-        qi.close()
+        qi._close()
 
 
 def test_queue_iterable_context_manager_closes_on_error() -> None:
