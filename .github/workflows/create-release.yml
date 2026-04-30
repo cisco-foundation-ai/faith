@@ -9,14 +9,13 @@
 # 2. Create a new tag using the release version.
 # 3. Create a new GitHub release (the bundle and whl files will be attached).
 
-name: "Release: Tag and Release"
+name: "tag and release"
 
 on:
   push:
     branches:
       - "main"
       - "release-*"
-      - "howard/*"
     paths:
       - "version.txt"
       - ".github/workflows/create-release.yml"
@@ -28,17 +27,21 @@ permissions:
   statuses: read
 
 jobs:
-  get_version:
-    name: Get version from version.txt
+  get-version:
+    name: "get version from version.txt"
     runs-on: ubuntu-latest
     outputs:
       faith_version: ${{ steps.global_var.outputs.faith_version }}
     steps:
-      - name: 📦 checkout repository
+      - name: "🔒 harden runner"
+        uses: step-security/harden-runner@8d3c67de8e2fe68ef647c8db1e6a09f647780f40 # v2.19.0
+        with:
+          egress-policy: audit
+      - name: "📦 checkout repository"
         uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
         with:
           persist-credentials: false
-      - name: Set global variables
+      - name: "⚙️ set global variables"
         env:
           MY_REF_NAME: "${{ github.ref_name }}"
         id: global_var
@@ -51,26 +54,29 @@ jobs:
              [[ "$MY_REF_NAME" != "release-*" ]]; then
             export PREFIX="$MY_REF_NAME-"
           fi
-          env |sort
           echo "faith_version=${PREFIX}${MY_VERSION}" >> "$GITHUB_OUTPUT"
 
-  create_tag:
-    name: Create Tag
+  create-tag:
+    name: "create tag"
     runs-on: ubuntu-latest
     permissions:
       contents: write
       packages: write
       statuses: write
-    needs: [get_version]
+    needs: [get-version]
     steps:
-      - name: 📦 checkout repository
+      - name: "🔒 harden runner"
+        uses: step-security/harden-runner@8d3c67de8e2fe68ef647c8db1e6a09f647780f40 # v2.19.0
+        with:
+          egress-policy: audit
+      - name: "📦 checkout repository"
         uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
         with:
           persist-credentials: true
-      - name: Create Tag for FAITH
+      - name: "🏷️ create git tag"
         env:
           GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-          MYTAG: "${{ needs.get_version.outputs.faith_version }}"
+          MYTAG: "${{ needs.get-version.outputs.faith_version }}"
         run: |
           echo "INFO: Tagging HEAD to [$MYTAG]"
           git log --oneline -n 5
@@ -81,22 +87,26 @@ jobs:
           git push origin "${MYTAG}"
 
   release:
-    name: Release
+    name: "release"
     runs-on: ubuntu-latest
     permissions:
       contents: write
       packages: write
       statuses: write
-    needs: [get_version, create_tag]
+    needs: [get-version, create-tag]
     steps:
-      - name: Checkout
+      - name: "🔒 harden runner"
+        uses: step-security/harden-runner@8d3c67de8e2fe68ef647c8db1e6a09f647780f40 # v2.19.0
+        with:
+          egress-policy: audit
+      - name: "📦 checkout repository"
         uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
         with:
           persist-credentials: false
-      - name: Create a GitHub release
+      - name: "🚀 create a GitHub release"
         env:
           GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-          MYTAG: "${{ needs.get_version.outputs.faith_version }}"
+          MYTAG: "${{ needs.get-version.outputs.faith_version }}"
         run: |
           gh release create "${MYTAG}" \
             --title "${MYTAG}" \
