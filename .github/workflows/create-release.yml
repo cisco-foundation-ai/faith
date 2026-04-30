@@ -94,8 +94,10 @@ jobs:
         with:
           persist-credentials: false
       - name: Create a GitHub release
-        uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda
-        with:
-          name: ${{ needs.get_version.outputs.faith_version }}
-          tag_name: ${{ needs.get_version.outputs.faith_version }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          MYTAG: "${{ needs.get_version.outputs.faith_version }}"
+        run: |
+          gh release create "${MYTAG}" \
+            --title "${MYTAG}" \
+            --generate-notes
