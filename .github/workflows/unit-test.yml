@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 ---
-name: "Unit Test Python"
+name: "unit test python"
 
 on:
   push:
@@ -23,26 +23,25 @@ jobs:
     permissions:
       contents: read
     steps:
-      # Check out with entire commit history to ensure all commits and tags
-      # are available for correct versioning.
-      - name: 📦 checkout repository
+      - name: "🔒 harden runner"
+        uses: step-security/harden-runner@8d3c67de8e2fe68ef647c8db1e6a09f647780f40 # v2.19.0
+        with:
+          egress-policy: audit
+      - name: "📦 checkout repository"
         uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
         with:
           fetch-depth: 0
           persist-credentials: false
-
-      - name: "Setup uv"
+      - name: "🐍 setup python via uv"
         uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
           python-version: "3.11"
           enable-cache: true
-
-      - name: "Install dependencies"
+      - name: "📥 install packages"
         run: |
           uv venv
           uv pip install -e '.[test]'
-
-      - name: "Run tests"
+      - name: "🧪 run all unit tests"
         run: |
           source .venv/bin/activate
           make test_all
