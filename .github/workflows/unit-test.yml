@@ -19,7 +19,7 @@ concurrency:
 
 jobs:
   unit-tests:
-    runs-on: ubuntu-22.04-x86_64-large
+    runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
