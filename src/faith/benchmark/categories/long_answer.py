@@ -17,7 +17,7 @@ from faith._types.config.patterns import AnswerFormat, PatternDef
 from faith._types.model.generation import GenerationMode
 from faith._types.record.prompt import PromptRecord
 from faith._types.record.stats import MetricSummary
-from faith.benchmark.benchmark import BaseBenchmark
+from faith.benchmark.benchmark import QABenchmark
 from faith.benchmark.dataset.dataset import BenchmarkDataset
 from faith.benchmark.formatting.qa import QAFormatter
 from faith.benchmark.grading.common_graders import ChatCompletionLogGrader
@@ -26,7 +26,7 @@ from faith.benchmark.grading.log_grader import LogGrader
 from faith.benchmark.scores.scoring import Score
 
 
-class LABenchmark(BaseBenchmark):
+class LABenchmark(QABenchmark):
     """Base `Benchmark` class for benchmarks with long answer question-answer pairs."""
 
     # Note: Because long answer benchmarks cannot be used in next-token or logits mode,

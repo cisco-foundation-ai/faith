@@ -26,7 +26,7 @@ from faith._types.config.scoring import OutputProcessingConfig
 from faith._types.model.generation import GenerationMode
 from faith._types.record.prompt import PromptRecord
 from faith._types.record.stats import MetricSummary, SingleLabelSeq
-from faith.benchmark.benchmark import BaseBenchmark
+from faith.benchmark.benchmark import QABenchmark
 from faith.benchmark.dataset.dataset import BenchmarkDataset
 from faith.benchmark.formatting.qa import QAFormatter
 from faith.benchmark.grading.common_graders import (
@@ -74,7 +74,7 @@ def _load_answer_set(config: BenchmarkConfig) -> frozenset[str]:
     return answer_set
 
 
-class MCBenchmark(BaseBenchmark):
+class MCBenchmark(QABenchmark):
     """A benchmark for multiple choice question-answering tasks."""
 
     def __init__(self, spec: BenchmarkSpec, config: BenchmarkConfig, **kwargs: Any):

@@ -10,13 +10,15 @@ from faith._types.model.generation import GenerationMode
 from faith._types.record.model import ModelRecord
 from faith._types.record.prompt import PromptRecord
 from faith._types.record.sample import Metadata, SampleRecord
-from faith.benchmark.benchmark import Benchmark
+from faith.benchmark.benchmark import QABenchmark
 
 
 class SampleFormatter(Mapping[PromptRecord, SampleRecord]):
     """Transform that converts PromptRecords into log records for querying the model."""
 
-    def __init__(self, benchmark: Benchmark, tokenizer: PreTrainedTokenizerBase | None):
+    def __init__(
+        self, benchmark: QABenchmark, tokenizer: PreTrainedTokenizerBase | None
+    ):
         self._bench_formatter = benchmark.formatter
         self._bench_version = benchmark.version
 

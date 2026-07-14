@@ -8,7 +8,7 @@ from typing import Any
 
 from faith._types.benchmark.spec import BenchmarkSpec
 from faith._types.config.benchmark import BenchmarkConfig
-from faith.benchmark.benchmark import Benchmark
+from faith.benchmark.benchmark import QABenchmark
 from faith.benchmark.categories.long_answer import LABenchmark
 from faith.benchmark.categories.multiple_choice import MCBenchmark
 from faith.benchmark.categories.short_answer import SABenchmark
@@ -16,7 +16,7 @@ from faith.benchmark.categories.short_answer import SABenchmark
 
 def load_benchmark(
     spec: BenchmarkSpec, config: BenchmarkConfig, **kwargs: Any
-) -> Benchmark:
+) -> QABenchmark:
     """Load a benchmark from a benchmark specification `spec` and configuration `config`."""
     if config.mcqa_config is not None:
         return MCBenchmark(spec, config, **kwargs)
