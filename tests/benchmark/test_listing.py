@@ -20,6 +20,8 @@ def test_benchmark_choices() -> None:
         "all",
         "all-reasoning",
         "all-security",
+        "cti-reasoning",
+        "!cti-reasoning",
         "ctibench-ate",
         "!ctibench-ate",
         "ctibench-mcqa",
@@ -30,6 +32,8 @@ def test_benchmark_choices() -> None:
         "!ctibench-taa",
         "ctibench-vsp",
         "!ctibench-vsp",
+        "cwe-prediction",
+        "!cwe-prediction",
         "cybermetric-10000",
         "!cybermetric-10000",
         "cybermetric-2000",
@@ -60,10 +64,12 @@ def test_choices_to_benchmarks() -> None:
     assert choices_to_benchmarks([]) == []
     assert choices_to_benchmarks(["all"]) == benchmark_subpath(
         [
+            "cti-reasoning",
             "ctibench-ate",
             "ctibench-mcqa",
             "ctibench-rcm",
             "ctibench-vsp",
+            "cwe-prediction",
             "cybermetric-10000",
             "cybermetric-2000",
             "cybermetric-500",
@@ -77,15 +83,18 @@ def test_choices_to_benchmarks() -> None:
     )
     assert choices_to_benchmarks(["all-reasoning"]) == benchmark_subpath(
         [
+            "cti-reasoning",
             "secbench-mcqa-eng-reasoning",
         ]
     )
     assert choices_to_benchmarks(["all-security"]) == benchmark_subpath(
         [
+            "cti-reasoning",
             "ctibench-ate",
             "ctibench-mcqa",
             "ctibench-rcm",
             "ctibench-vsp",
+            "cwe-prediction",
             "cybermetric-10000",
             "cybermetric-2000",
             "cybermetric-500",
@@ -99,10 +108,12 @@ def test_choices_to_benchmarks() -> None:
     assert choices_to_benchmarks(["mmlu-all", "all"]) == benchmark_subpath(
         [
             "mmlu-all",
+            "cti-reasoning",
             "ctibench-ate",
             "ctibench-mcqa",
             "ctibench-rcm",
             "ctibench-vsp",
+            "cwe-prediction",
             "cybermetric-10000",
             "cybermetric-2000",
             "cybermetric-500",
@@ -115,10 +126,12 @@ def test_choices_to_benchmarks() -> None:
     )
     assert choices_to_benchmarks(["!mmlu-all", "all", "!seceval"]) == benchmark_subpath(
         [
+            "cti-reasoning",
             "ctibench-ate",
             "ctibench-mcqa",
             "ctibench-rcm",
             "ctibench-vsp",
+            "cwe-prediction",
             "cybermetric-10000",
             "cybermetric-2000",
             "cybermetric-500",
@@ -138,10 +151,12 @@ def test_find_benchmarks() -> None:
     assert find_benchmarks(benchmarks_root()) == unordered(
         benchmark_subpath(
             [
+                "cti-reasoning",
                 "ctibench-ate",
                 "ctibench-mcqa",
                 "ctibench-rcm",
                 "ctibench-vsp",
+                "cwe-prediction",
                 "cybermetric-10000",
                 "cybermetric-2000",
                 "cybermetric-500",
