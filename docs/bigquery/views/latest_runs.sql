@@ -34,6 +34,6 @@ FROM (
             ORDER BY ingest_time DESC
         ) AS rn
     FROM `PROJECT_ID.DATASET_ID.metrics`
-)
-WHERE rn = 1
+) AS ranked
+WHERE ranked.rn = 1
 ORDER BY ingest_time DESC;

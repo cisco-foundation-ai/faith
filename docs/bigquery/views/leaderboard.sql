@@ -30,6 +30,6 @@ FROM (
         ) AS rn
     FROM `PROJECT_ID.DATASET_ID.metrics`
     WHERE is_primary = TRUE
-)
-WHERE rn = 1
+) AS ranked
+WHERE ranked.rn = 1
 ORDER BY benchmark ASC, metric_value DESC;
