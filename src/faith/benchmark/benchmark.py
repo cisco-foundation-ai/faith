@@ -37,23 +37,66 @@ class Benchmark(ABC):
         path: Path | None = None,
         seed: int | None = None,
     ):
-        """Initialize the Benchmark class.
+        """Initialize the benchmark's shared identity.
 
         Args:
             spec (BenchmarkSpec): The specification for the benchmark.
             config (BenchmarkConfig): The configuration for the benchmark.
-            formatter (QAFormatter): The formatter used to create prompts.
             path (Path | None): The path to the benchmark data directory used when
                 loading data.
             seed (int | None): The random seed for reproducibility.
         """
         self._name = spec.name
-        self._generation_mode = spec.generation_mode
-        self._n_shot = spec.n_shot
         self._config = config
-        self._formatter = QAFormatter(spec.prompt_format, self._config.format)
         self._seed = seed
         self._path = path
+
+    @property
+    def name(self) -> str:
+        """Fetch the name of the benchmark."""
+        return self._name
+
+    @property
+    def version(self) -> str:
+        """Fetch the version of the benchmark."""
+        return __version__
+
+    @abstractmethod
+    def log_grader(
+        self,
+        *,
+        model_format_config: PatternDef | None = None,
+    ) -> LogGrader:
+        """Fetch a log grader that scores this benchmark's logged records."""
+
+    @abstractmethod
+    def grade_aggregator(self) -> GradeAggregator:
+        """Fetch a grade aggregator that summarizes this benchmark's graded records."""
+
+
+class QABenchmark(Benchmark):
+    """Base class for all question-answer benchmarks."""
+
+    def __init__(
+        self,
+        spec: BenchmarkSpec,
+        config: BenchmarkConfig,
+        path: Path | None = None,
+        seed: int | None = None,
+    ):
+        """Initialize the QA benchmark.
+
+        Args:
+            spec (BenchmarkSpec): The specification for the benchmark.
+            config (BenchmarkConfig): The configuration for the benchmark.
+            path (Path | None): The path to the benchmark data directory used when
+                loading data.
+            seed (int | None): The random seed for reproducibility.
+        """
+        super().__init__(spec, config, path=path, seed=seed)
+        self._generation_mode = spec.generation_mode
+        self._n_shot = spec.n_shot
+        self._formatter = QAFormatter(spec.prompt_format, self._config.format)
 
     @property
     def answer_set(self) -> frozenset[str] | None:
@@ -66,19 +109,9 @@ class Benchmark(ABC):
         return self._generation_mode
 
     @property
-    def name(self) -> str:
-        """Fetch the name of the benchmark."""
-        return self._name
-
-    @property
     def formatter(self) -> QAFormatter:
         """Fetch the benchmark's formatter used for creating prompts."""
         return self._formatter
-
-    @property
-    def version(self) -> str:
-        """Fetch the version of the benchmark."""
-        return __version__
 
     def answer_leadin(self, tokenizer: PreTrainedTokenizerBase) -> str:
         """Fetch the answer lead-in for the benchmark.
@@ -90,36 +123,17 @@ class Benchmark(ABC):
             f"Benchmark {self.name} does not implement answer lead-in."
         )
 
-    @abstractmethod
-    def build_dataset(
-        self,
-        sample_size: int | None = None,
-        randomize_choices: bool = False,
-    ) -> "BenchmarkDataset":
-        """Builds the dataset for this benchmark."""
-
-    @abstractmethod
-    def log_grader(
-        self,
-        *,
-        model_format_config: PatternDef | None = None,
-    ) -> LogGrader:
-        """Fetch a log grader for this benchmark."""
-
-    @abstractmethod
-    def grade_aggregator(self) -> GradeAggregator:
-        """Fetch a grade aggregator for this benchmark."""
-
-
-class BaseBenchmark(Benchmark):
-    """Base class for benchmarks that uses a BenchmarkDataset."""
-
     def build_dataset(
         self,
         sample_size: int | None = None,
         randomize_choices: bool = False,
     ) -> BenchmarkDataset:
-        """Builds the dataset for this benchmark."""
+        """Builds the dataset for this benchmark.
+
+        Loads the benchmark's data from its source, samples it, splits off the
+        n-shot holdout, then delegates the type-specific construction to
+        `_build_dataset`.
+        """
         # Build the benchmark's dataset from the benchmark configuration.
         if self._seed is None:
             logger.warning("No seed provided for benchmark; using default seed.")

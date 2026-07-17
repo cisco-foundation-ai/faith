@@ -22,11 +22,11 @@ from faith.cli.subcmd.query import (
     _run_single_model,
     current_timestamp,
     get_command_output,
-    read_trial_log,
     run_experiment_queries,
 )
 from faith.experiment.params import DataSamplingParams, ExperimentParams
 from faith.record_pipelines.params import RecordHandlingParams
+from faith.record_pipelines.trial_log import read_trial_log
 
 MINIMAL_SAMPLE_RECORD = SampleRecord.from_dict(
     {
@@ -144,6 +144,13 @@ def test_run_single_model_experiment_loop(tmp_path: Path) -> None:
 
     with (
         patch("faith.cli.subcmd.query.find_benchmarks", return_value=[tmp_path]),
+        # The per-trial pipeline is exercised by QATrialRunner's own tests; here
+        # we only verify the experiment loop drives the runner and writes the
+        # run record, so the runner is mocked out.
+        patch(
+            "faith.cli.subcmd.query.trial_runner_for",
+            return_value=Mock(run_trial=Mock(return_value=None)),
+        ),
         patch(
             "faith.cli.subcmd.query.create_model",
             return_value=Mock(

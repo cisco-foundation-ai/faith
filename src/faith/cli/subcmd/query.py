@@ -10,7 +10,7 @@ import os
 import subprocess
 import sys
 import time
-from collections.abc import Iterable, Iterator, Sequence
+from collections.abc import Iterator, Sequence
 from datetime import datetime
 from functools import partial
 from pathlib import Path
@@ -20,11 +20,8 @@ from tqdm import tqdm
 
 from faith import __version__
 from faith._internal.functools.compose import compose
-from faith._internal.io.json import read_logs_from_json, write_as_json
-from faith._internal.io.logging import LoggingTransform
+from faith._internal.io.json import write_as_json
 from faith._internal.io.store import Store
-from faith._internal.iter.mux import MuxTransform
-from faith._internal.iter.transform import DevNullReducer, IdentityTransform
 from faith._internal.multiprocessing.gpu_scheduling import (
     GPUJob,
     run_gpu_jobs_in_parallel,
@@ -32,18 +29,13 @@ from faith._internal.multiprocessing.gpu_scheduling import (
 from faith._types.model.engine import ModelEngine
 from faith._types.model.generation import GenerationMode
 from faith._types.model.spec import ModelSpec
-from faith._types.record.sample import RecordStatus, SampleRecord
 from faith.benchmark.listing import choices_to_benchmarks, find_benchmarks
 from faith.experiment.experiment import BenchmarkExperiment
 from faith.experiment.params import DataSamplingParams, ExperimentParams
+from faith.experiment.trial_runner import trial_runner_for
 from faith.model.factory import create_model
 from faith.model.resolver import ResolvedModelPath
-from faith.record_pipelines.formatting import SampleFormatter
-from faith.record_pipelines.hashing import HashModelDataTransform
 from faith.record_pipelines.params import RecordHandlingParams
-from faith.record_pipelines.prediction import model_querier
-from faith.record_pipelines.reconciliation import record_reconciler
-from faith.record_pipelines.sorting import SortByTransform
 
 logger = logging.getLogger(__name__)
 
@@ -69,13 +61,6 @@ def current_timestamp() -> str:
     return datetime.now(tz=ZoneInfo("America/Los_Angeles")).strftime(
         "%Y-%m-%d %H:%M:%S %Z"
     )
-
-
-def read_trial_log(trial_log_path: Path) -> Iterable[SampleRecord]:
-    """Read the trial log records from the given path."""
-    if trial_log_path.exists():
-        return [SampleRecord.from_dict(d) for d in read_logs_from_json(trial_log_path)]
-    return []  # No records if the log file doesn't exist yet.
 
 
 def _run_single_model(
@@ -185,28 +170,13 @@ def _run_single_model(
                 experiment, desc="Trials", unit=" trial", leave=False
             ):
                 trial_start_time = time.perf_counter()
-                _ = (
-                    benchmark.build_dataset(**sampling_params.to_dict()).iter_data()
-                    >> SampleFormatter(benchmark, model.tokenizer)
-                    >> record_reconciler(
-                        read_trial_log(exp_datastore.path / trial_path),
-                        record_params.replacement_strategy,
-                        benchmark.generation_mode,
-                    )
-                    >> MuxTransform(
-                        {
-                            # Pass through fresh records unchanged.
-                            RecordStatus.FRESH: IdentityTransform[SampleRecord](),
-                            # For stale records, query the model and update the record.
-                            RecordStatus.STALE: model_querier(
-                                model, benchmark.generation_mode, model_spec.generation
-                            ),
-                        }
-                    )
-                    >> HashModelDataTransform()
-                    >> SortByTransform[int]("data", "benchmark_sample_index")
-                    >> LoggingTransform[SampleRecord](exp_datastore.path / trial_path)
-                    >> DevNullReducer[SampleRecord]()
+                trial_runner_for(benchmark).run_trial(
+                    benchmark,
+                    exp_datastore.path / trial_path,
+                    model=model,
+                    generation=model_spec.generation,
+                    sampling_params=sampling_params,
+                    record_params=record_params,
                 )
                 run_record["trial_records"][str(trial_path.parent)] = {
                     "runtime_seconds": time.perf_counter() - trial_start_time,

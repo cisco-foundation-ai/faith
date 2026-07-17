@@ -1,0 +1,61 @@
+# Copyright 2025 Cisco Systems, Inc. and its affiliates
+#
+# SPDX-License-Identifier: Apache-2.0
+
+---
+benchmark:
+  metadata: !from
+    '$BENCHMARKS_ROOT/base-template.yaml["metadata"]':
+      name: "cwe-prediction"
+      description: |-
+        CWE Prediction benchmark with 3,000 question-answer pairs. Given a
+        CVE or GHSA security advisory description, predict the associated
+        CWE (Common Weakness Enumeration) label. This benchmark evaluates
+        a model's ability to classify vulnerabilities based on their
+        underlying weakness patterns.
+      license: "Sources: CVE/NVD (public domain, NIST), GHSA (CC-BY 4.0, https://github.com/advisories)"
+      urls:
+        - https://huggingface.co/datasets/fdtn-ai/cwe-prediction-benchmark
+        - https://nvd.nist.gov/
+        - https://github.com/advisories
+      categories: ["security"]
+  source:
+    huggingface: !from
+      '$BENCHMARKS_ROOT/sources-template.yaml["sources"]["huggingface"]':
+        path: "fdtn-ai/cwe-prediction-benchmark"
+        subset_name: null
+        test_split: "cwe_prediction_benchmark"
+    options:
+      dataframe_transform_expr: |
+        df.assign(
+            question=df["question"].str.strip(),
+            answer=df["final_answer"].str.strip().str.upper(),
+        )[["question", "answer"]]
+  saqa_config:
+    type: "string_match"
+  format:
+    instructions: !from
+      '$BENCHMARKS_ROOT/instructions-template.yaml["instructions"]':
+        base_inst_template: "The following is a vulnerability description. Map it to the appropriate CWE ID."
+        chat_inst_template: "Analyze the following vulnerability description and map it to the most appropriate CWE. Provide a brief justification for your choice. Ensure the last line of your response contains only the CWE ID which should be of format `CWE ID: CWE-$id`."
+    prompt:
+      question_template: "{{ question }}"
+      answer_template: "{{ answer }}"
+      prompt_template: !from '$BENCHMARKS_ROOT/prompting-template.yaml["prompting"]["prompt_template"]'
+  output_processing: !from
+    '$BENCHMARKS_ROOT/output-processing-template.yaml["output_processing"]':
+      primary_metric: "accuracy.mean"
+      answer_formats:
+        # Reuse CWE extraction patterns from ctibench-rcm
+        - pattern: '(?i)\b(cwe[‑-]\d+)\b'
+          capture_transform:
+            params: ["x"]
+            expr: "x.upper().replace('‑', '-')"
+          disambiguation: "match_if_unique"
+          format_type: "proper"
+        - pattern: '(?i)\b(?:cwe|id):\s+(\d+)\b'
+          capture_transform:
+            params: ["x"]
+            expr: 'f"CWE-{x}"'
+          disambiguation: "match_if_unique"
+          format_type: "improper"

@@ -1,0 +1,38 @@
+# Copyright 2025 Cisco Systems, Inc. and its affiliates
+#
+# SPDX-License-Identifier: Apache-2.0
+
+---
+benchmark: !from
+  '$BENCHMARKS_ROOT/mcqa-template.yaml["mcqa_common_benchmark"]':
+    metadata: !from
+      '$BENCHMARKS_ROOT/base-template.yaml["metadata"]':
+        name: "cti-reasoning"
+        description: |-
+          CTI Reasoning benchmark with 200 multiple-choice questions about
+          Cyber Threat Intelligence. Sources include CAPEC (Common Attack
+          Pattern Enumeration and Classification) and CWE (Common Weakness
+          Enumeration). Questions test analysis-based reasoning and deep
+          processing of security concepts.
+        license: "Terms of Use: CAPEC (https://capec.mitre.org/about/termsofuse.html), CWE (https://cwe.mitre.org/about/termsofuse.html)"
+        urls:
+          - https://huggingface.co/datasets/fdtn-ai/cti-reasoning
+          - https://capec.mitre.org/
+          - https://cwe.mitre.org/
+        categories: ["security", "reasoning"]
+    source:
+      huggingface: !from
+        '$BENCHMARKS_ROOT/sources-template.yaml["sources"]["huggingface"]':
+          path: "fdtn-ai/cti-reasoning"
+          subset_name: null
+          test_split: "cti_reasoning_test"
+      options:
+        dataframe_transform_expr: |
+          df.assign(
+              question=df["question"].str.strip(),
+              answer=df["correct_option"].str.strip().str.upper(),
+              choices=[
+                  [row["option_a"], row["option_b"], row["option_c"], row["option_d"]]
+                  for _, row in df.iterrows()
+              ],
+          )[["question", "choices", "answer"]]

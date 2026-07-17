@@ -23,7 +23,7 @@ from faith._types.config.patterns import PatternDef
 from faith._types.model.generation import GenerationMode
 from faith._types.model.prompt import PromptFormatter
 from faith._types.record.prompt import PromptRecord
-from faith.benchmark.benchmark import Benchmark
+from faith.benchmark.benchmark import QABenchmark
 from faith.benchmark.dataset.dataset import BenchmarkDataset
 from faith.benchmark.formatting.qa import QAFormatter
 from faith.benchmark.grading.grade_aggregator import GradeAggregator
@@ -60,7 +60,7 @@ def _make_fake_tokenizer() -> PreTrainedTokenizerBase:
         return AutoTokenizer.from_pretrained(tmp_path)
 
 
-class FakeBenchmark(Benchmark):
+class FakeBenchmark(QABenchmark):
     """A fake benchmark for testing purposes."""
 
     def answer_leadin(self, _tokenizer: PreTrainedTokenizerBase) -> str:
@@ -78,6 +78,17 @@ class FakeBenchmark(Benchmark):
     ) -> BenchmarkDataset:
         """Return the dataset for the fake benchmark."""
         return FakeDataset(self.formatter, np.random.default_rng())
+
+    def _build_dataset(
+        self,
+        benchmark_data: pd.DataFrame,
+        nshot_sampler: NShotSampler,
+        rng: np.random.Generator,
+        randomize_choices: bool = False,
+        ancillary_columns: frozenset[str] = frozenset(),
+    ) -> BenchmarkDataset:
+        """Not used: this fake overrides build_dataset directly."""
+        raise NotImplementedError("This method should not be called.")
 
     def log_grader(
         self,

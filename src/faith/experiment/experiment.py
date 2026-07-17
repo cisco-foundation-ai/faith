@@ -15,7 +15,7 @@ from faith._types.benchmark.spec import BenchmarkSpec
 from faith._types.config.benchmark import BenchmarkConfig
 from faith._types.model.generation import GenerationMode, GenParams
 from faith._types.model.prompt import PromptFormatter
-from faith.benchmark.benchmark import Benchmark
+from faith.benchmark.benchmark import QABenchmark
 from faith.benchmark.config import load_config_from_path
 from faith.benchmark.load import load_benchmark
 
@@ -23,7 +23,7 @@ from faith.benchmark.load import load_benchmark
 class BenchmarkExperiment:
     """A class to manage an experiment for a benchmark over multiple trials.
 
-    Experiments act as an iterator of `Benchmark` instances, each representing a trial
+    Experiments act as an iterator of `QABenchmark` instances, each representing a trial
     of the benchmark with a specific seed. The experiment is configured with parameters
     benchmark path, generation mode, prompt format, number of shots, and any
     `kwargs` given. The datastore location and seed for the benchmark are changed for
@@ -98,7 +98,7 @@ class BenchmarkExperiment:
         """Returns the datastore for this experiment."""
         return self._datastore
 
-    def __iter__(self) -> Iterator[tuple[Benchmark, Path]]:
+    def __iter__(self) -> Iterator[tuple[QABenchmark, Path]]:
         """Return an iterator over the benchmark trials."""
         return self
 
@@ -106,8 +106,8 @@ class BenchmarkExperiment:
         """Return the number of trials in the experiment."""
         return self._num_trials
 
-    def __next__(self) -> tuple[Benchmark, Path]:
-        """Create a new Benchmark instance for the next trial."""
+    def __next__(self) -> tuple[QABenchmark, Path]:
+        """Create a new QABenchmark instance for the next trial."""
         if self._trial >= self._num_trials:
             raise StopIteration
         trial_seed = self._initial_seed + self._trial
