@@ -577,7 +577,7 @@ export FAITH_BIGQUERY_DATASET=faith_results
 bq mk --dataset ${FAITH_BIGQUERY_PROJECT}:${FAITH_BIGQUERY_DATASET}
 
 # Ingest results
-pip install faith[bigquery]
+uv pip install -e '.[bigquery]'
 faith summarize --experiment-path gs://my-bucket/results \
   --output-format bigquery
 ```
