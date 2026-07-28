@@ -16,6 +16,10 @@ for benchmarking the knowledge and capabilities of language models in the
 cybersecurity domain. FAITH currently runs benchmarks for the following
 cybersecurity benchmarks:
 
+- [CTI-Reasoning](https://huggingface.co/datasets/fdtn-ai/cti-reasoning)
+  - `cti-reasoning`: 200 expert-curated multiple-choice questions on Cyber
+    Threat Intelligence, sourced from CAPEC and CWE, testing analysis-based
+    reasoning and deep processing of security concepts.
 - [CTIBench](https://arxiv.org/abs/2406.07599)
   - `ctibench-ate`: Attack Technique Extraction — identify MITRE ATT&CK
     techniques from threat descriptions.
@@ -24,6 +28,10 @@ cybersecurity benchmarks:
   - `ctibench-taa`: Threat Actor Attribution — attribute cyber incidents
     to known threat actors.
   - `ctibench-vsp`: Vulnerability Severity Prediction — predict CVSS vector strings.
+- [CWE-Prediction](https://huggingface.co/datasets/fdtn-ai/cwe-prediction-benchmark)
+  - `cwe-prediction`: 3,000 question-answer pairs mapping CVE/GHSA security
+    advisory descriptions to their associated CWE label, evaluating
+    vulnerability classification by underlying weakness pattern.
 - [CyberMetric](https://arxiv.org/abs/2402.07688)
   - `cybermetric-80`, `cybermetric-500`, `cybermetric-2000`, `cybermetric-10000`:
     Subsets of 80, 500, 2,000, and ~10,000 multiple-choice cybersecurity questions.
