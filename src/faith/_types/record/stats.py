@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any, TypeAlias
 
@@ -10,7 +10,13 @@ from dataclasses_json import DataClassJsonMixin, config
 
 from faith._types.config.patterns import AnswerFormat
 
-Labeling: TypeAlias = str | Sequence[str]
+# A label or prediction may be any JSON value: a single string answer, a list of
+# strings, a numeric target, a structured object. Each score function binds this
+# alias to the concrete shape it expects via its ScoreFn type parameter, which
+# mypy checks at the call site.
+Labeling: TypeAlias = (
+    str | int | float | bool | None | Sequence["Labeling"] | Mapping[str, "Labeling"]
+)
 SingleLabelSeq: TypeAlias = Sequence[str | None]
 MultiLabelSeq: TypeAlias = Sequence[Sequence[str] | None]
 
