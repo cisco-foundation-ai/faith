@@ -41,6 +41,8 @@ jobs:
           LINTER_RULES_PATH: ".github/linters"
           ENABLE_GITHUB_PULL_REQUEST_SUMMARY_COMMENT: false # Disable PR comments
           GITHUB_ACTIONS_CONFIG_FILE: ".actionlint.yml"
+          CSS_FILE_NAME: ".stylelintrc.json"
+          JAVASCRIPT_ES_CONFIG_FILE: "eslint.config.mjs"
           MARKDOWN_CONFIG_FILE: ".markdownlint.yml"
           PYTHON_FLAKE8_CONFIG_FILE: ".flake8"
           PYTHON_ISORT_CONFIG_FILE: ".isort.cfg"
@@ -51,6 +53,8 @@ jobs:
           YAML_CONFIG_FILE: ".yamllint.yml"
           MULTI_STATUS: false
           VALIDATE_ALL_CODEBASE: true
+          # Don't add FILTER_REGEX_EXCLUDE: it hides a file from every linter at
+          # once. Exclusions live per-linter instead; see website/README.md.
           VALIDATE_BIOME_FORMAT: false
           VALIDATE_BIOME_LINT: false
           VALIDATE_JSCPD: false # TODO: Enable this once we configure jscpd.

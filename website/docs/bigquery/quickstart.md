@@ -1,19 +1,26 @@
-# BigQuery Quickstart Guide
+---
+id: quickstart
+title: BigQuery Quickstart
+sidebar_label: Quickstart
+sidebar_position: 1
+---
+
+# BigQuery quickstart
 
 Get started with FAITH BigQuery analytics in 5 minutes.
 
 ## Prerequisites
 
-- FAITH installed with BigQuery support: `pip install faith[bigquery]`
-- Google Cloud project with BigQuery API enabled
+- FAITH installed with BigQuery support: `uv pip install -e '.[bigquery]'`
+- A Google Cloud project with the BigQuery API enabled
 - GCloud CLI authenticated: `gcloud auth application-default login`
 
 ## Setup
 
-### 1. Create BigQuery Dataset
+### 1. Create a BigQuery dataset
 
-First, set your project and dataset names as environment variables, then create
-the dataset using the `bq` CLI:
+Set your project and dataset names as environment variables, then create the
+dataset using the `bq` CLI:
 
 ```bash
 export FAITH_BIGQUERY_PROJECT=my-project
@@ -22,7 +29,7 @@ export FAITH_BIGQUERY_DATASET=faith_results
 bq mk --dataset ${FAITH_BIGQUERY_PROJECT}:${FAITH_BIGQUERY_DATASET}
 ```
 
-The metrics table (default: `metrics`) will be created automatically on first
+The metrics table (default: `metrics`) is created automatically on first
 ingestion.
 
 **Using a custom table name:**
@@ -34,7 +41,7 @@ export FAITH_BIGQUERY_TABLE=metrics_prod
 
 Any table name will be auto-created with the correct schema.
 
-### 2. Run Evaluation
+### 2. Run an evaluation
 
 ```bash
 faith run-all \
@@ -61,20 +68,25 @@ gs://my-bucket/results/run-001/
 
 ### 3. Ingest to BigQuery
 
-You can ingest at any path level - the tool recursively finds all
-`metrics.json` files:
+You can ingest at any path level — the tool recursively finds all
+`metrics.json` files. `--experiment-path` is a **local** path, so pull the run
+down from GCS first if that's where `query` wrote it:
+
+```bash
+gcloud storage cp -r gs://my-bucket/results/run-001 ./results/
+```
 
 ```bash
 # Entire run (all benchmarks, all models)
-faith summarize --experiment-path gs://my-bucket/results/run-001 \
+faith summarize --experiment-path ./results/run-001 \
   --output-format bigquery
 
 # Single benchmark (all models)
-faith summarize --experiment-path gs://my-bucket/results/run-001/ctibench-mcqa \
+faith summarize --experiment-path ./results/run-001/ctibench-mcqa \
   --output-format bigquery
 
 # Single model
-faith summarize --experiment-path gs://my-bucket/results/run-001/ctibench-mcqa/Llama-3.1-8B \
+faith summarize --experiment-path ./results/run-001/ctibench-mcqa/Llama-3.1-8B \
   --output-format bigquery
 ```
 
@@ -83,12 +95,14 @@ The tool will:
 - Find all `metrics.json` files recursively
 - Parse experiment configuration from paired `experiment.json` files
 - Create the `metrics` table if it doesn't exist
-- Skip files already ingested (idempotency via `metrics_file_uri`)
+- Refuse to re-ingest an already-ingested run: if the first record's
+  `metrics_file_uri` is already in the table, the whole insert is aborted with
+  an error rather than skipped silently
 - Insert all metrics in a single batch
 
-## Query Your Data
+## Query your data
 
-### BigQuery Console
+### BigQuery console
 
 ```sql
 SELECT
@@ -114,15 +128,9 @@ bq query --use_legacy_sql=false \
    LIMIT 10'
 ```
 
-## Example Queries
+## Example queries
 
-For pre-built queries like leaderboards and model comparisons, see the SQL
-files in:
-
-- [queries/](queries/) - Ready-to-run query examples
-- [views/](views/) - Reusable BigQuery views
-
-### Filter by Experiment Configuration
+### Filter by experiment configuration
 
 ```sql
 SELECT
@@ -137,7 +145,7 @@ WHERE temperature = 0.0
 ORDER BY benchmark, metric_value DESC;
 ```
 
-### Performance Over Time
+### Performance over time
 
 ```sql
 SELECT
@@ -158,7 +166,7 @@ ORDER BY date DESC, benchmark;
 Install the BigQuery extra:
 
 ```bash
-pip install faith[bigquery]
+uv pip install -e '.[bigquery]'
 ```
 
 ### "BigQuery project not specified" or "BigQuery dataset not specified"
@@ -219,11 +227,7 @@ experiment-path/
         └── experiment.json
 ```
 
-## Next Steps
+## Next steps
 
-- **Full schema:** [schema.md](schema.md) - All table columns and
-  descriptions
-- **Build dashboards:** [dashboards.md](dashboards.md) - Create interactive
-  visualizations in Looker Studio
-- **SQL examples:** [queries/](queries/) and [views/](views/) - Pre-built
-  queries for common use cases
+- **Full schema:** [Metrics Table Schema](./schema.md)
+- **Build dashboards:** [Building Dashboards with Looker Studio](./dashboards/setup.md)

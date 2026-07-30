@@ -1,0 +1,217 @@
+.wrap {
+  margin: 1.25rem 0 2rem;
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid var(--fai-border2);
+  border-radius: 12px;
+  overflow: hidden;
+  font-size: 1rem;
+  display: table;
+}
+
+.table thead th {
+  text-align: left;
+  font-family: var(--fai-sans);
+  font-weight: 600;
+  font-size: 0.82rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--fai-text2);
+  background: var(--fai-bg1);
+  padding: 0.75rem 0.9rem;
+  border-bottom: 1px solid var(--fai-border2);
+  white-space: nowrap;
+}
+
+.table tbody td {
+  padding: 0.85rem 0.9rem;
+  border-bottom: 1px solid var(--fai-border);
+  vertical-align: top;
+  color: var(--fai-text);
+  line-height: 1.6;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Column sizing — every fixed column shrinks to its own content (`width: 1%`
+   with auto table layout), so Description keeps the remaining space and the
+   table never grows past the page. Nothing here may set a width in absolute
+   units: a column sized for its widest possible content pushes narrow tables
+   into a horizontal scrollbar they don't need. */
+.flagCol {
+  width: 1%;
+}
+
+.typeCol {
+  width: 1%;
+}
+
+.defaultCol {
+  width: 1%;
+}
+
+.reqCol {
+  width: 1%;
+}
+
+/* Inline code cells. These must not be `nowrap`: a long flag like
+   `--experimental-parallelize-models` next to a long default like
+   `if_hash_differs` sets a minimum width that squeezes Description until the
+   whole table overflows. Let them wrap, and break inside the token only when
+   there's no other choice. */
+.flagName,
+.typeVal,
+.defaultVal {
+  font-family: var(--fai-mono);
+  font-size: 0.9rem;
+  background: var(--fai-accent-dim);
+  color: var(--fai-accent);
+  border: 1px solid transparent;
+  padding: 0.14em 0.5em;
+  border-radius: 6px;
+  overflow-wrap: break-word;
+}
+
+.typeVal {
+  background: transparent;
+  color: var(--fai-text2);
+  padding: 0.12em 0;
+  white-space: normal;
+}
+
+.defaultVal {
+  background: transparent;
+  border: 1px solid var(--fai-border2);
+  color: var(--fai-text2);
+}
+
+.dash {
+  color: var(--fai-text3);
+}
+
+/* Expandable flag button */
+.flagToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+}
+
+.rowExpandable:hover .flagName {
+  border-color: var(--fai-accent);
+}
+
+.chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.05rem;
+  height: 1.05rem;
+  flex: none;
+  border-radius: 5px;
+  color: var(--fai-accent);
+  background: var(--fai-accent-dim);
+  font-size: 0.9rem;
+  line-height: 1;
+  transition: transform 0.18s ease;
+}
+
+.chevronOpen {
+  transform: rotate(90deg);
+}
+
+.annCount {
+  font-family: var(--fai-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--fai-text3);
+  white-space: nowrap;
+}
+
+/* Annotation sub-row */
+.annRow > .annCell {
+  padding: 0;
+  border-bottom: 1px solid var(--fai-border);
+}
+
+.annInner {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.22s ease;
+  background: var(--fai-bg1);
+  overflow: hidden;
+}
+
+.annRowOpen .annInner {
+  grid-template-rows: 1fr;
+}
+
+.annList {
+  min-height: 0;
+  overflow: hidden;
+  margin: 0;
+  padding: 0 1rem 0 2.05rem;
+}
+
+.annRowOpen .annList {
+  padding-top: 0.85rem;
+  padding-bottom: 0.95rem;
+}
+
+.annItem {
+  display: grid;
+  grid-template-columns: minmax(9rem, max-content) 1fr;
+  gap: 0.5rem 1.1rem;
+  padding: 0.32rem 0;
+  border-left: 2px solid var(--fai-accent);
+  padding-left: 0.9rem;
+}
+
+.annItem + .annItem {
+  margin-top: 0.15rem;
+}
+
+.annItem dt {
+  margin: 0;
+}
+
+.annItem dd {
+  margin: 0;
+  color: var(--fai-text2);
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+.annKey {
+  font-family: var(--fai-mono);
+  font-size: 0.85rem;
+  color: var(--fai-accent);
+  background: var(--fai-accent-dim);
+  border: 1px solid var(--fai-accent);
+  padding: 0.12em 0.5em;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+@media (max-width: 700px) {
+  .annItem {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
+  }
+}
