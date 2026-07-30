@@ -1,0 +1,494 @@
+/**
+ * Global styles. FAITH uses the Foundation AI editorial design system:
+ * warm near-black backgrounds, off-white text, amber accent,
+ * Poppins / Cormorant Garamond / DM Mono type.
+ */
+
+:root {
+  /* Type — theme-invariant */
+  --fai-serif: "Cormorant Garamond", georgia, serif;
+  --fai-sans: "Poppins", -apple-system, blinkmacsystemfont, sans-serif;
+  --fai-mono: "DM Mono", "SF Mono", sfmono-regular, menlo, monospace;
+
+  /* Highlight colors — theme-invariant */
+  --fai-green: #4ade80;
+  --fai-blue: #60a5fa;
+  --fai-red: #f87171;
+  --ifm-font-family-base: var(--fai-sans);
+  --ifm-font-family-monospace: var(--fai-mono);
+  --ifm-heading-font-family: var(--fai-serif);
+  --ifm-heading-font-weight: 600;
+  --ifm-font-weight-bold: 600;
+  --ifm-code-font-size: 92%;
+}
+
+/* Dark is the primary (and default) theme. */
+[data-theme="dark"] {
+  /* Semantic palette — dark */
+  --fai-bg: #08080a;
+  --fai-bg1: #0e0e12;
+  --fai-bg2: #141418;
+  --fai-bg3: #1a1a20;
+  --fai-surface: #1e1e25;
+  --fai-border: #2a2a33;
+  --fai-border2: #353540;
+  --fai-text: #e8e4df;
+  --fai-text2: #9a9590;
+  --fai-text3: #5e5a56;
+  --fai-accent: #e8943a;
+  --fai-accent2: #d4622a;
+  --fai-accent-dim: rgb(232 148 58 / 12%);
+  --fai-accent-glow: rgb(232 148 58 / 6%);
+  --fai-on-accent: #1a1206;
+  --fai-hero-top: #0b0b0f;
+  --fai-hero-grid: rgb(232 148 58 / 5%);
+  --fai-code-bg: #17171d;
+  --ifm-color-primary: #e8943a;
+  --ifm-color-primary-dark: #e07d1f;
+  --ifm-color-primary-darker: #d4622a;
+  --ifm-color-primary-darkest: #b8531f;
+  --ifm-color-primary-light: #eca457;
+  --ifm-color-primary-lighter: #efb06c;
+  --ifm-color-primary-lightest: #f3c48c;
+  --ifm-background-color: var(--fai-bg);
+  --ifm-background-surface-color: var(--fai-bg2);
+  --ifm-navbar-background-color: rgb(8 8 10 / 85%);
+  --ifm-footer-background-color: var(--fai-bg1);
+  --ifm-font-color-base: var(--fai-text);
+  --ifm-heading-color: var(--fai-text);
+  --ifm-color-content-secondary: var(--fai-text2);
+  --ifm-color-emphasis-0: var(--fai-bg);
+  --ifm-color-emphasis-100: var(--fai-bg1);
+  --ifm-color-emphasis-200: var(--fai-border);
+  --ifm-color-emphasis-300: var(--fai-border2);
+  --ifm-color-emphasis-700: var(--fai-text2);
+  --ifm-toc-border-color: var(--fai-border);
+  --ifm-hr-border-color: var(--fai-border);
+  --ifm-table-border-color: var(--fai-border);
+  --ifm-table-stripe-background: rgb(255 255 255 / 2%);
+  --ifm-code-background: var(--fai-bg3);
+  --ifm-link-color: var(--fai-accent);
+  --docusaurus-highlighted-code-line-bg: rgb(232 148 58 / 14%);
+}
+
+/* Light theme — warm paper tones with the same amber accent. */
+[data-theme="light"] {
+  /* Semantic palette — light */
+  --fai-bg: #faf7f2;
+  --fai-bg1: #f4efe7;
+  --fai-bg2: #fff;
+  --fai-bg3: #f0eae0;
+  --fai-surface: #fff;
+  --fai-border: #e4ddd0;
+  --fai-border2: #d5ccbb;
+  --fai-text: #2a251d;
+  --fai-text2: #6b6355;
+  --fai-text3: #9a9184;
+  --fai-accent: #c96a1e;
+  --fai-accent2: #a85818;
+  --fai-accent-dim: rgb(201 106 30 / 10%);
+  --fai-accent-glow: rgb(201 106 30 / 5%);
+  --fai-on-accent: #fff;
+  --fai-hero-top: #fffdf9;
+  --fai-hero-grid: rgb(201 106 30 / 6%);
+  --fai-code-bg: #f3ede3;
+  --ifm-color-primary: #c96a1e;
+  --ifm-color-primary-dark: #b45f1a;
+  --ifm-color-primary-darker: #a85818;
+  --ifm-color-primary-darkest: #8a4914;
+  --ifm-color-primary-light: #de7d2c;
+  --ifm-color-primary-lighter: #e28a41;
+  --ifm-color-primary-lightest: #eaa568;
+  --ifm-background-color: var(--fai-bg);
+  --ifm-background-surface-color: var(--fai-bg2);
+  --ifm-navbar-background-color: rgb(250 247 242 / 85%);
+  --ifm-footer-background-color: var(--fai-bg1);
+  --ifm-font-color-base: var(--fai-text);
+  --ifm-heading-color: var(--fai-text);
+  --ifm-color-content-secondary: var(--fai-text2);
+  --ifm-color-emphasis-0: var(--fai-bg);
+  --ifm-color-emphasis-100: var(--fai-bg1);
+  --ifm-color-emphasis-200: var(--fai-border);
+  --ifm-color-emphasis-300: var(--fai-border2);
+  --ifm-color-emphasis-700: var(--fai-text2);
+  --ifm-toc-border-color: var(--fai-border);
+  --ifm-hr-border-color: var(--fai-border);
+  --ifm-table-border-color: var(--fai-border);
+  --ifm-code-background: var(--fai-bg3);
+  --ifm-link-color: var(--fai-accent);
+  --docusaurus-highlighted-code-line-bg: rgb(201 106 30 / 10%);
+}
+
+/* Serif display headings, like the reference blogs. */
+h1,
+h2,
+h3,
+.hero__title,
+.markdown h1,
+.markdown h2,
+.markdown h3 {
+  font-family: var(--fai-serif);
+  letter-spacing: -0.01em;
+}
+
+/* Body copy in Poppins with comfortable rhythm. */
+body {
+  font-family: var(--fai-sans);
+}
+
+.navbar {
+  border-bottom: 1px solid var(--fai-border);
+  backdrop-filter: blur(10px);
+  box-shadow: none;
+}
+
+/* Wordmark: larger serif, tracked out a touch to read as a logotype. */
+.navbar__title {
+  font-family: var(--fai-serif);
+  font-weight: 600;
+  font-size: 1.5rem;
+  letter-spacing: 0.04em;
+  color: var(--fai-text);
+}
+
+.footer__title {
+  font-family: var(--fai-serif);
+  font-weight: 600;
+}
+
+/* Nav links: the site's Poppins body face, sized down a touch and lightly
+ * tracked so they read as a clean, considered header. */
+.navbar__item.navbar__link {
+  font-family: var(--fai-sans);
+  font-size: 0.92rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--fai-text2);
+  transition: color 0.15s ease;
+}
+
+.navbar__link:hover {
+  color: var(--fai-accent);
+}
+
+.navbar__link--active {
+  color: var(--fai-text);
+}
+
+/* Amber underline for the active section. */
+.navbar__link--active::after {
+  content: "";
+  display: block;
+  height: 2px;
+  margin-top: 2px;
+  border-radius: 2px;
+  background: var(--fai-accent);
+}
+
+/* GitHub link → a small outlined chip so it reads as a secondary action. */
+.navbar__items--right .navbar__link {
+  color: var(--fai-text2);
+}
+
+/* Doc prev/next pagination cards. Infima's default is a plain bordered box with
+ * a blue link; restyle to the site's warm surface + amber + mono label. */
+.pagination-nav__link {
+  border: 1px solid var(--fai-border);
+  border-radius: 12px;
+  background: var(--fai-bg1);
+  padding: 1rem 1.25rem;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    transform 0.15s ease;
+}
+
+.pagination-nav__link:hover {
+  border-color: var(--fai-accent);
+  background: var(--fai-bg2);
+  transform: translateY(-2px);
+  text-decoration: none;
+}
+
+.pagination-nav__sublabel {
+  font-family: var(--fai-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fai-text3);
+}
+
+.pagination-nav__label {
+  font-family: var(--fai-serif);
+  font-weight: 600;
+  font-size: 1.15rem;
+  color: var(--fai-text);
+}
+
+.pagination-nav__link:hover .pagination-nav__label {
+  color: var(--fai-accent);
+}
+
+/* "Required" pill for flag-reference tables. A small amber capsule; an optional
+ * condition note sits next to it in muted text ("if --model-paths unset"). */
+.reqPill {
+  display: inline-block;
+  font-family: var(--fai-mono);
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.12em 0.5em;
+  border-radius: 20px;
+  color: var(--fai-accent);
+  background: var(--fai-accent-dim);
+  border: 1px solid var(--fai-accent);
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+/* The note is the only thing in the Required column that wraps, so it sets that
+ * column's width. Give it a floor wide enough to read without letting the
+ * column reserve space on tables whose rows have no note at all. */
+.reqNote {
+  display: block;
+  min-width: 9rem;
+  margin-top: 0.35rem;
+  font-size: 0.8rem;
+  color: var(--fai-text2);
+  line-height: 1.4;
+}
+
+/* Inside the small condition note, render inline code as quiet gray text (no
+ * amber pill) so the note stays low-key. */
+.reqNote code {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  color: var(--fai-text2) !important;
+  font-size: 0.95em !important;
+}
+
+/* Admonitions (:::tip / :::note / :::info / :::warning). Infima's stock colors
+ * are a bright green/blue/yellow that clash with the warm palette. Retint them
+ * all onto the site's surface with a colored left edge so they read as a family
+ * that belongs here — tip/note in amber, warning/danger in the deeper accent. */
+.theme-admonition {
+  background: var(--fai-bg1);
+  border: 1px solid var(--fai-border);
+  border-left: 3px solid var(--fai-accent);
+  border-radius: 10px;
+  color: var(--fai-text);
+}
+
+.theme-admonition .admonitionHeading_Gvgb,
+.theme-admonition [class*="admonitionHeading"] {
+  color: var(--fai-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-family: var(--fai-mono);
+  font-size: 0.72rem;
+}
+
+/* Warning / danger get the deeper burnt-orange accent instead. */
+.theme-admonition-warning,
+.theme-admonition-danger,
+.theme-admonition-caution {
+  border-left-color: var(--fai-accent2);
+}
+
+.theme-admonition-warning [class*="admonitionHeading"],
+.theme-admonition-danger [class*="admonitionHeading"],
+.theme-admonition-caution [class*="admonitionHeading"] {
+  color: var(--fai-accent2);
+}
+
+/* Inline code in body copy. DM Mono is a tall, wide face, so left to Infima's
+ * defaults its box inflates the line and dwarfs the surrounding Poppins text.
+ * Shrink it, tighten the padding, and pin vertical-align so it doesn't push
+ * lines apart. */
+.markdown :not(pre) > code:not([class*="language-"]) {
+  font-family: var(--fai-mono);
+  font-size: 0.8em;
+  line-height: 1;
+  padding: 0.12em 0.4em;
+  border-radius: 5px;
+  color: var(--fai-accent);
+  background: var(--fai-accent-dim);
+  border: 1px solid transparent;
+  vertical-align: baseline;
+}
+
+/* Code-block <code> must never inherit the inline-code pill background. */
+.markdown pre code,
+pre code[class*="codeBlockLines"] {
+  background: transparent !important;
+  border: none;
+  padding: 0;
+}
+
+/* Inline code inside serif headings otherwise renders as a heavy, boxed mono
+ * chip that clashes with the display type. Tone it down: no box, accent color,
+ * sized to sit on the heading's baseline. */
+.markdown h1 code,
+.markdown h2 code,
+.markdown h3 code,
+.markdown h4 code,
+h1 code,
+h2 code,
+h3 code,
+h4 code {
+  font-family: var(--fai-mono);
+  font-weight: 400;
+  font-size: 0.68em;
+  line-height: 1;
+  color: var(--fai-accent);
+  background: transparent;
+  border: none;
+  padding: 0;
+  vertical-align: baseline;
+}
+
+/* Fenced code blocks. Two problems with the defaults: (1) DM Mono is wide + tall
+ * so the text reads cramped and small, and (2) Docusaurus sets the Prism theme
+ * background as an inline style on the container AND the <pre>, giving a
+ * two-tone "colored panel floating on white" look. We force ONE flat background
+ * (via --fai-code-bg) on both, override the inline style with !important, and
+ * give the type room to breathe. */
+.theme-code-block,
+div[class*="codeBlockContainer"] {
+  background: var(--fai-code-bg) !important;
+  border: 1px solid var(--fai-border2);
+  border-radius: 10px;
+  box-shadow: none;
+}
+
+div[class*="codeBlockContent"],
+div[class*="codeBlockContent"] pre,
+.theme-code-block pre {
+  background: var(--fai-code-bg) !important;
+}
+
+/* The code-block title bar (```lang title="...") sits above the code — give it a
+ * subtly darker strip and a divider so it reads as a header, not a second bg. */
+div[class*="codeBlockTitle"] {
+  background: var(--fai-code-bg) !important;
+  border-bottom: 1px solid var(--fai-border);
+  font-family: var(--fai-mono);
+  font-size: 0.76rem;
+  color: var(--fai-text2);
+}
+
+.prism-code,
+pre code[class*="language-"] {
+  font-family: var(--fai-mono);
+  font-size: 0.9rem;
+  line-height: 1.8;
+}
+
+/* Each highlighted line gets a bit more vertical rhythm. */
+.prism-code .token-line {
+  line-height: 1.8;
+}
+
+/* Code-block padding — roomier gutters. */
+div[class*="codeBlockContent"] pre {
+  padding: 1.15rem 1.3rem;
+}
+
+/* ---------- Tabs (DefenseClaw-style clickable headers) ---------- *
+ * Wrap the tab strip + panel in a bordered, rounded card so it's clear where
+ * the tabbed section begins and ends. */
+.tabs-container {
+  border: 1px solid var(--fai-border);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+  background: var(--fai-bg1);
+}
+
+.tabs {
+  border-bottom: 1px solid var(--fai-border);
+  background: var(--fai-bg2);
+  margin-bottom: 0;
+  padding: 0 0.4rem;
+}
+
+.tabs__item {
+  font-family: var(--fai-mono);
+  font-size: 0.82rem;
+  font-weight: 400;
+  color: var(--fai-text2);
+  border-radius: 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  padding: 0.7rem 1rem;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.tabs__item:hover {
+  background: var(--fai-accent-glow);
+  color: var(--fai-text);
+}
+
+.tabs__item--active {
+  color: var(--fai-accent);
+  border-bottom-color: var(--fai-accent);
+  background: transparent;
+}
+
+/* The panel below the tab strip. */
+.tabs-container > div[role="tabpanel"],
+.tabs-container > .margin-top--md {
+  margin-top: 0 !important;
+  padding: 1.25rem 1.35rem;
+}
+
+/* Search lives in the left sidebar (see DocSidebar/Desktop swizzle). Hide the
+   navbar copy on desktop; keep it on mobile where the sidebar is hidden. */
+@media (min-width: 997px) {
+  .navbar__inner .navbar__search {
+    display: none;
+  }
+
+  /* The sidebar container ships with `clip-path: inset(0)` for the collapse
+     animation. clip-path clips the ENTIRE descendant subtree to the sidebar
+     box, so the search results dropdown gets cut off at the sidebar edge
+     instead of floating over the page content. The collapse animation isn't
+     enabled here (docs.sidebar.hideable is off), so it's safe to drop the clip
+     and let the dropdown overflow. */
+  .theme-doc-sidebar-container {
+    clip-path: none !important;
+  }
+}
+
+/* Cohesive search input: site type, tokens, and a legible placeholder. */
+.navbar__search-input {
+  font-family: var(--fai-mono);
+  font-size: 0.8rem;
+  height: auto;
+  padding: 0.5rem 0.7rem 0.5rem 2.1rem;
+  border: 1px solid var(--fai-border);
+  border-radius: 8px;
+  background-color: var(--fai-bg);
+  background-position: 0.7rem center;
+  background-size: 0.95rem;
+  color: var(--fai-text);
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.navbar__search-input::placeholder {
+  color: var(--fai-text2);
+  opacity: 1;
+}
+
+.navbar__search-input:focus {
+  border-color: var(--fai-accent);
+  box-shadow: 0 0 0 2px var(--fai-accent-dim);
+  outline: none;
+}

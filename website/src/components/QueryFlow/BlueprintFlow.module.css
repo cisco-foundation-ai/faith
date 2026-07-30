@@ -1,0 +1,439 @@
+/* ============================================================ 11 · Blueprint */
+.blueprint {
+  --c-query: var(--fai-accent, #e8943a);
+  --c-eval: #5aa9e6;
+  --c-summarize: #8f7fe8;
+
+  margin: 2rem 0 2.5rem;
+}
+
+.bp_query,
+.bp_eval,
+.bp_summarize {
+  --bc: var(--c-query);
+
+  border: 1px solid var(--fai-border, #2a2a33);
+  border-left: 3px solid var(--bc);
+  border-radius: 12px;
+  background: var(--fai-bg1, #0e0e12);
+  padding: 1rem 1.1rem 1.15rem;
+}
+
+.bp_eval {
+  --bc: var(--c-eval);
+}
+
+.bp_summarize {
+  --bc: var(--c-summarize);
+}
+
+.bpBand {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-bottom: 0.9rem;
+}
+
+.bpTag {
+  font-family: var(--fai-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bc);
+  border: 1px solid currentcolor;
+  border-radius: 5px;
+  padding: 0.08rem 0.4rem;
+}
+
+.bpCmd {
+  font-family: var(--fai-mono);
+  font-size: 0.9rem;
+  color: var(--fai-text);
+}
+
+.bpBlurb {
+  font-size: 0.82rem;
+  font-weight: 300;
+  color: var(--fai-text2);
+}
+
+.bpHint {
+  margin-left: auto;
+  font-family: var(--fai-mono);
+  font-size: 0.64rem;
+  color: var(--fai-text3, #5e5a56);
+  font-style: italic;
+}
+
+/* horizontal track of process nodes joined by arrows */
+.bpTrack {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.4rem;
+}
+
+.bpArrow {
+  flex: none;
+  align-self: flex-start;
+  margin-top: 1.4rem;
+  font-size: 1.1rem;
+  line-height: 1;
+  color: color-mix(in srgb, var(--bc) 75%, var(--fai-text3));
+}
+
+.bpCol {
+  flex: 1 1 0;
+  min-width: 11rem;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.bpNode {
+  border: 1px solid var(--fai-border2, #353540);
+  border-top: 3px solid var(--bc);
+  border-radius: 9px;
+  background: var(--fai-bg2, #141418);
+  padding: 0.65rem 0.8rem;
+  height: 100%;
+
+  /* node contents stack as a consistent vertical rhythm:
+     role kicker · title · file ref · description · [detail] · in→out */
+  display: flex;
+  flex-direction: column;
+}
+
+.bpNode[data-decision="true"] {
+  border-color: color-mix(in srgb, var(--bc) 55%, var(--fai-border2));
+}
+
+/* optional step (e.g. BigQuery ingest) — dashed to read as "not always run" */
+.bpNodeOptional {
+  border-style: dashed;
+}
+
+.bpOptTag {
+  font-family: var(--fai-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bc);
+  border: 1px dashed color-mix(in srgb, var(--bc) 55%, transparent);
+  border-radius: 999px;
+  padding: 0.1rem 0.4rem;
+}
+
+/* decision nodes are buttons: reset native styling, keep them clickable */
+.bpNodeBtn {
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  appearance: none;
+  transition:
+    border-color 0.14s ease,
+    box-shadow 0.14s ease,
+    transform 0.14s ease;
+}
+
+.bpNodeBtn:hover,
+.bpNodeActive {
+  border-color: var(--bc);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--bc) 22%, transparent);
+}
+
+.bpNodeOpen {
+  border-color: var(--bc);
+}
+
+.bpNodeBtn:focus-visible {
+  outline: none;
+  border-color: var(--bc);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--bc) 40%, transparent);
+}
+
+/* row 1 — role kicker (left) + expand badge (right) */
+.bpNodeHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  min-height: 1.1rem;
+  margin-bottom: 0.3rem;
+}
+
+.bpRole {
+  font-family: var(--fai-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--bc);
+}
+
+/* row 2 — human title */
+.bpNodeTitle {
+  font-family: var(--fai-sans);
+  font-weight: 600;
+  font-size: 0.95rem;
+  line-height: 1.2;
+  color: var(--fai-text);
+  margin-bottom: 0.3rem;
+}
+
+/* "3 engines ▾" pill that signals the node expands */
+.bpBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex: none;
+  font-family: var(--fai-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.02em;
+  color: var(--bc);
+  background: color-mix(in srgb, var(--bc) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--bc) 45%, transparent);
+  border-radius: 999px;
+  padding: 0.12rem 0.45rem;
+  white-space: nowrap;
+}
+
+.bpChevron {
+  display: inline-block;
+  font-size: 0.55rem;
+  transition: transform 0.15s ease;
+}
+
+.bpChevronOpen {
+  transform: rotate(180deg);
+}
+
+/* row 3 — source file / dir */
+.bpNodeRef {
+  align-self: flex-start;
+  font-family: var(--fai-mono);
+  font-size: 0.68rem;
+  color: var(--fai-text2);
+  background: var(--fai-code-bg, #17171d);
+  border: 1px solid var(--fai-border, #2a2a33);
+  border-radius: 5px;
+  padding: 0.08rem 0.4rem;
+  margin-bottom: 0.5rem;
+}
+
+/* row 4 — description */
+.bpNodeBody {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 300;
+  line-height: 1.45;
+  color: var(--fai-text2);
+}
+
+/* optional detail bullets (used by the single-node phases) */
+.bpDetail {
+  margin: 0.5rem 0 0;
+  padding-left: 1rem;
+  list-style: none;
+}
+
+.bpDetail li {
+  position: relative;
+  font-size: 0.76rem;
+  font-weight: 300;
+  line-height: 1.4;
+  color: var(--fai-text2);
+  margin-bottom: 0.3rem;
+}
+
+.bpDetail li::before {
+  content: "▪";
+  position: absolute;
+  left: -1rem;
+  color: var(--bc);
+  font-size: 0.6rem;
+  top: 0.15rem;
+}
+
+.bpNodeLink {
+  align-self: flex-start;
+  margin-top: 0.5rem;
+  font-family: var(--fai-mono);
+  font-size: 0.68rem;
+  color: var(--bc);
+  text-decoration: none;
+}
+
+.bpNodeLink:hover {
+  text-decoration: underline;
+}
+
+/* footer — the data this node takes in and hands out */
+.bpIo {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: auto;
+  padding-top: 0.6rem;
+}
+
+.bpNode > .bpIo {
+  border-top: 1px dashed var(--fai-border, #2a2a33);
+  margin-top: 0.7rem;
+}
+
+.bpIoIn,
+.bpIoOut {
+  font-family: var(--fai-mono);
+  font-size: 0.64rem;
+  border-radius: 5px;
+  padding: 0.08rem 0.4rem;
+}
+
+.bpIoIn {
+  color: var(--fai-text3, #5e5a56);
+  border: 1px solid var(--fai-border2, #353540);
+}
+
+.bpIoOut {
+  color: #0b0b0d;
+  background: var(--bc);
+}
+
+.bpIoArrow {
+  color: var(--bc);
+  font-size: 0.8rem;
+  line-height: 1;
+}
+
+/* decision drops below its node and fans out its options */
+.bpFanWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 0.2rem;
+}
+
+.bpFanWrap[data-open="true"] {
+  animation: bpFanIn 0.18s ease;
+}
+
+@keyframes bpFanIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.bpDrop {
+  width: 2px;
+  height: 0.7rem;
+  background: color-mix(in srgb, var(--bc) 70%, transparent);
+}
+
+.bpDecision {
+  font-family: var(--fai-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.03em;
+  color: var(--bc);
+  text-align: center;
+  padding: 0.2rem 0.5rem;
+  border: 1px dashed color-mix(in srgb, var(--bc) 60%, var(--fai-border2));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bc) 8%, transparent);
+  margin-bottom: 0.5rem;
+}
+
+.bpOptions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  width: 100%;
+}
+
+.bpOption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+  padding: 0.28rem 0.5rem;
+  border: 1px solid var(--fai-border2, #353540);
+  border-radius: 7px;
+  background: var(--fai-bg, #08080a);
+}
+
+.bpFanWrap[data-none] .bpOption {
+  border-style: dashed;
+}
+
+.bpOptLabel {
+  font-family: var(--fai-sans);
+  font-size: 0.76rem;
+  font-weight: 500;
+  color: var(--fai-text);
+}
+
+.bpOptNote {
+  font-family: var(--fai-mono);
+  font-size: 0.62rem;
+  color: var(--fai-text3, #5e5a56);
+}
+
+/* handoff between phases */
+.bpHandoff {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0.9rem 0 0.1rem;
+  padding-left: 0.4rem;
+}
+
+.bp_query,
+.bp_eval {
+  margin-bottom: 0;
+}
+
+.bpHandoffArrow {
+  font-size: 1.1rem;
+  color: var(--fai-text3, #5e5a56);
+  line-height: 1;
+}
+
+.bpHandoffLabel {
+  font-family: var(--fai-mono);
+  font-size: 0.78rem;
+  color: var(--fai-text);
+  background: var(--fai-code-bg, #17171d);
+  border: 1px solid var(--fai-border2, #353540);
+  border-radius: 6px;
+  padding: 0.15rem 0.5rem;
+}
+
+.bpHandoffHint {
+  font-size: 0.76rem;
+  font-weight: 300;
+  color: var(--fai-text2);
+}
+
+/* stack the phase cards with a small gap; handoff bridges them */
+.blueprint > section + section {
+  margin-top: 0.9rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bpFanWrap[data-open="true"] {
+    animation: none;
+  }
+
+  .bpNodeBtn,
+  .bpChevron {
+    transition: none;
+  }
+}

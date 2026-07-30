@@ -1,0 +1,6 @@
+# Prettier reformats MDX in ways markdownlint and Docusaurus disagree about,
+# and it rewrites the generated configs.js so `sync-configs --check` reports
+# drift. Scoped to prettier alone: codespell and textlint still read these
+# files.
+website/docs/
+website/src/components/ModelConfig/configs.js

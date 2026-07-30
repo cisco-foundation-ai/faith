@@ -1,0 +1,21 @@
+{
+  "extends": ["stylelint-config-standard"],
+  "overrides": [
+    {
+      "extends": ["stylelint-config-recommended-scss"],
+      "files": ["*.scss", "**/*.scss"],
+      "customSyntax": "postcss-scss"
+    }
+  ],
+  "rules": {
+    "selector-class-pattern": null,
+    "keyframes-name-pattern": null,
+    "selector-pseudo-class-no-unknown": [
+      true,
+      { "ignorePseudoClasses": ["global"] }
+    ],
+    "no-descending-specificity": null,
+    "media-feature-range-notation": "prefix",
+    "property-no-vendor-prefix": null
+  }
+}
