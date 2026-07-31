@@ -388,10 +388,15 @@ def check_benchmarks(repo: Path) -> None:
         )
     )
 
+    # A benchmark is a directory holding a benchmark.yaml, which is how
+    # listing.py:_get_benchmark_paths enumerates them. Listing directories
+    # instead is a weaker proxy that breaks on a shared-asset directory: it
+    # would call load_config_from_path on one and hit that function's assert.
+    # __benchmarks__ already holds shared *files* (base-template.yaml and
+    # friends), so a directory of them is a matter of time.
     configs = [
-        load_config_from_path(d)
-        for d in sorted((repo / "src/faith/__benchmarks__").iterdir())
-        if d.is_dir()
+        load_config_from_path(f.parent)
+        for f in sorted((repo / "src/faith/__benchmarks__").glob("**/benchmark.yaml"))
     ]
 
     # The per-benchmark loop below only checks that every benchmark reaches the
