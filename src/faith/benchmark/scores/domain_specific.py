@@ -25,8 +25,9 @@ from faith._types.enums import CIEnum
 from faith._types.model.engine import ModelEngine
 from faith._types.model.prompt import PromptFormatter
 from faith._types.record.model_response import GenerationError
+from faith._types.record.score import Score
 from faith._types.record.stats import MetricSummary
-from faith.benchmark.scores.scoring import Score, ScoreFn
+from faith.benchmark.scores.scoring import ScoreFn
 from faith.model.factory import create_model
 
 logger = logging.getLogger(__name__)
@@ -271,7 +272,7 @@ class LLMJudgeScore(ScoreFn[str]):
         self._llm_max_score = llm_score_range.get("max", 1.0)
         assert (
             self._llm_min_score < self._llm_max_score
-        ), "Invalid score range for judge: min {self._llm_min_score} >= max {self._llm_max_score}."
+        ), f"Invalid score range for judge: min {self._llm_min_score} >= max {self._llm_max_score}."
         model_engine = ModelEngine(judge_model["model_engine"])
         self._judge_model = create_model(
             model_engine,
