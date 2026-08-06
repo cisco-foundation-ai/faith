@@ -9,6 +9,7 @@ from cvss.exceptions import CVSS3MalformedError
 
 from faith._types.config.patterns import AnswerFormat, CaptureTransform, PatternDef
 from faith._types.config.scoring import ScoreFnConfig
+from faith._types.record.score import Score
 from faith.benchmark.scores.domain_specific import (
     AliasAccuracyScore,
     CompositeScore,
@@ -19,7 +20,6 @@ from faith.benchmark.scores.domain_specific import (
     _decode_by_hint,
     _decode_kwargs_by_hints,
 )
-from faith.benchmark.scores.scoring import Score
 
 _PATTERN_DICT = {"pattern": ".*", "format_type": "proper"}
 _PATTERN_DEF = PatternDef(pattern=".*", format_type=AnswerFormat.PROPER)

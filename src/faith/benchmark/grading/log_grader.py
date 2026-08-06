@@ -10,9 +10,9 @@ from typing import Any
 from faith._internal.iter.transform import IsoMapping
 from faith._types.config.scoring import OutputProcessingConfig
 from faith._types.record.sample import SampleRecord
+from faith._types.record.score import Score
 from faith._types.record.stats import Labeling
 from faith.benchmark.scores.domain_specific import DomainSpecificScore
-from faith.benchmark.scores.scoring import Score
 
 
 class LogGrader(IsoMapping[SampleRecord]):

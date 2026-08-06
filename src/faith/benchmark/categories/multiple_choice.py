@@ -25,6 +25,7 @@ from faith._types.config.patterns import AnswerFormat, PatternDef
 from faith._types.config.scoring import OutputProcessingConfig
 from faith._types.model.generation import GenerationMode
 from faith._types.record.prompt import PromptRecord
+from faith._types.record.score import Score
 from faith._types.record.stats import MetricSummary, SingleLabelSeq
 from faith.benchmark.benchmark import QABenchmark
 from faith.benchmark.dataset.dataset import BenchmarkDataset
@@ -36,7 +37,6 @@ from faith.benchmark.grading.common_graders import (
 )
 from faith.benchmark.grading.grade_aggregator import GradeAggregator
 from faith.benchmark.grading.log_grader import LogGrader
-from faith.benchmark.scores.scoring import Score
 
 
 def _load_answer_set(config: BenchmarkConfig) -> frozenset[str]:
