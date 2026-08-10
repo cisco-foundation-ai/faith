@@ -19,3 +19,19 @@ updates:
       timezone: "America/Los_Angeles"
     cooldown:
       default-days: 7
+
+  # Grouped into one PR a week: the website's tree is large and transitive, and
+  # nothing here is imported by the Python package.
+  - package-ecosystem: "npm"
+    directory: "/website"
+    groups:
+      npm:
+        patterns:
+          - "*"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+      timezone: "America/Los_Angeles"
+    cooldown:
+      default-days: 7
