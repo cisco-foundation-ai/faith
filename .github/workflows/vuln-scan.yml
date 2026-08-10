@@ -1,0 +1,56 @@
+# Copyright 2025 Cisco Systems, Inc. and its affiliates
+#
+# SPDX-License-Identifier: Apache-2.0
+
+---
+name: "vulnerability scan"
+
+on:
+  push:
+    # Run on pushes to default branch
+    branches:
+      - main
+  schedule:
+    # Run daily at 04:30 UTC
+    - cron: "30 4 * * *"
+  # Run the workflow manually
+  workflow_dispatch:
+
+# Declare default permissions as read-only
+permissions: read-all
+
+jobs:
+  scan-dependencies:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: "🔒 harden runner"
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
+      - name: "📦 checkout repository"
+        uses: actions/checkout@e8d4307400f9427dba7cb98e488d6ab85f1cec5f
+        with:
+          persist-credentials: false
+      - name: "🔎 scan dependencies for known vulnerabilities"
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: "fs"
+          scanners: "vuln"
+          severity: "CRITICAL,HIGH"
+          # SARIF output reports every severity unless this is set.
+          limit-severities-for-sarif: true
+          ignore-unfixed: true
+          format: "sarif"
+          output: "trivy-results.sarif"
+          # A finding is reported through code scanning rather than failing the
+          # job, so a newly published advisory does not read as a broken build.
+          exit-code: "0"
+          skip-dirs: "**/.venv"
+      - name: "📤 upload results to code scanning"
+        uses: github/codeql-action/upload-sarif@18420e3271f74589575af831a523c833acda327f # codeql-bundle-v2.26.2
+        with:
+          sarif_file: "trivy-results.sarif"
+          category: "trivy-vuln"
