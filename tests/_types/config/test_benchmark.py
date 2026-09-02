@@ -6,6 +6,13 @@
 
 import pytest
 
+from faith._types.config.agentic import (
+    AgenticAnswerExtractorConfig,
+    AgenticConfig,
+    AgenticEnvironmentConfig,
+    AgenticLimitsConfig,
+    AgenticTaskLoaderConfig,
+)
 from faith._types.config.benchmark import (
     BenchmarkConfig,
     LAQAConfig,
@@ -62,6 +69,130 @@ def test_benchmark_config_for_benchmark_types() -> None:
     assert BenchmarkConfig.from_dict(
         {"laqa_config": {"type": "free_form"}}
     ) == BenchmarkConfig(laqa_config=LAQAConfig(type=LongAnswerType.FREE_FORM))
+
+
+def test_benchmark_config_with_agentic_section() -> None:
+    assert BenchmarkConfig.from_dict(
+        {
+            "output_processing": {"score_fns": {"file_f1": {"type": "jaccard"}}},
+            "agentic_config": {
+                "task_loader": {"type": "vulnloc", "config": {"n": 1}},
+                "environment": {"type": "docker", "config": {"image": "ubuntu"}},
+                "answer_extractor": {"type": "file_list"},
+                "tools": ["bash_exec", "submit"],
+                "limits": {"max_tool_calls": 10, "timeout_seconds": 60},
+            },
+        }
+    ) == BenchmarkConfig(
+        output_processing=OutputProcessingConfig(
+            score_fns={"file_f1": ScoreFnConfig(type="jaccard")}
+        ),
+        agentic_config=AgenticConfig(
+            task_loader=AgenticTaskLoaderConfig(type="vulnloc", config={"n": 1}),
+            environment=AgenticEnvironmentConfig(
+                type="docker", config={"image": "ubuntu"}
+            ),
+            answer_extractor=AgenticAnswerExtractorConfig(type="file_list"),
+            tools=["bash_exec", "submit"],
+            limits=AgenticLimitsConfig(max_tool_calls=10, timeout_seconds=60),
+        ),
+    )
+
+
+_AGENTIC_CONFIG = AgenticConfig(
+    task_loader=AgenticTaskLoaderConfig(type="vulnloc"),
+    environment=AgenticEnvironmentConfig(type="docker"),
+    answer_extractor=AgenticAnswerExtractorConfig(type="file_list"),
+)
+
+_SCORED_OUTPUT = OutputProcessingConfig(
+    score_fns={"file_f1": ScoreFnConfig(type="jaccard")}
+)
+
+
+def test_benchmark_config_agentic_requires_a_score_function() -> None:
+    """With no score_fn there is nothing to grade the agent's answer against."""
+    with pytest.raises(ValueError) as excinfo:
+        BenchmarkConfig(agentic_config=_AGENTIC_CONFIG)
+
+    assert str(excinfo.value) == (
+        "An agentic benchmark requires at least one output_processing.score_fn."
+    )
+
+
+def test_benchmark_config_rejects_agentic_with_a_qa_config() -> None:
+    """agentic_config joins the QA sections in the one-benchmark-type rule."""
+    with pytest.raises(ValueError) as excinfo:
+        BenchmarkConfig(
+            output_processing=_SCORED_OUTPUT,
+            mcqa_config=MCQAConfig(answer_symbols=["A", "B"]),
+            agentic_config=_AGENTIC_CONFIG,
+        )
+
+    assert str(excinfo.value) == (
+        "At most one of mcqa_config, saqa_config, laqa_config, agentic_config "
+        "may be provided."
+    )
+
+
+@pytest.mark.parametrize(
+    "qa_only,named",
+    [
+        (
+            {"source": SourceConfig(huggingface=HuggingFaceSourceConfig(path="a/b"))},
+            "source",
+        ),
+        (
+            {
+                "format": FormatConfig(
+                    prompt=PromptConfig(question_template="{{ question }}")
+                )
+            },
+            "format",
+        ),
+        (
+            {
+                "output_processing": OutputProcessingConfig(
+                    score_fns={"file_f1": ScoreFnConfig(type="jaccard")},
+                    answer_formats=[
+                        PatternDef(pattern=".*", format_type=AnswerFormat.PROPER)
+                    ],
+                )
+            },
+            "output_processing.answer_formats",
+        ),
+        # Every offending section is named at once, so one parse fixes the yaml
+        # instead of one section per attempt.
+        (
+            {
+                "source": SourceConfig(huggingface=HuggingFaceSourceConfig(path="a/b")),
+                "format": FormatConfig(
+                    prompt=PromptConfig(question_template="{{ question }}")
+                ),
+            },
+            "source, format",
+        ),
+    ],
+    ids=["source", "format", "answer_formats", "several_at_once"],
+)
+def test_benchmark_config_rejects_qa_only_sections_when_agentic(
+    qa_only: dict, named: str
+) -> None:
+    """These sections are silently ignored on the agentic path.
+
+    Accepting one would misreport what a run actually did, so the error names
+    exactly which ones to remove.
+    """
+    with pytest.raises(ValueError) as excinfo:
+        BenchmarkConfig(
+            **{"output_processing": _SCORED_OUTPUT, **qa_only},
+            agentic_config=_AGENTIC_CONFIG,
+        )
+
+    assert str(excinfo.value) == (
+        f"An agentic benchmark must not set {named}: its tasks, prompts, and "
+        f"predictions all come from agentic_config."
+    )
 
 
 def test_benchmark_config_with_format_config() -> None:
@@ -284,29 +415,31 @@ def test_benchmark_config_full_config() -> None:
     )
 
 
-def test_benchmark_config_mutually_exclusive_config_types() -> None:
-    with pytest.raises(
-        ValueError,
-        match="At most one of mcqa_config, saqa_config, laqa_config may be provided.",
-    ):
-        BenchmarkConfig(
-            mcqa_config=MCQAConfig(),
-            saqa_config=SAQAConfig(type=ShortAnswerType.STRING_MATCH),
-        )
-    with pytest.raises(
-        ValueError,
-        match="At most one of mcqa_config, saqa_config, laqa_config may be provided.",
-    ):
-        BenchmarkConfig(
-            mcqa_config=MCQAConfig(),
-            laqa_config=LAQAConfig(type=LongAnswerType.FREE_FORM),
-        )
-    with pytest.raises(
-        ValueError,
-        match="At most one of mcqa_config, saqa_config, laqa_config may be provided.",
-    ):
-        BenchmarkConfig(
-            mcqa_config=MCQAConfig(),
-            saqa_config=SAQAConfig(type=ShortAnswerType.STRING_MATCH),
-            laqa_config=LAQAConfig(type=LongAnswerType.FREE_FORM),
-        )
+@pytest.mark.parametrize(
+    "configs",
+    [
+        {
+            "mcqa_config": MCQAConfig(),
+            "saqa_config": SAQAConfig(type=ShortAnswerType.STRING_MATCH),
+        },
+        {
+            "mcqa_config": MCQAConfig(),
+            "laqa_config": LAQAConfig(type=LongAnswerType.FREE_FORM),
+        },
+        {
+            "mcqa_config": MCQAConfig(),
+            "saqa_config": SAQAConfig(type=ShortAnswerType.STRING_MATCH),
+            "laqa_config": LAQAConfig(type=LongAnswerType.FREE_FORM),
+        },
+    ],
+    ids=["mcqa_saqa", "mcqa_laqa", "all_three"],
+)
+def test_benchmark_config_mutually_exclusive_config_types(configs: dict) -> None:
+    """A benchmark is exactly one type; two sections leave which one ambiguous."""
+    with pytest.raises(ValueError) as excinfo:
+        BenchmarkConfig(**configs)
+
+    assert str(excinfo.value) == (
+        "At most one of mcqa_config, saqa_config, laqa_config, agentic_config "
+        "may be provided."
+    )

@@ -176,6 +176,41 @@ class _ToolCallOutcome:
     answer_tool: str | None = None
 
 
+def validate_agent_limits(
+    max_tool_calls: int,
+    max_turns: int,
+    max_consecutive_no_tool_calls: int,
+    timeout_seconds: float | None,
+) -> None:
+    """Validate agent limits, shared with the yaml-facing AgenticLimitsConfig.
+
+    Both validate: a yaml benchmark goes through AgenticLimitsConfig, a library
+    caller constructs ReActLoop directly.
+
+    Raises:
+        ValueError: If any limit is out of range.
+    """
+    if max_tool_calls < 1 or max_turns < 1:
+        raise ValueError(
+            f"max_tool_calls ({max_tool_calls}) and max_turns "
+            f"({max_turns}) must both be at least 1."
+        )
+    if max_turns < max_tool_calls:
+        raise ValueError(
+            f"max_turns ({max_turns}) must be >= max_tool_calls ({max_tool_calls})."
+        )
+    if max_consecutive_no_tool_calls < 1:
+        raise ValueError(
+            f"max_consecutive_no_tool_calls ({max_consecutive_no_tool_calls}) "
+            f"must be at least 1."
+        )
+    if timeout_seconds is not None and timeout_seconds <= 0:
+        raise ValueError(
+            f"timeout_seconds ({timeout_seconds}) must be positive; "
+            f"omit it for no timeout."
+        )
+
+
 @dataclass(frozen=True)
 class ReActConfig:
     """Immutable configuration for ReAct runs: the reusable knobs and clients.
@@ -234,26 +269,12 @@ class ReActConfig:
                 f"api_retry_sleep_secs ({self.api_retry_sleep_secs}) must be "
                 f"non-negative."
             )
-        if self.max_tool_calls < 1 or self.max_turns < 1:
-            raise ValueError(
-                f"max_tool_calls ({self.max_tool_calls}) and max_turns "
-                f"({self.max_turns}) must both be at least 1."
-            )
-        if self.max_turns < self.max_tool_calls:
-            raise ValueError(
-                f"max_turns ({self.max_turns}) must be >= max_tool_calls "
-                f"({self.max_tool_calls})."
-            )
-        if self.max_consecutive_no_tool_calls < 1:
-            raise ValueError(
-                f"max_consecutive_no_tool_calls "
-                f"({self.max_consecutive_no_tool_calls}) must be at least 1."
-            )
-        if self.timeout_seconds is not None and self.timeout_seconds <= 0:
-            raise ValueError(
-                f"timeout_seconds ({self.timeout_seconds}) must be positive; "
-                f"omit it for no timeout."
-            )
+        validate_agent_limits(
+            self.max_tool_calls,
+            self.max_turns,
+            self.max_consecutive_no_tool_calls,
+            self.timeout_seconds,
+        )
         self._validate_capabilities()
         # Evaluate now: a tool whose schema properties raise should fail here,
         # not on the first model call.

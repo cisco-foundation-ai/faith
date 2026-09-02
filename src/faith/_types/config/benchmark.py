@@ -9,6 +9,7 @@ from enum import auto
 
 from dataclasses_json import DataClassJsonMixin, config
 
+from faith._types.config.agentic import AgenticConfig
 from faith._types.config.format import FormatConfig
 from faith._types.config.metadata import MetadataConfig
 from faith._types.config.scoring import OutputProcessingConfig
@@ -75,15 +76,46 @@ class BenchmarkConfig(DataClassJsonMixin):
     laqa_config: LAQAConfig | None = field(
         default=None, metadata=config(exclude=lambda x: x is None)
     )
+    agentic_config: AgenticConfig | None = field(
+        default=None, metadata=config(exclude=lambda x: x is None)
+    )
 
     def __post_init__(self) -> None:
         if (
             sum(
                 c is not None
-                for c in [self.mcqa_config, self.saqa_config, self.laqa_config]
+                for c in [
+                    self.mcqa_config,
+                    self.saqa_config,
+                    self.laqa_config,
+                    self.agentic_config,
+                ]
             )
             > 1
         ):
             raise ValueError(
-                "At most one of mcqa_config, saqa_config, laqa_config may be provided."
+                "At most one of mcqa_config, saqa_config, laqa_config, "
+                "agentic_config may be provided."
+            )
+        if self.agentic_config is None:
+            return
+        if not self.output_processing.score_fns:
+            raise ValueError(
+                "An agentic benchmark requires at least one output_processing.score_fn."
+            )
+        if unused := [
+            name
+            for name, is_set in [
+                ("source", self.source != SourceConfig()),
+                ("format", self.format != FormatConfig()),
+                (
+                    "output_processing.answer_formats",
+                    self.output_processing.answer_formats,
+                ),
+            ]
+            if is_set
+        ]:
+            raise ValueError(
+                f"An agentic benchmark must not set {', '.join(unused)}: its tasks, "
+                f"prompts, and predictions all come from agentic_config."
             )
