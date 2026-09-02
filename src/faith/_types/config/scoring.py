@@ -61,3 +61,16 @@ class OutputProcessingConfig(DataClassJsonMixin):
             exclude=lambda x: not x,
         ),
     )
+
+    def __post_init__(self) -> None:
+        """Validate that score function names stay addressable by primary_metric.
+
+        Raises:
+            ValueError: If a score function name contains a dot.
+        """
+        if dotted := sorted(name for name in self.score_fns if "." in name):
+            raise ValueError(
+                f"Score function names must not contain '.': {', '.join(dotted)}. "
+                f"primary_metric addresses a statistic as '<score_fn>.<stat>', so a "
+                f"dotted name cannot be referenced."
+            )
