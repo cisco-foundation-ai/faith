@@ -14,7 +14,7 @@ from faith._types.record.model_response import ChatResponse, GenerationError, To
 from faith._types.record.sample import SampleRecord
 from faith.model.base import BaseModel, PromptList
 from faith.record_pipelines.prediction import model_querier
-from tests.benchmark.categories.fake_record_maker import make_fake_record
+from tests.benchmark.qa.fake_record_maker import make_fake_record
 
 
 class FakeModel(BaseModel):

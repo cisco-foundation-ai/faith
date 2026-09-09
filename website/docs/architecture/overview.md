@@ -58,7 +58,7 @@ The package lives under `src/faith/`:
         {name: 'load.py', kind: 'file', note: 'Build a benchmark from its spec + config'},
         {name: 'config.py', kind: 'file', note: 'Benchmark YAML parsing'},
         {name: 'listing.py', kind: 'file', note: 'Resolve names and groups (all, !name)'},
-        {name: 'categories/', kind: 'dir', note: 'Per-type logic: mcqa, saqa, laqa'},
+        {name: 'qa/', kind: 'dir', note: 'Per-type logic: mcqa, saqa, laqa'},
         {name: 'dataset/', kind: 'dir', note: 'Dataset loading and transforms'},
         {name: 'scores/', kind: 'dir', note: 'Score functions (accuracy, Jaccard, …)'},
         {name: 'grading/', kind: 'dir', note: 'Answer extraction and grading'},

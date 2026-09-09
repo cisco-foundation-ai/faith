@@ -28,9 +28,9 @@ from faith._types.model.generation import GenerationMode
 from faith._types.model.prompt import PromptFormatter
 from faith._types.record.model_response import ChatResponse, GenerationError
 from faith._types.record.stats import StatsRecord
-from faith.benchmark.categories.long_answer import LABenchmark
+from faith.benchmark.qa.long_answer import LABenchmark
 from faith.model.base import BaseModel, PromptList
-from tests.benchmark.categories.fake_record_maker import make_fake_record
+from tests.benchmark.qa.fake_record_maker import make_fake_record
 
 
 def test_la_benchmark_logits() -> None:
