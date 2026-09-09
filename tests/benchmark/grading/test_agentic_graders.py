@@ -18,7 +18,7 @@ from faith._types.record.score import Score
 from faith._types.record.stats import Labeling, StatsRecord
 from faith.agentic.core import AnswerExtractor
 from faith.benchmark.grading.agentic_graders import AgentTrajectoryLogGrader
-from tests.benchmark.categories.fake_record_maker import make_fake_record
+from tests.benchmark.qa.fake_record_maker import make_fake_record
 
 _JACCARD = {"file_f1": ScoreFnConfig(type="jaccard")}
 _TRAJECTORY = Path(__file__).parent / "testdata" / "agent-trajectory.json"

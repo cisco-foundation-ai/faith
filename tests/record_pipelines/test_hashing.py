@@ -4,7 +4,7 @@
 
 from faith._internal.iter.common import GetAttrTransform
 from faith.record_pipelines.hashing import HashModelDataTransform
-from tests.benchmark.categories.fake_record_maker import make_fake_record
+from tests.benchmark.qa.fake_record_maker import make_fake_record
 
 
 def test_hash_model_data_transform() -> None:
