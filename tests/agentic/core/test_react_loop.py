@@ -925,9 +925,15 @@ def test_unknown_tool_name_is_fed_back_not_fatal() -> None:
         "error": UNKNOWN_TOOL_ERROR,
         "timestamp": ANY,
     }
-    assert result.tool_responses[0]["response_truncated"] == (
+    unknown_tool_response = (
         "Unknown tool: Tool 'does_not_exist' not found. Available tools: submit"
     )
+    assert result.tool_responses[0] == {
+        "tool_name": "does_not_exist",
+        "response_truncated": unknown_tool_response,
+        "response_length": len(unknown_tool_response),
+        "timestamp": ANY,
+    }
 
 
 def test_an_expired_timeout_outranks_a_spent_tool_budget() -> None:
@@ -1002,7 +1008,12 @@ def test_a_malformed_call_is_fed_back_and_retriable(
         "error": error,
         "timestamp": ANY,
     }
-    assert result.tool_responses[0]["response_truncated"] == message
+    assert result.tool_responses[0] == {
+        "tool_name": tool_name,
+        "response_truncated": message,
+        "response_length": len(message),
+        "timestamp": ANY,
+    }
     # Nothing ran for the bad call: only the recovering submission reached the
     # environment, and the run recovered to a clean submission.
     assert env.commands_executed == ['submit {"answer": "flag{x}"}']
@@ -1010,6 +1021,34 @@ def test_a_malformed_call_is_fed_back_and_retriable(
         StoppedReason.SUBMITTED,
         "flag{x}",
     )
+
+
+def test_a_long_error_response_records_its_untruncated_length() -> None:
+    """The error path excerpts its message but records the real length.
+
+    A separate construction site from an executed call's, and the one whose
+    message can grow without a tool involved: the feedback quotes the model's raw
+    arguments back, so a large invalid blob produces a large error. Every other
+    case here is short enough that the truncated and untruncated lengths agree,
+    which is where recording the wrong one would go unnoticed.
+    """
+    arguments = '"' + "y" * (MAX_LOGGED_RESPONSE_CHARS * 2) + '"'
+    registry = ToolRegistry(
+        [_FakeTool("bash_exec"), _FakeTool("submit", is_terminal=True)]
+    )
+    model = _FakeModelAPI(
+        [_turn("Bad call", ("call_bad", "bash_exec", arguments)), _SUBMIT_TURN]
+    )
+
+    result = _loop(model, registry, _FakeEnvironment(), max_tool_calls=5).run(_TASK)
+
+    message = f"Error: Tool arguments must be a JSON object; got: {arguments}"
+    assert result.tool_responses[0] == {
+        "tool_name": "bash_exec",
+        "response_truncated": message[:MAX_LOGGED_RESPONSE_CHARS],
+        "response_length": len(message),
+        "timestamp": ANY,
+    }
 
 
 def test_all_malformed_calls_stop_at_max_turns_not_max_calls() -> None:

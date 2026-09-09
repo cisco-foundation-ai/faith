@@ -831,6 +831,9 @@ SUMMARY: [your summary text]""",
         "median_llm_grade": pytest.approx(float("nan"), nan_ok=True),
         "stddev_llm_grade": pytest.approx(float("nan"), nan_ok=True),
         "query_count": 0,
+        "scored_count": 0,
+        "error_count": 0,
+        "error_rate": pytest.approx(float("nan"), nan_ok=True),
     }
 
     assert [
@@ -897,5 +900,8 @@ SUMMARY: [your summary text]""",
         "median_llm_grade": pytest.approx(4 / 5),
         "stddev_llm_grade": pytest.approx(math.sqrt(67 / 2) / 15),
         "query_count": 3,
+        "scored_count": 3,
+        "error_count": 0,
+        "error_rate": pytest.approx(0),
         "rate_max_token_halt": pytest.approx(0),
     }

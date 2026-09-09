@@ -39,5 +39,8 @@ class AnswerExtractor(ABC):
 
         Returns:
             The prediction, or None if the answer does not extract (never
-            submitted, or an unusable shape).
+            submitted, or an unusable shape). None means unscorable, and is
+            graded as a miss: an extractor whose benchmark has an abstain
+            terminal tool must map it to a non-None value meaning "no answer"
+            (e.g. an empty list) or a correct abstain is scored as wrong.
         """

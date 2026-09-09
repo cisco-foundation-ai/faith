@@ -4,10 +4,11 @@
 
 """Core abstractions for agentic evaluation."""
 
+from faith._types.record.agent import AgentResult, StoppedReason
 from faith.agentic.core.answer_extractor import AnswerExtractor
 from faith.agentic.core.capabilities import CommandExecution, FileRead, FileWrite
 from faith.agentic.core.environment import DEFAULT_WORKSPACE_DIR, Environment
-from faith.agentic.core.react_loop import AgentResult, ReActLoop
+from faith.agentic.core.react_loop import ReActLoop
 from faith.agentic.core.task import Task
 from faith.agentic.core.task_loader import TaskLoader
 from faith.agentic.core.tool import Tool
@@ -30,6 +31,7 @@ __all__ = [
     "ToolNotFoundError",
     "ReActLoop",
     "AgentResult",
+    "StoppedReason",
     "TaskLoader",
     "Task",
 ]

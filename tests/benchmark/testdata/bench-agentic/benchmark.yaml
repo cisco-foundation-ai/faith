@@ -1,0 +1,26 @@
+# Copyright 2025 Cisco Systems, Inc. and its affiliates
+#
+# SPDX-License-Identifier: Apache-2.0
+
+---
+# Fake agentic benchmark for unit testing benchmark listing/grouping.
+benchmark:
+  metadata: !from
+    '$BENCHMARKS_ROOT/base-template.yaml["metadata"]':
+      name: "bench-agentic"
+      description: "A fake agentic benchmark."
+      state: enabled
+      categories: ["security", "reasoning"]
+  agentic_config:
+    task_loader:
+      type: "faith.agentic.fake.FakeTaskLoader"
+    environment:
+      type: "fake"
+    answer_extractor:
+      type: "faith.agentic.fake.FakeExtractor"
+  output_processing: !from
+    '$BENCHMARKS_ROOT/output-processing-template.yaml["output_processing"]':
+      primary_metric: "file_f1.mean"
+      score_fns:
+        file_f1:
+          type: "jaccard"

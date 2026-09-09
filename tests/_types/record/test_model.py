@@ -5,6 +5,7 @@
 import pytest
 
 from faith._types.model.generation import GenerationMode
+from faith._types.record.agent import AgentResult, StoppedReason
 from faith._types.record.model import ModelRecord
 from faith._types.record.model_response import ChatResponse, GenerationError, TokenPred
 
@@ -18,10 +19,21 @@ def test_model_record_reset_to_mode(mode: GenerationMode) -> None:
         logits=[[TokenPred(token="A", token_id=0, logprob=-1.0)]],
         next_token=ChatResponse(output_text="A"),
         chat_comp=ChatResponse(output_text="The answer is A"),
+        agent_trajectory=AgentResult(
+            task_id="t",
+            answer="A",
+            messages=[],
+            tool_calls=[],
+            tool_responses=[],
+            num_tool_calls=0,
+            execution_time_seconds=0.0,
+            stopped_reason=StoppedReason.SUBMITTED,
+        ),
         error=GenerationError(title="Something went wrong"),
     )
     record.reset_to_mode(mode)
 
+    # agent_trajectory is not a GenerationMode, so reset always clears it.
     assert record == ModelRecord(
         prompt="What is 2 + 2?",
         answer_symbol_ids={"A": 0, "B": 1},

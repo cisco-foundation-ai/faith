@@ -567,6 +567,9 @@ def test_sa_benchmark_grade_aggregator_string_match() -> None:
         },
         "lenient_accuracy": pytest.approx(float("nan"), nan_ok=True),
         "query_count": 0,
+        "scored_count": 0,
+        "error_count": 0,
+        "error_rate": pytest.approx(float("nan"), nan_ok=True),
     }
 
     assert [
@@ -629,6 +632,9 @@ def test_sa_benchmark_grade_aggregator_string_match() -> None:
         "lenient_accuracy": pytest.approx(2 / 3),
         "mean_output_tokens": pytest.approx(7),
         "query_count": 3,
+        "scored_count": 3,
+        "error_count": 0,
+        "error_rate": pytest.approx(0),
         "rate_max_token_halt": pytest.approx(2 / 3),
     }
 
@@ -721,6 +727,9 @@ def test_sa_benchmark_grade_aggregator_label_set() -> None:
         "median_jaccard_index": pytest.approx(float("nan"), nan_ok=True),
         "micro_f1": pytest.approx(float("nan"), nan_ok=True),
         "query_count": 0,
+        "scored_count": 0,
+        "error_count": 0,
+        "error_rate": pytest.approx(float("nan"), nan_ok=True),
     }
 
     assert [
@@ -785,6 +794,9 @@ def test_sa_benchmark_grade_aggregator_label_set() -> None:
         "median_jaccard_index": pytest.approx(1 / 3),
         "micro_f1": pytest.approx(4 / 9),
         "query_count": 3,
+        "scored_count": 3,
+        "error_count": 0,
+        "error_rate": pytest.approx(0),
         "rate_max_token_halt": pytest.approx(1 / 3),
     }
 
@@ -857,6 +869,9 @@ def test_sa_benchmark_grade_aggregator_domain_specific() -> None:
         "mean_cvss_score": pytest.approx(float("nan"), nan_ok=True),
         "median_cvss_score": pytest.approx(float("nan"), nan_ok=True),
         "query_count": 0,
+        "scored_count": 0,
+        "error_count": 0,
+        "error_rate": pytest.approx(float("nan"), nan_ok=True),
     }
 
     assert [
@@ -901,5 +916,8 @@ def test_sa_benchmark_grade_aggregator_domain_specific() -> None:
         "mean_output_tokens": pytest.approx(8),
         "median_cvss_score": pytest.approx(1 / 4),
         "query_count": 3,
+        "scored_count": 3,
+        "error_count": 0,
+        "error_rate": pytest.approx(0),
         "rate_max_token_halt": pytest.approx(1 / 3),
     }

@@ -8,16 +8,20 @@ import json
 import logging
 import time
 from dataclasses import dataclass
-from enum import auto
 from functools import cached_property
-from typing import Any, NotRequired, TypedDict
+from typing import Any, TypedDict
 
 from faith._internal.functools.retriable import (
     MaxAttemptsExceededError,
     RetryFunctionWrapper,
 )
-from faith._types.enums import CIStrEnum
 from faith._types.json_types import JsonValue
+from faith._types.record.agent import (
+    AgentResult,
+    StoppedReason,
+    ToolCallEntry,
+    ToolResponseEntry,
+)
 from faith.agentic.core.environment import Environment
 from faith.agentic.core.task import Task
 from faith.agentic.core.tool import Tool
@@ -60,95 +64,6 @@ class _ModelToolCall(TypedDict):
     id: str
     type: str
     function: _FunctionCall
-
-
-class ToolCallEntry(TypedDict):
-    """One emitted tool call. `args` marks an executed call, `error` a rejected one."""
-
-    tool_name: str
-    timestamp: float
-    args: NotRequired[dict[str, JsonValue]]
-    raw_arguments: NotRequired[str]
-    error: NotRequired[str]
-
-
-class ToolResponseEntry(TypedDict):
-    """The result string fed back for one tool call, truncated for the log.
-
-    `response_length` is the untruncated length, so a payload-size question is
-    answerable from this entry alone; the full string is in AgentResult.messages.
-    """
-
-    tool_name: str
-    timestamp: float
-    response_truncated: str
-    response_length: int
-
-
-class StoppedReason(CIStrEnum):
-    """Why a ReActLoop run terminated.
-
-    Two orthogonal axes are encoded in one closed set: the first five are
-    normal terminations (the agent or a configured limit ended the run cleanly),
-    while ERROR is the sole failure mode (the harness/API/environment broke).
-    The AgentResult invariant ties error to this: AgentResult.error is non-None
-    if and only if stopped_reason is ERROR. A limit being hit (including TIMEOUT)
-    is a normal incomplete result, not a failure, so it carries no error string.
-
-    Only SUBMITTED yields an answer; NO_TOOL_CALLS is a normal termination but
-    not a success (the model replied with prose, and kept doing so after being
-    nudged, instead of calling submit).
-    """
-
-    SUBMITTED = auto()
-    NO_TOOL_CALLS = auto()
-    MAX_CALLS = auto()
-    MAX_TURNS = auto()
-    TIMEOUT = auto()
-    ERROR = auto()
-
-
-@dataclass
-class AgentResult:
-    """Result of running an agent on a task.
-
-    Attributes:
-        answer: Agent's final submitted answer, exactly as the model supplied it
-            to the terminal tool (any JSON type: str, list, dict, number, ...),
-            or None if the agent never submitted. Interpretation is left to the
-            benchmark's extractor, which knows the expected answer shape.
-        answer_tool: Name of the terminal tool that ended the run, or None if the
-            agent never submitted (stopped_reason != SUBMITTED). Paired with
-            answer for the extractor: which terminal tool fired can change how the
-            same answer value is graded (e.g. a submit tool vs. an abstain tool).
-        tool_calls: One entry per tool call the model emitted, in order. Executed
-            calls record the parsed args; calls that never ran record the raw
-            arguments and an "error" marker instead.
-        tool_responses: One entry per tool call, holding the (truncated) result
-            string returned to the model.
-        num_tool_calls: Total number of tool calls the model emitted, including
-            malformed attempts that never executed a tool. Equals len(tool_calls).
-        stopped_reason: Why the agent stopped (see StoppedReason).
-        final_turn_offered: Whether the run exhausted its tool-call budget and was
-            given one extra turn to submit. Distinguishes a submission the nudge
-            rescued from an ordinary one, and a run that was nudged and still
-            refused from a record predating the nudge.
-        error: Failure message, set if and only if stopped_reason is
-            StoppedReason.ERROR. Hitting a limit (max_calls/max_turns/timeout) is
-            a normal incomplete result, not a failure, so it carries no error.
-    """
-
-    task_id: str
-    answer: JsonValue
-    messages: list[dict[str, Any]]
-    tool_calls: list[ToolCallEntry]
-    tool_responses: list[ToolResponseEntry]
-    num_tool_calls: int
-    execution_time_seconds: float
-    stopped_reason: StoppedReason
-    answer_tool: str | None = None
-    final_turn_offered: bool = False
-    error: str | None = None
 
 
 @dataclass
