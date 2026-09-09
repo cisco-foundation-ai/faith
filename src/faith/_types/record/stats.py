@@ -25,7 +25,14 @@ MetricSummary: TypeAlias = dict[str, Any]
 
 @dataclass(frozen=True)
 class StatsRecord(DataClassJsonMixin):
-    """Statistics computed for a single record by a log grader."""
+    """Statistics computed for a single record by a log grader.
+
+    `error` holds the title of the generation error that produced no answer to
+    grade. A failure is not a wrong answer, so an errored record is excluded from
+    the accuracy metrics and counted separately.
+
+    `stopped_reason` is agentic-only, and left None by every QA grader.
+    """
 
     label: Labeling | None
     prediction: Labeling | None
@@ -45,5 +52,11 @@ class StatsRecord(DataClassJsonMixin):
         default=None, metadata=config(exclude=lambda x: x is None)
     )
     scores: dict[str, Any] | None = field(
+        default=None, metadata=config(exclude=lambda x: x is None)
+    )
+    error: str | None = field(
+        default=None, metadata=config(exclude=lambda x: x is None)
+    )
+    stopped_reason: str | None = field(
         default=None, metadata=config(exclude=lambda x: x is None)
     )

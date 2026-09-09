@@ -47,6 +47,7 @@
         "num_answer_tokens": null,
         "max_token_halt": false
       },
+      "agent_trajectory": null,
       "error": null
     },
     "stats": {
@@ -57,7 +58,8 @@
       "log_probs": null,
       "num_output_tokens": 27,
       "max_token_halt": false,
-      "scores": null
+      "scores": null,
+      "error": null
     }
   },
   {
@@ -108,6 +110,7 @@
         "num_answer_tokens": null,
         "max_token_halt": false
       },
+      "agent_trajectory": null,
       "error": null
     },
     "stats": {
@@ -118,7 +121,8 @@
       "log_probs": null,
       "num_output_tokens": 21,
       "max_token_halt": false,
-      "scores": null
+      "scores": null,
+      "error": null
     }
   },
   {
@@ -169,6 +173,7 @@
         "num_answer_tokens": null,
         "max_token_halt": false
       },
+      "agent_trajectory": null,
       "error": null
     },
     "stats": {
@@ -179,7 +184,8 @@
       "log_probs": null,
       "num_output_tokens": 23,
       "max_token_halt": false,
-      "scores": null
+      "scores": null,
+      "error": null
     }
   },
   {
@@ -230,6 +236,7 @@
         "num_answer_tokens": null,
         "max_token_halt": true
       },
+      "agent_trajectory": null,
       "error": null
     },
     "stats": {
@@ -240,7 +247,8 @@
       "log_probs": null,
       "num_output_tokens": 30,
       "max_token_halt": true,
-      "scores": null
+      "scores": null,
+      "error": null
     }
   }
 ]

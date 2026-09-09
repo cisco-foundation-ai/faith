@@ -965,6 +965,9 @@ Choices:
         "label_count": {"A": 0, "B": 0},
         "lenient_accuracy": pytest.approx(float("nan"), nan_ok=True),
         "query_count": 0,
+        "scored_count": 0,
+        "error_count": 0,
+        "error_rate": pytest.approx(float("nan"), nan_ok=True),
         "weighted_avg_f1": pytest.approx(float("nan"), nan_ok=True),
     }
 
@@ -1051,6 +1054,9 @@ Choices:
             "incorrect_token": 1.0,
         },
         "query_count": 4,
+        "scored_count": 4,
+        "error_count": 0,
+        "error_rate": pytest.approx(0),
         "num_near_ties": {
             "symbol": 0,
             "token": 0,
@@ -1144,6 +1150,9 @@ Choices:
         "label_count": {"A": 0, "B": 0},
         "lenient_accuracy": pytest.approx(float("nan"), nan_ok=True),
         "query_count": 0,
+        "scored_count": 0,
+        "error_count": 0,
+        "error_rate": pytest.approx(float("nan"), nan_ok=True),
         "weighted_avg_f1": pytest.approx(float("nan"), nan_ok=True),
     }
 
@@ -1205,8 +1214,122 @@ Choices:
         },
         "mean_output_tokens": pytest.approx(16),
         "query_count": 3,
+        "scored_count": 3,
+        "error_count": 0,
+        "error_rate": pytest.approx(0),
         "rate_max_token_halt": pytest.approx(0),
         "subject_weighted_accuracy": pytest.approx(1 / 4),
         "subject_weighted_lenient_accuracy": pytest.approx(1 / 4),
         "weighted_avg_f1": pytest.approx(1 / 3),
+    }
+
+
+def test_mc_benchmark_grade_aggregator_excludes_errored_records() -> None:
+    metric_aggregator = MCBenchmark(
+        spec=BenchmarkSpec(
+            name="test-bar",
+            generation_mode=GenerationMode.CHAT_COMP,
+            prompt_format=PromptFormatter.CHAT,
+            n_shot=SampleRatio(0),
+        ),
+        config=BenchmarkConfig(mcqa_config=MCQAConfig(answer_symbols=["A", "B"])),
+    ).grade_aggregator()
+
+    scored = [
+        StatsRecord(
+            label="A",
+            max_token_halt=False,
+            num_output_tokens=3,
+            prediction="B",
+            answer_format=AnswerFormat.PROPER,
+            subject="bumbershoots",
+        ),
+        StatsRecord(
+            label="B",
+            max_token_halt=False,
+            num_output_tokens=41,
+            prediction="B",
+            answer_format=AnswerFormat.PROPER,
+            subject="blabberdash",
+        ),
+    ]
+    errored = StatsRecord(
+        label="A",
+        prediction=None,
+        answer_format=AnswerFormat.INVALID,
+        subject="bumbershoots",
+        error="Empty Response",
+    )
+
+    # An errored record changes only the error metrics: every other metric matches
+    # the run without it, so a harness failure is never scored as a wrong answer.
+    assert [*scored, errored] >> metric_aggregator == (scored >> metric_aggregator) | {
+        "query_count": 3,
+        "scored_count": 2,
+        "error_count": 1,
+        "error_rate": pytest.approx(1 / 3),
+    }
+
+
+def test_mc_benchmark_grade_aggregator_drops_ungraded_records() -> None:
+    """A None entry is a record the grader never scored, and is not a query.
+
+    Unlike an errored record, it is dropped outright rather than counted: it
+    reports nothing about the model or the harness, so even query_count ignores
+    it. The one real record's metrics must come through untouched.
+    """
+    metric_aggregator = MCBenchmark(
+        spec=BenchmarkSpec(
+            name="test-bar",
+            generation_mode=GenerationMode.CHAT_COMP,
+            prompt_format=PromptFormatter.CHAT,
+            n_shot=SampleRatio(0),
+        ),
+        config=BenchmarkConfig(mcqa_config=MCQAConfig(answer_symbols=["A", "B"])),
+    ).grade_aggregator()
+
+    assert [
+        StatsRecord(
+            label="A",
+            max_token_halt=False,
+            num_output_tokens=3,
+            prediction="B",
+            answer_format=AnswerFormat.PROPER,
+            subject="bumbershoots",
+        ),
+        None,
+    ] >> metric_aggregator == {
+        "accuracy": pytest.approx(0),
+        "confusion_matrix_count": {
+            "A": {"A": 0, "B": 1, "": 0},
+            "B": {"A": 0, "B": 0, "": 0},
+            "": {"A": 0, "B": 0, "": 0},
+        },
+        "f1_scores": {
+            "A": pytest.approx(0),
+            "B": pytest.approx(0),
+        },
+        "format_breakdown_count": {
+            "improper": {"correct": 0, "incorrect": 0},
+            "inferred": {"correct": 0, "incorrect": 0},
+            "invalid": {"correct": 0, "incorrect": 0},
+            "proper": {"correct": 0, "incorrect": 1},
+        },
+        "format_count": {"improper": 0, "inferred": 0, "invalid": 0, "proper": 1},
+        "format_rate": {
+            "improper": pytest.approx(0),
+            "inferred": pytest.approx(0),
+            "invalid": pytest.approx(0),
+            "proper": pytest.approx(1),
+        },
+        "label_count": {"A": 1, "B": 0},
+        "lenient_accuracy": pytest.approx(0),
+        "mean_output_tokens": pytest.approx(3),
+        # The None is absent from every count, query_count included.
+        "query_count": 1,
+        "scored_count": 1,
+        "error_count": 0,
+        "error_rate": pytest.approx(0),
+        "rate_max_token_halt": pytest.approx(0),
+        "weighted_avg_f1": pytest.approx(0),
     }
