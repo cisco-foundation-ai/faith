@@ -46,9 +46,8 @@ authors = [
   {name = "Blaine Nelson"},
 ]
 maintainers = [
-  {name = "Baturay Saglam"},
-  {name = "Blaine Nelson"},
-  {name = "Paul Kassianik"}
+  {name = "Kimia Majd"},
+  {name = "Fraser Burch"}
 ]
 readme = "README.md"
 keywords = ["benchmarks", "cybersecurity", "evaluations", "llm"]
