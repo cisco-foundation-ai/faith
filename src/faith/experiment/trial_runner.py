@@ -13,7 +13,6 @@ layer (it composes record pipelines and queries the model), keeping the
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any
 
 from faith._internal.iter.mux import MuxTransform
 from faith._internal.iter.transform import DevNullReducer, IdentityTransform
@@ -145,17 +144,6 @@ class AgenticTrialRunner(TrialRunner):
 
         agentic_config = benchmark.agentic_config
         limits = agentic_config.limits
-        generation_params: dict[str, Any] = {
-            "temperature": generation.temperature,
-            "top_p": generation.top_p,
-            **generation.kwargs,
-        }
-        # -1 is the "omit, use the API default" sentinel (see APIBasedModel.query);
-        # forwarding it verbatim would make the API reject reasoning configs like o3.
-        if generation.max_completion_tokens > 0:
-            generation_params["max_completion_tokens"] = (
-                generation.max_completion_tokens
-            )
         loop = ReActLoop(
             model_api=model.client,
             model=model.name_or_path,
@@ -170,7 +158,7 @@ class AgenticTrialRunner(TrialRunner):
             # so the loop must not fall back to its own defaults here.
             api_max_attempts=model.api_max_attempts,
             api_retry_sleep_secs=model.api_retry_sleep_secs,
-            generation_params=generation_params,
+            generation_params=generation.as_request_params(),
         )
         # Index tasks so the query stage can recover the Task to run for each
         # stale record (a stale record may be one read back from a prior log and

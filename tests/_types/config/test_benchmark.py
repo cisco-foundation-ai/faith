@@ -76,7 +76,10 @@ def test_benchmark_config_with_agentic_section() -> None:
         {
             "output_processing": {"score_fns": {"file_f1": {"type": "jaccard"}}},
             "agentic_config": {
-                "task_loader": {"type": "vulnloc", "config": {"n": 1}},
+                "task_loader": {
+                    "type": "vulnerability_localization",
+                    "config": {"n": 1},
+                },
                 "environment": {"type": "docker", "config": {"image": "ubuntu"}},
                 "answer_extractor": {"type": "file_list"},
                 "tools": ["bash_exec", "submit"],
@@ -88,7 +91,9 @@ def test_benchmark_config_with_agentic_section() -> None:
             score_fns={"file_f1": ScoreFnConfig(type="jaccard")}
         ),
         agentic_config=AgenticConfig(
-            task_loader=AgenticTaskLoaderConfig(type="vulnloc", config={"n": 1}),
+            task_loader=AgenticTaskLoaderConfig(
+                type="vulnerability_localization", config={"n": 1}
+            ),
             environment=AgenticEnvironmentConfig(
                 type="docker", config={"image": "ubuntu"}
             ),
@@ -100,7 +105,7 @@ def test_benchmark_config_with_agentic_section() -> None:
 
 
 _AGENTIC_CONFIG = AgenticConfig(
-    task_loader=AgenticTaskLoaderConfig(type="vulnloc"),
+    task_loader=AgenticTaskLoaderConfig(type="vulnerability_localization"),
     environment=AgenticEnvironmentConfig(type="docker"),
     answer_extractor=AgenticAnswerExtractorConfig(type="file_list"),
 )

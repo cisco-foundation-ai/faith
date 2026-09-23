@@ -1,0 +1,22 @@
+# Copyright 2025 Cisco Systems, Inc. and its affiliates
+#
+# SPDX-License-Identifier: Apache-2.0
+
+---
+# Minimal agentic benchmark for exercising the query subcommand's agentic guards.
+benchmark:
+  type: agentic
+  metadata:
+    name: fake-agentic
+  output_processing:
+    primary_metric: mean_file_f1
+    score_fns:
+      file_f1:
+        type: jaccard
+  agentic_config:
+    task_loader:
+      type: fake
+    environment:
+      type: fake
+    answer_extractor:
+      type: fake
