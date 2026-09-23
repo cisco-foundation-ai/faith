@@ -5,6 +5,7 @@
 import re
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -12,7 +13,7 @@ import httpx
 import pytest
 from openai import BadRequestError, InternalServerError
 
-from faith._internal.io.json import write_as_json
+from faith._internal.io.json import read_json_file, write_as_json
 from faith._internal.iter.transform import DevNullReducer
 from faith._internal.multiprocessing.gpu_scheduling import JobOutcome
 from faith._types.benchmark.sample_ratio import SampleRatio
@@ -33,6 +34,7 @@ from faith.cli.subcmd.query import (
     _warn_ignored_agentic_nshot,
     current_timestamp,
     get_command_output,
+    redact_argv,
     run_experiment_queries,
 )
 from faith.experiment.params import DataSamplingParams, ExperimentParams
@@ -67,6 +69,81 @@ def test_current_timestamp() -> None:
     ts = current_timestamp()
     assert re.match(r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} \w+", ts)
     assert ts.endswith("PST") or ts.endswith("PDT")
+
+
+@pytest.mark.parametrize(
+    "argv,expected",
+    [
+        (["api_key=sk-abc"], ["api_key=<redacted>"]),
+        (["--api-key", "sk-abc"], ["--api-key", "<redacted>"]),
+        (["--API-KEY", "sk-abc"], ["--API-KEY", "<redacted>"]),
+        (
+            ["--engine-kwargs", "max_model_len=131072"],
+            ["--engine-kwargs", "max_model_len=131072"],
+        ),
+        (["--api-key"], ["--api-key"]),
+        (["api_key=a=b=c"], ["api_key=<redacted>"]),
+        (["--model-path"], ["--model-path"]),
+        (
+            ["--engine-kwargs", "api_key=1", "--engine-kwargs", "AUTH_TOKEN=2"],
+            [
+                "--engine-kwargs",
+                "api_key=<redacted>",
+                "--engine-kwargs",
+                "AUTH_TOKEN=<redacted>",
+            ],
+        ),
+        # A generation bound is not a credential, however much its name looks like one.
+        (["--max-completion-tokens", "512"], ["--max-completion-tokens", "512"]),
+        (
+            ["--engine-kwargs", "max_tokens=512", "stop_token_ids=[128001]"],
+            ["--engine-kwargs", "max_tokens=512", "stop_token_ids=[128001]"],
+        ),
+    ],
+)
+def test_redact_argv_masks_every_credential_shape(
+    argv: list[str], expected: list[str]
+) -> None:
+    """A credential is masked whether it follows `=` or its flag, and keys survive."""
+    assert redact_argv(argv) == expected
+
+
+def test_redact_argv_masks_only_the_secret_in_a_full_command_line() -> None:
+    """A realistic command line round-trips with the credential as its only change.
+
+    `--max-completion-tokens` is here because it is the case that made this worth
+    fixing: a substring match on `token` redacted it, so the record silently lost a
+    parameter that decides what the run measured.
+    """
+    assert redact_argv(
+        [
+            "faith",
+            "query",
+            "--model-path",
+            "openai/gpt-4",
+            "--max-completion-tokens",
+            "512",
+            "--engine-kwargs",
+            'api_key="sk-abc123"',
+            "--engine-kwargs",
+            "base_url=https://example.invalid/v1",
+            "--output-dir",
+            "/tmp/out",
+        ]
+    ) == [
+        "faith",
+        "query",
+        "--model-path",
+        "openai/gpt-4",
+        "--max-completion-tokens",
+        "512",
+        "--engine-kwargs",
+        "api_key=<redacted>",
+        "--engine-kwargs",
+        "base_url=https://example.invalid/v1",
+        "--output-dir",
+        "/tmp/out",
+    ]
 
 
 def test_get_command_output_returns_stripped_stdout() -> None:
@@ -156,6 +233,9 @@ def test_run_single_model_experiment_loop(tmp_path: Path) -> None:
 
     with (
         patch("faith.cli.subcmd.query.find_benchmarks", return_value=[bench]),
+        patch.object(
+            sys, "argv", ["faith", "query", "--engine-kwargs", 'api_key="sk-abc123"']
+        ),
         # The per-trial pipeline is exercised by QATrialRunner's own tests; here
         # we only verify the experiment loop drives the runner and writes the
         # run record, so the runner is mocked out.
@@ -218,6 +298,13 @@ def test_run_single_model_experiment_loop(tmp_path: Path) -> None:
             )
         ) == [exp_dir / "experiment.json"]
         assert (exp_dir / "experiment.json").exists()
+        # The recorded command line must not carry the key the model spec redacts.
+        assert read_json_file(exp_dir / "experiment.json")["metadata"]["run_args"] == [
+            "faith",
+            "query",
+            "--engine-kwargs",
+            "api_key=<redacted>",
+        ]
 
 
 def test_run_experiment_queries_sequential(tmp_path: Path) -> None:

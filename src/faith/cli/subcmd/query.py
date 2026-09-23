@@ -28,7 +28,7 @@ from faith._internal.multiprocessing.gpu_scheduling import (
     run_gpu_jobs_in_parallel,
 )
 from faith._types.benchmark.sample_ratio import SampleRatio
-from faith._types.model.engine import ModelEngine
+from faith._types.model.engine import REDACTED, ModelEngine, is_secret_name
 from faith._types.model.generation import GenerationMode, GenParams
 from faith._types.model.prompt import PromptFormatter
 from faith._types.model.spec import ModelSpec
@@ -173,6 +173,33 @@ def get_command_output(command: str) -> str:
     return result.stdout.strip()
 
 
+def _is_secret_flag(arg: str) -> bool:
+    """Whether `arg` names a credential, ignoring flag dashes and dash-vs-underscore."""
+    return is_secret_name(arg.lstrip("-").replace("-", "_"))
+
+
+def redact_argv(argv: Sequence[str]) -> list[str]:
+    """Mask credential values in a command line, keeping every flag and key visible.
+
+    A credential reaches argv either within a single element (`api_key=sk-...`) or as
+    the element following its flag (`--api-key sk-...`), so both shapes are masked.
+    """
+    redacted: list[str] = []
+    mask_next = False
+    for arg in argv:
+        if mask_next:
+            redacted.append(REDACTED)
+            mask_next = False
+            continue
+        key, sep, _ = arg.partition("=")
+        if sep and _is_secret_flag(key):
+            redacted.append(f"{key}{sep}{REDACTED}")
+        else:
+            redacted.append(arg)
+            mask_next = not sep and _is_secret_flag(arg)
+    return redacted
+
+
 def current_timestamp() -> str:
     """Get the current timestamp as a string in the 'America/Los_Angeles' timezone."""
     return datetime.now(tz=ZoneInfo("America/Los_Angeles")).strftime(
@@ -264,7 +291,7 @@ def _run_single_model(
                 "metadata": {
                     "start_time": current_timestamp(),
                     "version": __version__,
-                    "run_args": sys.argv,
+                    "run_args": redact_argv(sys.argv),
                 },
                 "experiment_params": {
                     "benchmark": experiment.benchmark_spec.to_dict(),

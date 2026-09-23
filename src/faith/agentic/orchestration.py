@@ -7,8 +7,7 @@
 An agentic benchmark.yaml names its task loader, environment, tools, and answer
 extractor by short name; this module turns those names into instances, which the
 trial runner assembles into a ReActLoop. Selection uses closed CIEnum registries
-keyed by short name, mirroring `DomainSpecificScore`. The registries start empty:
-their members arrive with the implementations in later PRs.
+keyed by short name, mirroring `DomainSpecificScore`.
 """
 
 from typing import Any
@@ -22,6 +21,7 @@ from faith.agentic.core import (
     Tool,
     ToolRegistry,
 )
+from faith.agentic.tools import BashExecTool, SubmitTool
 
 
 class _ConfiguredRegistry(CIEnum):
@@ -88,12 +88,17 @@ class AgenticAnswerExtractorType(_ConfiguredRegistry):
 
 
 class AgenticToolType(_NoConfigRegistry):
-    """Registry of Tool implementations.
+    """Registry of Tool implementations, keyed by the tool's function-call name.
 
     Tools take no configuration (only the environment is stateful), so this
     registry constructs them with no arguments rather than inheriting
-    `_ConfiguredRegistry`'s config-taking `create`.
+    `_ConfiguredRegistry`'s config-taking `create`. Each member name matches the
+    wrapped tool's `name`, so a benchmark.yaml naming "bash_exec" resolves to
+    BASH_EXEC.
     """
+
+    BASH_EXEC = (BashExecTool,)  # Run a shell command in the environment.
+    SUBMIT = (SubmitTool,)  # Submit the final answer, terminating the run.
 
 
 def build_task_loader(config: AgenticConfig) -> TaskLoader:
