@@ -23,7 +23,7 @@ from faith._types.config.agentic import (
 # A benchmark.yaml `agentic_config` naming every section and limit, and the
 # config it parses to. Round-tripped, so it doubles as the serialized form.
 _FULL_AGENTIC_DICT = {
-    "task_loader": {"type": "vulnloc", "config": {"split": "test"}},
+    "task_loader": {"type": "vulnerability_localization", "config": {"split": "test"}},
     "environment": {"type": "docker", "config": {"image": "ubuntu:22.04"}},
     "answer_extractor": {"type": "file_list", "config": {"strip_prefix": "src/"}},
     "working_subdir": "repo",
@@ -39,7 +39,9 @@ _FULL_AGENTIC_DICT = {
 }
 
 _FULL_AGENTIC_CONFIG = AgenticConfig(
-    task_loader=AgenticTaskLoaderConfig(type="vulnloc", config={"split": "test"}),
+    task_loader=AgenticTaskLoaderConfig(
+        type="vulnerability_localization", config={"split": "test"}
+    ),
     environment=AgenticEnvironmentConfig(
         type="docker", config={"image": "ubuntu:22.04"}
     ),
@@ -61,7 +63,7 @@ _FULL_AGENTIC_CONFIG = AgenticConfig(
 # The minimal legal section: only the three implementation choices, everything
 # else defaulted.
 _MINIMAL_AGENTIC_DICT = {
-    "task_loader": {"type": "vulnloc"},
+    "task_loader": {"type": "vulnerability_localization"},
     "environment": {"type": "docker"},
     "answer_extractor": {"type": "file_list"},
 }
@@ -84,7 +86,7 @@ def test_the_omitted_sections_default_and_serialize_back_out() -> None:
     config = AgenticConfig.from_dict(_MINIMAL_AGENTIC_DICT)
 
     assert config == AgenticConfig(
-        task_loader=AgenticTaskLoaderConfig(type="vulnloc"),
+        task_loader=AgenticTaskLoaderConfig(type="vulnerability_localization"),
         environment=AgenticEnvironmentConfig(type="docker"),
         answer_extractor=AgenticAnswerExtractorConfig(type="file_list"),
         working_subdir="",

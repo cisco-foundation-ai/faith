@@ -12,10 +12,13 @@ import numpy as np
 
 from faith._internal.algo.sampling import sample_sequence
 from faith._internal.metrics.llm import formatting_metrics
+from faith._types.benchmark.sample_ratio import SampleRatio
 from faith._types.benchmark.spec import BenchmarkSpec
 from faith._types.config.agentic import AgenticConfig
 from faith._types.config.benchmark import BenchmarkConfig
 from faith._types.config.patterns import AnswerFormat, PatternDef
+from faith._types.model.generation import GenerationMode
+from faith._types.model.prompt import PromptFormatter
 from faith._types.record.score import Score
 from faith._types.record.stats import MetricSummary
 from faith.agentic.core.task import Task
@@ -26,6 +29,15 @@ from faith.benchmark.grading.grade_aggregator import GradeAggregator
 from faith.benchmark.grading.log_grader import LogGrader
 
 logger = logging.getLogger(__name__)
+
+
+# An agent loop only ever uses chat completions over system/user/assistant/tool
+# turns with no few-shot examples, so an agentic experiment pins these three spec
+# fields to constants (only `name` varies). The spec stays valid, so datastore
+# paths and experiment records match QA's and summarize/BigQuery treat both alike.
+AGENTIC_GENERATION_MODE = GenerationMode.CHAT_COMP
+AGENTIC_PROMPT_FORMAT = PromptFormatter.CHAT
+AGENTIC_N_SHOT = SampleRatio(0)
 
 
 class AgenticBenchmark(Benchmark):
