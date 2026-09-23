@@ -111,6 +111,9 @@ or
 /local/path/to/gen_params_hash/metrics.json
 ```
 
+An agentic benchmark hashes its agentic config into a further `agentic_<hash>`
+directory below `gen_params_<hash>`, so its metrics file sits one level deeper.
+
 ## Example row
 
 ```json

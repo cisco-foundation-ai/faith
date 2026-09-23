@@ -15,6 +15,7 @@ import numpy as np
 from faith._internal.iter.transform import Reducer
 from faith._internal.metrics.validation import assert_same_length
 from faith._types.config.scoring import OutputProcessingConfig
+from faith._types.record.agent import StoppedReason
 from faith._types.record.score import Score
 from faith._types.record.stats import MetricSummary, StatsRecord
 from faith.benchmark.scores.domain_specific import DomainSpecificScore
@@ -52,6 +53,7 @@ class GradeAggregator(Reducer[StatsRecord | None, MetricSummary]):
             # Last, to restore query_count as the total: _aggregate only ever saw
             # the scored records.
             | GradeAggregator._error_metrics(len(graded), len(scored))
+            | GradeAggregator._stopped_reason_metrics(graded)
         )
 
     @staticmethod
@@ -66,6 +68,28 @@ class GradeAggregator(Reducer[StatsRecord | None, MetricSummary]):
                 if query_count > 0
                 else float("nan")
             ),
+        }
+
+    @staticmethod
+    def _stopped_reason_metrics(graded: Sequence[StatsRecord]) -> MetricSummary:
+        """How the agent's runs terminated, or nothing at all for a QA benchmark.
+
+        Computed here rather than in `_aggregate` because it must cover the errored
+        records too: ERROR is a stopped reason, and a histogram omitting it would
+        read as an empty tally beside a nonzero error_count.
+        """
+        reasons = [stats.stopped_reason for stats in graded]
+        if all(reason is None for reason in reasons):
+            return {}
+        return {
+            "stopped_reason_count": {
+                str(sr): sum(1 for reason in reasons if reason == str(sr))
+                for sr in list(StoppedReason)
+            },
+            "stopped_reason_rate": {
+                str(sr): np.mean([1 if reason == str(sr) else 0 for reason in reasons])
+                for sr in list(StoppedReason)
+            },
         }
 
     @staticmethod

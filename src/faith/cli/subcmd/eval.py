@@ -20,7 +20,7 @@ from faith._types.config.benchmark import BenchmarkConfig
 from faith._types.config.patterns import AnswerFormat, Disambiguation, PatternDef
 from faith._types.record.sample import ReplacementStrategy
 from faith._types.record.stats import MetricSummary
-from faith.benchmark.benchmark import QABenchmark
+from faith.benchmark.benchmark import Benchmark
 from faith.benchmark.load import load_benchmark
 from faith.record_pipelines.grading import grade_trial_records
 from faith.record_pipelines.params import RecordHandlingParams
@@ -61,7 +61,7 @@ def _agg_trials(tms: ValuesView[MetricSummary]) -> MetricSummary:
 
 
 def compute_experiment_metrics(
-    benchmark: QABenchmark,
+    benchmark: Benchmark,
     trial_logs: dict[str, Path],
     *,
     replacement_strategy: ReplacementStrategy = ReplacementStrategy.NEVER,

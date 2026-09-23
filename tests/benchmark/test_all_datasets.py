@@ -27,12 +27,14 @@ def load_benchmark_for_test(name: str) -> QABenchmark:
     )
     benchmark_path = benchmarks_root() / name
     benchmark_config = load_config_from_path(benchmark_path)
-    return load_benchmark(
+    benchmark = load_benchmark(
         benchmark_spec,
         benchmark_config,
         path=benchmark_path,
         seed=12345678910987654321,
     )
+    assert isinstance(benchmark, QABenchmark)
+    return benchmark
 
 
 def hash_dataframe(df: pd.DataFrame) -> str:

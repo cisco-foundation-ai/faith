@@ -42,6 +42,16 @@ class APIBasedModel(BaseModel, ABC):
         self._api_retry_sleep_secs = api_retry_sleep_secs
 
     @property
+    def api_max_attempts(self) -> int:
+        """Return how many times a failed API call is retried."""
+        return self._api_max_attempts
+
+    @property
+    def api_retry_sleep_secs(self) -> float:
+        """Return how long to sleep between API retries."""
+        return self._api_retry_sleep_secs
+
+    @property
     def supported_formats(self) -> set[PromptFormatter]:
         """Return the supported input formats for API-based models."""
         return {PromptFormatter.CHAT}

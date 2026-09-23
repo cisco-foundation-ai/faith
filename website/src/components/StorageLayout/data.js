@@ -56,9 +56,17 @@ export const SEGMENTS = [
     title: "Generation-params hash",
     text: "Hash of the model’s generation params — keeps logs from clobbering each other when parameters (e.g. temperature) change.",
   },
+  {
+    id: "agentic",
+    label: "agentic_<agentic-config-hash>",
+    ph: true,
+    short: "agentic-config-hash",
+    title: "Agentic-config hash",
+    text: "Agentic benchmarks only: hash of the benchmark’s agentic config — keeps logs from clobbering each other when the environment, tools, or limits change. Absent for question-answering benchmarks.",
+  },
 ];
 
-// Leaf contents inside gen_params_<hash>/
+// Leaf contents inside the innermost path segment
 export const LEAVES = [
   {
     id: "experiment",

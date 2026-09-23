@@ -1,0 +1,23 @@
+# Copyright 2025 Cisco Systems, Inc. and its affiliates
+#
+# SPDX-License-Identifier: Apache-2.0
+
+---
+# A fake agentic benchmark, for testing the agentic segment of the experiment path.
+benchmark:
+  metadata:
+    name: "bench-agentic"
+    description: "A fake agentic benchmark."
+    state: enabled
+  agentic_config:
+    task_loader:
+      type: "vulnerability_localization"
+    environment:
+      type: "docker"
+    answer_extractor:
+      type: "vulnerability_localization"
+  output_processing:
+    primary_metric: "file_f1.mean"
+    score_fns:
+      file_f1:
+        type: "jaccard"

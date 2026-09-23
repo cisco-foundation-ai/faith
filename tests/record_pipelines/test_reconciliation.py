@@ -7,11 +7,20 @@ import pytest
 
 from faith._types.model.generation import GenerationMode
 from faith._types.record.sample import RecordStatus, ReplacementStrategy, SampleRecord
-from faith.record_pipelines.reconciliation import record_reconciler
+from faith._types.record.stats import AnswerFormat, StatsRecord
+from faith.record_pipelines.reconciliation import (
+    agentic_record_reconciler,
+    record_reconciler,
+)
 from tests.benchmark.qa.fake_record_maker import make_fake_record
 
 FRESH = RecordStatus.FRESH
 STALE = RecordStatus.STALE
+
+# The grade a prior run left on a record, from grading an output now being replaced.
+_STALE_GRADE = StatsRecord(
+    label="4", prediction="5", answer_format=AnswerFormat.INVALID
+)
 
 
 def _rec(
@@ -21,6 +30,7 @@ def _rec(
     *,
     question: str = "",
     model_stats: dict | None = None,
+    stats: StatsRecord | None = None,
 ) -> SampleRecord:
     """Build a minimal record for testing."""
     return make_fake_record(
@@ -32,6 +42,7 @@ def _rec(
         },
         model_data={"prompt": "The quick brown", "answer_symbol_ids": {}}
         | (model_stats or {}),
+        stats=stats,
     )
 
 
@@ -351,3 +362,151 @@ def test_duplicate_sample_hash_stable_across_runs() -> None:
         (FRESH, _rec(1, "H", "d1", model_stats=chat_resp)),
         (FRESH, _rec(2, "U", "d2", model_stats=chat_resp)),
     ]
+
+
+# A serialized AgentResult, the agentic analog of the chat_comp response above.
+_TRAJECTORY = {
+    "task_id": "t",
+    "answer": "a",
+    "messages": [],
+    "tool_calls": [],
+    "tool_responses": [],
+    "num_tool_calls": 0,
+    "execution_time_seconds": 0.0,
+    "stopped_reason": "submitted",
+}
+
+
+_ERRORED = {**_TRAJECTORY, "stopped_reason": "error", "error": "boom"}
+
+
+@pytest.mark.parametrize(
+    "reconcile, graded_output",
+    [
+        # Graded under NEXT_TOKEN, now re-run under CHAT_COMP: the old response is
+        # cleared by reset_to_mode, so the record is stale under the new mode.
+        (
+            lambda existing: record_reconciler(
+                existing, ReplacementStrategy.NEVER, GenerationMode.CHAT_COMP
+            ),
+            {"next_token": {"output_text": "5"}},
+        ),
+        # An errored trajectory is kept on the record but is not fresh, so the
+        # grade computed from it has to go with the re-run.
+        (
+            lambda existing: agentic_record_reconciler(
+                existing, ReplacementStrategy.NEVER
+            ),
+            {"agent_trajectory": _ERRORED},
+        ),
+    ],
+    ids=["qa", "agentic"],
+)
+def test_a_stale_record_loses_the_grade_of_the_output_it_is_replacing(
+    reconcile, graded_output: dict
+) -> None:
+    """Both reconcilers drop a stale record's stats, so the row is graded again.
+
+    Stats are keyed to the model output, and persist_records re-stamps
+    model_data_hash on write: a grade left behind would match the new output's
+    hash and read as current, so the row would keep the old run's score forever.
+    """
+    existing = [_rec(0, "a", "h1", model_stats=graded_output, stats=_STALE_GRADE)]
+
+    status, record = next(iter([_rec(0, "a", "h1")] >> reconcile(existing)))
+
+    assert (status, record.stats) == (STALE, None)
+
+
+def test_a_fresh_record_keeps_its_grade() -> None:
+    """A record whose output is reused keeps the grade computed for that output.
+
+    The other half of the contract: clearing unconditionally would re-grade every
+    resumed row, which is the cost the reconciler exists to avoid.
+    """
+    existing = [
+        _rec(
+            0,
+            "a",
+            "h1",
+            model_stats={"agent_trajectory": _TRAJECTORY},
+            stats=_STALE_GRADE,
+        )
+    ]
+
+    assert list(
+        [_rec(0, "a", "h1")]
+        >> agentic_record_reconciler(existing, ReplacementStrategy.NEVER)
+    ) == [
+        (
+            FRESH,
+            _rec(
+                0,
+                "a",
+                "h1",
+                model_stats={"agent_trajectory": _TRAJECTORY},
+                stats=_STALE_GRADE,
+            ),
+        )
+    ]
+
+
+def test_agentic_reconciler_stale_without_trajectory() -> None:
+    """A record with no agent_trajectory is stale and must be (re)run."""
+    assert list(
+        [_rec(0, "a", "h1")] >> agentic_record_reconciler([], ReplacementStrategy.NEVER)
+    ) == [(STALE, _rec(0, "a", "h1"))]
+
+
+def test_agentic_reconciler_fresh_with_trajectory_keeps_it() -> None:
+    """NEVER: a matched record with a logged trajectory is fresh and preserved."""
+    existing = [_rec(0, "a", "h1", model_stats={"agent_trajectory": _TRAJECTORY})]
+    assert list(
+        [_rec(0, "a", "h1")]
+        >> agentic_record_reconciler(existing, ReplacementStrategy.NEVER)
+    ) == [(FRESH, _rec(0, "a", "h1", model_stats={"agent_trajectory": _TRAJECTORY}))]
+
+
+def test_agentic_reconciler_keeps_only_the_trajectory_on_a_fresh_record() -> None:
+    """A kept record is reset to the trajectory alone: QA fields and error are cleared.
+
+    `reset_to_agentic` clears them; without this the whole method can be a no-op
+    and every other agentic test still passes. A stray `error` from a prior QA
+    run would exclude a good trajectory from the accuracy metrics, and a stray
+    `chat_comp` would be graded in preference to it.
+    """
+    existing = [
+        _rec(
+            0,
+            "a",
+            "h1",
+            model_stats={
+                "agent_trajectory": _TRAJECTORY,
+                "chat_comp": {"output_text": "stale QA output"},
+                "next_token": {"output_text": "stale QA output"},
+                "error": {"title": "Old Error", "details": "from a prior run"},
+            },
+        )
+    ]
+    assert list(
+        [_rec(0, "a", "h1")]
+        >> agentic_record_reconciler(existing, ReplacementStrategy.NEVER)
+    ) == [(FRESH, _rec(0, "a", "h1", model_stats={"agent_trajectory": _TRAJECTORY}))]
+
+
+def test_agentic_reconciler_if_hash_differs_reruns_on_change() -> None:
+    """IF_HASH_DIFFERS: a changed data hash drops the old trajectory and goes stale."""
+    existing = [_rec(0, "a", "h_old", model_stats={"agent_trajectory": _TRAJECTORY})]
+    assert list(
+        [_rec(0, "a", "h_new")]
+        >> agentic_record_reconciler(existing, ReplacementStrategy.IF_HASH_DIFFERS)
+    ) == [(STALE, _rec(0, "a", "h_new"))]
+
+
+def test_agentic_reconciler_stale_on_errored_trajectory() -> None:
+    """NEVER: an errored trajectory is stale so resume retries it."""
+    existing = [_rec(0, "a", "h1", model_stats={"agent_trajectory": _ERRORED})]
+    assert list(
+        [_rec(0, "a", "h1")]
+        >> agentic_record_reconciler(existing, ReplacementStrategy.NEVER)
+    ) == [(STALE, _rec(0, "a", "h1", model_stats={"agent_trajectory": _ERRORED}))]
