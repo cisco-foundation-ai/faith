@@ -1,0 +1,36 @@
+# Copyright 2025 Cisco Systems, Inc. and its affiliates
+#
+# SPDX-License-Identifier: Apache-2.0
+
+---
+# `bench-agentic`'s config with every default spelled out at its default value.
+# Authoring a default is not an edit, so this must not fork the path.
+benchmark:
+  metadata:
+    name: "bench-agentic"
+    description: "A fake agentic benchmark."
+    state: enabled
+  agentic_config:
+    task_loader:
+      type: "vulnerability_localization"
+      config: {}
+    environment:
+      type: "docker"
+      config: {}
+    answer_extractor:
+      type: "vulnerability_localization"
+      config: {}
+    working_subdir: ""
+    tools: []
+    system_prompt: null
+    limits:
+      max_tool_calls: 50
+      max_turns: 100
+      max_consecutive_no_tool_calls: 3
+      timeout_seconds: null
+      command_timeout_seconds: 60
+  output_processing:
+    primary_metric: "file_f1.mean"
+    score_fns:
+      file_f1:
+        type: "jaccard"

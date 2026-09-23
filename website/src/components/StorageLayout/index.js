@@ -55,9 +55,7 @@ export function CombinedLayout() {
             </div>
           </div>
         ))}
-        <div className={styles.specLeafHead}>
-          Inside <code>gen_params_&lt;hash&gt;/</code>
-        </div>
+        <div className={styles.specLeafHead}>Inside the innermost segment</div>
         {LEAVES.map((l) => (
           <div key={l.id} className={styles.specLeaf}>
             <span

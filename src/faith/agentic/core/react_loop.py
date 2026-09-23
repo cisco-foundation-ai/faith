@@ -7,7 +7,7 @@
 import json
 import logging
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import cached_property
 from typing import Any, TypedDict
 
@@ -160,6 +160,11 @@ class ReActConfig:
             APIBasedModel's default. A transient API failure mid-run would
             otherwise discard the whole trajectory.
         api_retry_sleep_secs: Delay between those attempts.
+        generation_params: Extra keyword arguments spread into every
+            chat.completions.create call (e.g. temperature, top_p,
+            max_completion_tokens). Kept as a plain dict so the loop stays
+            decoupled from the model layer's GenParams. Empty means "use API
+            defaults".
     """
 
     model_api: Any
@@ -173,6 +178,7 @@ class ReActConfig:
     timeout_seconds: float | None = None
     api_max_attempts: int = 10
     api_retry_sleep_secs: float = 1.0
+    generation_params: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         if self.api_max_attempts < 1:
@@ -259,6 +265,7 @@ class ReActLoop:
         timeout_seconds: float | None = None,
         api_max_attempts: int = 10,
         api_retry_sleep_secs: float = 1.0,
+        generation_params: dict[str, Any] | None = None,
     ):
         """Initialize ReAct loop. See ReActConfig for argument semantics."""
         self._config = ReActConfig(
@@ -273,6 +280,7 @@ class ReActLoop:
             timeout_seconds=timeout_seconds,
             api_max_attempts=api_max_attempts,
             api_retry_sleep_secs=api_retry_sleep_secs,
+            generation_params=generation_params or {},
         )
 
     def run(self, task: Task) -> AgentResult:
@@ -728,6 +736,7 @@ class _Run:
             messages=self._messages,
             tools=tools if tools else None,
             tool_choice="auto" if tools else None,
+            **self._config.generation_params,
         )
         if not response.choices:
             raise RuntimeError(

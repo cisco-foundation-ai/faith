@@ -55,3 +55,10 @@ class ModelRecord(DataClassJsonMixin):
             self.chat_comp = None
         self.agent_trajectory = None
         self.error = None
+
+    def reset_to_agentic(self) -> None:
+        """Resets the model data to only include the agent trajectory."""
+        self.logits = None
+        self.next_token = None
+        self.chat_comp = None
+        self.error = None

@@ -2,26 +2,19 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Tests for the agent-result to log-record mapping."""
+"""Tests for the task to log-record mapping."""
 
 from pathlib import Path
 from typing import Any
 
-import pytest
-
 from faith._internal.algo.hash import dict_sha256
 from faith._types.json_types import JsonValue
-from faith._types.record.agent import StoppedReason
-from faith._types.record.model_response import GenerationError
+from faith._types.record.sample import SampleRecord
 from faith.agentic.core.task import Task
-from faith.record_pipelines.agentic_formatting import (
-    agent_result_to_sample_record,
-)
-from tests._types.record.fake_agent_result_maker import (
-    make_fake_agent_result as _result,
-)
+from faith.record_pipelines.agentic_formatting import TaskFormatter
 
 _PROMPT = "Localize the vulnerability."
+_SYSTEM_PROMPT = "You are a security analyst."
 
 
 def _task(
@@ -40,12 +33,16 @@ def _task(
     )
 
 
-def test_maps_result_into_stale_record() -> None:
-    """Test the mapping embeds the trajectory, sets the label, and leaves stats None."""
-    task = _task(["a.c", "b.c"], metadata={"difficulty": "easy"})
-    result = _result(["a.c", "b.c"])
+def _format(
+    task: Task, *, index: int = 0, system_prompt: str | None = _SYSTEM_PROMPT
+) -> SampleRecord:
+    (record,) = list(iter({index: task}.items()) >> TaskFormatter("v1", system_prompt))
+    return record
 
-    record = agent_result_to_sample_record(task, result, index=3, version="v1")
+
+def test_maps_task_into_bare_record() -> None:
+    """Test the mapping sets data/metadata and the label, leaves the trajectory and stats None."""
+    record = _format(_task(["a.c", "b.c"], metadata={"difficulty": "easy"}), index=3)
 
     expected_data: dict[str, Any] = {
         "benchmark_sample_index": 3,
@@ -59,7 +56,7 @@ def test_maps_result_into_stale_record() -> None:
             }
         ),
         "subject": None,
-        "system_prompt": None,
+        "system_prompt": _SYSTEM_PROMPT,
         "instruction": None,
         "question": _PROMPT,
         "choices": None,
@@ -69,6 +66,7 @@ def test_maps_result_into_stale_record() -> None:
         "question_prompt": _PROMPT,
         "ancillary_data": {"difficulty": "easy"},
     }
+    # No "agent_trajectory" key: the record is bare until AgentLoopRunner fills it.
     assert record.to_dict() == {
         "metadata": {
             "version": "v1",
@@ -78,7 +76,6 @@ def test_maps_result_into_stale_record() -> None:
         "model_data": {
             "prompt": _PROMPT,
             "answer_symbol_ids": {},
-            "agent_trajectory": result.to_dict(),
         },
     }
     assert record.stats is None
@@ -86,54 +83,15 @@ def test_maps_result_into_stale_record() -> None:
 
 def test_ground_truth_becomes_label_across_json_shapes() -> None:
     """Test a non-string ground truth (now a valid Labeling) flows into the label."""
-    record = agent_result_to_sample_record(
-        _task({"file": "a.c", "line": 42}),
-        _result(None),
-        index=0,
-        version="v1",
-    )
+    record = _format(_task({"file": "a.c", "line": 42}))
     assert record.data.label == {"file": "a.c", "line": 42}
 
 
 def test_empty_metadata_yields_no_ancillary_data() -> None:
     """Test empty task metadata is dropped rather than stored as an empty dict."""
-    record = agent_result_to_sample_record(
-        _task("flag{x}"), _result("flag{x}"), index=0, version="v1"
-    )
+    record = _format(_task("flag{x}"))
     assert record.data.ancillary_data is None
     assert "ancillary_data" not in record.data.to_dict()
-
-
-def test_an_errored_run_records_a_generation_error() -> None:
-    """Test the harness failure reaches the grader as QA's generation error."""
-    record = agent_result_to_sample_record(
-        _task("flag{x}"),
-        _result(None, StoppedReason.ERROR, error="container died"),
-        index=0,
-        version="v1",
-    )
-    assert record.model_data.error == GenerationError(
-        title="Agent Run Error", details="container died"
-    )
-
-
-@pytest.mark.parametrize(
-    "stopped_reason",
-    [
-        StoppedReason.SUBMITTED,
-        StoppedReason.NO_TOOL_CALLS,
-        StoppedReason.MAX_CALLS,
-        StoppedReason.MAX_TURNS,
-        StoppedReason.TIMEOUT,
-    ],
-)
-def test_a_normal_termination_records_no_error(stopped_reason: StoppedReason) -> None:
-    # Hitting a limit is an incomplete answer, not a failure: marking it errored
-    # would withhold it from the accuracy metrics it belongs in.
-    record = agent_result_to_sample_record(
-        _task("flag{x}"), _result(None, stopped_reason), index=0, version="v1"
-    )
-    assert record.model_data.error is None
 
 
 def test_sample_hash_covers_the_data_payload_and_environment() -> None:
@@ -148,10 +106,21 @@ def test_sample_hash_covers_the_data_payload_and_environment() -> None:
         _task("flag{x}", environment_config={"image": "ubuntu:22.04"}),
     ]
 
-    hashes = {
-        agent_result_to_sample_record(
-            task, _result("flag{x}"), index=0, version="v1"
-        ).data.benchmark_sample_hash
-        for task in tasks
-    }
+    hashes = {_format(task).data.benchmark_sample_hash for task in tasks}
     assert len(hashes) == len(tasks)
+
+
+def test_data_hash_covers_the_system_prompt() -> None:
+    """A changed system prompt is a changed record, so IF_HASH_DIFFERS re-runs the task.
+
+    The system prompt is not part of benchmark_sample_hash, so data_hash is the
+    only thing that distinguishes two runs configured with different standing
+    instructions.
+    """
+    prompts = [None, _SYSTEM_PROMPT, "You are a helpful assistant."]
+
+    hashes = {
+        _format(_task("flag{x}"), system_prompt=prompt).metadata.data_hash
+        for prompt in prompts
+    }
+    assert len(hashes) == len(prompts)

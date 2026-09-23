@@ -59,7 +59,8 @@
       "num_output_tokens": 7,
       "max_token_halt": false,
       "scores": null,
-      "error": null
+      "error": null,
+      "stopped_reason": null
     }
   },
   {
@@ -122,7 +123,8 @@
       "num_output_tokens": 30,
       "max_token_halt": true,
       "scores": null,
-      "error": null
+      "error": null,
+      "stopped_reason": null
     }
   },
   {
@@ -185,7 +187,8 @@
       "num_output_tokens": 27,
       "max_token_halt": false,
       "scores": null,
-      "error": null
+      "error": null,
+      "stopped_reason": null
     }
   },
   {
@@ -248,7 +251,8 @@
       "num_output_tokens": 24,
       "max_token_halt": false,
       "scores": null,
-      "error": null
+      "error": null,
+      "stopped_reason": null
     }
   },
   {
@@ -311,7 +315,8 @@
       "num_output_tokens": 19,
       "max_token_halt": false,
       "scores": null,
-      "error": null
+      "error": null,
+      "stopped_reason": null
     }
   },
   {
@@ -374,7 +379,8 @@
       "num_output_tokens": 31,
       "max_token_halt": false,
       "scores": null,
-      "error": null
+      "error": null,
+      "stopped_reason": null
     }
   },
   {
@@ -437,7 +443,8 @@
       "num_output_tokens": 30,
       "max_token_halt": true,
       "scores": null,
-      "error": null
+      "error": null,
+      "stopped_reason": null
     }
   }
 ]

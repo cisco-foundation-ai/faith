@@ -1,0 +1,24 @@
+# Copyright 2025 Cisco Systems, Inc. and its affiliates
+#
+# SPDX-License-Identifier: Apache-2.0
+
+---
+# `bench-agentic` with an edited description and an identical agentic config, so a
+# path that forks here would mean the segment is keyed on more than it claims.
+benchmark:
+  metadata:
+    name: "bench-agentic"
+    description: "A fake agentic benchmark, described differently."
+    state: enabled
+  agentic_config:
+    task_loader:
+      type: "vulnerability_localization"
+    environment:
+      type: "docker"
+    answer_extractor:
+      type: "vulnerability_localization"
+  output_processing:
+    primary_metric: "file_f1.mean"
+    score_fns:
+      file_f1:
+        type: "jaccard"

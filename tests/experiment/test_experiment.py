@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+import re
 from pathlib import Path
 
 import pytest
@@ -62,9 +63,10 @@ def test_benchmark_experiment() -> None:
         initial_seed=3,
     )
     assert experiment.benchmark_config.metadata.name == "for-unit-test-only"
-    assert str(experiment.datastore.path).startswith(
-        "/tmp/for-unit-test-only/example_model/chat/chat_comp/5_shot/gen_params_"
+    assert experiment.datastore.path.parent == Path(
+        "/tmp/for-unit-test-only/example_model/chat/chat_comp/5_shot"
     )
+    assert experiment.datastore.path.name.startswith("gen_params_")
     assert experiment.benchmark_spec == BenchmarkSpec(
         name="for-unit-test-only",
         generation_mode=GenerationMode.CHAT_COMP,
@@ -104,6 +106,51 @@ def test_benchmark_experiment() -> None:
             num_trials=0,
             initial_seed=27,
         )
+
+
+def _agentic_experiment(benchmark_dir: str) -> BenchmarkExperiment:
+    return BenchmarkExperiment(
+        benchmark_path=Path(__file__).parent / "testdata" / benchmark_dir,
+        generation_mode=GenerationMode.CHAT_COMP,
+        prompt_format=PromptFormatter.CHAT,
+        n_shot=SampleRatio(0),
+        model_name="example_model",
+        gen_params=GenParams(
+            temperature=0.1, top_p=0.5, max_completion_tokens=100, kwargs={}
+        ),
+        root_datastore=FakeStore(Path("/tmp")),
+        num_trials=1,
+        initial_seed=0,
+    )
+
+
+def test_agentic_config_forks_the_experiment_path() -> None:
+    path = _agentic_experiment("bench-agentic").datastore.path
+    assert path.parent.parent == Path(
+        "/tmp/bench-agentic/example_model/chat/chat_comp/0_shot"
+    )
+    assert path.parent.name.startswith("gen_params_")
+    assert re.fullmatch(r"agentic_[0-9a-f]{16}", path.name)
+
+    raised_cap = _agentic_experiment("bench-agentic-limits").datastore.path
+    assert raised_cap.parent == path.parent
+    assert raised_cap.name != path.name
+
+
+@pytest.mark.parametrize(
+    "benchmark_dir",
+    ["bench-agentic-described", "bench-agentic-verbose"],
+    ids=[
+        "an-edit-outside-the-agentic-config",
+        "the-same-config-with-its-defaults-spelled-out",
+    ],
+)
+def test_the_agentic_segment_forks_on_nothing_else(benchmark_dir: str) -> None:
+    """Neither a non-agentic edit nor an equivalent authoring may move the path."""
+    assert (
+        _agentic_experiment(benchmark_dir).datastore.path
+        == _agentic_experiment("bench-agentic").datastore.path
+    )
 
 
 def test_benchmark_experiment_iteration() -> None:

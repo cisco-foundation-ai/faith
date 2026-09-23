@@ -833,6 +833,33 @@ def test_the_prose_turn_counter_resets_on_a_tool_call() -> None:
     )
 
 
+def test_generation_params_spread_into_model_calls() -> None:
+    """generation_params reach chat.completions.create on every model turn.
+
+    Without this the agent would silently use the API's defaults (e.g.
+    temperature 1.0), defeating deterministic eval.
+    """
+    model = _FakeModelAPI([_turn("done")])
+
+    _loop(
+        model,
+        ToolRegistry(),
+        _FakeEnvironment(),
+        generation_params={"temperature": 0.3, "max_completion_tokens": 256},
+    ).run(_TASK)
+
+    # The whole call, since a param that collided with model/messages/tools
+    # would otherwise go unnoticed.
+    assert model.chat.completions.create.call_args.kwargs == {
+        "model": "test-model",
+        "messages": ANY,
+        "tools": None,
+        "tool_choice": None,
+        "temperature": 0.3,
+        "max_completion_tokens": 256,
+    }
+
+
 def test_environment_setup_failure_is_an_error_that_still_tears_down() -> None:
     """A setup failure yields an empty trajectory, and cleanup still runs.
 

@@ -38,6 +38,16 @@ class OpenAIModel(APIBasedModel):
         )
         self._client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
+    @property
+    def client(self) -> OpenAI:
+        """Return the underlying OpenAI client.
+
+        The agentic runner drives the ReAct loop by calling
+        `chat.completions.create` interactively, so it needs the raw client
+        rather than the batch `query` surface the QA path uses.
+        """
+        return self._client
+
     def _query_api(
         self, messages: list[dict[str, str]], **gen_params: Any
     ) -> ChatResponse:

@@ -37,7 +37,7 @@ def _label_metrics(
     )
 
 
-def _formatting_metrics(
+def formatting_metrics(
     answer_format: Sequence[AnswerFormat],
     correct_prediction: Sequence[bool] | None,
 ) -> dict[str, dict[str, Any]]:
@@ -151,7 +151,7 @@ def llm_prediction_metrics(
 
     return (
         _label_metrics(label, labelset)
-        | _formatting_metrics(
+        | formatting_metrics(
             answer_format, [lab == pred for lab, pred in zip(label, prediction)]
         )
         | {
@@ -191,7 +191,7 @@ def llm_multilabel_metrics(
 
     return (
         _label_metrics(label, labelset=None)
-        | _formatting_metrics(
+        | formatting_metrics(
             answer_format,
             [set(lab or []) == set(pred or []) for lab, pred in zip(label, prediction)],
         )
@@ -226,4 +226,4 @@ def llm_basic_metrics(
         pred is None or isinstance(pred, str) for pred in prediction
     ), "All predictions must be strings."
 
-    return _label_metrics(label, None) | _formatting_metrics(answer_format, None)
+    return _label_metrics(label, None) | formatting_metrics(answer_format, None)
