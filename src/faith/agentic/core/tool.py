@@ -29,7 +29,7 @@ class Tool(ABC):
         """Unique tool name used in function calling.
 
         Returns:
-            Tool name (e.g., "bash_exec", "file_read")
+            Tool name (e.g., "bash_exec", "submit")
         """
 
     @property

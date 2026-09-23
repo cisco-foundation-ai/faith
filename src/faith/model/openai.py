@@ -25,9 +25,16 @@ class OpenAIModel(APIBasedModel):
         api_num_threads: int = 5,
         api_max_attempts: int = 10,
         api_retry_sleep_secs: float = 1.0,
+        base_url: str | None = None,
+        api_key: str | None = None,
         **_kwargs: Any,
     ):
-        """Initialize the OpenAI API backend with the given parameters."""
+        """Initialize the OpenAI API backend with the given parameters.
+
+        `base_url` points the client at an OpenAI-compatible server other than
+        OpenAI's own (a vLLM host, OpenRouter, a local server). `api_key` overrides
+        the OPENAI_API_KEY env var.
+        """
         super().__init__(
             name_or_path,
             num_log_probs=num_log_probs,
@@ -36,7 +43,13 @@ class OpenAIModel(APIBasedModel):
             api_max_attempts=api_max_attempts,
             api_retry_sleep_secs=api_retry_sleep_secs,
         )
-        self._client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        resolved_api_key = api_key or os.getenv("OPENAI_API_KEY") or None
+        # Gated on base_url: a keyless OpenAI-compatible server (e.g. local vLLM)
+        # needs a non-empty placeholder, while against OpenAI itself None makes the
+        # SDK fail fast at construction rather than 401 mid-run.
+        if resolved_api_key is None and base_url is not None:
+            resolved_api_key = "EMPTY"
+        self._client = OpenAI(api_key=resolved_api_key, base_url=base_url)
 
     @property
     def client(self) -> OpenAI:

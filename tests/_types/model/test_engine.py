@@ -29,6 +29,48 @@ def test_engine_params_to_dict() -> None:
     }
 
 
+def test_engine_params_redacts_credential_kwargs() -> None:
+    """Every credential-named kwarg serializes to a sentinel, not its value.
+
+    One case per marker, since a dropped marker leaks that credential into every
+    experiment record. Matching is on whole words, so `key` and `token` count only
+    as the last one: `refresh_token` is a credential and `max_tokens` is not.
+    """
+    params = EngineParams(
+        engine_type=ModelEngine.OPENAI,
+        kwargs={
+            "api_key": "sk-secret",
+            "AUTH_TOKEN": "t0ken",
+            "refresh_token": "r3fresh",
+            "password": "hunter2",
+            "client_secret": "shh",
+            "gcp_credentials": "{...}",
+            "base_url": "https://example.invalid/v1",
+            "max_model_len": 131072,
+            "max_tokens": 512,
+            "tokenizer": "meta-llama/Llama-3-8B",
+            "stop_token_ids": [128001],
+        },
+    )
+    # Each key survives redaction so the record still shows a credential was set,
+    # and a non-credential kwarg keeps its value whatever its type.
+    assert params.to_dict()["kwargs"] == {
+        "api_key": "<redacted>",
+        "AUTH_TOKEN": "<redacted>",
+        "refresh_token": "<redacted>",
+        "password": "<redacted>",
+        "client_secret": "<redacted>",
+        "gcp_credentials": "<redacted>",
+        "base_url": "https://example.invalid/v1",
+        "max_model_len": 131072,
+        "max_tokens": 512,
+        "tokenizer": "meta-llama/Llama-3-8B",
+        "stop_token_ids": [128001],
+    }
+    # Redaction is a serialization concern only: the engine still gets the real key.
+    assert params.kwargs["api_key"] == "sk-secret"
+
+
 @pytest.mark.parametrize(
     "params",
     [

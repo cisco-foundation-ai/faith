@@ -29,6 +29,7 @@ from faith.agentic.core import (
     Tool,
 )
 from faith.agentic.orchestration import (
+    AgenticToolType,
     _ConfiguredRegistry,
     _NoConfigRegistry,
     _WorkingDirRegistry,
@@ -216,3 +217,15 @@ def test_build_tool_registry_registers_named_tools(
     with patch("faith.agentic.orchestration.AgenticToolType", _FakeToolType):
         registry = build_tool_registry(tool_names)
     assert registry.list_tools() == expected
+
+
+def test_build_tool_registry_wires_the_real_builtin_tools() -> None:
+    """Every built-in tool resolves through the unpatched production registry.
+
+    The registry keys each tool by the tool's own `name`, so listing back exactly
+    the requested short names proves the member name and the tool name agree — a
+    benchmark.yaml asking for "bash_exec" cannot resolve to something else.
+    """
+    short_names = [member.name.lower() for member in AgenticToolType]
+    assert short_names == ["bash_exec", "submit"]
+    assert build_tool_registry(short_names).list_tools() == short_names
