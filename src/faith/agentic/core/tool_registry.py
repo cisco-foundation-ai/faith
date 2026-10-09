@@ -11,6 +11,10 @@ from faith.agentic.core.environment import Environment
 from faith.agentic.core.tool import Tool
 
 
+class ToolArgumentError(ValueError):
+    """Raised when arguments are rejected before a tool executes."""
+
+
 class ToolExecutionError(Exception):
     """Raised when a registered tool fails during execution.
 
@@ -109,9 +113,12 @@ class ToolRegistry:
 
         Raises:
             ToolNotFoundError: If the tool is not found
+            ToolArgumentError: If argument validation rejects the call
             ToolExecutionError: If the tool raises during execution
         """
         tool = self.get_tool(tool_name)
+        if (error := tool.validate_args(args)) is not None:
+            raise ToolArgumentError(error)
         try:
             return tool.execute(environment, args)
         except Exception as e:

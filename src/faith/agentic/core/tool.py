@@ -55,7 +55,7 @@ class Tool(ABC):
     def schema(self) -> dict[str, Any]:
         """Function-calling schema for this tool, derived once per instance.
 
-        Read by both the registry (what the model is told) and ``_validate_args``
+        Read by both the registry (what the model is told) and ``validate_args``
         (what a call is checked against), so the two cannot diverge even if a
         subclass computes its schema properties.
         """
@@ -95,7 +95,7 @@ class Tool(ABC):
         Returns:
             The tool result, or an error string fed back to the model.
         """
-        if (error := self._validate_args(args)) is not None:
+        if (error := self.validate_args(args)) is not None:
             return error
         try:
             return self._invoke(environment, args)
@@ -118,8 +118,8 @@ class Tool(ABC):
             if not isinstance(environment, cap)
         )
 
-    def _validate_args(self, args: dict) -> str | None:
-        """Error string for a non-object args or the first missing required key, else None."""
+    def validate_args(self, args: dict) -> str | None:
+        """Check required keys without side effects; return an error string or None."""
         if not isinstance(args, dict):
             return f"Error: {self.name} requires a JSON object of arguments"
         for key in self.schema["parameters"].get("required") or []:

@@ -69,7 +69,7 @@ class BashExecTool(Tool):
 def _max_chars(args: dict) -> int:
     """The requested output cap, ignoring a non-positive or non-integer value.
 
-    Tool._validate_args only checks that required keys are present, so a model
+    Tool.validate_args only checks that required keys are present, so a model
     sending a string or a huge number reaches here; bool is excluded because it is
     an int in Python and output[:True] is one character.
     """

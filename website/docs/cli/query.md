@@ -100,6 +100,12 @@ Similarly, pass keyword args to the text-generation method with
 --generation-kwargs reasoning_effort='"high"'
 ```
 
+For Agentic runs, generation kwargs cannot contain `model`, `messages`, `tools`,
+`tool_choice`, `client`, `max_attempts`, or `retry_sleep_secs`. FAITH owns these
+request and retry fields and rejects conflicting settings before probing the
+endpoint. Configure retries through the engine's `api_max_attempts` and
+`api_retry_sleep_secs` instead. Other generation options remain supported.
+
 With `--model-configs`, both kwarg sets are **merged** into the config's own
 kwargs rather than replacing them, and the command-line value wins on a key
 collision.
