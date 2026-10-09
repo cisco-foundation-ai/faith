@@ -17,6 +17,7 @@ import pytest
 from faith.agentic.core import (
     Environment,
     Tool,
+    ToolArgumentError,
     ToolExecutionError,
     ToolNotFoundError,
     ToolRegistry,
@@ -73,6 +74,10 @@ class _BrokenTool:
     def execute(self, environment: Any, args: dict) -> str:
         """Raise instead of returning."""
         raise self._error
+
+    def validate_args(self, _args: dict) -> str | None:
+        """Accept arguments so the test reaches execution."""
+        return None
 
 
 def _broken_registry(name: str, error: Exception) -> ToolRegistry:
@@ -191,6 +196,12 @@ def test_execute_tool_routes_to_the_named_tool() -> None:
     assert registry.execute_tool("test_tool", {"arg": "value"}, _NO_ENV) == (
         "FakeTool(test_tool) executed with {'arg': 'value'}"
     )
+
+
+def test_argument_rejection_is_distinct_from_execution_failure() -> None:
+    registry = ToolRegistry([_FakeTool("test_tool")])
+    with pytest.raises(ToolArgumentError, match="requires 'arg' argument"):
+        registry.execute_tool("test_tool", {}, _NO_ENV)
 
 
 def test_execute_tool_rejects_an_unregistered_name() -> None:

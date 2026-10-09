@@ -32,6 +32,7 @@ from faith._types.model.engine import REDACTED, ModelEngine, is_secret_name
 from faith._types.model.generation import GenerationMode, GenParams
 from faith._types.model.prompt import PromptFormatter
 from faith._types.model.spec import ModelSpec
+from faith.agentic.core.react_loop import validate_agentic_generation_params
 from faith.benchmark.agentic import (
     AGENTIC_GENERATION_MODE,
     AGENTIC_N_SHOT,
@@ -418,6 +419,7 @@ def _check_tool_calling(model: Any, generation: GenParams) -> None:
     a model the run can serve cannot be rejected by the check that gates it.
     """
     probe_params = generation.as_request_params()
+    validate_agentic_generation_params(probe_params)
     probe_params["max_completion_tokens"] = _TOOL_PROBE_MAX_TOKENS
     try:
         response = completion_with_retries(

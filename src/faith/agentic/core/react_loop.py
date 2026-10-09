@@ -7,6 +7,7 @@
 import json
 import logging
 import time
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from functools import cached_property
 from typing import Any, TypedDict
@@ -23,6 +24,7 @@ from faith.agentic.core.environment import Environment
 from faith.agentic.core.task import Task
 from faith.agentic.core.tool import Tool
 from faith.agentic.core.tool_registry import (
+    ToolArgumentError,
     ToolExecutionError,
     ToolNotFoundError,
     ToolRegistry,
@@ -47,6 +49,41 @@ MAX_LOGGED_RESPONSE_CHARS = 500
 # A well-behaved tool caps its own output; this is the backstop that keeps a tool
 # that doesn't from exceeding the model API's request limit and failing the task.
 MAX_TOOL_RESULT_CHARS = 100_000
+
+
+def validate_agentic_generation_params(params: dict[str, Any]) -> None:
+    """Reject harness-owned fields and streaming, including SDK body overrides."""
+    reserved = {
+        "model",
+        "messages",
+        "tools",
+        "tool_choice",
+        "client",
+        "max_attempts",
+        "retry_sleep_secs",
+    }
+    # The SDK merges extra_body over its request body, so validating only the
+    # top-level kwargs would let it replace the tools, messages, or model later.
+    extra_body = params.get("extra_body")
+    sources: list[Mapping[str, Any]] = [params]
+    if isinstance(extra_body, Mapping):
+        sources.append(extra_body)
+    for source in sources:
+        if conflicts := sorted(reserved.intersection(source)):
+            raise ValueError(
+                "Agentic generation parameters contain reserved fields: "
+                f"{', '.join(conflicts)}. Remove them from generation.kwargs "
+                "(or generation_params), including extra_body; FAITH controls "
+                "these fields."
+            )
+        # Both the probe and loop need a complete response with choices. A stream
+        # has a different shape and must not be misreported as missing tool support.
+        if source.get("stream"):
+            raise ValueError(
+                "Agentic execution does not support stream=True. Remove it from "
+                "generation.kwargs (or generation_params), including extra_body, "
+                "or set stream=False."
+            )
 
 
 class _FunctionCall(TypedDict):
@@ -179,6 +216,7 @@ class ReActConfig:
     generation_params: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
+        validate_agentic_generation_params(self.generation_params)
         validate_retry_settings(self.api_max_attempts, self.api_retry_sleep_secs)
         validate_agent_limits(
             self.max_tool_calls,
@@ -658,16 +696,19 @@ class _Run:
             result = self._config.tool_registry.execute_tool(
                 tool_name, tool_args, self._config.environment
             )
-        except ToolNotFoundError as e:
-            # Unknown tool name: nothing executed, so feed it back like malformed
-            # JSON and don't count it against the budget (max_turns bounds these).
+        except (ToolArgumentError, ToolNotFoundError) as e:
+            # Rejected before execution; max_turns bounds these attempts.
             # Narrow on purpose: a ValueError raised by a tool that DID run is a
             # ToolExecutionError, and must not be reported as a bad tool name.
             return self._recoverable_error(
                 tool_call,
                 call_timestamp,
-                UNKNOWN_TOOL_ERROR,
-                f"Unknown tool: {str(e)}",
+                (
+                    INVALID_ARGS_ERROR
+                    if isinstance(e, ToolArgumentError)
+                    else UNKNOWN_TOOL_ERROR
+                ),
+                str(e) if isinstance(e, ToolArgumentError) else f"Unknown tool: {e}",
             )
         except ToolExecutionError as e:
             # The tool executed and raised: counts as executed, fed back so the

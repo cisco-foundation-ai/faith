@@ -13,6 +13,7 @@ from faith.agentic.core.task import Task
 from faith.agentic.core.task_loader import TaskLoader
 from faith.agentic.core.tool import Tool
 from faith.agentic.core.tool_registry import (
+    ToolArgumentError,
     ToolExecutionError,
     ToolNotFoundError,
     ToolRegistry,
@@ -27,6 +28,7 @@ __all__ = [
     "Environment",
     "Tool",
     "ToolRegistry",
+    "ToolArgumentError",
     "ToolExecutionError",
     "ToolNotFoundError",
     "ReActLoop",
