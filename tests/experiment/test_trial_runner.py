@@ -36,6 +36,7 @@ _LOOP_BUDGET_KEYS = (
     "max_turns",
     "max_consecutive_no_tool_calls",
     "timeout_seconds",
+    "recover_on_environment_failure",
     "api_max_attempts",
     "api_retry_sleep_secs",
 )
@@ -47,6 +48,7 @@ _LIMITS = AgenticLimitsConfig(
     max_turns=9,
     max_consecutive_no_tool_calls=2,
     timeout_seconds=30.0,
+    recover_on_environment_failure=False,
 )
 
 # Every value below is distinct from every other and from the ReActLoop default
@@ -272,6 +274,7 @@ def test_agentic_run_trial_threads_the_configured_limits_and_retries(tmp_path) -
         "max_turns": 9,
         "max_consecutive_no_tool_calls": 2,
         "timeout_seconds": 30.0,
+        "recover_on_environment_failure": False,
         "api_max_attempts": 4,
         "api_retry_sleep_secs": 0.25,
     }
@@ -348,7 +351,7 @@ def test_agentic_run_trial_records_a_failed_task_as_an_errored_trajectory(
     failed = records[0].model_data.agent_trajectory
     assert failed is not None
     assert failed.stopped_reason == StoppedReason.ERROR
-    assert failed.error == "Agent run failed: environment blew up"
+    assert failed.error == "Agent run failed: RuntimeError: environment blew up"
 
     # The errored task is stale on resume; the successful one is not re-run.
     rerun: list[str] = []

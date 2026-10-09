@@ -7,7 +7,6 @@ from collections.abc import Callable, Iterable
 from faith._internal.iter.join import LeftJoinTransform
 from faith._internal.iter.transform import Mapping, Transform
 from faith._types.model.generation import GenerationMode
-from faith._types.record.agent import StoppedReason
 from faith._types.record.model import ModelRecord
 from faith._types.record.sample import RecordStatus, ReplacementStrategy, SampleRecord
 
@@ -90,9 +89,7 @@ def _mode_is_fresh(mode: GenerationMode) -> Callable[[SampleRecord], bool]:
 def _agentic_is_fresh(record: SampleRecord) -> bool:
     """An agentic record is fresh once it carries a non-errored trajectory."""
     trajectory = record.model_data.agent_trajectory
-    return trajectory is not None and trajectory.stopped_reason is not (
-        StoppedReason.ERROR
-    )
+    return trajectory is not None and not trajectory.stopped_reason.is_failure
 
 
 def _reconciler(

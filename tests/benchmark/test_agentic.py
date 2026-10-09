@@ -59,7 +59,7 @@ def _config() -> BenchmarkConfig:
         ),
         agentic_config=AgenticConfig(
             task_loader=AgenticTaskLoaderConfig(type="fake"),
-            environment=AgenticEnvironmentConfig(type="fake"),
+            environment=AgenticEnvironmentConfig(type="docker"),
             answer_extractor=AgenticAnswerExtractorConfig(type="fake"),
         ),
     )
@@ -192,6 +192,7 @@ def test_grade_aggregator_summarizes_scores_and_formats() -> None:
             "max_turns": 0,
             "timeout": 0,
             "error": 0,
+            "environment_error": 0,
         },
         "stopped_reason_rate": {
             "submitted": pytest.approx(1.0),
@@ -200,6 +201,7 @@ def test_grade_aggregator_summarizes_scores_and_formats() -> None:
             "max_turns": pytest.approx(0.0),
             "timeout": pytest.approx(0.0),
             "error": pytest.approx(0.0),
+            "environment_error": pytest.approx(0.0),
         },
     }
 
@@ -225,6 +227,7 @@ def test_the_stopped_reason_breakdown_separates_runs_that_never_answered() -> No
         "max_turns": 0,
         "timeout": 0,
         "error": 0,
+        "environment_error": 0,
     }
     assert summary["stopped_reason_rate"] == {
         "submitted": pytest.approx(0.25),
@@ -233,6 +236,7 @@ def test_the_stopped_reason_breakdown_separates_runs_that_never_answered() -> No
         "max_turns": pytest.approx(0.0),
         "timeout": pytest.approx(0.0),
         "error": pytest.approx(0.0),
+        "environment_error": pytest.approx(0.0),
     }
 
 
@@ -251,6 +255,7 @@ def test_an_errored_run_is_counted_in_the_stopped_reason_breakdown() -> None:
         "max_turns": 0,
         "timeout": 0,
         "error": 1,
+        "environment_error": 0,
     }
 
 

@@ -15,6 +15,12 @@ from faith.agentic.core import ReActLoop, Task
 
 logger = logging.getLogger(__name__)
 
+# Separate titles so the log distinguishes a broken cluster from a broken run.
+_ERROR_TITLES = {
+    StoppedReason.ERROR: "Agent Run Error",
+    StoppedReason.ENVIRONMENT_ERROR: "Agent Environment Error",
+}
+
 
 def _errored_trajectory(task_id: str, error: str) -> AgentResult:
     """An empty trajectory recording that the task never ran."""
@@ -34,13 +40,16 @@ def _errored_trajectory(task_id: str, error: str) -> AgentResult:
 def _record_trajectory(record: SampleRecord, result: AgentResult) -> None:
     """Store the trajectory, recording a failed run as a GenerationError.
 
-    Only ERROR qualifies, so the aggregator withholds a harness failure from the
-    accuracy metrics; hitting a limit is a normal incomplete result.
+    Only a failure reason qualifies, so the aggregator withholds a harness or
+    infrastructure failure from the accuracy metrics; hitting a limit is a normal
+    incomplete result.
     """
     record.model_data.agent_trajectory = result
     record.model_data.error = (
-        GenerationError(title="Agent Run Error", details=result.error)
-        if result.stopped_reason is StoppedReason.ERROR
+        GenerationError(
+            title=_ERROR_TITLES[result.stopped_reason], details=result.error
+        )
+        if result.stopped_reason.is_failure
         else None
     )
 
@@ -74,7 +83,8 @@ class AgentLoopRunner(IsoTransform[SampleRecord]):
                 _record_trajectory(
                     record,
                     _errored_trajectory(
-                        task.id if task else str(index), f"Agent run failed: {e}"
+                        task.id if task else str(index),
+                        f"Agent run failed: {type(e).__name__}: {e}",
                     ),
                 )
             yield record

@@ -16,12 +16,25 @@ from faith.agentic.core.task import Task
 DEFAULT_WORKSPACE_DIR = "/workspace"
 
 
+class EnvironmentUnavailableError(RuntimeError):
+    """Raised when the sandbox is gone or unreachable, not when work in it failed.
+
+    A command exiting non-zero is an ordinary result; this is a terminated pod, a
+    dead container, or a lost connection. The loop rebuilds and retries rather than
+    charging the call, so the agent is never billed for a cluster hiccup.
+    """
+
+
 class Environment(ABC):
     """Base class for agent execution environments.
 
     An environment is an isolated sandbox. Only its lifecycle is required here;
     what it can *do* is expressed by the capability protocols it satisfies (see
     ``core.capabilities``).
+
+    An implementation whose sandbox can die mid-task raises
+    EnvironmentUnavailableError from its capability methods, so the loop can tell
+    infrastructure failure from a command the agent got wrong.
     """
 
     @abstractmethod

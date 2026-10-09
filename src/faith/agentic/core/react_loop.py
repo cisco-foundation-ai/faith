@@ -20,7 +20,7 @@ from faith._types.record.agent import (
     ToolCallEntry,
     ToolResponseEntry,
 )
-from faith.agentic.core.environment import Environment
+from faith.agentic.core.environment import Environment, EnvironmentUnavailableError
 from faith.agentic.core.task import Task
 from faith.agentic.core.tool import Tool
 from faith.agentic.core.tool_registry import (
@@ -49,6 +49,13 @@ MAX_LOGGED_RESPONSE_CHARS = 500
 # A well-behaved tool caps its own output; this is the backstop that keeps a tool
 # that doesn't from exceeding the model API's request limit and failing the task.
 MAX_TOOL_RESULT_CHARS = 100_000
+
+# How many times a dead sandbox is rebuilt before the task is abandoned as
+# ENVIRONMENT_ERROR. Two bounds: consecutive catches a cluster that is broken
+# rather than flaky, total catches alternating success and failure, which never
+# trips the consecutive one.
+MAX_CONSECUTIVE_RECOVERIES = 2
+MAX_TOTAL_RECOVERIES = 3
 
 
 def validate_agentic_generation_params(params: dict[str, Any]) -> None:
@@ -126,6 +133,10 @@ class _ToolCallOutcome:
     answer_tool: str | None = None
 
 
+class EnvironmentRecoveryExhaustedError(RuntimeError):
+    """Raised when a dead sandbox could not be restored within the bounds above."""
+
+
 def validate_agent_limits(
     max_tool_calls: int,
     max_turns: int,
@@ -191,6 +202,10 @@ class ReActConfig:
         timeout_seconds: Optional task timeout, checked BETWEEN turns, so an
             in-flight request or its retries are not cancelled. The run may
             overshoot by the entire retry sequence. None means no timeout.
+        recover_on_environment_failure: Whether a sandbox that dies mid-task is
+            rebuilt and the call retried, unseen by the agent. See
+            AgenticLimitsConfig: a benchmark whose agent writes files must turn
+            this off.
         api_max_attempts: Attempts per model call before the run fails, matching
             APIBasedModel's default. A transient API failure mid-run would
             otherwise discard the whole trajectory.
@@ -211,6 +226,7 @@ class ReActConfig:
     max_turns: int = 100
     max_consecutive_no_tool_calls: int = 3
     timeout_seconds: float | None = None
+    recover_on_environment_failure: bool = True
     api_max_attempts: int = 10
     api_retry_sleep_secs: float = 1.0
     generation_params: dict[str, Any] = field(default_factory=dict)
@@ -273,7 +289,8 @@ class ReActLoop:
     - Tool-call budget reached (MAX_CALLS)
     - Turn cap reached (MAX_TURNS)
     - Wall-clock timeout reached (TIMEOUT)
-    - Harness/API/environment failure (ERROR)
+    - Harness/API failure (ERROR)
+    - A sandbox that died and could not be rebuilt (ENVIRONMENT_ERROR)
 
     This is the reusable, configured entry point; each run() delegates to a
     fresh _Run holding that task's mutable state.
@@ -291,6 +308,7 @@ class ReActLoop:
         max_turns: int = 100,
         max_consecutive_no_tool_calls: int = 3,
         timeout_seconds: float | None = None,
+        recover_on_environment_failure: bool = True,
         api_max_attempts: int = 10,
         api_retry_sleep_secs: float = 1.0,
         generation_params: dict[str, Any] | None = None,
@@ -306,6 +324,7 @@ class ReActLoop:
             max_turns=max_turns,
             max_consecutive_no_tool_calls=max_consecutive_no_tool_calls,
             timeout_seconds=timeout_seconds,
+            recover_on_environment_failure=recover_on_environment_failure,
             api_max_attempts=api_max_attempts,
             api_retry_sleep_secs=api_retry_sleep_secs,
             generation_params=generation_params or {},
@@ -345,6 +364,8 @@ class _Run:
         self._elapsed_seconds = 0.0
         self._answer: JsonValue = None
         self._answer_tool: str | None = None
+        self._consecutive_recoveries = 0
+        self._total_recoveries = 0
         # Set once when the budget runs out, which is what bounds the extra turn
         # to exactly one.
         self._final_turn_offered = False
@@ -357,12 +378,17 @@ class _Run:
         try:
             try:
                 self._config.environment.setup(self._task)
+            except EnvironmentUnavailableError as e:
+                self._stopped_reason = StoppedReason.ENVIRONMENT_ERROR
+                self._error = f"Environment setup failed: {str(e)}"
             except Exception as e:  # pylint: disable=broad-exception-caught
                 # Setup runs inside the outer try so teardown still fires: a
                 # setup that fails partway (e.g. container started, later step
                 # raised) must be cleaned up, not leaked.
                 self._stopped_reason = StoppedReason.ERROR
-                self._error = f"Environment setup failed: {str(e)}"
+                # The type as well as the message: only this string is recorded,
+                # and a bare `raise TimeoutError()` has no message.
+                self._error = f"Environment setup failed: {type(e).__name__}: {e}"
             else:
                 # Seeded only after setup succeeds, so a setup failure yields
                 # empty buffers (the run never entered the loop).
@@ -371,9 +397,13 @@ class _Run:
                 while self._stopped_reason is None:
                     self._run_one_iteration()
 
+        except EnvironmentRecoveryExhaustedError as e:
+            self._stopped_reason = StoppedReason.ENVIRONMENT_ERROR
+            self._error = str(e)
+
         except Exception as e:  # pylint: disable=broad-exception-caught
             self._stopped_reason = StoppedReason.ERROR
-            self._error = f"Agent loop error: {str(e)}"
+            self._error = f"Agent loop error: {type(e).__name__}: {e}"
 
         finally:
             # Stop the clock first: cleanup time is not the task's time.
@@ -617,6 +647,72 @@ class _Run:
         remaining = self._config.max_tool_calls - self._executed_tool_calls
         return f"{result}\n[{remaining} tool-calls remaining]"
 
+    def _run_tool(self, tool_name: str, tool_args: dict[str, JsonValue]) -> str:
+        """Run a tool, rebuilding the sandbox and retrying if it died.
+
+        Retries until the tool runs or _recover_environment exhausts its bounds.
+
+        Raises:
+            ToolNotFoundError: If the tool is not registered.
+            ToolExecutionError: If the tool ran and raised.
+            EnvironmentRecoveryExhaustedError: If the sandbox could not be restored.
+        """
+        while True:
+            try:
+                result = self._config.tool_registry.execute_tool(
+                    tool_name, tool_args, self._config.environment
+                )
+            except EnvironmentUnavailableError as e:
+                self._recover_environment(e)
+                continue
+            self._consecutive_recoveries = 0
+            return result
+
+    def _recover_environment(self, cause: Exception) -> None:
+        """Rebuild the sandbox after it died, or give up on the task.
+
+        Bounded by consecutive rebuilds, total rebuilds, and the run's wall clock.
+        The clock is checked here rather than only between turns because a cluster
+        rebuild can take minutes.
+
+        Raises:
+            EnvironmentRecoveryExhaustedError: If a bound is reached or the rebuild
+                itself fails.
+        """
+        if not self._config.recover_on_environment_failure:
+            raise EnvironmentRecoveryExhaustedError(
+                f"Environment failed and recovery is disabled: {cause}"
+            )
+        self._consecutive_recoveries += 1
+        self._total_recoveries += 1
+        if (
+            self._consecutive_recoveries > MAX_CONSECUTIVE_RECOVERIES
+            or self._total_recoveries > MAX_TOTAL_RECOVERIES
+        ):
+            raise EnvironmentRecoveryExhaustedError(
+                f"Environment failed {self._total_recoveries} times "
+                f"({self._consecutive_recoveries} consecutively) and was not "
+                f"recovered: {cause}"
+            )
+        if self._timed_out():
+            raise EnvironmentRecoveryExhaustedError(
+                f"Environment failed and the task's {self._config.timeout_seconds}s "
+                f"timeout expired before it could be recovered: {cause}"
+            )
+        logger.warning(
+            "Rebuilding environment for task %s after failure (attempt %d): %s",
+            self._task.id,
+            self._total_recoveries,
+            cause,
+        )
+        try:
+            self._config.environment.teardown()
+            self._config.environment.setup(self._task)
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            raise EnvironmentRecoveryExhaustedError(
+                f"Environment failed and could not be rebuilt: {e}"
+            ) from e
+
     def _terminal_tool(self, tool_name: str) -> Tool | None:
         """The registered terminal tool of this name, or None.
 
@@ -693,9 +789,7 @@ class _Run:
                 answer = tool_args[answer_field]
 
         try:
-            result = self._config.tool_registry.execute_tool(
-                tool_name, tool_args, self._config.environment
-            )
+            result = self._run_tool(tool_name, tool_args)
         except (ToolArgumentError, ToolNotFoundError) as e:
             # Rejected before execution; max_turns bounds these attempts.
             # Narrow on purpose: a ValueError raised by a tool that DID run is a

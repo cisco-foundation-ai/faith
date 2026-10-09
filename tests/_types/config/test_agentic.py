@@ -35,6 +35,7 @@ _FULL_AGENTIC_DICT = {
         "max_consecutive_no_tool_calls": 2,
         "timeout_seconds": 900.0,
         "command_timeout_seconds": 10,
+        "recover_on_environment_failure": False,
     },
 }
 
@@ -57,6 +58,7 @@ _FULL_AGENTIC_CONFIG = AgenticConfig(
         max_consecutive_no_tool_calls=2,
         timeout_seconds=900.0,
         command_timeout_seconds=10,
+        recover_on_environment_failure=False,
     ),
 )
 
@@ -98,6 +100,7 @@ def test_the_omitted_sections_default_and_serialize_back_out() -> None:
             max_consecutive_no_tool_calls=3,
             timeout_seconds=None,
             command_timeout_seconds=60,
+            recover_on_environment_failure=True,
         ),
     )
     assert config.to_dict() == _MINIMAL_AGENTIC_DICT | {
@@ -106,6 +109,7 @@ def test_the_omitted_sections_default_and_serialize_back_out() -> None:
             "max_turns": 100,
             "max_consecutive_no_tool_calls": 3,
             "command_timeout_seconds": 60,
+            "recover_on_environment_failure": True,
         }
     }
 
@@ -215,3 +219,43 @@ def test_an_unbounded_command_is_written_as_zero() -> None:
     assert AgenticLimitsConfig.from_dict(
         {"command_timeout_seconds": 0}
     ) == AgenticLimitsConfig(command_timeout_seconds=0)
+
+
+def _agentic_config(environment_type: str, tools: list[str]) -> AgenticConfig:
+    return AgenticConfig(
+        task_loader=AgenticTaskLoaderConfig(type="vulnerability_localization"),
+        environment=AgenticEnvironmentConfig(type=environment_type),
+        answer_extractor=AgenticAnswerExtractorConfig(type="file_list"),
+        tools=tools,
+    )
+
+
+def test_agentic_config_accepts_tools_the_environment_serves() -> None:
+    assert _agentic_config("docker", ["bash_exec", "submit"]).tools == [
+        "bash_exec",
+        "submit",
+    ]
+
+
+def test_agentic_config_rejects_an_unregistered_environment() -> None:
+    # Parse-time, so `faith list-benchmarks` surfaces a typo rather than an eval.
+    with pytest.raises(ValueError, match="not a valid AgenticEnvironmentType"):
+        _agentic_config("dokker", [])
+
+
+def test_agentic_config_rejects_an_unregistered_tool() -> None:
+    with pytest.raises(ValueError, match="not a valid AgenticToolType"):
+        _agentic_config("docker", ["no_such_tool"])
+
+
+def test_agentic_config_tolerates_a_bare_tools_key() -> None:
+    """`tools:` with no value decodes to None, not to the field default."""
+    config = AgenticConfig.from_dict(
+        {
+            "task_loader": {"type": "vulnerability_localization"},
+            "environment": {"type": "docker"},
+            "answer_extractor": {"type": "file_list"},
+            "tools": None,
+        }
+    )
+    assert config.tools == []

@@ -19,14 +19,16 @@ import pytest
 
 from faith.agentic.core import ReActLoop, Task, ToolExecutionError, ToolRegistry
 from faith.agentic.core.capabilities import CommandExecution, FileRead
-from faith.agentic.core.environment import Environment
+from faith.agentic.core.environment import Environment, EnvironmentUnavailableError
 from faith.agentic.core.react_loop import (
     BUDGET_EXHAUSTED_ERROR,
     INVALID_ARGS_ERROR,
     INVALID_JSON_ERROR,
     INVALID_SUBMIT_ERROR,
+    MAX_CONSECUTIVE_RECOVERIES,
     MAX_LOGGED_RESPONSE_CHARS,
     MAX_TOOL_RESULT_CHARS,
+    MAX_TOTAL_RECOVERIES,
     UNKNOWN_TOOL_ERROR,
     AgentResult,
     StoppedReason,
@@ -66,37 +68,60 @@ class _FakeEnvironment(Environment):
     Failure and slowness are constructor parameters rather than subclasses, so a
     test naming one needs no new class: setup_error/teardown_error raise, and the
     delays burn wall-clock time for the timeout and timing contracts.
+
+    `command_failures` scripts a sandbox that dies: the first N commands raise
+    EnvironmentUnavailableError. `rebuild_delay` and `rebuild_error` apply to every
+    setup but the first, since recovery's cost and failure are what the timeout and
+    rebuild contracts are about — applying them to the initial setup would end the
+    run before a tool ever ran.
     """
 
     def __init__(
         self,
         *,
         setup_error: Exception | None = None,
+        rebuild_error: Exception | None = None,
+        rebuild_delay: float = 0.0,
         command_delay: float = 0.0,
+        command_failures: int = 0,
         teardown_error: Exception | None = None,
         teardown_delay: float = 0.0,
     ) -> None:
         self._setup_error = setup_error
+        self._rebuild_error = rebuild_error
+        self._rebuild_delay = rebuild_delay
         self._command_delay = command_delay
+        self._command_failures = command_failures
         self._teardown_error = teardown_error
         self._teardown_delay = teardown_delay
         self.setup_called = False
         self.teardown_called = False
+        self.setup_count = 0
+        self.teardown_count = 0
         self.commands_executed: list[str] = []
 
     def setup(self, task: Task) -> None:
         self.setup_called = True
+        self.setup_count += 1
+        if self.setup_count > 1:
+            time.sleep(self._rebuild_delay)
+            if self._rebuild_error is not None:
+                raise self._rebuild_error
         if self._setup_error is not None:
             raise self._setup_error
 
     def run_command(self, command: str) -> tuple[int, str]:
-        """Record the command and return canned output."""
+        """Record the command and return canned output, or die if scripted to."""
         time.sleep(self._command_delay)
+        if self._command_failures > 0:
+            self._command_failures -= 1
+            raise EnvironmentUnavailableError("sandbox is gone")
         self.commands_executed.append(command)
         return 0, "test output"
 
     def teardown(self) -> None:
         self.teardown_called = True
+        self.teardown_count += 1
         time.sleep(self._teardown_delay)
         if self._teardown_error is not None:
             raise self._teardown_error
@@ -860,13 +885,34 @@ def test_generation_params_spread_into_model_calls() -> None:
     }
 
 
-def test_environment_setup_failure_is_an_error_that_still_tears_down() -> None:
+@pytest.mark.parametrize(
+    ("setup_error", "expected_reason", "expected_error"),
+    [
+        (
+            RuntimeError("Setup failed"),
+            StoppedReason.ERROR,
+            "Environment setup failed: RuntimeError: Setup failed",
+        ),
+        (
+            EnvironmentUnavailableError("Setup failed"),
+            StoppedReason.ENVIRONMENT_ERROR,
+            # No type prefix: the caught type is named by the reason already.
+            "Environment setup failed: Setup failed",
+        ),
+    ],
+    ids=["run_error", "environment_error"],
+)
+def test_environment_setup_failure_is_an_error_that_still_tears_down(
+    setup_error: Exception, expected_reason: StoppedReason, expected_error: str
+) -> None:
     """A setup failure yields an empty trajectory, and cleanup still runs.
 
     Setup that fails partway (e.g. a container started before a later step
-    raised) would otherwise leak the resource.
+    raised) would otherwise leak the resource. The reason separates a cluster
+    that could not serve a sandbox from a sandbox FAITH could not prepare, which
+    is what tells a reader which one to go look at.
     """
-    env = _FakeEnvironment(setup_error=RuntimeError("Setup failed"))
+    env = _FakeEnvironment(setup_error=setup_error)
 
     result = _loop(_FakeModelAPI([]), ToolRegistry(), env).run(_TASK)
 
@@ -879,8 +925,8 @@ def test_environment_setup_failure_is_an_error_that_still_tears_down() -> None:
         tool_responses=[],
         num_tool_calls=0,
         execution_time_seconds=ANY,
-        stopped_reason=StoppedReason.ERROR,
-        error="Environment setup failed: Setup failed",
+        stopped_reason=expected_reason,
+        error=expected_error,
     )
     assert env.teardown_called
 
@@ -1156,7 +1202,7 @@ def test_non_string_tool_result_fails_the_run() -> None:
     assert (result.stopped_reason, result.answer, result.error) == (
         StoppedReason.ERROR,
         None,
-        "Agent loop error: Tool bash_exec returned dict, expected str",
+        "Agent loop error: TypeError: Tool bash_exec returned dict, expected str",
     )
 
 
@@ -1292,7 +1338,9 @@ def test_an_api_failure_on_every_attempt_ends_the_run_as_error() -> None:
 
     assert result.stopped_reason == StoppedReason.ERROR
     assert result.error is not None
-    assert result.error.startswith("Agent loop error: Model API call failed")
+    assert result.error.startswith(
+        "Agent loop error: RuntimeError: Model API call failed"
+    )
     assert model.chat.completions.create.call_count == 3
 
 
@@ -1319,3 +1367,157 @@ def test_an_empty_choices_response_is_retried() -> None:
         StoppedReason.NO_TOOL_CALLS,
         None,
     )
+
+
+def test_a_dead_sandbox_is_rebuilt_without_the_agent_seeing_it() -> None:
+    """A recovered failure is invisible: the agent gets the retry's result.
+
+    The whole point of the fix — an infra error fed back as a tool result reads to
+    the agent as its own mistake, and it burns budget retrying.
+    """
+    env = _FakeEnvironment(command_failures=1)
+    registry = ToolRegistry(
+        [_FakeTool("bash_exec"), _FakeTool("submit", is_terminal=True)]
+    )
+    model = _FakeModelAPI(
+        [_turn("Looking", ("call_1", "bash_exec", _LIST_ARGUMENTS)), _SUBMIT_TURN]
+    )
+
+    result = _loop(model, registry, env).run(_TASK)
+
+    assert (result.stopped_reason, result.answer) == (
+        StoppedReason.SUBMITTED,
+        "flag{x}",
+    )
+    # No mention of the failure, and charged once rather than twice.
+    assert result.tool_responses[0] == {
+        "tool_name": "bash_exec",
+        "response_truncated": "test output\n[49 tool-calls remaining]",
+        "response_length": len("test output\n[49 tool-calls remaining]"),
+        "timestamp": ANY,
+    }
+    assert result.tool_calls[0] == {
+        "tool_name": "bash_exec",
+        "args": {"command": "ls"},
+        "timestamp": ANY,
+    }
+    # Rebuilt once: the initial setup plus one recovery.
+    assert (env.setup_count, env.teardown_count) == (2, 2)
+
+
+def test_a_sandbox_that_keeps_dying_ends_the_task_as_an_environment_error() -> None:
+    """Consecutive failures stop the task rather than rebuilding forever."""
+    env = _FakeEnvironment(command_failures=MAX_CONSECUTIVE_RECOVERIES + 1)
+    registry = ToolRegistry([_FakeTool("bash_exec")])
+    model = _FakeModelAPI([_turn("Looking", ("call_1", "bash_exec", _LIST_ARGUMENTS))])
+
+    result = _loop(model, registry, env).run(_TASK)
+
+    assert result == AgentResult(
+        task_id="t",
+        answer=None,
+        answer_tool=None,
+        messages=ANY,
+        tool_calls=[],
+        tool_responses=[],
+        num_tool_calls=0,
+        execution_time_seconds=ANY,
+        stopped_reason=StoppedReason.ENVIRONMENT_ERROR,
+        error=(
+            f"Environment failed {MAX_CONSECUTIVE_RECOVERIES + 1} times "
+            f"({MAX_CONSECUTIVE_RECOVERIES + 1} consecutively) and was not "
+            f"recovered: sandbox is gone"
+        ),
+    )
+    # The bound is on rebuilds attempted, so the last failure buys no rebuild.
+    assert env.setup_count == MAX_CONSECUTIVE_RECOVERIES + 1
+
+
+def test_intermittent_failures_are_bounded_by_the_total_not_the_streak() -> None:
+    """Alternating success and failure never trips the consecutive counter."""
+    env = _FakeEnvironment()
+    registry = ToolRegistry([_FakeTool("bash_exec")])
+    model = _FakeModelAPI(
+        [
+            _turn(f"Try {i}", (f"call_{i}", "bash_exec", _LIST_ARGUMENTS))
+            for i in range(MAX_TOTAL_RECOVERIES + 1)
+        ]
+    )
+    # One failure per call, each followed by a success, so the streak resets every
+    # time and only the total can end the run.
+    with patch.object(
+        _FakeEnvironment,
+        "run_command",
+        side_effect=[
+            EnvironmentUnavailableError("sandbox is gone") if i % 2 == 0 else (0, "ok")
+            for i in range(2 * (MAX_TOTAL_RECOVERIES + 1))
+        ],
+    ):
+        result = _loop(model, registry, env, max_turns=100).run(_TASK)
+
+    assert result.stopped_reason == StoppedReason.ENVIRONMENT_ERROR
+    assert result.error == (
+        f"Environment failed {MAX_TOTAL_RECOVERIES + 1} times "
+        f"(1 consecutively) and was not recovered: sandbox is gone"
+    )
+
+
+def test_recovery_that_overruns_the_task_timeout_stops_the_task() -> None:
+    """The clock is checked during recovery, not only between turns.
+
+    A cluster rebuild is a new claim plus a readiness wait, so three of them can
+    spend minutes — churn that would otherwise be unbounded and invisible. Here the
+    first rebuild alone outlasts the task, so the second failure ends it well inside
+    the retry bounds.
+    """
+    env = _FakeEnvironment(command_failures=2, rebuild_delay=0.3)
+    registry = ToolRegistry([_FakeTool("bash_exec")])
+    model = _FakeModelAPI([_turn("Looking", ("call_1", "bash_exec", _LIST_ARGUMENTS))])
+
+    result = _loop(model, registry, env, timeout_seconds=0.2).run(_TASK)
+
+    assert result.stopped_reason == StoppedReason.ENVIRONMENT_ERROR
+    assert result.error == (
+        "Environment failed and the task's 0.2s timeout expired before it could "
+        "be recovered: sandbox is gone"
+    )
+    # Checked before the rebuild, so the expired clock buys no further setup.
+    assert env.setup_count == 2
+
+
+def test_a_rebuild_that_itself_fails_ends_the_task() -> None:
+    """A cluster that cannot stamp a new sandbox is not worth retrying into."""
+    env = _FakeEnvironment(
+        command_failures=1, rebuild_error=RuntimeError("no capacity")
+    )
+    registry = ToolRegistry([_FakeTool("bash_exec")])
+    model = _FakeModelAPI([_turn("Looking", ("call_1", "bash_exec", _LIST_ARGUMENTS))])
+
+    result = _loop(model, registry, env).run(_TASK)
+
+    assert (result.stopped_reason, result.error) == (
+        StoppedReason.ENVIRONMENT_ERROR,
+        "Environment failed and could not be rebuilt: no capacity",
+    )
+
+
+def test_recovery_can_be_turned_off_for_a_benchmark_whose_agent_writes() -> None:
+    """Rebuilding re-runs setup, which discards whatever the agent wrote.
+
+    Silent recovery is only correct for a read-only workspace: a benchmark whose
+    agent builds or patches must fail the task instead of continuing against a
+    workspace missing its own work.
+    """
+    env = _FakeEnvironment(command_failures=1)
+    registry = ToolRegistry([_FakeTool("bash_exec")])
+    model = _FakeModelAPI([_turn("Looking", ("call_1", "bash_exec", _LIST_ARGUMENTS))])
+
+    result = _loop(model, registry, env, recover_on_environment_failure=False).run(
+        _TASK
+    )
+
+    assert (result.stopped_reason, result.error) == (
+        StoppedReason.ENVIRONMENT_ERROR,
+        "Environment failed and recovery is disabled: sandbox is gone",
+    )
+    assert env.setup_count == 1

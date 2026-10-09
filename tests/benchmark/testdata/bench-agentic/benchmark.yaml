@@ -15,7 +15,7 @@ benchmark:
     task_loader:
       type: "faith.agentic.fake.FakeTaskLoader"
     environment:
-      type: "fake"
+      type: "docker"
     answer_extractor:
       type: "faith.agentic.fake.FakeExtractor"
   output_processing: !from
