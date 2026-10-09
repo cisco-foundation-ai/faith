@@ -3,12 +3,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from functools import reduce
+from unittest.mock import Mock, patch
 
 import pytest
 
 from faith._internal.functools.retriable import (
     MaxAttemptsExceededError,
     RetryFunctionWrapper,
+    exception_chain,
 )
 
 
@@ -22,7 +24,7 @@ class FailingFunction:
     def __call__(self, *args: str) -> str:
         self._calls += 1
         if self._calls <= self._fail_times:
-            raise ValueError("Simulated failure")
+            raise ConnectionError("Simulated failure")
         return reduce(lambda x, y: x + y, args[: (self._calls - 1)], "")
 
     @property
@@ -57,7 +59,52 @@ def test_retry_function_wrapper_max_attempts_exceeded() -> None:
     wrapper = RetryFunctionWrapper(func, max_attempts=5, retry_sleep_secs=0.001)
     with pytest.raises(
         MaxAttemptsExceededError,
-        match="Maximum retries exceeded...\nFinal exception: Simulated failure",
+        match=r"Maximum attempts exceeded \(5 total attempts\)",
     ):
         wrapper("a", "b", "c", "d", "e", "f")
     assert func.calls == 5
+
+
+@pytest.mark.parametrize("attempts", [0, -1, 1.5, True])
+def test_retry_budget_must_be_a_positive_integer(attempts: int) -> None:
+    with pytest.raises(ValueError, match="api_max_attempts"):
+        RetryFunctionWrapper(Mock(), attempts, 0)
+
+
+@pytest.mark.parametrize("delay", [-1, float("nan"), float("inf")])
+def test_retry_delay_must_be_finite_and_non_negative(delay: float) -> None:
+    with pytest.raises(ValueError, match="api_retry_sleep_secs"):
+        RetryFunctionWrapper(Mock(), 3, delay)
+
+
+def test_unknown_failure_is_not_retried_or_slept_after() -> None:
+    error = ValueError("permanent")
+    func = Mock(side_effect=error)
+    with patch("time.sleep") as sleep, pytest.raises(ValueError) as caught:
+        RetryFunctionWrapper(func, 10, 1)()
+    assert caught.value is error
+    func.assert_called_once()
+    sleep.assert_not_called()
+
+
+def test_predicate_can_explicitly_allow_a_failure_and_exhaust_without_final_sleep() -> (
+    None
+):
+    error = ValueError("temporary in this caller")
+    func = Mock(side_effect=error)
+    with (
+        patch("time.sleep") as sleep,
+        pytest.raises(MaxAttemptsExceededError) as caught,
+    ):
+        RetryFunctionWrapper(func, 3, 0.5, retry_if=lambda _: True)()
+    assert caught.value.__cause__ is error
+    assert func.call_count == 3
+    assert [call.args for call in sleep.call_args_list] == [(0.5,), (0.5,)]
+
+
+def test_chain_prefers_explicit_cause_and_stops_at_cycles() -> None:
+    outer, inner = RuntimeError(), ConnectionError()
+    outer.__cause__ = inner
+    outer.__context__ = ValueError()
+    inner.__cause__ = outer
+    assert list(exception_chain(outer)) == [outer, inner]

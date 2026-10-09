@@ -12,6 +12,7 @@ from openrouter import OpenRouter
 from faith._types.model.spec import Reasoning
 from faith._types.record.model_response import ChatResponse, GenerationError
 from faith.model.api_model import APIBasedModel
+from faith.model.api_retry import EmptyChoicesError, describe_api_error
 
 
 class OpenRouterModel(APIBasedModel):
@@ -36,7 +37,9 @@ class OpenRouterModel(APIBasedModel):
             api_max_attempts=api_max_attempts,
             api_retry_sleep_secs=api_retry_sleep_secs,
         )
-        self._client = OpenRouter(api_key=os.getenv("OPENROUTER_API_KEY", ""))
+        self._client = OpenRouter(
+            api_key=os.getenv("OPENROUTER_API_KEY", ""), retry_config=None
+        )
 
     def _query_api(
         self, messages: list[dict[str, str]], **gen_params: Any
@@ -45,6 +48,8 @@ class OpenRouterModel(APIBasedModel):
         response = self._client.chat.send(
             model=self.name_or_path, messages=messages, **gen_params
         )
+        if not response.choices:
+            raise EmptyChoicesError()
         return ChatResponse(
             output_text=response.choices[0].message.content,
             num_output_tokens=int(response.usage.completion_tokens),
@@ -60,4 +65,6 @@ class OpenRouterModel(APIBasedModel):
     @staticmethod
     def _handle_query_error(exception: BaseException) -> GenerationError:
         """Handle exceptions raised when calling the API and return a GenerationError."""
-        return GenerationError(title="OpenRouter API Error", details=str(exception))
+        return GenerationError(
+            title="OpenRouter API Error", details=describe_api_error(exception)
+        )

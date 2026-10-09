@@ -3,9 +3,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from io import BytesIO
+from typing import Any
 from unittest.mock import Mock, patch
 
 import orjson
+import pytest
 
 from faith._types.model.prompt import PromptFormatter
 from faith._types.record.model_response import ChatResponse, GenerationError
@@ -17,6 +19,9 @@ def test_sagemaker_model(mock_boto3_client: Mock) -> None:
     # Initialize the SageMaker model with a mock endpoint.
     model = SageMakerModel("fake_endpoint", aws_region="us-east-1")
     mock_boto3_client.assert_called_once()
+    assert mock_boto3_client.call_args.kwargs["config"].retries == {
+        "total_max_attempts": 1
+    }
 
     # Check if the model is initialized correctly.
     assert model.name_or_path == "fake_endpoint"
@@ -51,6 +56,52 @@ def test_sagemaker_model(mock_boto3_client: Mock) -> None:
     assert mock_sagemaker_client.invoke_endpoint.call_count == 1
 
 
+@pytest.mark.parametrize(
+    "body,expression",
+    [
+        (
+            {"choices": [], "generated_text": "custom output"},
+            '{"output_text": response_body["generated_text"]}',
+        ),
+        (["custom output"], '{"output_text": response_body[0]}'),
+    ],
+)
+@patch("faith.model.sagemaker.boto3.client")
+def test_sagemaker_custom_response_parser(
+    mock_boto3_client: Mock, body: Any, expression: str
+) -> None:
+    model = SageMakerModel(
+        "fake_endpoint", aws_region="us-east-1", response_parsing_expr=expression
+    )
+    mock_boto3_client.return_value.invoke_endpoint.return_value = {
+        "Body": BytesIO(orjson.dumps(body))
+    }
+    result = list(model.query([[{"role": "user", "content": "test"}]]))[0]
+    assert isinstance(result, ChatResponse)
+    assert result.output_text == "custom output"
+    mock_boto3_client.return_value.invoke_endpoint.assert_called_once()
+
+
+@patch("faith.model.sagemaker.boto3.client")
+def test_sagemaker_custom_parser_index_error_is_not_retried(
+    mock_boto3_client: Mock,
+) -> None:
+    model = SageMakerModel(
+        "fake_endpoint",
+        aws_region="us-east-1",
+        response_parsing_expr='{"output_text": response_body["choices"][0]}',
+    )
+    mock_boto3_client.return_value.invoke_endpoint.return_value = {
+        "Body": BytesIO(b'{"choices": []}')
+    }
+    with patch("time.sleep") as sleep:
+        result = list(model.query([[{"role": "user", "content": "test"}]]))[0]
+    assert isinstance(result, GenerationError)
+    assert result.details == "IndexError"
+    mock_boto3_client.return_value.invoke_endpoint.assert_called_once()
+    sleep.assert_not_called()
+
+
 @patch("faith.model.sagemaker.boto3.client")
 def test_sagemaker_model_retry(mock_boto3_client: Mock) -> None:
     # Initialize the SageMaker model with retry settings.
@@ -73,7 +124,7 @@ def test_sagemaker_model_retry(mock_boto3_client: Mock) -> None:
         ],
     }
     mock_sagemaker_client.invoke_endpoint.side_effect = [
-        Exception("API error"),
+        ConnectionError("API error"),
         {"Body": BytesIO(orjson.dumps(mock_response_body))},
     ]
 
@@ -115,7 +166,7 @@ def test_sagemaker_model_failed_call(mock_boto3_client: Mock) -> None:
     assert list(response) == [
         GenerationError(
             title="SageMaker API Error",
-            details="Maximum retries exceeded...\nFinal exception: Invalid request",
+            details="ValueError",
         )
     ]
-    assert mock_sagemaker_client.invoke_endpoint.call_count == 3
+    assert mock_sagemaker_client.invoke_endpoint.call_count == 1
