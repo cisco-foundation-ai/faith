@@ -650,7 +650,7 @@ def _probe_model(
     side_effect: Exception | None = None,
 ) -> Mock:
     """A model whose client answers the tool probe with the given response."""
-    model = Mock(name_or_path="test-model")
+    model = Mock(name_or_path="test-model", api_max_attempts=3, api_retry_sleep_secs=0)
     model.client.chat.completions.create = Mock(
         return_value=Mock(
             choices=[
@@ -792,9 +792,10 @@ def test_a_parameter_rejection_is_reported_as_a_faith_bug_not_missing_tools() ->
 
     message = str(excinfo.value)
     assert message == (
-        f"Probing 'test-model' for tool calls failed because faith sent a parameter "
-        f"the model does not support: max_tokens. This is a faith bug, not a problem "
-        f"with the endpoint's tool support: {error}"
+        "Probing 'test-model' for tool calls failed because faith sent a parameter "
+        "the model does not support: max_tokens. This is a faith bug, not a problem "
+        "with the endpoint's tool support: BadRequestError (HTTP 400) "
+        "code=unsupported_parameter param=max_tokens"
     )
     assert _TOOL_PROBE_REMEDY not in message
 

@@ -137,7 +137,7 @@ model name (e.g. `gpt-4.1-2025-04-14`). Supported engine kwargs:
 | Engine kwarg | Default | Description |
 |------|---------|-------------|
 | `api_num_threads` | `5` | Concurrent API threads. |
-| `api_max_attempts` | `10` | Max retry attempts. |
+| `api_max_attempts` | `10` | Total attempts per call, including the first. |
 | `api_retry_sleep_secs` | `1.0` | Sleep between retries, in seconds. |
 
 </TabItem>
@@ -151,7 +151,7 @@ should be the OpenRouter model identifier (e.g. `anthropic/claude-3.5-sonnet`,
 | Engine kwarg | Default | Description |
 |------|---------|-------------|
 | `api_num_threads` | `5` | Concurrent API threads. |
-| `api_max_attempts` | `10` | Max retry attempts. |
+| `api_max_attempts` | `10` | Total attempts per call, including the first. |
 | `api_retry_sleep_secs` | `1.0` | Sleep between retries, in seconds. |
 
 </TabItem>
@@ -169,7 +169,7 @@ specify the **endpoint name**.
 |------|---------|-------------|
 | `aws_region` | — | AWS region (or set the `AWS_REGION` env var). |
 | `api_num_threads` | `5` | Concurrent API threads. |
-| `api_max_attempts` | `10` | Max retry attempts. |
+| `api_max_attempts` | `10` | Total attempts per call, including the first. |
 | `api_retry_sleep_secs` | `1.0` | Sleep between retries. |
 | `endpoint_timeout_secs` | `60` | Endpoint call timeout. |
 | `inference_component_name` | — | Optional inference component for multi-model endpoints. |
@@ -179,6 +179,42 @@ specify the **endpoint name**.
 </TabItem>
 
 </Tabs>
+
+### API retry policy
+
+FAITH owns retries for the API engines above; their SDK retries are disabled.
+`api_max_attempts` is a positive integer: `1` disables retries and the default `10`
+allows at most ten completion attempts, not ten attempts each with SDK retries.
+QA calls, Agentic turns, and the tool-calling preflight use the model's settings.
+Direct `ReActLoop` use also disables retries on real OpenAI clients without
+changing the caller's client; custom clients must disable their own retry layer.
+
+FAITH retries known connection/timeouts, remote protocol interruptions, empty
+completion choices, HTTP 408/409/429, and 5xx except 501/505. Here 409 is treated as
+a temporary conflict, matching OpenAI's lock-timeout behavior. Other HTTP errors
+(including 400/401/403/404/422), certificate-verification failures, quota/billing
+exhaustion, and otherwise unknown exceptions fail immediately. SageMaker's known
+throttling, request-timeout, and model-not-ready codes are also retryable. An
+explicit `x-should-retry: false` prevents a retry; `true` does not override a
+permanent error.
+
+For SageMaker `ModelError` responses (HTTP 424), FAITH applies the HTTP policy to
+`OriginalStatusCode`. Interrupted or incomplete SageMaker response bodies also
+retry. Empty-choice recovery applies to SageMaker's default response parser;
+custom `response_parsing_expr` values retain control of their response format.
+
+`api_retry_sleep_secs` remains the fixed delay between attempts and must be finite
+and non-negative. Valid `Retry-After`/`retry-after-ms` hints can increase that delay
+up to 60 seconds; a longer server hint stops retries instead of retrying too soon.
+There is no sleep after a permanent failure or the final attempt. Diagnostics
+retain exception-chain types, HTTP status, error code and parameter identifiers,
+but omit raw exception messages, response bodies, request contents and headers.
+
+These bounds are **not an operation deadline**. Agentic `timeout_seconds` is checked
+between turns; it does not cancel in-flight requests, retry sleeps, or the remainder
+of a retry sequence. Request timeouts are SDK/transport settings. A timed-out
+request may have reached the server, so retrying is not an exactly-once guarantee.
+Retries do not restart completed Agentic turns or change generation parameters.
 
 ## Experiment flags
 

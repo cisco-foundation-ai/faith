@@ -12,6 +12,7 @@ from openai import OpenAI
 from faith._types.model.spec import Reasoning
 from faith._types.record.model_response import ChatResponse, GenerationError
 from faith.model.api_model import APIBasedModel
+from faith.model.api_retry import EmptyChoicesError, describe_api_error
 
 
 class OpenAIModel(APIBasedModel):
@@ -49,7 +50,9 @@ class OpenAIModel(APIBasedModel):
         # SDK fail fast at construction rather than 401 mid-run.
         if resolved_api_key is None and base_url is not None:
             resolved_api_key = "EMPTY"
-        self._client = OpenAI(api_key=resolved_api_key, base_url=base_url)
+        self._client = OpenAI(
+            api_key=resolved_api_key, base_url=base_url, max_retries=0
+        )
 
     @property
     def client(self) -> OpenAI:
@@ -68,6 +71,8 @@ class OpenAIModel(APIBasedModel):
         response = self._client.chat.completions.create(
             model=self.name_or_path, messages=messages, **gen_params
         )
+        if not response.choices:
+            raise EmptyChoicesError()
         # Note: output, response, and answer are the same for chat completions in OpenAI
         # since there is way to distinguish them in the response.
         return ChatResponse(
@@ -85,4 +90,6 @@ class OpenAIModel(APIBasedModel):
     @staticmethod
     def _handle_query_error(exception: BaseException) -> GenerationError:
         """Handle exceptions raised when calling the API and return a GenerationError."""
-        return GenerationError(title="OpenAI API Error", details=str(exception))
+        return GenerationError(
+            title="OpenAI API Error", details=describe_api_error(exception)
+        )

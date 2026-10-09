@@ -1192,11 +1192,14 @@ def test_non_string_tool_result_fails_the_run() -> None:
         ),
         # max_attempts < 1 makes RetryFunctionWrapper never call, or (negative)
         # retry forever.
-        ({"api_max_attempts": 0}, "api_max_attempts (0) must be at least 1."),
-        ({"api_max_attempts": -1}, "api_max_attempts (-1) must be at least 1."),
+        ({"api_max_attempts": 0}, "api_max_attempts must be an integer of at least 1."),
+        (
+            {"api_max_attempts": -1},
+            "api_max_attempts must be an integer of at least 1.",
+        ),
         (
             {"api_retry_sleep_secs": -1.0},
-            "api_retry_sleep_secs (-1.0) must be non-negative.",
+            "api_retry_sleep_secs must be finite and non-negative.",
         ),
     ],
 )

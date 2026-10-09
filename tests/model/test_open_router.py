@@ -13,7 +13,7 @@ from faith.model.open_router import OpenRouterModel
 def test_open_router_model(mock_openrouter_client_class: Mock) -> None:
     # Initialize the OpenRouter model with a mock API key.
     model = OpenRouterModel("anthropic/claude-3.5-sonnet")
-    mock_openrouter_client_class.assert_called_once_with(api_key="")
+    mock_openrouter_client_class.assert_called_once_with(api_key="", retry_config=None)
 
     # Check if the model is initialized correctly.
     assert model.name_or_path == "anthropic/claude-3.5-sonnet"
@@ -54,7 +54,7 @@ def test_open_router_model_retry(mock_openrouter_client_class: Mock) -> None:
 
     # Mock the API to raise an exception on the first call and succeed on the second
     mock_openrouter_instance.chat.send.side_effect = [
-        Exception("API error"),
+        ConnectionError("API error"),
         Mock(
             choices=[Mock(message=Mock(content="ibi sum!"), finish_reason="stop")],
             usage=Mock(prompt_tokens=2, completion_tokens=5),
@@ -100,7 +100,7 @@ def test_open_router_model_failed_call(mock_openrouter_client_class: Mock) -> No
     assert list(response) == [
         GenerationError(
             title="OpenRouter API Error",
-            details="Maximum retries exceeded...\nFinal exception: Invalid request",
+            details="ValueError",
         )
     ]
-    assert mock_openrouter_instance.chat.send.call_count == 2
+    assert mock_openrouter_instance.chat.send.call_count == 1

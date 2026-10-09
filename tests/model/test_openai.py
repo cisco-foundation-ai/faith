@@ -117,7 +117,7 @@ def test_openai_client_credentials(
     with patch.dict(os.environ, env, clear=True):
         OpenAIModel("fake_model", **kwargs)
     mock_openai_client_class.assert_called_once_with(
-        api_key=expected_api_key, base_url=expected_base_url
+        api_key=expected_api_key, base_url=expected_base_url, max_retries=0
     )
 
 
@@ -129,7 +129,7 @@ def test_openai_model_retry(mock_openai_client_class: Mock) -> None:
 
     # Mock the API to raise an exception on the first call and succeed on the second
     mock_openai_instance.chat.completions.create.side_effect = [
-        Exception("API error"),
+        ConnectionError("API error"),
         ChatCompletion(
             id="chatcmpl-1234567890",
             object="chat.completion",
@@ -184,7 +184,7 @@ def test_openai_model_failed_call(mock_openai_client_class: Mock) -> None:
     assert list(response) == [
         GenerationError(
             title="OpenAI API Error",
-            details="Maximum retries exceeded...\nFinal exception: Invalid request",
+            details="ValueError",
         )
     ]
-    assert mock_openai_instance.chat.completions.create.call_count == 2
+    assert mock_openai_instance.chat.completions.create.call_count == 1

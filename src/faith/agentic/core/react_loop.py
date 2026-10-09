@@ -11,10 +11,7 @@ from dataclasses import dataclass, field
 from functools import cached_property
 from typing import Any, TypedDict
 
-from faith._internal.functools.retriable import (
-    MaxAttemptsExceededError,
-    RetryFunctionWrapper,
-)
+from faith._internal.functools.retriable import validate_retry_settings
 from faith._types.json_types import JsonValue
 from faith._types.record.agent import (
     AgentResult,
@@ -30,6 +27,7 @@ from faith.agentic.core.tool_registry import (
     ToolNotFoundError,
     ToolRegistry,
 )
+from faith.model.api_retry import completion_with_retries, describe_api_error
 
 logger = logging.getLogger(__name__)
 
@@ -154,8 +152,8 @@ class ReActConfig:
             run as NO_TOOL_CALLS. Earlier ones are nudged instead, so one chatty
             turn does not discard the task. 1 restores fail-on-first behavior.
         timeout_seconds: Optional task timeout, checked BETWEEN turns, so an
-            in-flight call is not cancelled and the run may overshoot it by one
-            slow call. None means no timeout.
+            in-flight request or its retries are not cancelled. The run may
+            overshoot by the entire retry sequence. None means no timeout.
         api_max_attempts: Attempts per model call before the run fails, matching
             APIBasedModel's default. A transient API failure mid-run would
             otherwise discard the whole trajectory.
@@ -181,15 +179,7 @@ class ReActConfig:
     generation_params: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
-        if self.api_max_attempts < 1:
-            raise ValueError(
-                f"api_max_attempts ({self.api_max_attempts}) must be at least 1."
-            )
-        if self.api_retry_sleep_secs < 0:
-            raise ValueError(
-                f"api_retry_sleep_secs ({self.api_retry_sleep_secs}) must be "
-                f"non-negative."
-            )
+        validate_retry_settings(self.api_max_attempts, self.api_retry_sleep_secs)
         validate_agent_limits(
             self.max_tool_calls,
             self.max_turns,
@@ -716,34 +706,22 @@ class _Run:
         )
 
     def _create_completion(self, terminal_only: bool) -> Any:
-        """Make one model API call, rejecting a response with no choices.
-
-        Args:
-            terminal_only: Offer only the terminal tools, for the final turn.
-
-        Raises:
-            RuntimeError: If the response carries no choices. Raised rather than
-                returned so the retry wrapper treats it as a retriable failure,
-                like a raised API exception.
-        """
+        """Request a completion with bounded transient and empty-choice retries."""
         tools = (
             self._config.terminal_tool_schemas
             if terminal_only
             else self._config.tool_schemas
         )
-        response = self._config.model_api.chat.completions.create(
+        return completion_with_retries(
+            self._config.model_api,
+            max_attempts=self._config.api_max_attempts,
+            retry_sleep_secs=self._config.api_retry_sleep_secs,
             model=self._config.model,
             messages=self._messages,
             tools=tools if tools else None,
             tool_choice="auto" if tools else None,
             **self._config.generation_params,
         )
-        if not response.choices:
-            raise RuntimeError(
-                "Model API returned empty choices array. "
-                "This may indicate rate limiting, content filtering, or API error."
-            )
-        return response
 
     def _call_model(self, terminal_only: bool) -> dict[str, Any]:
         """Call the model API with the current conversation, retrying failures.
@@ -758,13 +736,9 @@ class _Run:
             RuntimeError: If every attempt at the model API call fails.
         """
         try:
-            response = RetryFunctionWrapper[Any](
-                self._create_completion,
-                max_attempts=self._config.api_max_attempts,
-                retry_sleep_secs=self._config.api_retry_sleep_secs,
-            )(terminal_only)
-        except MaxAttemptsExceededError as e:
-            raise RuntimeError(f"Model API call failed: {str(e)}") from e
+            response = self._create_completion(terminal_only)
+        except Exception as e:
+            raise RuntimeError(f"Model API call failed: {describe_api_error(e)}") from e
 
         message = response.choices[0].message
         response_dict = {

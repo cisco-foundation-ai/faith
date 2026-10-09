@@ -17,6 +17,7 @@ from faith._internal.parsing.expr import evaluate_expr
 from faith._types.model.spec import Reasoning
 from faith._types.record.model_response import ChatResponse, GenerationError
 from faith.model.api_model import APIBasedModel
+from faith.model.api_retry import EmptyChoicesError, describe_api_error
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +67,7 @@ class SageMakerModel(APIBasedModel):
             num_log_probs: Number of log probabilities to return (not supported).
             reasoning_spec: Specification of reasoning tokens (not supported).
             api_num_threads: Number of concurrent API threads.
-            api_max_attempts: Maximum number of retry attempts.
+            api_max_attempts: Total attempts, including the initial request.
             api_retry_sleep_secs: Sleep duration between retries.
             aws_region: AWS region for the SageMaker endpoint.
         """
@@ -89,12 +90,17 @@ class SageMakerModel(APIBasedModel):
         self._inference_component_name = inference_component_name
         self._request_body_expr = partial(evaluate_expr, request_body_expr)
         self._response_parsing_expr = partial(evaluate_expr, response_parsing_expr)
+        self._uses_default_response_parser = (
+            response_parsing_expr == _DEFAULT_RESPONSE_PARSING_EXPR
+        )
 
         # Initialize SageMaker runtime client
         self._client = boto3.client(
             "sagemaker-runtime",
             region_name=region,
-            config=Config(read_timeout=endpoint_timeout_secs),
+            config=Config(
+                read_timeout=endpoint_timeout_secs, retries={"total_max_attempts": 1}
+            ),
         )
 
     def _query_api(
@@ -127,6 +133,12 @@ class SageMakerModel(APIBasedModel):
 
         # Parse the generated text and statistics from the response.
         response_body = orjson.loads(response["Body"].read())
+        if (
+            self._uses_default_response_parser
+            and isinstance(response_body, dict)
+            and response_body.get("choices") == []
+        ):
+            raise EmptyChoicesError()
         response = self._response_parsing_expr(names={"response_body": response_body})
 
         return ChatResponse(
@@ -141,4 +153,6 @@ class SageMakerModel(APIBasedModel):
     @staticmethod
     def _handle_query_error(exception: BaseException) -> GenerationError:
         """Handle exceptions raised when calling the API and return a GenerationError."""
-        return GenerationError(title="SageMaker API Error", details=str(exception))
+        return GenerationError(
+            title="SageMaker API Error", details=describe_api_error(exception)
+        )

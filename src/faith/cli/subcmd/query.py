@@ -42,6 +42,7 @@ from faith.benchmark.listing import choices_to_benchmarks, find_benchmarks
 from faith.experiment.experiment import BenchmarkExperiment
 from faith.experiment.params import DataSamplingParams, ExperimentParams
 from faith.experiment.trial_runner import trial_runner_for
+from faith.model.api_retry import completion_with_retries, describe_api_error
 from faith.model.factory import create_model
 from faith.model.resolver import ResolvedModelPath
 from faith.record_pipelines.params import RecordHandlingParams
@@ -419,7 +420,10 @@ def _check_tool_calling(model: Any, generation: GenParams) -> None:
     probe_params = generation.as_request_params()
     probe_params["max_completion_tokens"] = _TOOL_PROBE_MAX_TOKENS
     try:
-        response = model.client.chat.completions.create(
+        response = completion_with_retries(
+            model.client,
+            max_attempts=model.api_max_attempts,
+            retry_sleep_secs=model.api_retry_sleep_secs,
             model=model.name_or_path,
             messages=[{"role": "user", "content": "Call the probe tool with x='hi'."}],
             tools=_TOOL_PROBE_TOOLS,
@@ -431,12 +435,12 @@ def _check_tool_calling(model: Any, generation: GenParams) -> None:
             raise ValueError(
                 f"Probing '{model.name_or_path}' for tool calls failed because faith "
                 f"sent a parameter the model does not support: {bad_param}. This is a "
-                f"faith bug, not a problem with the endpoint's tool support: {e}"
-            ) from e
+                f"faith bug, not a problem with the endpoint's tool support: {describe_api_error(e)}"
+            ) from None
         raise ValueError(
             f"Agentic benchmarks require an endpoint that can emit tool calls, but "
-            f"probing '{model.name_or_path}' for one failed: {e}. {_TOOL_PROBE_REMEDY}"
-        ) from e
+            f"probing '{model.name_or_path}' for one failed: {describe_api_error(e)}. {_TOOL_PROBE_REMEDY}"
+        ) from None
 
     choice = response.choices[0]
     if choice.message.tool_calls:
