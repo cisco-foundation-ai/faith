@@ -90,6 +90,36 @@ Weakness classification from vulnerability descriptions
 | --- | --- | --- | --- | --- |
 | `cwe-prediction` | Short answer | 3,000 | Accuracy | Map CVE or GHSA advisory descriptions to CWE identifiers. |
 
+## VulnLoc
+
+Vulnerability localization in real repositories — the first **agentic** benchmark
+in FAITH. Instead of answering a question, the model drives a shell in a
+container: it explores a repository snapshot and submits its verdict through a
+tool call.
+
+VulnLoc is **one benchmark run in two phases** over the same repositories, and
+the two are only meaningful together. Phase A presents each repository as it
+stood *before* a security fix landed and asks which files must change. Phase B
+presents the *same* repositories *after* the fix, where the named vulnerability
+is gone, and asks the agent to report finding nothing. Reading phase A alone
+rewards a model that always claims to find something; phase B is what makes
+phase A's score mean anything.
+
+The two phases share their loader, container image, tools and limits — they
+differ only in which commit they present and how a submission is scored. Each is
+a separate `--benchmarks` identifier because FAITH reports one primary metric per
+benchmark, so run both and read the scores as a pair.
+
+| Task | Answer type | Size | Primary metric | Description |
+| --- | --- | --- | --- | --- |
+| `vulnerability-localization-a` | Agentic (tool submission) | — | File-set F1 | **Phase A, pre-fix** — given a repository snapshot taken before the fix and the class of vulnerability it contains, name the source files that must change. Scored against the files the real fix touched. |
+| `vulnerability-localization-b` | Agentic (tool submission) | — | True-negative rate | **Phase B, post-fix** — the same repositories snapshotted after the fix, so the vulnerability is no longer present. Scored by how often the agent correctly reports finding nothing. |
+
+Running VulnLoc needs the `docker` extra and a task manifest, which is not
+redistributable and so is supplied per deployment — point `VULNLOC_MANIFEST` at
+it. See [Creating New Benchmarks](./creating-benchmarks.md) for the
+`agentic_config` shape these two use.
+
 ## Benchmark groups
 
 Instead of naming every task, you can pass a group to `--benchmarks` to run a
@@ -97,7 +127,7 @@ whole set at once:
 
 | Group | Runs | Currently |
 | --- | --- | --- |
-| `all` | Every enabled benchmark. | 15 benchmarks |
+| `all` | Every enabled benchmark. | 17 benchmarks |
 | `all-security` | Enabled benchmarks tagged `security`. | all except `mmlu-all`, which is tagged `general` |
 | `all-reasoning` | Enabled benchmarks tagged `reasoning`. | `cti-reasoning`, `secbench-mcqa-eng-reasoning` |
 

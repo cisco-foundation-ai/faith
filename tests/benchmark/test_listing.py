@@ -2,12 +2,16 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+from numbers import Number
 from pathlib import Path
+from typing import cast
 from unittest.mock import patch
 
 from pytest_unordered import unordered
 
 from faith._internal.io.resources import benchmarks_root
+from faith._internal.metrics.aggregations import agg_trial_stats
+from faith._types.record.score import Score
 from faith.benchmark.config import load_config_from_path
 from faith.benchmark.listing import (
     benchmark_choices,
@@ -15,6 +19,7 @@ from faith.benchmark.listing import (
     choices_to_benchmarks,
     find_benchmarks,
 )
+from faith.benchmark.scores.domain_specific import DomainSpecificScore
 
 
 def test_benchmark_choices() -> None:
@@ -54,6 +59,10 @@ def test_benchmark_choices() -> None:
         "!secbench-mcqa-eng-reasoning",
         "seceval",
         "!seceval",
+        "vulnerability-localization-a",
+        "!vulnerability-localization-a",
+        "vulnerability-localization-b",
+        "!vulnerability-localization-b",
     ]
 
 
@@ -168,6 +177,8 @@ def test_find_benchmarks() -> None:
                 "secbench-mcqa-eng",
                 "secbench-mcqa-eng-reasoning",
                 "seceval",
+                "vulnerability-localization-a",
+                "vulnerability-localization-b",
             ]
         )
     )
@@ -205,13 +216,100 @@ def test_every_group_excludes_agentic_benchmarks() -> None:
         assert choices_to_benchmarks(["bench-agentic"]) == [testdata / "bench-agentic"]
 
 
-def test_all_benchmarks_have_primary_metric() -> None:
-    """Ensure all benchmarks define a primary_metric for analytics."""
-    core_benchmarks = find_benchmarks(benchmarks_root())
-    for benchmark_path in core_benchmarks:
-        config = load_config_from_path(benchmark_path)
-        primary_metric = config.output_processing.primary_metric
+def test_all_benchmarks_have_a_primary_metric_that_resolves() -> None:
+    """Ensure every benchmark's primary_metric names a statistic that gets emitted.
 
+    A name that resolves to nothing is silent: `is_primary` is simply set on no row,
+    so the benchmark's BigQuery export has no primary metric and nothing complains.
+
+    A primary_metric is `<metric>.<trial_stat>`, where the metric a score fn
+    contributes is `<aggregate_key>_<score_fn_name>` — so a score fn's own name is
+    never the metric, and `file_f1.mean` names nothing while `mean_file_f1.mean`
+    names the mean-across-tasks aggregated across trials.
+
+    QA's structural metrics (`accuracy`, `subject_weighted_accuracy`) are computed in
+    code rather than declared, so only the trial statistic is checkable for those.
+    """
+    # Read off the real aggregator rather than restated, so a stat added there is
+    # accepted here without editing this test.
+    sampled = agg_trial_stats(cast(list[Number], [0.0, 1.0]))
+    assert isinstance(sampled, dict)
+    trial_stats = set(sampled)
+
+    for benchmark_path in find_benchmarks(benchmarks_root()):
+        output_processing = load_config_from_path(benchmark_path).output_processing
+        primary_metric = output_processing.primary_metric
+        assert primary_metric, f"{benchmark_path.name} must set a 'primary_metric'."
+
+        metric, _, trial_stat = primary_metric.rpartition(".")
+        assert trial_stat in trial_stats, (
+            f"{benchmark_path.name} names trial statistic '{trial_stat}', which is "
+            f"not one of {sorted(trial_stats)}."
+        )
+
+        score_fns = DomainSpecificScore.from_configs(**output_processing.score_fns)
+        emitted = {
+            f"{aggregate_key}_{name}"
+            for name, score_fn in score_fns.items()
+            for aggregate_key in score_fn.aggregate([Score(raw_value=1.0, value=1.0)])
+        }
+        if any(metric == name or metric.endswith(f"_{name}") for name in score_fns):
+            assert metric in emitted, (
+                f"{benchmark_path.name} names metric '{metric}', which no score fn "
+                f"emits; its score fns emit {sorted(emitted)}."
+            )
+
+
+def test_every_agentic_benchmark_briefs_its_agent_on_its_own_tools() -> None:
+    """An agentic system prompt must name every tool the benchmark enables.
+
+    Guards the copy-paste that drops half a prompt, and the rename that leaves prose
+    naming a tool the model was never offered — the prompt says `terminal`
+    because its tool is named `terminal`. The tool list is read from the same config,
+    so this holds for a benchmark whose toolset changes without editing this test.
+    """
+    for benchmark_path in find_benchmarks(benchmarks_root()):
+        agentic = load_config_from_path(benchmark_path).agentic_config
+        if agentic is None:
+            continue
+        prompt = agentic.system_prompt
+        assert prompt, f"Agentic benchmark {benchmark_path.name} sets no system_prompt."
+        assert [t for t in agentic.tools if t not in prompt] == [], (
+            f"{benchmark_path.name}'s system_prompt does not name every tool it "
+            f"enables: {agentic.tools}"
+        )
+
+
+def test_each_vulnloc_phase_declares_the_scores_the_reference_aggregates() -> None:
+    """Phase A needs both: `file_f1` alone scores a give-up and a wrong guess 0.0."""
+    for name, score_fns in (
+        ("vulnerability-localization-a", {"file_f1", "abstain_rate"}),
+        ("vulnerability-localization-b", {"true_negative_rate"}),
+    ):
+        output_processing = load_config_from_path(
+            benchmarks_root() / name
+        ).output_processing
+        assert set(output_processing.score_fns) == score_fns, name
+
+
+def test_both_vulnloc_phases_require_read_only_workspaces() -> None:
+    for name in ("vulnerability-localization-a", "vulnerability-localization-b"):
+        agentic = load_config_from_path(benchmarks_root() / name).agentic_config
+        assert agentic is not None and agentic.read_only_workspace is True
+
+
+def test_the_prompt_states_the_tool_budget_it_is_configured_with() -> None:
+    """The prompt spends its call budget in prose, so the two must agree.
+
+    The budget is stated twice ("up to 15 terminal calls", "at least 7-10"), so
+    raising max_tool_calls without rewording leaves the agent self-limiting to a
+    stale number. Derived from the limit rather than transcribed, so the yaml stays
+    the single place the budget is written.
+    """
+    for name in ("vulnerability-localization-a", "vulnerability-localization-b"):
+        agentic = load_config_from_path(benchmarks_root() / name).agentic_config
+        assert agentic is not None and agentic.system_prompt
+        budget = agentic.limits.max_tool_calls
         assert (
-            primary_metric and len(primary_metric) > 0
-        ), f"Benchmark {benchmark_path.name} must have a non-empty 'primary_metric'."
+            f"up to {budget} terminal calls" in agentic.system_prompt
+        ), f"{name}'s prompt does not state its own budget of {budget} tool calls."

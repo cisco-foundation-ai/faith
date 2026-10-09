@@ -6,10 +6,12 @@
 
 import logging
 import os
+import posixpath
 import uuid
 from pathlib import Path
 from typing import Any
 
+from faith._internal.io.resources import resolve_resource_path
 from faith._types.json_types import JsonValue
 from faith.agentic.core.environment import (
     DEFAULT_WORKSPACE_DIR,
@@ -27,6 +29,11 @@ from faith.agentic.environments._command import (
     command_timeout,
     sdk_timeout,
     timeout_notice,
+)
+from faith.agentic.environments._read_only import (
+    read_only_archive,
+    read_only_required,
+    workspace_check,
 )
 from faith.agentic.environments._workspace import WorkspaceLayout
 
@@ -75,11 +82,15 @@ class DockerEnvironment(WorkspaceLayout, Environment):
 
     One container per task, kept alive with ``sleep infinity`` and executed
     against via ``docker exec``. Task data is copied in rather than bind-mounted,
-    so the agent gets a writable workspace and cannot reach the host's copy.
+    so the agent cannot reach the host's copy. The workspace is writable unless
+    the benchmark requires ``read_only_workspace``.
 
     Constructed from the ``environment.config`` sub-dict of a benchmark.yaml:
 
     - ``agent_image`` (required): image to run the agent in.
+    - ``agent_dockerfile`` (optional): a Dockerfile to build ``agent_image`` from
+      when that tag is not already present locally, so a benchmark ships with no
+      setup step. Usually ``$BENCHMARKS_ROOT/<benchmark>/Dockerfile``.
     - ``mount_path`` (default ``/workspace``): workspace root and data destination.
     - ``working_subdir`` (default ``""``): injected by `build_environment`, not
       authored here. Setup still targets the root, since the subdirectory only
@@ -99,9 +110,12 @@ class DockerEnvironment(WorkspaceLayout, Environment):
     - ``capabilities`` (default none): Linux capabilities to add back; all are
       dropped otherwise. Only an image running as root has any to lose, and one
       writing files it does not own needs at least ``DAC_OVERRIDE``.
+    - ``read_only_workspace`` (default false): injected from the benchmark. Seal
+      the input workspace before commands are allowed. Added capabilities and
+      root images are rejected in this mode.
 
     The agent image must provide ``timeout`` (coreutils) as well as ``bash``, and
-    should run as a non-root user -- FAITH cannot set that from outside.
+    should run as a non-root user; this is verified when read-only is required.
 
     This is hardened against a runaway agent, not against hostile code: a
     container shares the host kernel, and the daemon that starts it is
@@ -111,9 +125,11 @@ class DockerEnvironment(WorkspaceLayout, Environment):
     def __init__(self, config: dict[str, Any], client: Any = None):
         if client is None:
             _require_sdk()
-        self._image = config.get("agent_image")
-        if not self._image:
+        image = config.get("agent_image")
+        if not image:
             raise ValueError("DockerEnvironment config requires 'agent_image'")
+        self._image: str = str(image)
+        self._dockerfile = _resolve_dockerfile(config.get("agent_dockerfile"))
         super().__init__(
             config.get("mount_path") or DEFAULT_WORKSPACE_DIR,
             config.get("working_subdir") or "",
@@ -124,6 +140,10 @@ class DockerEnvironment(WorkspaceLayout, Environment):
         self._cpu_limit = config.get("cpu_limit") or None
         self._command_timeout = command_timeout(config.get("command_timeout_seconds"))
         self._hardening = _hardening_kwargs(config)
+        self._read_only_workspace = read_only_required(config)
+        if self._read_only_workspace and config.get("capabilities"):
+            raise ValueError("read_only_workspace does not allow added capabilities")
+        self._sealed = False
         self._client = client
         self._container: Any = None
 
@@ -145,6 +165,7 @@ class DockerEnvironment(WorkspaceLayout, Environment):
             RuntimeError: If a container started but could not be prepared.
         """
         image = _image_override(task.environment_config) or self._image
+        self._ensure_image(image)
         instance_id = uuid.uuid4().hex
         container_name = f"faith-{instance_id}"
         kwargs: dict[str, Any] = {
@@ -173,8 +194,15 @@ class DockerEnvironment(WorkspaceLayout, Environment):
             kwargs["nano_cpus"] = int(float(self._cpu_limit) * 1_000_000_000)
         self._start_container(kwargs)
         try:
+            self._sealed = False
+            if self._read_only_workspace:
+                self._check_workspace(sealed=False)
+            if task.data_provider is not None:
+                task.data_provider()
             if task.data_path is not None:
                 self._upload_data(task.data_path)
+            if self._read_only_workspace:
+                self.seal_workspace()
         except EnvironmentUnavailableError:
             raise
         except Exception as e:
@@ -224,6 +252,54 @@ class DockerEnvironment(WorkspaceLayout, Environment):
                 type(error).__name__,
             )
 
+    def _check_workspace(self, *, sealed: bool) -> None:
+        code, output = self._exec(
+            ["bash", "-c", workspace_check(self.workspace_dir, sealed=sealed)]
+        )
+        if code != 0:
+            raise RuntimeError(
+                "read_only_workspace requires a non-root agent with no capabilities, "
+                "no-new-privileges and protected workspace paths; "
+                f"verification failed (exit {code}): {output.strip()}"
+            )
+
+    def seal_workspace(self) -> None:
+        """Install root-owned input files through the daemon, then verify access."""
+        if self._sealed:
+            return
+        self._check_workspace(sealed=False)
+        try:
+            chunks, stat = self._require_container().get_archive(self.workspace_dir)
+            archive = b"".join(chunks)
+        except Exception as e:
+            raise EnvironmentUnavailableError(f"Cannot snapshot workspace: {e}") from e
+        self._put_archive(
+            posixpath.dirname(self.workspace_dir),
+            read_only_archive(archive, root=stat["name"]),
+        )
+        self._check_workspace(sealed=True)
+        self._sealed = True
+
+    def _ensure_image(self, image: str) -> None:
+        """Build `agent_dockerfile` into `image` if that tag is absent locally.
+
+        Checked per image rather than once, since a task may override the tag.
+        """
+        if self._dockerfile is None or self._get_client().images.list(name=image):
+            return
+        logger.info("Image '%s' not found locally; building it.", image)
+        try:
+            self._get_client().images.build(
+                path=str(self._dockerfile.parent),
+                dockerfile=self._dockerfile.name,
+                tag=image,
+                rm=True,
+            )
+        except Exception as e:
+            raise RuntimeError(
+                f"Failed to build '{image}' from {self._dockerfile}: {e}"
+            ) from e
+
     def _upload_data(self, data_path: Path) -> None:
         """Copy a local data path into the container workspace.
 
@@ -272,6 +348,10 @@ class DockerEnvironment(WorkspaceLayout, Environment):
         hang the task. Expiry is appended to the output rather than replacing it,
         so a command killed after printing something does not lose it.
         """
+        if self._read_only_workspace and not self._sealed:
+            raise RuntimeError(
+                "Read-only workspace is not ready; setup must succeed first"
+            )
         exit_code, output = self._exec(
             bounded_argv(command, self._command_timeout), workdir=self.working_dir
         )
@@ -303,6 +383,10 @@ class DockerEnvironment(WorkspaceLayout, Environment):
 
     def _put_archive(self, dest: str, archive: bytes) -> None:
         """Copy a tar into the container, raising on the SDK's falsy failure."""
+        if self._sealed:
+            raise RuntimeError(
+                "The read-only workspace is sealed; uploads are disabled"
+            )
         if not self._require_container().put_archive(dest, archive):
             raise RuntimeError(f"Failed to copy files into '{dest}'")
 
@@ -310,6 +394,22 @@ class DockerEnvironment(WorkspaceLayout, Environment):
         if self._container is None:
             raise RuntimeError("No container running. Call setup() first.")
         return self._container
+
+
+def _resolve_dockerfile(path: JsonValue) -> Path | None:
+    """Resolve a configured `agent_dockerfile`, checking it exists up front.
+
+    Checked at construction so a typo fails before a run starts, rather than as
+    an opaque Docker build error mid-run.
+    """
+    if path is None:
+        return None
+    if not isinstance(path, str):
+        raise ValueError(f"DockerEnvironment 'agent_dockerfile' must be a path: {path}")
+    dockerfile = resolve_resource_path(path)
+    if not dockerfile.is_file():
+        raise ValueError(f"agent_dockerfile does not exist: {dockerfile}")
+    return dockerfile
 
 
 def _image_override(environment_config: dict[str, JsonValue]) -> str | None:

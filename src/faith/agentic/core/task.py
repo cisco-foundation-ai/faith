@@ -25,7 +25,14 @@ class Task:
             for a benchmark whose payload is fetched rather than shipped. Set
             alongside `data_path`, not instead of it: `data_path` must name where
             the payload will land, so it is known before the fetch happens.
-        environment_config: Per-task environment overrides (empty if none)
+        environment_config: Per-task environment overrides (empty if none). The
+            highest of the three layers: it outranks both the benchmark's
+            environment section and a deployment's `--environment-config`, since
+            only the loader knows what a particular task needs.
+        data_identity: Stable, JSON-serializable identity for the data payload.
+            Unlike `data_path`, this is suitable for reconciliation because it
+            must not include machine-specific cache directories. If omitted,
+            the formatter retains the legacy `data_path` fallback.
     """
 
     id: str
@@ -35,3 +42,4 @@ class Task:
     data_path: Path | None = None
     data_provider: Callable[[], None] | None = None
     environment_config: dict[str, JsonValue] = field(default_factory=dict)
+    data_identity: JsonValue | None = None

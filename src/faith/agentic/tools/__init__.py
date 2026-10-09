@@ -2,16 +2,25 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""A starter set of general-purpose tools for agentic evaluation.
+"""Tools for agentic evaluation: a general-purpose starter set, plus per-benchmark
+tools in their own modules.
 
 A benchmark whose toolset is part of what it measures defines its own tools
-instead (see `AgenticToolType`).
+rather than reusing the starter set (see `AgenticToolType`).
 """
 
 from faith.agentic.tools.bash_exec import BashExecTool
 from faith.agentic.tools.submit import SubmitTool
+from faith.agentic.tools.vulnerability_localization import (
+    SubmitNoVulnerabilityFoundTool,
+    SubmitVulnerableFilesTool,
+    TerminalTool,
+)
 
 __all__ = [
     "BashExecTool",
+    "SubmitNoVulnerabilityFoundTool",
     "SubmitTool",
+    "SubmitVulnerableFilesTool",
+    "TerminalTool",
 ]

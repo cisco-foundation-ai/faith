@@ -54,6 +54,7 @@ FAITH ships with a catalog of cybersecurity-focused benchmarks:
 | [SecEval](https://xuanwuai.github.io/SecEval/) | ~1,000 multiple-choice computer-security questions |
 | [CTI-Reasoning](https://huggingface.co/datasets/fdtn-ai/cti-reasoning) | 200 reasoning-oriented cyber threat intelligence questions |
 | [CWE-Prediction](https://huggingface.co/datasets/fdtn-ai/cwe-prediction-benchmark) | 3,000 CVE / GHSA advisory descriptions to map to CWE identifiers |
+| [VulnLoc](./benchmarks/catalog.md#vulnloc) | Agentic vulnerability localization in real repositories, run in two paired phases |
 
 See the [Benchmark Catalog](./benchmarks/catalog.md) for the full list of task
 identifiers.

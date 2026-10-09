@@ -18,8 +18,17 @@ from typing import Any
 
 from faith._types.enums import CIEnum
 from faith.agentic.core import Tool
+from faith.agentic.core.capabilities import ReadOnlyWorkspace
 from faith.agentic.environments import DockerEnvironment, KubernetesEnvironment
-from faith.agentic.tools import BashExecTool, SubmitTool
+from faith.agentic.extractors import VulnerabilityLocalizationAnswerExtractor
+from faith.agentic.loaders import VulnerabilityLocalizationTaskLoader
+from faith.agentic.tools import (
+    BashExecTool,
+    SubmitNoVulnerabilityFoundTool,
+    SubmitTool,
+    SubmitVulnerableFilesTool,
+    TerminalTool,
+)
 
 
 class _ConfiguredRegistry(CIEnum):
@@ -71,11 +80,14 @@ class _NoConfigRegistry(CIEnum):
 
 
 class AgenticTaskLoaderType(_WorkingDirRegistry):
-    """Registry of TaskLoader implementations. Members arrive with vulnerability localization.
+    """Registry of TaskLoader implementations, keyed by short name.
 
     Loaders take the agent's working directory alongside their config, since a
     prompt that names the directory must name the one the agent runs in.
     """
+
+    # Reads the benchmark's manifest CSV, fetching each row's source from GitHub.
+    VULNERABILITY_LOCALIZATION = (VulnerabilityLocalizationTaskLoader,)
 
 
 class AgenticEnvironmentType(_ConfiguredRegistry):
@@ -90,20 +102,38 @@ class AgenticEnvironmentType(_ConfiguredRegistry):
 
 
 class AgenticAnswerExtractorType(_ConfiguredRegistry):
-    """Registry of AnswerExtractor implementations. Members arrive with vulnerability localization."""
+    """Registry of AnswerExtractor implementations, keyed by short name."""
+
+    # Reads the benchmark's ranked file list, and an abstention as an empty list.
+    VULNERABILITY_LOCALIZATION = (VulnerabilityLocalizationAnswerExtractor,)
 
 
 class AgenticToolType(_NoConfigRegistry):
     """Registry of Tool implementations, keyed by the tool's function-call name.
 
     Each member name matches the wrapped tool's `name`, so a benchmark.yaml naming
-    "bash_exec" resolves to BASH_EXEC. The members below are a starter set: a
+    "bash_exec" resolves to BASH_EXEC. The first two members are a starter set: a
     benchmark registers its own and may use none of these. The loop's only
     requirement is that some registered tool is terminal (`Tool.is_terminal`).
     """
 
     BASH_EXEC = (BashExecTool,)  # Run an unrestricted shell command.
     SUBMIT = (SubmitTool,)  # Submit a string answer, terminating the run.
+    # The benchmark's three tools: bash_exec under the name its system prompt uses,
+    # then name the vulnerable files, or abstain.
+    TERMINAL = (TerminalTool,)
+    SUBMIT_VULNERABLE_FILES = (SubmitVulnerableFilesTool,)
+    SUBMIT_NO_VULNERABILITY_FOUND = (SubmitNoVulnerabilityFoundTool,)
+
+
+def validate_read_only_workspace(environment_type: str, required: bool) -> None:
+    """Reject a required policy the environment class cannot implement."""
+    if required and not issubclass(
+        AgenticEnvironmentType(environment_type).impl_cls, ReadOnlyWorkspace
+    ):
+        raise ValueError(
+            f"Environment '{environment_type}' does not support read_only_workspace"
+        )
 
 
 def validate_tool_capabilities(environment_type: str, tool_names: list[str]) -> None:

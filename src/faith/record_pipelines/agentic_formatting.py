@@ -37,13 +37,22 @@ class TaskFormatter(Mapping[tuple[int, Task], SampleRecord]):
             benchmark_sample_index=index,
             # Every input that defines the task, so changing the payload or the
             # per-task environment invalidates a cached trajectory rather than
-            # silently reusing one produced under different conditions.
+            # silently reusing one produced under different conditions. A
+            # loader-provided data identity is used instead of its runtime path
+            # when available: cache roots are machine-specific, but sample
+            # identity must be portable across runs and hosts.
+            # Not the resolved environment section: a backend is recorded rather
+            # than keyed, as `engine` is on the QA path.
             benchmark_sample_hash=dict_sha256(
                 {
                     "id": task.id,
                     "prompt": task.prompt,
                     "ground_truth": task.ground_truth,
-                    "data_path": str(task.data_path) if task.data_path else None,
+                    "data_identity": (
+                        task.data_identity
+                        if task.data_identity is not None
+                        else str(task.data_path) if task.data_path else None
+                    ),
                     "environment_config": task.environment_config,
                 }
             ),

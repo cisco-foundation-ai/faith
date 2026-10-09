@@ -72,12 +72,43 @@ class _FakeContainer:
             raise self.stop_error
 
 
-class _FakeDockerClient:
-    """Fake ``docker.DockerClient`` recording the containers.run kwargs."""
+class _FakeImages:
+    """Fake ``client.images`` collection: records build() kwargs.
 
-    def __init__(self, container: _FakeContainer, run_error: Exception | None = None):
+    ``present`` names the tags that already exist locally, so ``list`` answers the
+    existence check the environment makes before building.
+    """
+
+    def __init__(self, present: set[str] | None = None):
+        self.present = present if present is not None else set()
+        self.build_kwargs: dict | None = None
+        self.build_error: Exception | None = None
+
+    def list(self, name: str) -> list[SimpleNamespace]:
+        """Return a one-image list if the tag is present, else nothing."""
+        return [SimpleNamespace(tags=[name])] if name in self.present else []
+
+    def build(self, **kwargs: Any) -> tuple[SimpleNamespace, Any]:
+        """Record the build kwargs, marking the tag present afterwards."""
+        self.build_kwargs = kwargs
+        if self.build_error is not None:
+            raise self.build_error
+        self.present.add(kwargs["tag"])
+        return SimpleNamespace(tags=[kwargs["tag"]]), []
+
+
+class _FakeDockerClient:
+    """Fake ``docker.DockerClient`` recording the containers.run and images.build kwargs."""
+
+    def __init__(
+        self,
+        container: _FakeContainer,
+        present: set[str] | None = None,
+        run_error: Exception | None = None,
+    ):
         self.run_kwargs: dict[str, Any] | None = None
         self.containers = SimpleNamespace(create=self._run, get=self._get)
+        self.images = _FakeImages(present)
         self._container = container
         self._run_error = run_error
 
@@ -107,7 +138,7 @@ def _make_env(
     **config: Any,
 ) -> tuple[DockerEnvironment, _FakeDockerClient, _FakeContainer]:
     container = container or _FakeContainer()
-    client = _FakeDockerClient(container, run_error)
+    client = _FakeDockerClient(container, run_error=run_error)
     env = DockerEnvironment({"agent_image": "img:latest", **config}, client=client)
     return env, client, container
 
@@ -486,3 +517,86 @@ def test_the_client_is_built_once_with_a_timeout_from_the_command_bound(
         env.setup(_task())
         env.setup(_task())
     mock_from_env.assert_called_once_with(timeout=expected_timeout)
+
+
+def _dockerfile(tmp_path: Path) -> Path:
+    path = tmp_path / "Dockerfile"
+    path.write_text("FROM ubuntu:24.04\n")
+    return path
+
+
+def test_builds_the_image_when_the_tag_is_absent(tmp_path: Path) -> None:
+    """A benchmark shipping a Dockerfile needs no manual `docker build` step."""
+    dockerfile = _dockerfile(tmp_path)
+    env, client, _ = _make_env(agent_dockerfile=str(dockerfile))
+    env.setup(_task())
+    assert client.images.build_kwargs == {
+        "path": str(tmp_path),
+        "dockerfile": "Dockerfile",
+        "tag": "img:latest",
+        "rm": True,
+    }
+
+
+def test_does_not_rebuild_an_image_that_is_already_present(tmp_path: Path) -> None:
+    client = _FakeDockerClient(_FakeContainer(), present={"img:latest"})
+    env = DockerEnvironment(
+        {"agent_image": "img:latest", "agent_dockerfile": str(_dockerfile(tmp_path))},
+        client=client,
+    )
+    env.setup(_task())
+    assert client.images.build_kwargs is None
+
+
+def test_no_dockerfile_means_no_build_and_no_existence_check() -> None:
+    """Without a Dockerfile the image is the user's to provide, as before."""
+    env, client, _ = _make_env()
+    env.setup(_task())
+    assert client.images.build_kwargs is None
+    assert client.run_kwargs is not None
+
+
+def test_a_task_image_override_is_built_too(tmp_path: Path) -> None:
+    """The Dockerfile backs whichever tag is about to run, not just the default."""
+    env, client, _ = _make_env(agent_dockerfile=str(_dockerfile(tmp_path)))
+    env.setup(_task(environment_config={"agent_image": "other:v2"}))
+    assert client.images.build_kwargs is not None
+    assert client.images.build_kwargs["tag"] == "other:v2"
+
+
+def test_a_failed_build_is_reported_with_the_dockerfile(tmp_path: Path) -> None:
+    dockerfile = _dockerfile(tmp_path)
+    env, client, _ = _make_env(agent_dockerfile=str(dockerfile))
+    client.images.build_error = RuntimeError("bad instruction")
+    with pytest.raises(
+        RuntimeError, match=f"Failed to build 'img:latest' from {dockerfile}"
+    ):
+        env.setup(_task())
+
+
+def test_a_missing_dockerfile_fails_at_construction(tmp_path: Path) -> None:
+    """A typo'd path must not surface as an opaque build error mid-run."""
+    missing = tmp_path / "nope" / "Dockerfile"
+    with pytest.raises(ValueError, match=f"agent_dockerfile does not exist: {missing}"):
+        DockerEnvironment(
+            {"agent_image": "img:latest", "agent_dockerfile": str(missing)},
+            client=_FakeDockerClient(_FakeContainer()),
+        )
+
+
+def test_a_non_string_dockerfile_is_rejected() -> None:
+    with pytest.raises(ValueError, match="'agent_dockerfile' must be a path"):
+        DockerEnvironment(
+            {"agent_image": "img:latest", "agent_dockerfile": 7},
+            client=_FakeDockerClient(_FakeContainer()),
+        )
+
+
+def test_a_benchmarks_root_dockerfile_path_is_expanded(tmp_path: Path) -> None:
+    """Config authors write `$BENCHMARKS_ROOT/` here as they do for `!from`."""
+    dockerfile = _dockerfile(tmp_path)
+    with patch("faith._internal.io.resources.benchmarks_root", return_value=tmp_path):
+        env, client, _ = _make_env(agent_dockerfile="$BENCHMARKS_ROOT/Dockerfile")
+        env.setup(_task())
+    assert client.images.build_kwargs is not None
+    assert client.images.build_kwargs["path"] == str(dockerfile.parent)

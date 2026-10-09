@@ -43,6 +43,9 @@ jobs:
           GITHUB_ACTIONS_CONFIG_FILE: ".actionlint.yml"
           CSS_FILE_NAME: ".stylelintrc.json"
           JAVASCRIPT_ES_CONFIG_FILE: "eslint.config.mjs"
+          # kubeconform has no schema for a custom resource. Keep this one flag,
+          # since the Makefile splices it into `docker run` unquoted.
+          KUBERNETES_KUBECONFORM_OPTIONS: "-skip=extensions.agents.x-k8s.io/v1beta1/SandboxTemplate,extensions.agents.x-k8s.io/v1beta1/SandboxWarmPool"
           MARKDOWN_CONFIG_FILE: ".markdownlint.yml"
           PYTHON_FLAKE8_CONFIG_FILE: ".flake8"
           PYTHON_ISORT_CONFIG_FILE: ".isort.cfg"

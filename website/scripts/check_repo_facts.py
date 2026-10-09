@@ -379,6 +379,8 @@ def check_benchmarks(repo: Path) -> None:
         "Accuracy": "accuracy.mean",
         "Subject-weighted accuracy": "subject_weighted_accuracy.mean",
         "Mean CVSS score": "mean_cvss_score.mean",
+        "File-set F1": "mean_file_f1.mean",
+        "True-negative rate": "mean_true_negative_rate.mean",
     }
 
     rows = dict(
