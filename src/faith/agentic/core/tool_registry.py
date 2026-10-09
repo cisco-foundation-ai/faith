@@ -7,7 +7,7 @@
 from collections.abc import Iterable
 from copy import deepcopy
 
-from faith.agentic.core.environment import Environment
+from faith.agentic.core.environment import Environment, EnvironmentUnavailableError
 from faith.agentic.core.tool import Tool
 
 
@@ -114,6 +114,7 @@ class ToolRegistry:
         Raises:
             ToolNotFoundError: If the tool is not found
             ToolArgumentError: If argument validation rejects the call
+            EnvironmentUnavailableError: If the sandbox is gone or unreachable
             ToolExecutionError: If the tool raises during execution
         """
         tool = self.get_tool(tool_name)
@@ -121,6 +122,8 @@ class ToolRegistry:
             raise ToolArgumentError(error)
         try:
             return tool.execute(environment, args)
+        except EnvironmentUnavailableError:
+            raise
         except Exception as e:
             raise ToolExecutionError(
                 # The type as well as the message: only this string reaches the

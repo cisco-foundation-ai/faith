@@ -5,100 +5,26 @@
 """Wiring for agentic benchmarks: resolve config into runnable objects.
 
 An agentic benchmark.yaml names its task loader, environment, tools, and answer
-extractor by short name; this module turns those names into instances, which the
-trial runner assembles into a ReActLoop. Selection uses closed CIEnum registries
-keyed by short name, mirroring `DomainSpecificScore`.
+extractor by short name; these builders turn a config section into an instance by
+resolving the name through `agentic.registries` (the runner assembles the results
+into a ReActLoop).
 """
 
-from typing import Any
-
 from faith._types.config.agentic import AgenticAnswerExtractorConfig, AgenticConfig
-from faith._types.enums import CIEnum
 from faith.agentic.core import (
     AnswerExtractor,
     Environment,
     TaskLoader,
-    Tool,
     ToolRegistry,
 )
-from faith.agentic.tools import BashExecTool, SubmitTool
+from faith.agentic.registries import (
+    AgenticAnswerExtractorType,
+    AgenticEnvironmentType,
+    AgenticTaskLoaderType,
+    AgenticToolType,
+)
 
-
-class _ConfiguredRegistry(CIEnum):
-    """Base for short-name registries of config-constructed classes.
-
-    Each member's value wraps the implementing class in a 1-tuple, as
-    `DomainSpecificScore` does, and every implementation takes its benchmark.yaml
-    `config` sub-dict as a single opaque argument, so resolution is a name lookup
-    plus a one-argument construction.
-    """
-
-    @property
-    def _impl_cls(self) -> type:
-        return self.value[0]
-
-    def create(self, config: dict) -> Any:
-        """Instantiate the registered class from its benchmark.yaml config."""
-        return self._impl_cls(config)
-
-
-class _WorkingDirRegistry(CIEnum):
-    """Base for short-name registries of classes also told where the agent works.
-
-    A separate base rather than an argument on `_ConfiguredRegistry.create`,
-    following `_NoConfigRegistry`: which arguments an implementation's `__init__`
-    takes is what a registry base states.
-    """
-
-    @property
-    def _impl_cls(self) -> type:
-        return self.value[0]
-
-    def create(self, config: dict, working_dir: str) -> Any:
-        """Instantiate the registered class from its config and working directory."""
-        return self._impl_cls(config, working_dir)
-
-
-class _NoConfigRegistry(CIEnum):
-    """Base for short-name registries of classes constructed with no arguments."""
-
-    @property
-    def _impl_cls(self) -> type[Tool]:
-        return self.value[0]
-
-    def create(self) -> Tool:
-        """Instantiate the registered tool."""
-        return self._impl_cls()
-
-
-class AgenticTaskLoaderType(_WorkingDirRegistry):
-    """Registry of TaskLoader implementations.
-
-    Loaders take the agent's working directory alongside their config, since a
-    prompt that names the directory must name the one the agent runs in.
-    """
-
-
-class AgenticEnvironmentType(_ConfiguredRegistry):
-    """Registry of Environment implementations."""
-
-
-class AgenticAnswerExtractorType(_ConfiguredRegistry):
-    """Registry of AnswerExtractor implementations."""
-
-
-class AgenticToolType(_NoConfigRegistry):
-    """Registry of Tool implementations, keyed by the tool's function-call name.
-
-    Tools take no configuration (only the environment is stateful), so this
-    registry constructs them with no arguments rather than inheriting
-    `_ConfiguredRegistry`'s config-taking `create`. Each member name matches the
-    wrapped tool's `name`, so a benchmark.yaml naming "bash_exec" resolves to
-    BASH_EXEC.
-    """
-
-    BASH_EXEC = (BashExecTool,)  # Run a shell command in the environment.
-    SUBMIT = (SubmitTool,)  # Submit the final answer, terminating the run.
+_SANDBOX_TTL_GRACE_SECONDS = 600
 
 
 def build_task_loader(config: AgenticConfig) -> TaskLoader:
@@ -113,16 +39,42 @@ def build_task_loader(config: AgenticConfig) -> TaskLoader:
 
 
 def build_environment(config: AgenticConfig) -> Environment:
-    """Resolve and construct the environment, told the benchmark's working subdir.
+    """Resolve and construct the environment, told the settings it does not own.
 
-    The subdir is injected into the environment's config rather than passed as an
-    argument: `Environment` declares only a lifecycle, and adding a constructor to
-    it to carry a path would make every environment's `__init__` part of the ABC.
+    These are injected into the environment's config rather than passed as
+    arguments: `Environment` declares only a lifecycle, and adding a constructor to
+    it to carry them would make every environment's `__init__` part of the ABC.
+    They are also declared outside the `environment` section, which a deployment
+    may replace wholesale — so the injection is what makes them survive a backend
+    switch, not merely a convenience.
+
+    The derived TTL goes in first so an authored one wins: a cluster's cap on how
+    long a claim may live is not the benchmark's to widen.
     """
     env = config.environment
     return AgenticEnvironmentType(env.type).create(
-        {**env.config, "working_subdir": config.working_subdir}
+        {
+            "shutdown_after_seconds": _sandbox_ttl(config.limits.timeout_seconds),
+            **env.config,
+            "working_subdir": config.working_subdir,
+            "command_timeout_seconds": config.limits.command_timeout_seconds,
+        }
     )
+
+
+def _sandbox_ttl(timeout_seconds: float | None) -> int | None:
+    """A claim's self-destruct deadline, derived from the task's wall-clock budget.
+
+    None without a budget: the deadline is absolute, so a guessed one would delete
+    a sandbox still being worked in, which recovery papers over by rebuilding it —
+    and a rebuild resets the workspace.
+
+    The grace covers what the budget does not. `timeout_seconds` is checked between
+    turns, so the turn that overruns it runs to completion, then teardown follows.
+    """
+    if timeout_seconds is None:
+        return None
+    return int(timeout_seconds) + _SANDBOX_TTL_GRACE_SECONDS
 
 
 def build_answer_extractor(config: AgenticAnswerExtractorConfig) -> AnswerExtractor:

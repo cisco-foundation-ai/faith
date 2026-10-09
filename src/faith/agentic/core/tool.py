@@ -8,7 +8,7 @@ from abc import ABC, abstractmethod
 from functools import cached_property
 from typing import Any, ClassVar, final
 
-from faith.agentic.core.environment import Environment
+from faith.agentic.core.environment import Environment, EnvironmentUnavailableError
 
 
 class Tool(ABC):
@@ -84,7 +84,7 @@ class Tool(ABC):
 
     @final
     def execute(self, environment: Environment, args: dict) -> str:
-        """Validate the arguments, then invoke the tool, never raising.
+        """Validate the arguments, then invoke the tool, raising only if the sandbox died.
 
         Tool behavior belongs in ``_invoke``.
 
@@ -94,11 +94,18 @@ class Tool(ABC):
 
         Returns:
             The tool result, or an error string fed back to the model.
+
+        Raises:
+            EnvironmentUnavailableError: If the sandbox is gone or unreachable —
+                the one exception to the never-raise contract, since the agent
+                cannot act on infrastructure failure.
         """
         if (error := self.validate_args(args)) is not None:
             return error
         try:
             return self._invoke(environment, args)
+        except EnvironmentUnavailableError:
+            raise
         except Exception as e:  # pylint: disable=broad-exception-caught
             return f"Error executing {self.name}: {e}"
 

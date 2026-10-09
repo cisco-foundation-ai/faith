@@ -45,10 +45,11 @@ class ToolResponseEntry(TypedDict):
 class StoppedReason(CIStrEnum):
     """Why a ReActLoop run terminated.
 
-    Every member but ERROR is a normal termination; ERROR is the sole failure
-    mode (the harness/API/environment broke), and AgentResult.error is non-None
-    if and only if the reason is ERROR — a limit being hit, TIMEOUT included, is
-    a normal incomplete result.
+    ERROR and ENVIRONMENT_ERROR are the two failure modes, and AgentResult.error is
+    non-None if and only if the reason is one of them; every other member is a
+    normal termination, a hit limit (TIMEOUT included) being a normal incomplete
+    result. Both are excluded from accuracy, and they are separate because only
+    ENVIRONMENT_ERROR says the cluster is what needs attention.
 
     Only SUBMITTED yields an answer; NO_TOOL_CALLS is a normal termination but
     not a success (the model replied with prose, and kept doing so after being
@@ -61,6 +62,12 @@ class StoppedReason(CIStrEnum):
     MAX_TURNS = auto()
     TIMEOUT = auto()
     ERROR = auto()
+    ENVIRONMENT_ERROR = auto()
+
+    @property
+    def is_failure(self) -> bool:
+        """Whether this reason means the run failed rather than finished."""
+        return self in (StoppedReason.ERROR, StoppedReason.ENVIRONMENT_ERROR)
 
 
 @dataclass
@@ -89,8 +96,8 @@ class AgentResult(DataClassJsonMixin):
             given one extra turn to submit. Distinguishes a submission the nudge
             rescued from an ordinary one, and a run that was nudged and still
             refused from a record predating the nudge.
-        error: Failure message, set if and only if stopped_reason is
-            StoppedReason.ERROR.
+        error: Failure message, set if and only if stopped_reason is a failure
+            (see StoppedReason.is_failure).
     """
 
     task_id: str
@@ -112,9 +119,8 @@ class AgentResult(DataClassJsonMixin):
     def __post_init__(self) -> None:
         # Also runs on from_dict, so a log record violating the invariant fails
         # the read rather than being graded as if it were consistent.
-        errored = self.stopped_reason is StoppedReason.ERROR
-        if errored != (self.error is not None):
+        if self.stopped_reason.is_failure != (self.error is not None):
             raise ValueError(
-                f"error must be set if and only if stopped_reason is ERROR; "
+                f"error must be set if and only if stopped_reason is a failure; "
                 f"got stopped_reason={self.stopped_reason}, error={self.error!r}."
             )

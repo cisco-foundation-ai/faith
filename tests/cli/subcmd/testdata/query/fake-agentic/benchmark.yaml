@@ -16,7 +16,8 @@ benchmark:
   agentic_config:
     task_loader:
       type: fake
+    # A registered environment: parsing this config validates the name.
     environment:
-      type: fake
+      type: docker
     answer_extractor:
       type: fake

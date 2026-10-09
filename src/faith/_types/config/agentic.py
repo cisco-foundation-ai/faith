@@ -19,6 +19,7 @@ from dataclasses_json import config as dc_config
 
 from faith.agentic.core import DEFAULT_WORKSPACE_DIR
 from faith.agentic.core.react_loop import validate_agent_limits
+from faith.agentic.registries import validate_tool_capabilities
 
 
 @dataclass(frozen=True)
@@ -95,6 +96,11 @@ class AgenticLimitsConfig(DataClassJsonMixin):
             one, declared here rather than under `environment` because every
             backend enforces it — a section a deployment may replace wholesale is
             no place for a setting that is not backend-specific.
+        recover_on_environment_failure: Whether a sandbox that dies mid-task is
+            rebuilt and the failed call retried, unseen and uncharged. Rebuilding
+            re-runs setup, so the workspace reverts: a benchmark whose agent writes
+            files must set this false, or the agent silently continues without its
+            own work.
     """
 
     max_tool_calls: int = 50
@@ -104,6 +110,7 @@ class AgenticLimitsConfig(DataClassJsonMixin):
         default=None, metadata=dc_config(exclude=lambda x: x is None)
     )
     command_timeout_seconds: int = 60
+    recover_on_environment_failure: bool = True
 
     def __post_init__(self) -> None:
         validate_agent_limits(
@@ -127,8 +134,9 @@ class AgenticConfig(DataClassJsonMixin):
     benchmarks (those carrying an `agentic_config`): how tasks are loaded, where
     the agent runs, which tools it may call, and its evaluation limits.
 
-    Each section that selects an implementation is named for the abstraction it
-    selects and picks one with `type`.
+    This is where the environment and the tools first meet, so an environment that
+    cannot serve a configured tool is rejected here rather than left to whichever
+    caller happens to check.
 
     Attributes:
         task_loader: How agentic tasks are loaded (loader type and its config).
@@ -161,11 +169,14 @@ class AgenticConfig(DataClassJsonMixin):
     limits: AgenticLimitsConfig = field(default_factory=AgenticLimitsConfig)
 
     def __post_init__(self) -> None:
-        # A bare `working_subdir:` key in yaml decodes to None, not to the field
-        # default, so neither the join below nor an environment has to defend
-        # against it.
+        """Reject a working subdir outside the workspace, or an unservable tool."""
+        # A bare `working_subdir:` or `tools:` key in yaml decodes to None, not to
+        # the field default, so neither the join below nor an environment has to
+        # defend against it.
         if self.working_subdir is None:
             object.__setattr__(self, "working_subdir", "")
+        if self.tools is None:
+            object.__setattr__(self, "tools", [])
         # Checked on the derived path, so an absolute subdir and one that climbs
         # out with `..` are rejected by the same test. The workspace root itself
         # is the no-subdir case, not an escape.
@@ -179,6 +190,7 @@ class AgenticConfig(DataClassJsonMixin):
                 f"{self.working_dir!r}); it must be relative to "
                 f"{DEFAULT_WORKSPACE_DIR}."
             )
+        validate_tool_capabilities(self.environment.type, self.tools)
 
     @property
     def working_dir(self) -> str:

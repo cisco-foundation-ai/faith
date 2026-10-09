@@ -153,6 +153,7 @@ class AgenticTrialRunner(TrialRunner):
             max_turns=limits.max_turns,
             max_consecutive_no_tool_calls=limits.max_consecutive_no_tool_calls,
             timeout_seconds=limits.timeout_seconds,
+            recover_on_environment_failure=limits.recover_on_environment_failure,
             system_prompt=agentic_config.system_prompt,
             # Retry patience is a transport setting configured on the model spec,
             # so the loop must not fall back to its own defaults here.

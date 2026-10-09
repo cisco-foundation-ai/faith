@@ -8,6 +8,10 @@
 expressed by the capabilities it satisfies. These are structural Protocols, so an
 environment declares one by implementing its method and a tool names what it
 needs in ``Tool.required_capabilities``.
+
+Every capability must declare METHODS ONLY: config-time validation calls
+``issubclass`` against these, which a Protocol carrying a data member rejects
+with a TypeError.
 """
 
 from typing import Protocol, runtime_checkable

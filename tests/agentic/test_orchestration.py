@@ -18,6 +18,7 @@ from faith._types.config.agentic import (
     AgenticAnswerExtractorConfig,
     AgenticConfig,
     AgenticEnvironmentConfig,
+    AgenticLimitsConfig,
     AgenticTaskLoaderConfig,
 )
 from faith._types.json_types import JsonValue
@@ -29,14 +30,16 @@ from faith.agentic.core import (
     Tool,
 )
 from faith.agentic.orchestration import (
-    AgenticToolType,
-    _ConfiguredRegistry,
-    _NoConfigRegistry,
-    _WorkingDirRegistry,
     build_answer_extractor,
     build_environment,
     build_task_loader,
     build_tool_registry,
+)
+from faith.agentic.registries import (
+    AgenticToolType,
+    _ConfiguredRegistry,
+    _NoConfigRegistry,
+    _WorkingDirRegistry,
 )
 
 
@@ -101,7 +104,10 @@ class _FakeLoaderType(_WorkingDirRegistry):
 
 
 class _FakeEnvType(_ConfiguredRegistry):
-    FAKE = (_FakeEnvironment,)
+    # Named for a real environment, not "fake": `AgenticConfig` resolves the
+    # environment's type through the production registry when it is parsed, so a
+    # config the builders can be handed at all has to name a registered one.
+    DOCKER = (_FakeEnvironment,)
 
 
 class _FakeExtractorType(_ConfiguredRegistry):
@@ -113,11 +119,16 @@ class _FakeToolType(_NoConfigRegistry):
 
 
 def _agentic_config(**overrides) -> AgenticConfig:
-    """An agentic config naming the fake types, with the section under test replaced."""
+    """An agentic config the builders can be handed, with one section replaced.
+
+    Its `environment` names a registered type because parsing resolves that name
+    through the production registry; the fake registries the builders are patched
+    with are keyed by the same name.
+    """
     return AgenticConfig(
         **{
             "task_loader": AgenticTaskLoaderConfig(type="fake"),
-            "environment": AgenticEnvironmentConfig(type="fake"),
+            "environment": AgenticEnvironmentConfig(type="docker"),
             "answer_extractor": AgenticAnswerExtractorConfig(type="fake"),
             **overrides,
         }
@@ -152,13 +163,18 @@ def test_build_environment_injects_the_working_subdir_into_its_config() -> None:
         env = build_environment(
             _agentic_config(
                 environment=AgenticEnvironmentConfig(
-                    type="fake", config={"image": "ubuntu:22.04"}
+                    type="docker", config={"image": "ubuntu:22.04"}
                 ),
                 working_subdir="repo",
             )
         )
     assert isinstance(env, _FakeEnvironment)
-    assert env.config == {"image": "ubuntu:22.04", "working_subdir": "repo"}
+    assert env.config == {
+        "image": "ubuntu:22.04",
+        "working_subdir": "repo",
+        "command_timeout_seconds": 60,
+        "shutdown_after_seconds": None,
+    }
 
 
 def test_an_environment_config_cannot_override_the_working_subdir() -> None:
@@ -171,13 +187,61 @@ def test_an_environment_config_cannot_override_the_working_subdir() -> None:
         env = build_environment(
             _agentic_config(
                 environment=AgenticEnvironmentConfig(
-                    type="fake", config={"working_subdir": "stale"}
+                    type="docker", config={"working_subdir": "stale"}
                 ),
                 working_subdir="repo",
             )
         )
     assert isinstance(env, _FakeEnvironment)
-    assert env.config == {"working_subdir": "repo"}
+    assert env.config == {
+        "working_subdir": "repo",
+        "command_timeout_seconds": 60,
+        "shutdown_after_seconds": None,
+    }
+
+
+@pytest.mark.parametrize(
+    ("timeout_seconds", "expected_ttl"),
+    [(None, None), (1800, 2400), (1800.5, 2400)],
+    ids=["unbounded_task", "bounded_task", "float_truncates"],
+)
+def test_the_claim_ttl_is_derived_from_the_task_budget(
+    timeout_seconds: float | None, expected_ttl: int | None
+) -> None:
+    """A cluster-side deadline is the only cleanup that survives an unclean exit.
+
+    None for an unbounded task, since a guessed absolute deadline would delete a
+    sandbox still being worked in.
+    """
+    with patch("faith.agentic.orchestration.AgenticEnvironmentType", _FakeEnvType):
+        env = build_environment(
+            _agentic_config(limits=AgenticLimitsConfig(timeout_seconds=timeout_seconds))
+        )
+    assert isinstance(env, _FakeEnvironment)
+    assert env.config == {
+        "working_subdir": "",
+        "command_timeout_seconds": 60,
+        "shutdown_after_seconds": expected_ttl,
+    }
+
+
+def test_an_environment_config_may_override_the_derived_claim_ttl() -> None:
+    """A cluster's cap on how long a claim may live is not a benchmark's to widen."""
+    with patch("faith.agentic.orchestration.AgenticEnvironmentType", _FakeEnvType):
+        env = build_environment(
+            _agentic_config(
+                environment=AgenticEnvironmentConfig(
+                    type="docker", config={"shutdown_after_seconds": 300}
+                ),
+                limits=AgenticLimitsConfig(timeout_seconds=1800),
+            )
+        )
+    assert isinstance(env, _FakeEnvironment)
+    assert env.config == {
+        "working_subdir": "",
+        "command_timeout_seconds": 60,
+        "shutdown_after_seconds": 300,
+    }
 
 
 def test_build_answer_extractor_resolves_and_constructs() -> None:
@@ -193,11 +257,15 @@ def test_build_answer_extractor_resolves_and_constructs() -> None:
 
 
 def test_a_config_naming_an_unregistered_type_is_rejected() -> None:
-    """An unregistered short name fails at build time, naming the bad value."""
-    with patch("faith.agentic.orchestration.AgenticEnvironmentType", _FakeEnvType):
+    """An unregistered short name fails at build time, naming the bad value.
+
+    Asserted on the loader rather than the environment: an environment's name is
+    resolved when the config is parsed, so a bad one never reaches a builder.
+    """
+    with patch("faith.agentic.orchestration.AgenticTaskLoaderType", _FakeLoaderType):
         with pytest.raises(ValueError, match="nope"):
-            build_environment(
-                _agentic_config(environment=AgenticEnvironmentConfig(type="nope"))
+            build_task_loader(
+                _agentic_config(task_loader=AgenticTaskLoaderConfig(type="nope"))
             )
 
 

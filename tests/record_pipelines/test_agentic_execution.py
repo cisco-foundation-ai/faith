@@ -99,7 +99,7 @@ def test_a_loop_that_raises_is_salvaged_as_an_errored_trajectory() -> None:
 
     (out,) = list([_record()] >> AgentLoopRunner(loop, {0: _TASK}))
 
-    details = "Agent run failed: boom"
+    details = "Agent run failed: RuntimeError: boom"
     assert out.model_data.error == GenerationError(
         title="Agent Run Error", details=details
     )
@@ -116,7 +116,7 @@ def test_a_record_with_no_loaded_task_is_salvaged_too() -> None:
 
     (out,) = list([_record()] >> AgentLoopRunner(loop, {}))
 
-    details = "Agent run failed: 'No task loaded for sample index 0'"
+    details = "Agent run failed: KeyError: 'No task loaded for sample index 0'"
     loop.run.assert_not_called()
     assert out.model_data.error == GenerationError(
         title="Agent Run Error", details=details

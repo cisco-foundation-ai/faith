@@ -5,6 +5,7 @@ Foundation-AI Testing Hub `FAITH` project.
 
 - [Disclosing a security issue](#disclosing-a-security-issue)
 - [Vulnerability management](#vulnerability-management)
+- [Running agentic benchmarks](#running-agentic-benchmarks)
 - [Suggesting changes](#suggesting-changes)
 
 ## Disclosing a security issue
@@ -50,6 +51,35 @@ following steps:
 - determining affected versions of the project
 - auditing code to find any potential similar problems
 - preparing fixes for all releases under maintenance
+
+## Running agentic benchmarks
+
+An agentic benchmark executes commands a model wrote. `FAITH` runs them in a
+container or a Kubernetes sandbox, never on the host, but how strong that
+boundary is depends on the backend and on the operator:
+
+- The `docker` environment is meant for local runs of benchmark code you trust.
+  Each task gets its own container with no network and no host paths mounted, a
+  cap on the number of processes, all Linux capabilities dropped, and privilege
+  escalation forbidden. A container still shares the host kernel, and the daemon
+  that starts it is root-equivalent, so this bounds a runaway agent rather than
+  containing a hostile one.
+- The `kubernetes` environment claims a sandbox `FAITH` does not define.
+  Isolation is whatever the SandboxTemplate and the cluster provide: the pod's
+  runtime class, seccomp profile, NetworkPolicy and node pool are all the
+  operator's to set. Code you have reason to distrust belongs here rather than
+  under `docker`.
+
+Treat model output and benchmark data as untrusted input. A task whose prompt or
+data steers the agent at the host, the network or your credentials will be
+followed. Run agentic benchmarks on a machine you are willing to lose, holding
+no credentials the run does not need.
+
+`FAITH` does not provide or operate the container host, the cluster, or the
+network they sit on -- the operator does, and the isolation those provide is the
+operator's to configure and verify. `FAITH` is provided without warranty of any
+kind (see the [LICENSE](LICENSE)); choosing a boundary appropriate to the code
+under evaluation is the operator's responsibility.
 
 ## Suggesting changes
 
