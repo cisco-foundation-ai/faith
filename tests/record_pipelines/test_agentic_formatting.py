@@ -22,6 +22,7 @@ def _task(
     metadata: dict[str, JsonValue] | None = None,
     data_path: Path | None = None,
     environment_config: dict[str, JsonValue] | None = None,
+    data_identity: JsonValue | None = None,
 ) -> Task:
     return Task(
         id="task-1",
@@ -30,6 +31,7 @@ def _task(
         metadata=metadata or {},
         data_path=data_path,
         environment_config=environment_config or {},
+        data_identity=data_identity,
     )
 
 
@@ -51,7 +53,7 @@ def test_maps_task_into_bare_record() -> None:
                 "id": "task-1",
                 "prompt": _PROMPT,
                 "ground_truth": ["a.c", "b.c"],
-                "data_path": None,
+                "data_identity": None,
                 "environment_config": {},
             }
         ),
@@ -108,6 +110,18 @@ def test_sample_hash_covers_the_data_payload_and_environment() -> None:
 
     hashes = {_format(task).data.benchmark_sample_hash for task in tasks}
     assert len(hashes) == len(tasks)
+
+
+def test_sample_hash_ignores_the_runtime_cache_root() -> None:
+    """The same payload reconciles even when fetched into different cache roots."""
+    identity: JsonValue = {"repo": "acme/widget", "sha": "a" * 40, "md5": "0" * 32}
+    tasks = [
+        _task("flag{x}", data_path=Path("/cache-a/a.zip"), data_identity=identity),
+        _task("flag{x}", data_path=Path("/cache-b/a.zip"), data_identity=identity),
+    ]
+
+    hashes = {_format(task).data.benchmark_sample_hash for task in tasks}
+    assert len(hashes) == 1
 
 
 def test_data_hash_covers_the_system_prompt() -> None:

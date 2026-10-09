@@ -171,6 +171,7 @@ def test_build_environment_injects_the_working_subdir_into_its_config() -> None:
     assert isinstance(env, _FakeEnvironment)
     assert env.config == {
         "image": "ubuntu:22.04",
+        "read_only_workspace": False,
         "working_subdir": "repo",
         "command_timeout_seconds": 60,
         "shutdown_after_seconds": None,
@@ -195,6 +196,7 @@ def test_an_environment_config_cannot_override_the_working_subdir() -> None:
     assert isinstance(env, _FakeEnvironment)
     assert env.config == {
         "working_subdir": "repo",
+        "read_only_workspace": False,
         "command_timeout_seconds": 60,
         "shutdown_after_seconds": None,
     }
@@ -220,6 +222,7 @@ def test_the_claim_ttl_is_derived_from_the_task_budget(
     assert isinstance(env, _FakeEnvironment)
     assert env.config == {
         "working_subdir": "",
+        "read_only_workspace": False,
         "command_timeout_seconds": 60,
         "shutdown_after_seconds": expected_ttl,
     }
@@ -241,7 +244,23 @@ def test_an_environment_config_may_override_the_derived_claim_ttl() -> None:
         "working_subdir": "",
         "command_timeout_seconds": 60,
         "shutdown_after_seconds": 300,
+        "read_only_workspace": False,
     }
+
+
+@pytest.mark.parametrize("required", [True, False])
+def test_environment_config_cannot_override_workspace_policy(required: bool) -> None:
+    with patch("faith.agentic.orchestration.AgenticEnvironmentType", _FakeEnvType):
+        env = build_environment(
+            _agentic_config(
+                read_only_workspace=required,
+                environment=AgenticEnvironmentConfig(
+                    type="docker", config={"read_only_workspace": not required}
+                ),
+            )
+        )
+    assert isinstance(env, _FakeEnvironment) and env.config is not None
+    assert env.config["read_only_workspace"] is required
 
 
 def test_build_answer_extractor_resolves_and_constructs() -> None:
@@ -288,12 +307,20 @@ def test_build_tool_registry_registers_named_tools(
 
 
 def test_build_tool_registry_wires_the_real_builtin_tools() -> None:
-    """Every built-in tool resolves through the unpatched production registry.
+    """Every registered tool resolves through the unpatched production registry.
 
     The registry keys each tool by the tool's own `name`, so listing back exactly
     the requested short names proves the member name and the tool name agree — a
     benchmark.yaml asking for "bash_exec" cannot resolve to something else.
     """
     short_names = [member.name.lower() for member in AgenticToolType]
-    assert short_names == ["bash_exec", "submit"]
+    assert short_names == [
+        "bash_exec",
+        "submit",
+        # `terminal` is bash_exec under the name the verbatim prompt uses, so
+        # both names resolve and each keys to its own tool.
+        "terminal",
+        "submit_vulnerable_files",
+        "submit_no_vulnerability_found",
+    ]
     assert build_tool_registry(short_names).list_tools() == short_names

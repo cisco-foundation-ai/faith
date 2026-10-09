@@ -19,7 +19,17 @@ from dataclasses_json import config as dc_config
 
 from faith.agentic.core import DEFAULT_WORKSPACE_DIR
 from faith.agentic.core.react_loop import validate_agent_limits
-from faith.agentic.registries import validate_tool_capabilities
+from faith.agentic.registries import (
+    validate_read_only_workspace,
+    validate_tool_capabilities,
+)
+
+
+def _read_only_boolean(value: Any) -> bool:
+    """Do not let config decoding turn the string 'false' into True."""
+    if not isinstance(value, bool):
+        raise ValueError("read_only_workspace must be a boolean")
+    return value
 
 
 @dataclass(frozen=True)
@@ -142,6 +152,8 @@ class AgenticConfig(DataClassJsonMixin):
         task_loader: How agentic tasks are loaded (loader type and its config).
         environment: Where the agent runs (environment type and its config).
         answer_extractor: How a prediction is derived from the agent's trajectory.
+        read_only_workspace: Require an immutable input workspace. Unsupported
+            environments fail setup; writable scratch outside it is still allowed.
         working_subdir: Subdirectory of the workspace the agent works from, for a
             benchmark whose data unpacks into one; "" to work from the workspace
             root. Declared here rather than under `environment` because the task
@@ -167,9 +179,15 @@ class AgenticConfig(DataClassJsonMixin):
         default=None, metadata=dc_config(exclude=lambda x: x is None)
     )
     limits: AgenticLimitsConfig = field(default_factory=AgenticLimitsConfig)
+    read_only_workspace: bool = field(
+        default=False,
+        metadata=dc_config(decoder=_read_only_boolean, exclude=lambda x: x is False),
+    )
 
     def __post_init__(self) -> None:
         """Reject a working subdir outside the workspace, or an unservable tool."""
+        _read_only_boolean(self.read_only_workspace)
+        validate_read_only_workspace(self.environment.type, self.read_only_workspace)
         # A bare `working_subdir:` or `tools:` key in yaml decodes to None, not to
         # the field default, so neither the join below nor an environment has to
         # defend against it.

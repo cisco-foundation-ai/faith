@@ -58,6 +58,7 @@ def build_environment(config: AgenticConfig) -> Environment:
             **env.config,
             "working_subdir": config.working_subdir,
             "command_timeout_seconds": config.limits.command_timeout_seconds,
+            "read_only_workspace": config.read_only_workspace,
         }
     )
 

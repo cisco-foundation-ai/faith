@@ -67,8 +67,28 @@ boundary is depends on the backend and on the operator:
 - The `kubernetes` environment claims a sandbox `FAITH` does not define.
   Isolation is whatever the SandboxTemplate and the cluster provide: the pod's
   runtime class, seccomp profile, NetworkPolicy and node pool are all the
-  operator's to set. Code you have reason to distrust belongs here rather than
-  under `docker`.
+  operator's to set. Kubernetes alone is not a hostile-code sandbox; untrusted
+  workloads need an appropriately isolated runtime and verified cluster controls.
+
+### Read-only benchmark inputs
+
+Benchmarks may require `agentic_config.read_only_workspace: true`; both VulnLoc
+phases do. FAITH protects workspace files and directories from the agent's shell,
+disables subsequent uploads, and refuses to start the agent if it cannot establish
+the requested policy. Scratch outside the workspace, such as `/tmp`, may remain
+writable. This is an input-integrity guarantee, not a command allowlist, a network
+policy, or protection from kernel/container escapes.
+
+Docker requires a trusted, non-root image without added Linux capabilities. The
+Kubernetes runtime must implement the irreversible seal, retain policy state
+across sidecar restarts, and execute agents without privilege escalation. The
+bundled template includes these controls; custom deployments must supply them.
+Startup checks verify basic behavior, not the security of an entire cluster.
+
+FAITH maintainers own the implementation, shipped defaults and reference code.
+Operators own image provenance, host/cluster patching, RBAC, network enforcement,
+secrets, runtime isolation and deployment verification. The bundled privileged
+sidecar is part of the trusted computing base, not an additional isolation boundary.
 
 Treat model output and benchmark data as untrusted input. A task whose prompt or
 data steers the agent at the host, the network or your credentials will be

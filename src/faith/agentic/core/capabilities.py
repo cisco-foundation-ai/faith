@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Optional environment capabilities that tools require.
+"""Optional environment capabilities required by tools or benchmark policy.
 
 ``Environment`` itself covers only lifecycle; what an environment can *do* is
 expressed by the capabilities it satisfies. These are structural Protocols, so an
@@ -15,6 +15,18 @@ with a TypeError.
 """
 
 from typing import Protocol, runtime_checkable
+
+
+@runtime_checkable
+class ReadOnlyWorkspace(Protocol):
+    """Can irreversibly protect task inputs before the agent starts."""
+
+    def seal_workspace(self) -> None:
+        """Protect the workspace from shell and file-API writes, or raise.
+
+        Setup must call this when read_only_workspace is required, including
+        when rebuilding an environment after an infrastructure failure.
+        """
 
 
 @runtime_checkable

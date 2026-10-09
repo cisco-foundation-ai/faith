@@ -12,6 +12,7 @@ tests/agentic/core/test_react_loop.py; only the delegation is asserted here.
 
 import pytest
 
+from faith._internal.algo.hash import dict_sha256
 from faith._types.config.agentic import (
     AgenticAnswerExtractorConfig,
     AgenticConfig,
@@ -75,6 +76,43 @@ def test_a_full_agentic_section_round_trips_through_a_dict() -> None:
     """A benchmark.yaml section must survive parse -> serialize (experiment.json)."""
     assert AgenticConfig.from_dict(_FULL_AGENTIC_DICT) == _FULL_AGENTIC_CONFIG
     assert _FULL_AGENTIC_CONFIG.to_dict() == _FULL_AGENTIC_DICT
+
+
+@pytest.mark.parametrize("value", [None, "true", "false", 0, 1, [], {}])
+def test_read_only_workspace_requires_a_boolean(value) -> None:
+    with pytest.raises(ValueError, match="must be a boolean"):
+        AgenticConfig.from_dict({**_MINIMAL_AGENTIC_DICT, "read_only_workspace": value})
+
+
+def test_read_only_workspace_changes_identity_without_changing_old_defaults() -> None:
+    writable = AgenticConfig.from_dict(_MINIMAL_AGENTIC_DICT).to_dict()
+    explicit_false = AgenticConfig.from_dict(
+        {
+            **_MINIMAL_AGENTIC_DICT,
+            "read_only_workspace": False,
+        }
+    ).to_dict()
+    protected = AgenticConfig.from_dict(
+        {
+            **_MINIMAL_AGENTIC_DICT,
+            "read_only_workspace": True,
+        }
+    ).to_dict()
+    assert writable == explicit_false
+    assert "read_only_workspace" not in writable
+    assert protected["read_only_workspace"] is True
+    assert dict_sha256(protected) != dict_sha256(writable)
+
+
+def test_existing_positional_agentic_configuration_remains_compatible() -> None:
+    config = AgenticConfig(
+        _FULL_AGENTIC_CONFIG.task_loader,
+        _FULL_AGENTIC_CONFIG.environment,
+        _FULL_AGENTIC_CONFIG.answer_extractor,
+        "repo",
+    )
+    assert config.working_subdir == "repo"
+    assert config.read_only_workspace is False
 
 
 def test_the_omitted_sections_default_and_serialize_back_out() -> None:

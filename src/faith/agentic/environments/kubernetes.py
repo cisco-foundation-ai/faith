@@ -33,6 +33,7 @@ from faith.agentic.environments._command import (
     sdk_timeout,
     timeout_notice,
 )
+from faith.agentic.environments._read_only import read_only_required, workspace_check
 from faith.agentic.environments._workspace import WorkspaceLayout
 
 
@@ -137,6 +138,9 @@ class KubernetesEnvironment(WorkspaceLayout, Environment):
       authored value. Enforced cluster-side, so it is the only bound here that
       survives FAITH being killed without teardown. Absolute rather than idle: it
       deletes a working sandbox as readily as an abandoned one.
+    - ``read_only_workspace`` (default false): injected from the benchmark. Requires
+      the runtime's irreversible, restart-persistent FAITH workspace-seal contract.
+      A missing contract or failed permission check is a setup error.
 
     Unlike DockerEnvironment, which starts the container it executes against, this
     claims a pod from a cluster-side warm pool FAITH does not own, so the sandbox's
@@ -200,6 +204,8 @@ class KubernetesEnvironment(WorkspaceLayout, Environment):
             )
         self._client = client
         self._sandbox: Any = None
+        self._read_only_workspace = read_only_required(config)
+        self._sealed = False
 
     def _get_client(self) -> Any:
         """The Agent Sandbox client, created on first use with claim auto-cleanup.
@@ -226,6 +232,7 @@ class KubernetesEnvironment(WorkspaceLayout, Environment):
             EnvironmentUnavailableError: If the cluster could not serve a sandbox.
             RuntimeError: If a sandbox came up but could not be prepared.
         """
+        self._sealed = False
         try:
             # create_sandbox watches the Ready condition itself, so a second wait
             # here would already be satisfied; the timeout is what we configure.
@@ -239,12 +246,61 @@ class KubernetesEnvironment(WorkspaceLayout, Environment):
             raise EnvironmentUnavailableError(f"Failed to claim a sandbox: {e}") from e
         try:
             self._probe_runtime()
+            if task.data_provider is not None:
+                task.data_provider()
             if task.data_path is not None:
                 self._upload_data(task.data_path)
+            if self._read_only_workspace:
+                self.seal_workspace()
         except EnvironmentUnavailableError:
             raise
         except Exception as e:
             raise RuntimeError(f"Failed to set up sandbox: {e}") from e
+
+    def seal_workspace(self) -> None:
+        """Require the runtime's irreversible seal and verify its basic guarantees."""
+        sandbox = self._require_sandbox()
+        connector = getattr(sandbox, "connector", None)
+        if connector is None:
+            raise RuntimeError("Sandbox runtime does not support read_only_workspace")
+        try:
+            response = connector.send_request(
+                "POST",
+                "faith/workspace/read-only",
+                json={"version": 1, "workspace": self.workspace_dir},
+                timeout=120,
+                allowed_statuses={404, 405, 409, 422, 501},
+            )
+        except Exception as e:
+            raise RuntimeError(f"Cannot establish read_only_workspace: {e}") from e
+        expected = {
+            "version": 1,
+            "read_only_workspace": True,
+            "uploads_disabled": True,
+        }
+        if response.status_code != 200 or response.json() != expected:
+            raise RuntimeError(
+                "Sandbox runtime does not support FAITH read_only_workspace v1; "
+                "deploy a compatible runtime and its persistent policy-state volume"
+            )
+        code, output = self._run(
+            bounded_shell(workspace_check(self.workspace_dir, sealed=True), 120)
+        )
+        if code != 0:
+            raise RuntimeError(
+                f"read_only_workspace verification failed (exit {code}): {output.strip()}"
+            )
+        # A shell permission check cannot detect a privileged file-API bypass.
+        response = connector.send_request(
+            "POST",
+            "upload",
+            files={"file": (_probe_file_name(), b"read-only probe")},
+            timeout=60,
+            allowed_statuses={403},
+        )
+        if response.status_code != 403:
+            raise RuntimeError("read_only_workspace runtime still accepts uploads")
+        self._sealed = True
 
     def _probe_runtime(self) -> None:
         """Reject a sandbox runtime that cannot serve the contract, before any task.
@@ -329,6 +385,10 @@ class KubernetesEnvironment(WorkspaceLayout, Environment):
         as a backstop for a wedged sandbox, but the in-container wrapper is what
         kills the process.
         """
+        if self._read_only_workspace and not self._sealed:
+            raise RuntimeError(
+                "Read-only workspace is not ready; setup must succeed first"
+            )
         exit_code, output = self._run(
             bounded_shell(command, self._command_timeout), cwd=self.working_dir
         )
@@ -368,6 +428,10 @@ class KubernetesEnvironment(WorkspaceLayout, Environment):
         Raises:
             EnvironmentUnavailableError: If the sandbox is gone or unreachable.
         """
+        if self._sealed:
+            raise RuntimeError(
+                "The read-only workspace is sealed; uploads are disabled"
+            )
         # The file API crosses the same tunnel as the command API, so it fails the
         # same way; classifying it as a broken run instead would skip recovery.
         try:
