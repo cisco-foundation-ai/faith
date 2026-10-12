@@ -21,9 +21,11 @@ import pytest
 import requests
 from docker import errors as docker_errors
 
+from faith._types.config.agentic import AgenticEnvironmentConfig, resolve_environment
 from faith.agentic.core.environment import EnvironmentUnavailableError
 from faith.agentic.core.task import Task
 from faith.agentic.environments._archive import tar_bytes, tar_directory
+from faith.agentic.environments._build import derived_image_tag
 from faith.agentic.environments.docker import DockerEnvironment
 
 
@@ -83,10 +85,20 @@ class _FakeImages:
         self.present = present if present is not None else set()
         self.build_kwargs: dict | None = None
         self.build_error: Exception | None = None
+        self.pulled: list[str] = []
+        self.pull_error: Exception | None = None
 
     def list(self, name: str) -> list[SimpleNamespace]:
         """Return a one-image list if the tag is present, else nothing."""
         return [SimpleNamespace(tags=[name])] if name in self.present else []
+
+    def pull(self, name: str) -> SimpleNamespace:
+        """Record the pull, marking the tag present afterwards."""
+        self.pulled.append(name)
+        if self.pull_error is not None:
+            raise self.pull_error
+        self.present.add(name)
+        return SimpleNamespace(tags=[name])
 
     def build(self, **kwargs: Any) -> tuple[SimpleNamespace, Any]:
         """Record the build kwargs, marking the tag present afterwards."""
@@ -151,10 +163,10 @@ def _setup_env(
     return env, container
 
 
-def test_requires_agent_image() -> None:
-    """Without an image there is nothing to run, and no default is safe to guess."""
+def test_requires_a_dockerfile_to_build_or_an_image_to_pull() -> None:
+    """With neither there is nothing to run, and no default is safe to guess."""
     with pytest.raises(
-        ValueError, match="DockerEnvironment config requires 'agent_image'"
+        ValueError, match="requires 'agent_dockerfile' .* or 'agent_image'"
     ):
         DockerEnvironment({}, client=_FakeDockerClient(_FakeContainer()))
 
@@ -201,6 +213,26 @@ def test_a_container_dying_during_setup_stays_an_environment_failure(
     assert str(excinfo.value) == "Docker container unavailable: gone"
 
 
+@pytest.mark.parametrize(
+    ("image", "expected_type"),
+    # An unquoted `agent_image: 3.12` in a yaml is a float, not a name. Rejected
+    # rather than stringified, which would produce a plausible tag nothing serves.
+    [(3.12, "float"), (True, "bool"), (["img:latest"], "list")],
+    ids=["float", "bool", "list"],
+)
+def test_a_non_string_agent_image_is_rejected_naming_what_it_got(
+    image: object, expected_type: str
+) -> None:
+    with pytest.raises(ValueError) as excinfo:
+        DockerEnvironment(
+            {"agent_image": image}, client=_FakeDockerClient(_FakeContainer())
+        )
+    assert str(excinfo.value) == (
+        f"DockerEnvironment config 'agent_image' must be a string, got "
+        f"{expected_type}: {image!r}"
+    )
+
+
 def test_setup_runs_a_detached_isolated_labeled_container() -> None:
     """The whole run() call, since an unasserted kwarg is an unnoticed default.
 
@@ -242,7 +274,6 @@ def test_setup_runs_a_detached_isolated_labeled_container() -> None:
     [
         ({"network": "bridge"}, {}, {"network_mode": "bridge"}),
         ({"environment": {"CC": "clang"}}, {}, {"environment": {"CC": "clang"}}),
-        ({"mount_path": "/app"}, {}, {"working_dir": "/app"}),
         ({"memory_limit": "2g"}, {}, {"mem_limit": "2g"}),
         ({"cpu_limit": 1.5}, {}, {"nano_cpus": 1_500_000_000}),
         ({"pids_limit": 4096}, {}, {"pids_limit": 4096}),
@@ -262,7 +293,6 @@ def test_setup_runs_a_detached_isolated_labeled_container() -> None:
     ids=[
         "network",
         "environment",
-        "mount_path",
         "memory_limit",
         "cpu_limit",
         "pids_limit",
@@ -287,6 +317,12 @@ def test_the_limit_kwargs_are_omitted_when_unset() -> None:
     env.setup(_task())
     assert client.run_kwargs is not None
     assert not {"mem_limit", "nano_cpus", "volumes"} & set(client.run_kwargs)
+
+
+def test_the_workspace_root_is_fixed_and_a_configured_mount_path_is_ignored() -> None:
+    """The path the prompt advertises, so a config must not be able to move it."""
+    env, _, _ = _make_env(mount_path="/app")
+    assert env.workspace_dir == "/workspace"
 
 
 def test_a_working_subdir_moves_the_agents_commands_but_not_setup(
@@ -525,53 +561,320 @@ def _dockerfile(tmp_path: Path) -> Path:
     return path
 
 
-def test_builds_the_image_when_the_tag_is_absent(tmp_path: Path) -> None:
-    """A benchmark shipping a Dockerfile needs no manual `docker build` step."""
+def test_builds_the_image_when_the_derived_tag_is_absent(tmp_path: Path) -> None:
+    """A benchmark shipping a Dockerfile needs no manual `docker build` step.
+
+    The whole build call, since an unasserted kwarg is an unnoticed default. The tag
+    is FAITH's own, derived from the context, so it never appears in the config; the
+    label is how the images left behind by earlier recipes are reclaimed.
+    """
     dockerfile = _dockerfile(tmp_path)
-    env, client, _ = _make_env(agent_dockerfile=str(dockerfile))
+    env = DockerEnvironment(
+        {"agent_dockerfile": str(dockerfile)},
+        client=(client := _FakeDockerClient(_FakeContainer())),
+    )
     env.setup(_task())
     assert client.images.build_kwargs == {
         "path": str(tmp_path),
         "dockerfile": "Dockerfile",
-        "tag": "img:latest",
+        "tag": derived_image_tag(dockerfile),
         "rm": True,
+        "labels": {"faith.managed": "true"},
     }
 
 
-def test_does_not_rebuild_an_image_that_is_already_present(tmp_path: Path) -> None:
-    client = _FakeDockerClient(_FakeContainer(), present={"img:latest"})
+def test_the_built_tag_is_never_the_authors_to_choose(tmp_path: Path) -> None:
+    """The point of deriving it: no config value can steer what a build overwrites.
+
+    Asserted against a config trying every plausible spelling of "name it this",
+    since the guarantee is that no key does it — not that these three do not.
+    """
+    dockerfile = _dockerfile(tmp_path)
     env = DockerEnvironment(
-        {"agent_image": "img:latest", "agent_dockerfile": str(_dockerfile(tmp_path))},
-        client=client,
+        {
+            "agent_dockerfile": str(dockerfile),
+            "agent_tag": "busybox:1.36",
+            "image": "busybox:1.36",
+            "tag": "busybox:1.36",
+        },
+        client=(client := _FakeDockerClient(_FakeContainer())),
     )
     env.setup(_task())
-    assert client.images.build_kwargs is None
+    assert client.images.build_kwargs is not None
+    assert client.images.build_kwargs["tag"] == derived_image_tag(dockerfile)
 
 
-def test_no_dockerfile_means_no_build_and_no_existence_check() -> None:
-    """Without a Dockerfile the image is the user's to provide, as before."""
-    env, client, _ = _make_env()
+def test_an_unchanged_benchmark_does_not_rebuild(tmp_path: Path) -> None:
+    """The reuse path: a second run on the same recipe finds its tag present."""
+    dockerfile = _dockerfile(tmp_path)
+    client = _FakeDockerClient(
+        _FakeContainer(), present={derived_image_tag(dockerfile)}
+    )
+    DockerEnvironment({"agent_dockerfile": str(dockerfile)}, client=client).setup(
+        _task()
+    )
+    assert (client.images.build_kwargs, client.images.pulled) == (None, [])
+
+
+def test_switching_recipes_builds_each_once_and_reuses_the_right_image(
+    tmp_path: Path,
+) -> None:
+    """Both recipes exist throughout; selection alone must invalidate the cache."""
+    first = _dockerfile(tmp_path)
+    second = tmp_path / "Dockerfile.other"
+    second.write_text("FROM ubuntu:22.04\n", encoding="utf-8")
+    client = _FakeDockerClient(_FakeContainer())
+
+    for recipe in (first, second):
+        client.images.build_kwargs = None
+        env = DockerEnvironment({"agent_dockerfile": str(recipe)}, client=client)
+        env.setup(_task())
+        assert client.images.build_kwargs is not None
+        assert client.images.build_kwargs["dockerfile"] == recipe.name
+        assert client.images.build_kwargs["tag"] == derived_image_tag(recipe)
+        assert client.run_kwargs is not None
+        assert client.run_kwargs["image"] == derived_image_tag(recipe)
+        env.teardown()
+
+    client.images.build_kwargs = None
+    env = DockerEnvironment({"agent_dockerfile": str(first)}, client=client)
     env.setup(_task())
     assert client.images.build_kwargs is None
     assert client.run_kwargs is not None
+    assert client.run_kwargs["image"] == derived_image_tag(first)
+    assert len(client.images.present) == 2
+    assert not client.images.pulled
+    env.teardown()
 
 
-def test_a_task_image_override_is_built_too(tmp_path: Path) -> None:
-    """The Dockerfile backs whichever tag is about to run, not just the default."""
-    env, client, _ = _make_env(agent_dockerfile=str(_dockerfile(tmp_path)))
-    env.setup(_task(environment_config={"agent_image": "other:v2"}))
+def test_an_edited_dockerfile_rebuilds_and_a_reverted_one_reuses(
+    tmp_path: Path,
+) -> None:
+    """The bug this design exists to remove, and the cache win that comes with it.
+
+    A single mutable tag is not an identity: with one, editing the recipe leaves the
+    old image sitting under the tag the run asks for, so every host holding it keeps
+    running the old image silently — two people on the same commit measure different
+    things. Deriving the tag makes the edit ask for an image that has never existed.
+    Reverting then asks for the first one again, which is still present.
+    """
+    dockerfile = _dockerfile(tmp_path)
+    original_tag = derived_image_tag(dockerfile)
+    client = _FakeDockerClient(_FakeContainer(), present={original_tag})
+
+    dockerfile.write_text("FROM ubuntu:22.04\nRUN echo edited\n")
+    DockerEnvironment({"agent_dockerfile": str(dockerfile)}, client=client).setup(
+        _task()
+    )
     assert client.images.build_kwargs is not None
-    assert client.images.build_kwargs["tag"] == "other:v2"
+    edited_tag = client.images.build_kwargs["tag"]
+
+    dockerfile.write_text("FROM ubuntu:24.04\n")
+    client.images.build_kwargs = None
+    DockerEnvironment({"agent_dockerfile": str(dockerfile)}, client=client).setup(
+        _task()
+    )
+
+    assert (edited_tag != original_tag, client.images.build_kwargs) == (True, None)
+
+
+def test_an_edited_context_file_rebuilds_though_the_dockerfile_is_untouched(
+    tmp_path: Path,
+) -> None:
+    """A COPY'd script is part of the image, so the digest must cover the context."""
+    dockerfile = _dockerfile(tmp_path)
+    script = tmp_path / "setup.sh"
+    script.write_text("echo one\n")
+    client = _FakeDockerClient(
+        _FakeContainer(), present={derived_image_tag(dockerfile)}
+    )
+
+    script.write_text("echo two\n")
+    DockerEnvironment({"agent_dockerfile": str(dockerfile)}, client=client).setup(
+        _task()
+    )
+
+    assert client.images.build_kwargs is not None
+
+
+def test_a_task_image_override_is_pulled_rather_than_built(tmp_path: Path) -> None:
+    """A task naming an image is naming one to pull, as the config key of that name is.
+
+    Otherwise the benchmark's Dockerfile would be built under a tag the task chose —
+    the fabrication the build/pull split exists to prevent, arriving by another door.
+    """
+    env = DockerEnvironment(
+        {"agent_dockerfile": str(_dockerfile(tmp_path))},
+        client=(client := _FakeDockerClient(_FakeContainer())),
+    )
+    env.setup(_task(environment_config={"agent_image": "other:v2"}))
+    assert (client.images.build_kwargs, client.images.pulled) == (None, ["other:v2"])
+
+
+@pytest.mark.parametrize(
+    ("task_config", "expected"),
+    [({}, "deployment:v2"), ({"agent_image": "task:v3"}, "task:v3")],
+    ids=["no_task_override", "task_override"],
+)
+def test_a_task_image_outranks_a_deployment_override(
+    task_config: dict[str, Any], expected: str
+) -> None:
+    """All three config layers at once, in order: benchmark < deployment < task.
+
+    The deployment layer arrives already merged (`--environment-config`), so only
+    the task layer is still live by the time the container starts.
+    """
+    resolved = resolve_environment(
+        AgenticEnvironmentConfig(type="docker", config={"agent_image": "benchmark:v1"}),
+        AgenticEnvironmentConfig(
+            type="docker", config={"agent_image": "deployment:v2"}
+        ),
+    )
+    client = _FakeDockerClient(_FakeContainer())
+    DockerEnvironment(resolved.config, client=client).setup(
+        _task(environment_config=task_config)
+    )
+    assert client.run_kwargs is not None
+    assert client.run_kwargs["image"] == expected
+
+
+def test_an_image_with_no_dockerfile_is_pulled_rather_than_built() -> None:
+    """Nothing to build it from means it was produced elsewhere: fetch it."""
+    env, client, _ = _make_env()
+    env.setup(_task())
+    assert (client.images.pulled, client.images.build_kwargs) == (["img:latest"], None)
+    assert client.run_kwargs is not None
+
+
+@pytest.mark.parametrize(
+    "image",
+    [
+        "ubuntu:24.04",
+        "my-local-build:v2",
+        "registry.example/team/vulnerability-localization:v2",
+    ],
+    ids=["public_base_image", "unqualified_local_tag", "registry_host"],
+)
+def test_a_deployment_image_is_never_built_from_the_benchmarks_dockerfile(
+    tmp_path: Path, image: str
+) -> None:
+    """A deployment naming an image is naming one to pull, whatever the benchmark ships.
+
+    The merged config holds both keys — the benchmark's Dockerfile and the
+    deployment's image — and that combination reads as "pull this instead", with no
+    key-specific rule in `resolve_environment` to arrange it. Building here would
+    substitute a local build for the image the deployment asked to fetch, and the
+    image's *name* cannot decide it: `ubuntu:24.04` is as pullable as a registry path.
+    """
+    resolved = resolve_environment(
+        AgenticEnvironmentConfig(
+            type="docker",
+            config={"agent_dockerfile": str(_dockerfile(tmp_path))},
+        ),
+        AgenticEnvironmentConfig(type="docker", config={"agent_image": image}),
+    )
+    client = _FakeDockerClient(_FakeContainer())
+    DockerEnvironment(resolved.config, client=client).setup(_task())
+    assert (client.images.build_kwargs, client.images.pulled) == (None, [image])
+
+
+def test_a_pulling_deployment_leaves_the_benchmarks_dockerfile_in_the_merged_config(
+    tmp_path: Path,
+) -> None:
+    """Pull-wins is the environment's reading of the pair, not a deleted key.
+
+    Pinned because the previous design deleted `agent_dockerfile` during the merge —
+    a key-specific exception to a generic merge. Precedence belongs where the keys
+    are interpreted, so the merge stays a merge.
+    """
+    dockerfile = str(_dockerfile(tmp_path))
+    resolved = resolve_environment(
+        AgenticEnvironmentConfig(
+            type="docker", config={"agent_dockerfile": dockerfile}
+        ),
+        AgenticEnvironmentConfig(type="docker", config={"agent_image": "pulled:v2"}),
+    )
+
+    assert resolved.config == {
+        "agent_dockerfile": dockerfile,
+        "agent_image": "pulled:v2",
+    }
+
+
+def test_a_build_is_logged_with_the_recipe_it_came_from(tmp_path: Path) -> None:
+    """One INFO line, since a derived tag says nothing about which Dockerfile made it.
+
+    A build no longer needs a warning: it can only produce a tag in FAITH's own
+    namespace, so it cannot overwrite anything upstream published. What is worth
+    recording is which recipe a run's image came from.
+    """
+    dockerfile = _dockerfile(tmp_path)
+    env = DockerEnvironment(
+        {"agent_dockerfile": str(dockerfile)},
+        client=_FakeDockerClient(_FakeContainer()),
+    )
+    with patch("faith.agentic.environments.docker.logger") as mock_logger:
+        env.setup(_task())
+    mock_logger.info.assert_called_once_with(
+        "Image '%s' not found locally; building it from %s.",
+        derived_image_tag(dockerfile),
+        dockerfile,
+    )
+
+
+def test_a_present_image_is_neither_pulled_nor_built(tmp_path: Path) -> None:
+    """A cached tag is used as-is, so a run needs no network."""
+    client = _FakeDockerClient(
+        _FakeContainer(), present={"registry.example/vulnerability-localization:v2"}
+    )
+    env = DockerEnvironment(
+        {
+            "agent_image": "registry.example/vulnerability-localization:v2",
+            "agent_dockerfile": str(_dockerfile(tmp_path)),
+        },
+        client=client,
+    )
+    env.setup(_task())
+    assert (client.images.pulled, client.images.build_kwargs) == ([], None)
+
+
+def test_a_failed_pull_is_reported_rather_than_built_around(tmp_path: Path) -> None:
+    """The deployment named an image it expects to exist; a miss must not fall back.
+
+    Given a Dockerfile to fall back *to*, since without one there is nothing the
+    fallback this forbids could have built. Typed as an environment failure: a
+    registry the host cannot reach is not a broken run.
+    """
+    client = _FakeDockerClient(_FakeContainer())
+    client.images.pull_error = RuntimeError("manifest unknown")
+    env = DockerEnvironment(
+        {
+            "agent_image": "registry.example/vulnerability-localization:v2",
+            "agent_dockerfile": str(_dockerfile(tmp_path)),
+        },
+        client=client,
+    )
+    with pytest.raises(EnvironmentUnavailableError) as excinfo:
+        env.setup(_task())
+    assert str(excinfo.value) == (
+        "Failed to pull 'registry.example/vulnerability-localization:v2': "
+        "manifest unknown"
+    )
+    assert client.images.build_kwargs is None
 
 
 def test_a_failed_build_is_reported_with_the_dockerfile(tmp_path: Path) -> None:
+    """Also an environment failure, so a broken recipe is not logged as a broken run."""
     dockerfile = _dockerfile(tmp_path)
-    env, client, _ = _make_env(agent_dockerfile=str(dockerfile))
+    client = _FakeDockerClient(_FakeContainer())
     client.images.build_error = RuntimeError("bad instruction")
-    with pytest.raises(
-        RuntimeError, match=f"Failed to build 'img:latest' from {dockerfile}"
-    ):
+    env = DockerEnvironment({"agent_dockerfile": str(dockerfile)}, client=client)
+    with pytest.raises(EnvironmentUnavailableError) as excinfo:
         env.setup(_task())
+    assert str(excinfo.value) == (
+        f"Failed to build '{derived_image_tag(dockerfile)}' from {dockerfile}: "
+        "bad instruction"
+    )
 
 
 def test_a_missing_dockerfile_fails_at_construction(tmp_path: Path) -> None:
@@ -595,8 +898,10 @@ def test_a_non_string_dockerfile_is_rejected() -> None:
 def test_a_benchmarks_root_dockerfile_path_is_expanded(tmp_path: Path) -> None:
     """Config authors write `$BENCHMARKS_ROOT/` here as they do for `!from`."""
     dockerfile = _dockerfile(tmp_path)
+    client = _FakeDockerClient(_FakeContainer())
     with patch("faith._internal.io.resources.benchmarks_root", return_value=tmp_path):
-        env, client, _ = _make_env(agent_dockerfile="$BENCHMARKS_ROOT/Dockerfile")
-        env.setup(_task())
+        DockerEnvironment(
+            {"agent_dockerfile": "$BENCHMARKS_ROOT/Dockerfile"}, client=client
+        ).setup(_task())
     assert client.images.build_kwargs is not None
     assert client.images.build_kwargs["path"] == str(dockerfile.parent)

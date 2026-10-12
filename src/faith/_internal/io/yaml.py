@@ -33,13 +33,18 @@ def _parse_config_path(path: str) -> tuple[Path, list[int | str]]:
     return resolve_resource_path(file_path), indices
 
 
-def _deep_merge_config(
+def deep_merge_config(
     source: dict[Any, Any], overrides: dict[Any, Any]
 ) -> dict[Any, Any]:
-    """Recursively merge two dictionaries, with `overrides` taking precedence."""
+    """Recursively merge two dictionaries, with `overrides` taking precedence.
+
+    Writes into `source` and returns it, nested dicts included, so a caller that
+    must not disturb its input passes a `deepcopy`: a shallow copy still shares
+    the nested dicts this merges into.
+    """
     for key, value in overrides.items():
         if isinstance(value, dict) and key in source and isinstance(source[key], dict):
-            source[key] = _deep_merge_config(source[key], value)
+            source[key] = deep_merge_config(source[key], value)
         else:
             source[key] = value
     return source
@@ -83,7 +88,7 @@ def _include_handler(loader: "_YamlIncludeLoader", node: yaml.Node) -> dict:
         overrides = loader.construct_mapping(node, deep=True)
         for key, value in overrides.items():
             imported_config = _import_config(loader.base_path, str(key))
-            merged_map.update(_deep_merge_config(imported_config, value))
+            merged_map.update(deep_merge_config(imported_config, value))
         return merged_map
 
     raise yaml.YAMLError(f"Unsupported node type for !from: {type(node)}")

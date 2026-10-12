@@ -104,6 +104,9 @@ def _probe_file_name() -> str:
 class KubernetesEnvironment(WorkspaceLayout, Environment):
     """Runs agent tools inside a Kubernetes Agent Sandbox.
 
+    The workspace root is always ``DEFAULT_WORKSPACE_DIR``: every command the
+    agent runs carries a ``cd`` there.
+
     Constructed from the ``environment.config`` sub-dict of a benchmark.yaml:
 
     - ``warmpool`` (required): SandboxWarmPool to claim from. Cluster-specific,
@@ -120,8 +123,6 @@ class KubernetesEnvironment(WorkspaceLayout, Environment):
       namespace holding the router service a ``tunnel`` port-forwards to. Ignored
       in ``in_cluster`` mode. A cluster whose router sits elsewhere fails every
       claim with ``NotFound`` until this names it.
-    - ``mount_path`` (default ``/workspace``): the workspace root, which is both
-      the upload destination and the root the file guard resolves against.
     - ``working_subdir`` (default ``""``): injected by `build_environment`, not
       authored here. Setup extraction still runs at the root, since the
       subdirectory only exists once the data is extracted.
@@ -143,14 +144,16 @@ class KubernetesEnvironment(WorkspaceLayout, Environment):
       A missing contract or failed permission check is a setup error.
 
     Unlike DockerEnvironment, which starts the container it executes against, this
-    claims a pod from a cluster-side warm pool FAITH does not own, so the sandbox's
-    runtime must meet three requirements:
+    claims a pod from a cluster-side warm pool FAITH does not own. Only two of the
+    SDK's calls reach the pod at all -- ``commands.run`` and ``files.write``, the
+    rest of the lifecycle going to the Kubernetes API -- so the whole requirement
+    on the sandbox's runtime is:
 
     - ``commands.run`` must evaluate its argument as a **shell** command. FAITH
       sends ``cd <dir> && timeout ... bash -c ...``, which a runtime that execs
       directly reads as a request for a binary named ``cd``. Upstream's
       ``examples/python-runtime-sandbox`` does exactly that.
-    - ``files.write`` must resolve against the configured ``mount_path``, since an
+    - ``files.write`` must resolve against ``DEFAULT_WORKSPACE_DIR``, since an
       uploaded archive is named by a command that runs there.
     - The binaries FAITH runs on its own behalf -- ``bash``, coreutils ``timeout``,
       ``tar``, ``unzip``, ``rm`` -- must be executable by the user the runtime execs
@@ -180,10 +183,7 @@ class KubernetesEnvironment(WorkspaceLayout, Environment):
                 f"KubernetesEnvironment 'connection' is {connection!r}; must be "
                 f"one of {', '.join(ConnectionMode)}."
             ) from e
-        super().__init__(
-            config.get("mount_path") or DEFAULT_WORKSPACE_DIR,
-            config.get("working_subdir") or "",
-        )
+        super().__init__(DEFAULT_WORKSPACE_DIR, config.get("working_subdir") or "")
         # The SDK counts this down in whole seconds and rejects nothing, so a
         # float would silently truncate and a 0 would fail every claim.
         timeout = config.get("ready_timeout_seconds")

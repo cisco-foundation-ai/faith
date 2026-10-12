@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+import dataclasses
 import re
 import shutil
 import subprocess
@@ -14,10 +15,13 @@ import pytest
 from openai import BadRequestError, InternalServerError
 
 from faith._internal.io.json import read_json_file, write_as_json
+from faith._internal.io.store import StoreContext
 from faith._internal.iter.transform import DevNullReducer
 from faith._internal.multiprocessing.gpu_scheduling import JobOutcome
 from faith._types.benchmark.sample_ratio import SampleRatio
-from faith._types.model.engine import EngineParams, ModelEngine
+from faith._types.config.agentic import AgenticEnvironmentConfig
+from faith._types.config.benchmark import BenchmarkConfig
+from faith._types.model.engine import REDACTED, EngineParams, ModelEngine
 from faith._types.model.generation import GenerationMode, GenParams
 from faith._types.model.prompt import PromptFormatter
 from faith._types.model.spec import ModelSpec
@@ -631,6 +635,110 @@ def test_warn_ignored_agentic_nshot_silent_without_agentic(
     with caplog.at_level("WARNING"):
         _warn_ignored_agentic_nshot(_exp_params([bench]))
     assert not [r for r in caplog.records if "for agentic benchmarks" in r.message]
+
+
+def test_build_experiments_resolves_a_deployments_environment(tmp_path: Path) -> None:
+    """The override reaches the experiment's config, the only record of where a run ran.
+
+    Asserted on the built experiment rather than on the loader, since the summary
+    is written from `experiment.benchmark_config` after the merge has happened.
+    """
+    bench = _write_benchmark(tmp_path / "agentic", agentic=True)
+    deployment = AgenticEnvironmentConfig(
+        type="kubernetes", config={"warmpool": "vulnerability-localization-pool"}
+    )
+    [experiment] = list(
+        _build_experiments(
+            [bench],
+            dataclasses.replace(_exp_params([bench]), environment_config=deployment),
+            PromptFormatter.BASE,
+            _model_spec(),
+            Mock(sub_store=Mock(return_value=Mock())),
+        )
+    )
+    agentic_config = experiment.benchmark_config.agentic_config
+    assert agentic_config is not None
+    assert agentic_config.environment == deployment
+
+
+@pytest.mark.parametrize(
+    ("variables", "expected"),
+    [
+        ({"API_KEY": "fake-run-key", "LANG": "C"}, {"API_KEY": REDACTED, "LANG": "C"}),
+        (["API_KEY=fake-run-key", "LANG=C"], [f"API_KEY={REDACTED}", "LANG=C"]),
+    ],
+    ids=["mapping", "docker-list"],
+)
+def test_run_record_redacts_environment_secrets_but_execution_receives_them(
+    tmp_path: Path,
+    caplog: pytest.LogCaptureFixture,
+    variables: dict[str, str] | list[str],
+    expected: dict[str, str] | list[str],
+) -> None:
+    """Exercise the real config merge and experiment.json writer, without a model call."""
+    bench = _write_benchmark(tmp_path / "agentic", agentic=True)
+    deployment = AgenticEnvironmentConfig(
+        type="docker",
+        config={
+            "environment": variables,
+            "nested": [{"AUTH_TOKEN": "fake-run-token"}],
+        },
+    )
+    runner = Mock()
+    with (
+        StoreContext.from_path(str(tmp_path / "results")) as store,
+        patch("faith.cli.subcmd.query._check_tool_calling"),
+        patch(
+            "faith.cli.subcmd.query.create_model",
+            return_value=Mock(supported_formats={PromptFormatter.CHAT}),
+        ),
+        patch("faith.cli.subcmd.query.trial_runner_for", return_value=runner),
+    ):
+        [record_path] = _run_single_model(
+            model_spec=_model_spec(),
+            exp_params=dataclasses.replace(
+                _pinned_exp_params([bench]), environment_config=deployment
+            ),
+            sampling_params=DataSamplingParams(),
+            record_params=RecordHandlingParams(ReplacementStrategy.NEVER),
+            datastore=store,
+        )
+    assert isinstance(record_path, Path)
+    run_record = read_json_file(record_path)
+    assert "fake-run-key" not in str(run_record) + caplog.text
+    assert "fake-run-token" not in str(run_record) + caplog.text
+    recorded = run_record["benchmark_config"]
+    env = recorded["agentic_config"]["environment"]
+    assert env["config"]["environment"] == expected
+    assert env["config"]["nested"] == [{"AUTH_TOKEN": REDACTED}]
+    # The eval command still needs to be able to decode a recorded config.
+    assert BenchmarkConfig.from_dict(recorded).agentic_config is not None
+    benchmark = runner.run_trial.call_args.args[0]
+    assert benchmark.agentic_config.environment.config["environment"] == variables
+
+
+def test_run_experiment_queries_rejects_an_environment_config_without_agentic(
+    tmp_path: Path,
+) -> None:
+    """A QA-only run has nothing to apply the flag to, so it must not be ignored."""
+    bench = _write_benchmark(tmp_path / "qa", agentic=False)
+    exp_params = dataclasses.replace(
+        _pinned_exp_params([bench]),
+        environment_config=AgenticEnvironmentConfig(type="kubernetes"),
+    )
+    with pytest.raises(
+        ValueError, match="--environment-config only applies to agentic benchmarks"
+    ):
+        list(
+            run_experiment_queries(
+                model_specs=[_model_spec()],
+                exp_params=exp_params,
+                sampling_params=DataSamplingParams(),
+                record_params=RecordHandlingParams(ReplacementStrategy.NEVER),
+                datastore=Mock(),
+                parallelize_models=False,
+            )
+        )
 
 
 def test_requested_benchmark_paths_dedups_overlapping_roots(tmp_path: Path) -> None:

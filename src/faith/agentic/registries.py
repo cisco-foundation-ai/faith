@@ -94,7 +94,7 @@ class AgenticEnvironmentType(_ConfiguredRegistry):
     """Registry of Environment implementations, keyed by short name.
 
     Each is constructed as ``EnvClass(config)`` from the environment section's
-    ``config`` sub-dict (image, limits, mount path).
+    ``config`` sub-dict (image, limits, timeouts).
     """
 
     DOCKER = (DockerEnvironment,)  # Run the agent in an isolated Docker container.

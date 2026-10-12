@@ -58,6 +58,7 @@ def _cli_query(args: argparse.Namespace, datastore: Store) -> Iterator[Path]:
     # sub-command has different dependencies and importing them as part of the
     # main CLI script makes autocompletion slow.
     # pylint: disable=import-outside-toplevel
+    from faith.benchmark.config import load_environment_config
     from faith.cli.subcmd.query import run_experiment_queries
     from faith.record_pipelines.params import RecordHandlingParams
 
@@ -184,6 +185,11 @@ def _cli_query(args: argparse.Namespace, datastore: Store) -> Iterator[Path]:
             n_shot=args.n_shot,
             num_trials=args.num_trials,
             initial_seed=args.seed,
+            environment_config=(
+                load_environment_config(args.environment_config)
+                if args.environment_config is not None
+                else None
+            ),
         ),
         DataSamplingParams(
             sample_size=args.sample_size,
@@ -257,6 +263,12 @@ def _add_experiment_args(parser: argparse.ArgumentParser) -> None:
         type=int,
         default=None,
         help="Sample size for the benchmark. If not supplied, no sampling occurs. [Default: None]",
+    )
+    group.add_argument(
+        "--environment-config",
+        type=Path,
+        default=None,
+        help="Path to a YAML file naming the environment an agentic benchmark's agents run in, overriding each benchmark's own portable default. One file per run, since a run happens in one place. Rejected for a non-agentic benchmark. [Default: None]",
     )
 
 

@@ -12,11 +12,15 @@ from faith._internal.algo.hash import dict_sha256
 from faith._internal.io.store import Store
 from faith._types.benchmark.sample_ratio import SampleRatio
 from faith._types.benchmark.spec import BenchmarkSpec
+from faith._types.config.agentic import AgenticEnvironmentConfig
 from faith._types.config.benchmark import BenchmarkConfig
 from faith._types.model.generation import GenerationMode, GenParams
 from faith._types.model.prompt import PromptFormatter
 from faith.benchmark.benchmark import Benchmark
-from faith.benchmark.config import load_config_from_path
+from faith.benchmark.config import (
+    load_config_from_path,
+    resolve_deployment_environment,
+)
 from faith.benchmark.load import load_benchmark
 
 
@@ -41,6 +45,7 @@ class BenchmarkExperiment:
         root_datastore: Store,
         num_trials: int,
         initial_seed: int,
+        environment_config: AgenticEnvironmentConfig | None = None,
         **kwargs: Any,
     ):
         """Initialize a benchmark experiment with the given experiment parameters."""
@@ -52,8 +57,13 @@ class BenchmarkExperiment:
             self._benchmark_dir.exists() and self._benchmark_dir.is_dir()
         ), f"Benchmark path '{self._benchmark_dir}' is not an existing directory."
 
-        # State that specifies and configures the benchmark.
-        self._benchmark_config = load_config_from_path(self._benchmark_dir)
+        # State that specifies and configures the benchmark. The environment
+        # override is merged in here, before `benchmark_config` is recorded, so the
+        # experiment's summary names the environment the run actually used.
+        authored_config = load_config_from_path(self._benchmark_dir)
+        self._benchmark_config = resolve_deployment_environment(
+            authored_config, environment_config
+        )
         benchmark_name = self._benchmark_config.metadata.name
         assert benchmark_name, "Benchmark config missing field `metadata.name`."
         self._benchmark_spec = BenchmarkSpec(
@@ -78,8 +88,13 @@ class BenchmarkExperiment:
             / f"gen_params_{dict_sha256(self._gen_params.to_dict())[-16:]}"
         )
         # An agentic config shapes a run the way gen params do, so it forks the path.
-        if (agentic_config := self._benchmark_config.agentic_config) is not None:
-            experiment_path /= f"agentic_{dict_sha256(agentic_config.to_dict())[-16:]}"
+        # The authored config is hashed, not the resolved one: where a run was
+        # deployed does not change its answers.
+        if authored_config.agentic_config is not None:
+            experiment_path /= (
+                "agentic_"
+                + dict_sha256(authored_config.agentic_config.to_identity_dict())[-16:]
+            )
         self._datastore = root_datastore.sub_store(experiment_path)
 
         # State for regulating the experiment's trials.

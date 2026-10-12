@@ -1,0 +1,12 @@
+# Copyright 2025 Cisco Systems, Inc. and its affiliates
+#
+# SPDX-License-Identifier: Apache-2.0
+
+---
+# A deployment naming an image to pull *and* a Dockerfile to build, which is the
+# author-named build the derived tag removes. Rejected as an authored file, unlike
+# the same pair arriving in a merged config, where it means "pull mine instead".
+type: docker
+config:
+  agent_dockerfile: /tmp/Dockerfile
+  agent_image: registry.example/vulnerability-localization:v3

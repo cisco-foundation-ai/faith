@@ -24,6 +24,7 @@ from faith.agentic.environments._archive import (
     tar_directory,
     workspace_operand,
 )
+from faith.agentic.environments._build import derived_image_tag
 from faith.agentic.environments._command import (
     bounded_argv,
     command_timeout,
@@ -85,13 +86,16 @@ class DockerEnvironment(WorkspaceLayout, Environment):
     so the agent cannot reach the host's copy. The workspace is writable unless
     the benchmark requires ``read_only_workspace``.
 
-    Constructed from the ``environment.config`` sub-dict of a benchmark.yaml:
+    The workspace root and data destination is always ``DEFAULT_WORKSPACE_DIR``.
 
-    - ``agent_image`` (required): image to run the agent in.
-    - ``agent_dockerfile`` (optional): a Dockerfile to build ``agent_image`` from
-      when that tag is not already present locally, so a benchmark ships with no
-      setup step. Usually ``$BENCHMARKS_ROOT/<benchmark>/Dockerfile``.
-    - ``mount_path`` (default ``/workspace``): workspace root and data destination.
+    Constructed from the ``environment.config`` sub-dict of a benchmark.yaml.
+    Exactly one of the first two keys names the agent's image; setting both is
+    rejected when the config is parsed.
+
+    - ``agent_dockerfile``: a Dockerfile to build the agent image from, tagged
+      ``faith-build/<context>:<digest of the build context>``. Usually
+      ``$BENCHMARKS_ROOT/<benchmark>/Dockerfile``.
+    - ``agent_image``: an image to pull, never built locally.
     - ``working_subdir`` (default ``""``): injected by `build_environment`, not
       authored here. Setup still targets the root, since the subdirectory only
       exists once the data is extracted.
@@ -126,14 +130,28 @@ class DockerEnvironment(WorkspaceLayout, Environment):
         if client is None:
             _require_sdk()
         image = config.get("agent_image")
-        if not image:
-            raise ValueError("DockerEnvironment config requires 'agent_image'")
-        self._image: str = str(image)
-        self._dockerfile = _resolve_dockerfile(config.get("agent_dockerfile"))
-        super().__init__(
-            config.get("mount_path") or DEFAULT_WORKSPACE_DIR,
-            config.get("working_subdir") or "",
-        )
+        if image is not None and not isinstance(image, str):
+            raise ValueError(
+                f"DockerEnvironment config 'agent_image' must be a string, got "
+                f"{type(image).__name__}: {image!r}"
+            )
+        # Resolved even when an image is named and the Dockerfile will go unused, so a
+        # typo'd path still fails before a run starts rather than passing unnoticed.
+        dockerfile = _resolve_dockerfile(config.get("agent_dockerfile"))
+        # A merged config may carry both keys; the deployment's `agent_image` wins,
+        # since it names an image it expects to already exist.
+        if image:
+            self._image = image
+        elif dockerfile is not None:
+            self._image = derived_image_tag(dockerfile)
+        else:
+            raise ValueError(
+                "DockerEnvironment config requires 'agent_dockerfile' (to build the "
+                "agent image) or 'agent_image' (to pull one)"
+            )
+        self._dockerfile = dockerfile
+        self._builds_own_image = not image
+        super().__init__(DEFAULT_WORKSPACE_DIR, config.get("working_subdir") or "")
         self._environment = config.get("environment") or {}
         self._network = config.get("network") or "none"
         self._memory_limit = config.get("memory_limit") or None
@@ -161,11 +179,16 @@ class DockerEnvironment(WorkspaceLayout, Environment):
         """Start the container for a task and copy its data into the workspace.
 
         Raises:
-            EnvironmentUnavailableError: If the daemon could not start a container.
+            EnvironmentUnavailableError: If the daemon could not supply an image or
+                start a container.
             RuntimeError: If a container started but could not be prepared.
         """
-        image = _image_override(task.environment_config) or self._image
-        self._ensure_image(image)
+        # A per-task image names one to pull, as the config key of that name does.
+        override = _image_override(task.environment_config)
+        image = override or self._image
+        self._build_or_pull_image(
+            image, build=self._builds_own_image and override is None
+        )
         instance_id = uuid.uuid4().hex
         container_name = f"faith-{instance_id}"
         kwargs: dict[str, Any] = {
@@ -280,23 +303,45 @@ class DockerEnvironment(WorkspaceLayout, Environment):
         self._check_workspace(sealed=True)
         self._sealed = True
 
-    def _ensure_image(self, image: str) -> None:
-        """Build `agent_dockerfile` into `image` if that tag is absent locally.
+    def _build_or_pull_image(self, image: str, build: bool) -> None:
+        """Make `image` present locally, by build or by pull.
 
-        Checked per image rather than once, since a task may override the tag.
+        A present tag is used as-is: a built tag carries the digest of what built
+        it, so an edited Dockerfile asks for a tag that has never existed. Checked
+        per image rather than once, since a task may override the tag.
+
+        Raises:
+            EnvironmentUnavailableError: If the image could not be built or pulled.
         """
-        if self._dockerfile is None or self._get_client().images.list(name=image):
+        if self._get_client().images.list(name=image):
             return
-        logger.info("Image '%s' not found locally; building it.", image)
+        if not build or self._dockerfile is None:
+            logger.info("Image '%s' not found locally; pulling it.", image)
+            try:
+                self._get_client().images.pull(image)
+            except Exception as e:
+                raise EnvironmentUnavailableError(
+                    f"Failed to pull '{image}': {e}"
+                ) from e
+            return
+        logger.info(
+            "Image '%s' not found locally; building it from %s.",
+            image,
+            self._dockerfile,
+        )
         try:
             self._get_client().images.build(
                 path=str(self._dockerfile.parent),
                 dockerfile=self._dockerfile.name,
                 tag=image,
                 rm=True,
+                # An edit leaves the previous image behind; the label is how those
+                # are found again (`docker image prune -a --filter
+                # label=faith.managed=true`).
+                labels={"faith.managed": "true"},
             )
         except Exception as e:
-            raise RuntimeError(
+            raise EnvironmentUnavailableError(
                 f"Failed to build '{image}' from {self._dockerfile}: {e}"
             ) from e
 

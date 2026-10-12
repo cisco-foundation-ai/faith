@@ -1,0 +1,11 @@
+# Copyright 2025 Cisco Systems, Inc. and its affiliates
+#
+# SPDX-License-Identifier: Apache-2.0
+
+---
+# A deployment that spells the type the way the registry reads it -- case
+# -insensitively -- while only tightening a limit. Nothing about the benchmark's
+# environment should move except that limit.
+type: Docker
+config:
+  memory_limit: 16g
