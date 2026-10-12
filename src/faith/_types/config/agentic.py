@@ -11,14 +11,19 @@ benchmark.yaml that configure that flow.
 """
 
 import posixpath
-from dataclasses import dataclass, field
+from copy import deepcopy
+from dataclasses import dataclass, field, fields, replace
 from typing import Any
 
 from dataclasses_json import DataClassJsonMixin
 from dataclasses_json import config as dc_config
 
+from faith._internal.io.yaml import deep_merge_config
+from faith._types.model.engine import REDACTED, is_secret_name
+from faith.agentic import registries
 from faith.agentic.core import DEFAULT_WORKSPACE_DIR
 from faith.agentic.core.react_loop import validate_agent_limits
+from faith.agentic.environments.kubernetes import ConnectionMode
 from faith.agentic.registries import (
     validate_read_only_workspace,
     validate_tool_capabilities,
@@ -29,6 +34,27 @@ def _read_only_boolean(value: Any) -> bool:
     """Do not let config decoding turn the string 'false' into True."""
     if not isinstance(value, bool):
         raise ValueError("read_only_workspace must be a boolean")
+    return value
+
+
+def _redact_environment_secrets(value: Any) -> Any:
+    """Copy config, masking credential-named keys and NAME=value assignments.
+
+    Uses the model-config naming policy, not value inspection: a secret with an
+    innocuous name is not detected. Runtime config is never mutated or decoded
+    from this representation.
+    """
+    if isinstance(value, dict):
+        return {
+            key: REDACTED if is_secret_name(key) else _redact_environment_secrets(item)
+            for key, item in value.items()
+        }
+    if isinstance(value, (list, tuple)):
+        return [_redact_environment_secrets(item) for item in value]
+    if isinstance(value, str):
+        name, separator, _ = value.partition("=")
+        if separator and is_secret_name(name):
+            return f"{name}={REDACTED}"
     return value
 
 
@@ -55,13 +81,132 @@ class AgenticEnvironmentConfig(DataClassJsonMixin):
     Attributes:
         type: Registered short name of the Environment, resolved through
             AgenticEnvironmentType — not an import path.
-        config: Environment-specific configuration (image, limits, mount path).
+        config: Environment-specific configuration (image, limits, timeouts).
     """
 
     type: str
     config: dict[str, Any] = field(
-        default_factory=dict, metadata=dc_config(exclude=lambda x: not x)
+        default_factory=dict,
+        repr=False,
+        metadata=dc_config(
+            exclude=lambda x: not x, encoder=_redact_environment_secrets
+        ),
     )
+
+    def __post_init__(self) -> None:
+        # A bare `config:` key in yaml decodes to None, not to the field default,
+        # as a bare `tools:` does in AgenticConfig. Normalized here so neither the
+        # merge nor an environment's __init__ has to defend against it.
+        if self.config is None:
+            object.__setattr__(self, "config", {})
+
+
+def validate_authored_environment(config: dict[str, Any], source: str) -> None:
+    """Reject an authored environment config a run would only fail on much later.
+
+    Both checks are here rather than in the environment's ``__init__`` because that
+    runs per trial, inside the run loop: a sweep over several benchmarks bills the
+    earlier ones in full before reaching the invalid one, while every other config
+    error costs nothing.
+
+    Checked per authored file, not on a merged config: a deployment naming an image
+    over a benchmark that builds one is the supported way to say "pull this instead",
+    and that merge legitimately holds both keys.
+
+    Args:
+        config: An environment section's `config` sub-dict as it was written.
+        source: What to name in the error — the file or section the author wrote.
+
+    Raises:
+        ValueError: If both image keys are set, or the sandbox connection mode is
+            not a known one.
+    """
+    # `agent_dockerfile` means "build it, and FAITH names what it builds";
+    # `agent_image` means "pull the one someone else published". Together they ask
+    # for a local build under a name the author chose, which is how a build ends up
+    # overwriting a tag that is not theirs, and how a mutable tag ends up standing
+    # in for the recipe that produced it. Neither is undoable once the image exists.
+    if config.get("agent_dockerfile") and config.get("agent_image"):
+        raise ValueError(
+            f"{source} sets both 'agent_dockerfile' and 'agent_image'. Set only "
+            f"'agent_dockerfile' to build the agent image (FAITH names what it "
+            f"builds, from the build context's digest), or only 'agent_image' to "
+            f"pull a published one."
+        )
+    # Checked against the names rather than by constructing the environment, which
+    # would need the optional k8s extra installed just to read a config file.
+    connection = config.get("connection")
+    if connection is not None:
+        try:
+            ConnectionMode(connection)
+        except ValueError as e:
+            raise ValueError(
+                f"{source} sets 'connection' to {connection!r}; must be one of "
+                f"{', '.join(ConnectionMode)}."
+            ) from e
+
+
+def resolve_environment(
+    benchmark: AgenticEnvironmentConfig,
+    deployment: AgenticEnvironmentConfig | None,
+) -> AgenticEnvironmentConfig:
+    """Merge a deployment's environment selection over a benchmark's default.
+
+    A benchmark's environment section is a portable default — the one that works
+    on a laptop — so a deployment that cannot run it replaces it.
+
+    Named fields merge, the deployment winning wherever it sets one. The `config`
+    dict merges only when the `type` matches; a type switch replaces it, since its
+    keys name things the new backend cannot read (a cluster has no use for a
+    Dockerfile). Every named field is merged generically, so adding one needs no
+    change here.
+
+    The `config` merge recurses, so a deployment adding one container env var
+    keeps the benchmark's rest: a shallow merge would drop the siblings it never
+    mentioned and report nothing. The cost is that a nested dict can only be added
+    to, not cleared — `null` already means "unset, use the default" elsewhere in
+    these yamls, so spending it here as "delete" would collide.
+
+    Types are compared as registry members, not as strings: the registry resolves
+    them case-insensitively, so `Docker` and `docker` name one backend and must
+    merge rather than read as a switch that discards the benchmark's config. The
+    resolved type is stored canonically, so a run's record names its environment
+    the same way however the deployment spelled it.
+
+    Every key merges the same way, this one included: a deployment naming an
+    `agent_image` over a benchmark that ships an `agent_dockerfile` leaves both in
+    the merged config, and the environment reads that pair as "pull the deployment's
+    image". Nothing key-specific happens here, because the two keys are mutually
+    exclusive in an authored file — which is what makes the merged combination
+    unambiguous rather than something this function has to arbitrate.
+
+    Args:
+        benchmark: The environment section the benchmark.yaml declared.
+        deployment: A deployment's override, or None to use the benchmark's as-is.
+
+    Returns:
+        The environment section the run should use.
+    """
+    if deployment is None:
+        return benchmark
+    overrides = {
+        f.name: value
+        for f in fields(deployment)
+        if f.name != "config" and (value := getattr(deployment, f.name)) is not None
+    }
+    if "type" in overrides:
+        # Resolved through the module rather than an imported name so a test that
+        # substitutes the registry is seen here too, as it is in `registries`.
+        env_type = registries.AgenticEnvironmentType(overrides["type"])
+        overrides["type"] = str(env_type)
+        same_type = env_type is registries.AgenticEnvironmentType(benchmark.type)
+    else:
+        same_type = True
+    if same_type:
+        config = deep_merge_config(deepcopy(benchmark.config), deployment.config)
+    else:
+        config = deployment.config
+    return replace(benchmark, **overrides, config=config)
 
 
 @dataclass(frozen=True)
@@ -183,6 +328,18 @@ class AgenticConfig(DataClassJsonMixin):
         default=False,
         metadata=dc_config(decoder=_read_only_boolean, exclude=lambda x: x is False),
     )
+
+    def to_identity_dict(self) -> dict[str, Any]:
+        """Unredacted config for hashing only; never persist or log this dict.
+
+        Keep the existing identity shape and values, including authored secrets.
+        Redacting the record must not invalidate old checkpoints or collapse
+        distinct authored configs onto one cache path.
+        """
+        identity: dict[str, Any] = self.to_dict()
+        if self.environment.config:
+            identity["environment"]["config"] = deepcopy(self.environment.config)
+        return identity
 
     def __post_init__(self) -> None:
         """Reject a working subdir outside the workspace, or an unservable tool."""

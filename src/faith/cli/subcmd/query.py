@@ -160,6 +160,7 @@ def _build_experiments(
                 datastore,
                 exp_params.num_trials,
                 initial_seed=exp_params.initial_seed,
+                environment_config=exp_params.environment_config,
             )
 
 
@@ -299,6 +300,8 @@ def _run_single_model(
                     "benchmark": experiment.benchmark_spec.to_dict(),
                     "model": model_spec.to_dict(),
                 },
+                # Environment serialization redacts credentials; execution uses
+                # the original config object, not this recorded representation.
                 "benchmark_config": experiment.benchmark_config.to_dict(),
                 "trial_records": {},
             }
@@ -346,6 +349,13 @@ def _check_agentic_compat(
     one hits an incompatibility.
     """
     if not _requests_agentic_benchmark(exp_params):
+        # The flag only selects where an agent runs, so a QA-only run has nothing
+        # to apply it to; accepting it silently would read as having been honored.
+        if exp_params.environment_config is not None:
+            raise ValueError(
+                "--environment-config only applies to agentic benchmarks, and none "
+                "of the requested benchmarks is agentic."
+            )
         return
 
     # Agentic runs stay single-process: their Docker/OpenAI clients aren't picklable

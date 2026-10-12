@@ -153,11 +153,12 @@ def test_build_task_loader_passes_its_config_and_the_working_dir() -> None:
     assert loader.received == ({"depth": 2}, "/workspace/repo")
 
 
-def test_build_environment_injects_the_working_subdir_into_its_config() -> None:
-    """The subdir reaches the environment through its config, alongside its own keys.
+def test_build_environment_injects_the_settings_it_does_not_own() -> None:
+    """Both reach the environment through its config, alongside its own keys.
 
-    `Environment` declares only a lifecycle, so the one path it needs arrives the
-    same way the rest of its settings do rather than as a constructor argument.
+    `Environment` declares only a lifecycle, so the settings it does not own arrive
+    the same way the rest do rather than as constructor arguments. The bound is
+    written unconditionally, since its default is a real value.
     """
     with patch("faith.agentic.orchestration.AgenticEnvironmentType", _FakeEnvType):
         env = build_environment(
@@ -166,6 +167,7 @@ def test_build_environment_injects_the_working_subdir_into_its_config() -> None:
                     type="docker", config={"image": "ubuntu:22.04"}
                 ),
                 working_subdir="repo",
+                limits=AgenticLimitsConfig(command_timeout_seconds=10),
             )
         )
     assert isinstance(env, _FakeEnvironment)
@@ -173,31 +175,34 @@ def test_build_environment_injects_the_working_subdir_into_its_config() -> None:
         "image": "ubuntu:22.04",
         "read_only_workspace": False,
         "working_subdir": "repo",
-        "command_timeout_seconds": 60,
+        "command_timeout_seconds": 10,
         "shutdown_after_seconds": None,
     }
 
 
-def test_an_environment_config_cannot_override_the_working_subdir() -> None:
-    """A stale `working_subdir` under `environment` loses to the top-level key.
+def test_an_environment_config_cannot_override_the_injected_settings() -> None:
+    """Stale copies under `environment` lose to the sections that own them.
 
     The duplication this replaces is exactly a benchmark carrying two answers, so
-    the authoritative one has to win rather than be silently shadowed.
+    the authoritative one has to win rather than be silently shadowed — and for the
+    bound, a copy left under `environment` is one a backend switch would drop.
     """
     with patch("faith.agentic.orchestration.AgenticEnvironmentType", _FakeEnvType):
         env = build_environment(
             _agentic_config(
                 environment=AgenticEnvironmentConfig(
-                    type="docker", config={"working_subdir": "stale"}
+                    type="docker",
+                    config={"working_subdir": "stale", "command_timeout_seconds": 999},
                 ),
                 working_subdir="repo",
+                limits=AgenticLimitsConfig(command_timeout_seconds=10),
             )
         )
     assert isinstance(env, _FakeEnvironment)
     assert env.config == {
         "working_subdir": "repo",
         "read_only_workspace": False,
-        "command_timeout_seconds": 60,
+        "command_timeout_seconds": 10,
         "shutdown_after_seconds": None,
     }
 

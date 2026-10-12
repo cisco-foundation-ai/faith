@@ -1,0 +1,8 @@
+# Copyright 2025 Cisco Systems, Inc. and its affiliates
+#
+# SPDX-License-Identifier: Apache-2.0
+
+---
+# A list, not a mapping: one run, one environment, so this is never right.
+- type: docker
+- type: kubernetes

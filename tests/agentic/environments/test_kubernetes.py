@@ -167,13 +167,14 @@ class _FakeSandboxClient:
         return self._sandbox
 
 
-def _in_workspace(command: str, workspace: str = "/workspace") -> str:
+def _in_workspace(command: str, cwd: str = "/workspace") -> str:
     """A command as the sandbox receives it: run from the workspace root.
 
     Spelled out once so the cases below still read as the command under test, and
-    a test that cares about the prefix itself names it literally.
+    the test that pins the prefix itself names it literally. `cwd` is only passed
+    where a `working_subdir` moves the agent's own commands off the root.
     """
-    return f"cd {workspace} && {command}"
+    return f"cd {cwd} && {command}"
 
 
 def _task(data_path: Path | None = None) -> Task:
@@ -373,24 +374,6 @@ def test_the_probe_is_removed_even_when_it_fails() -> None:
     assert sandbox.commands.probe_runs[-1] == _in_workspace("rm -f ./.faith-probe-1-0")
 
 
-def test_the_probe_is_checked_against_the_configured_workspace() -> None:
-    """The contract is "root at *this* workspace", not at a fixed path.
-
-    A configured `mount_path` moves both the write and the read, so a runtime is
-    checked against the root this environment was told to use.
-    """
-    env, _, sandbox = _make_env(mount_path="/app")
-    with patch(
-        "faith.agentic.environments.kubernetes._probe_file_name",
-        return_value=".faith-probe-1-0",
-    ):
-        env.setup(_task())
-    assert sandbox.commands.probe_runs == [
-        _in_workspace("timeout -k 5 60 bash -c 'cat ./.faith-probe-1-0'", "/app"),
-        _in_workspace("rm -f ./.faith-probe-1-0", "/app"),
-    ]
-
-
 def test_the_probe_reads_from_the_root_it_wrote_to_under_a_working_subdir() -> None:
     """`files.write` writes by basename, so the probe file is at the root, not the subdir.
 
@@ -420,14 +403,13 @@ def test_probe_names_are_unique_per_process_and_per_setup() -> None:
     assert all(name.startswith(f".faith-probe-{os.getpid()}-") for name in probed)
 
 
-@pytest.mark.parametrize(
-    ("config", "expected_workspace"),
-    [({}, "/workspace"), ({"mount_path": "/app"}, "/app")],
-    ids=["default", "configured_mount_path"],
-)
-def test_every_command_runs_from_the_workspace(
-    config: dict[str, Any], expected_workspace: str
-) -> None:
+def test_the_workspace_root_is_fixed_and_a_configured_mount_path_is_ignored() -> None:
+    """The path the prompt advertises, so a config must not be able to move it."""
+    env, _, _ = _make_env(mount_path="/app")
+    assert env.workspace_dir == "/workspace"
+
+
+def test_every_command_runs_from_the_workspace() -> None:
     """The sandbox API takes no working directory, so the command has to carry it.
 
     Its shell starts at `/` while `files.write` resolves against the workspace, so
@@ -436,18 +418,9 @@ def test_every_command_runs_from_the_workspace(
     staging tar is left where the agent sees it. DockerEnvironment gets the same
     thing from `exec_run`'s `workdir`.
     """
-    env, sandbox = _setup_env(**config)
+    env, sandbox = _setup_env()
     env.run_command("ls")
-    assert sandbox.commands.runs == [
-        _in_workspace("timeout -k 5 60 bash -c ls", expected_workspace)
-    ]
-
-
-def test_a_workspace_needing_quoting_is_quoted() -> None:
-    """The workspace is config, so it reaches the shell as one word regardless."""
-    env, sandbox = _setup_env(mount_path="/two words")
-    env.run_command("ls")
-    assert sandbox.commands.runs == ["cd '/two words' && timeout -k 5 60 bash -c ls"]
+    assert sandbox.commands.runs == ["cd /workspace && timeout -k 5 60 bash -c ls"]
 
 
 def test_a_working_subdir_moves_the_agents_commands_but_not_setup(
