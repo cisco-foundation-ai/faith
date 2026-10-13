@@ -17,6 +17,7 @@ without retagging another test run's defaults.
 import base64
 import json
 import os
+from contextlib import suppress
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -178,6 +179,7 @@ def _docker_client():
 
 @pytest.fixture(name="sidecar")
 def _sidecar(docker_client):
+    from docker.errors import NotFound
     from k8s_agent_sandbox.commands.command_executor import CommandExecutor
     from k8s_agent_sandbox.files.filesystem import Filesystem
     from k8s_agent_sandbox.trace_manager import trace
@@ -189,7 +191,6 @@ def _sidecar(docker_client):
             _AGENT_IMAGE,
             "sleep infinity",
             detach=True,
-            remove=True,
             network_mode="none",
             cap_drop=["ALL"],
             security_opt=["no-new-privileges"],
@@ -199,7 +200,6 @@ def _sidecar(docker_client):
         runtime = docker_client.containers.run(
             _RUNTIME_IMAGE,
             detach=True,
-            remove=True,
             pid_mode=f"container:{agent.id}",
             network_mode=f"container:{agent.id}",
             cap_drop=["ALL"],
@@ -220,7 +220,14 @@ def _sidecar(docker_client):
     finally:
         for container in (runtime, agent):
             if container is not None:
-                container.stop(timeout=1)
+                # Retain exited containers until teardown: auto-removal hides
+                # OOM/exit diagnostics and makes stop() raise a second error.
+                with suppress(NotFound):
+                    container.reload()
+                    if not container.attrs["State"]["Running"]:
+                        print(container.attrs["State"])
+                        print(container.logs(tail=50).decode(errors="replace"))
+                    container.remove(force=True)
         volume.remove()
 
 

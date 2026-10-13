@@ -7,10 +7,10 @@
 import logging
 from collections.abc import Iterable
 
-from faith._internal.iter.transform import IsoTransform
+from faith._internal.iter.transform import IsoTransform, Transform
 from faith._types.record.agent import AgentResult, StoppedReason
 from faith._types.record.model_response import GenerationError
-from faith._types.record.sample import SampleRecord
+from faith._types.record.sample import RecordStatus, SampleRecord
 from faith.agentic.core import ReActLoop, Task
 
 logger = logging.getLogger(__name__)
@@ -57,7 +57,7 @@ def _record_trajectory(record: SampleRecord, result: AgentResult) -> None:
 class AgentLoopRunner(IsoTransform[SampleRecord]):
     """Transform that runs the agent loop for each record and stores its trajectory.
 
-    The agentic analog of `model_querier`: muxed onto stale records only, it looks
+    The agentic analog of `model_querier`: applied to stale records only, it looks
     each record's task up by its benchmark sample index and writes the resulting
     AgentResult into `model_data.agent_trajectory`.
     """
@@ -71,9 +71,8 @@ class AgentLoopRunner(IsoTransform[SampleRecord]):
         for record in records:
             index = record.data.benchmark_sample_index
             task = self._tasks_by_index.get(index)
-            # This stage runs in a worker thread whose exceptions are not
-            # re-raised, so an unhandled one would silently drop the row from the
-            # trial log; an ERROR trajectory is retried on the next resume instead.
+            # Ordinary task failures remain visible and retryable. Process-level
+            # interruptions propagate; only fully yielded records are checkpointed.
             try:
                 if task is None:
                     raise KeyError(f"No task loaded for sample index {index}")
@@ -88,3 +87,29 @@ class AgentLoopRunner(IsoTransform[SampleRecord]):
                     ),
                 )
             yield record
+
+
+class AgenticExecutionTransform(
+    Transform[tuple[RecordStatus, SampleRecord], SampleRecord]
+):
+    """Pass fresh records through and run stale tasks without worker prefetch.
+
+    The downstream checkpoint must finish before the next task starts. A Mux
+    worker can run ahead of its consumer, even without a whole-stream sort, so
+    agentic execution stays on the consuming thread. QA keeps its existing Mux.
+    """
+
+    def __init__(self, loop: ReActLoop, tasks_by_index: dict[int, Task]):
+        self._runner = AgentLoopRunner(loop, tasks_by_index)
+
+    def __call__(
+        self, records: Iterable[tuple[RecordStatus, SampleRecord]]
+    ) -> Iterable[SampleRecord]:
+        """Yield one completed record at a time, in the selected task order."""
+        for status, record in records:
+            if status == RecordStatus.FRESH:
+                yield record
+            elif status == RecordStatus.STALE:
+                yield from self._runner([record])
+            else:
+                raise ValueError(f"Unknown agentic record status: {status}")

@@ -12,6 +12,37 @@ import {CombinedLayout} from '@site/src/components/StorageLayout';
 After running benchmarks, logs should be stored in long-term storage such as a
 GCP bucket.
 
+## Agentic task checkpoints
+
+Agentic trials atomically update their local `benchmark-log.json` after each
+completed task, before starting the next one. Each record includes the full
+trajectory, failure details when applicable, and its model-data hash. No new
+checkpoint format or command-line flag is required; QA persistence is unchanged.
+
+To resume, rerun against the same retained datastore and trial identity with a
+replacement strategy that permits reuse. Existing reconciliation rules still
+apply: non-failure trajectories can be reused, failures and missing results are
+retried, and an `ALWAYS` replacement strategy reruns all selected tasks. A task
+interrupted before its checkpoint commits runs again from the beginning; there
+is no mid-task or tool-call resume.
+
+During resume, checkpoints retain untouched records from the previous log,
+including later completed tasks. Only successful completion of a nonempty trial
+removes records outside the newly selected task set. An empty selection leaves
+the prior log unchanged. Checkpoint write errors stop the trial and propagate to
+the caller, leaving the previous valid checkpoint intact.
+
+:::warning
+These are **local** checkpoints, not per-task GCS uploads. They do not survive
+deletion of temporary pod or container storage. Use retained storage for recovery
+across pod replacement; remote sync behavior and credentials are unchanged.
+:::
+
+Each checkpoint rewrites the accumulated JSON log, so long trajectories increase
+write cost and memory use. Atomic replacement also needs temporary disk space
+for the new log alongside the previous one. Use one writer per trial log; this
+does not add coordination for concurrent runs targeting the same trial.
+
 ## Uploading results
 
 When you use a GCP URI (beginning with `gs://`) as the `--datastore-location`,
