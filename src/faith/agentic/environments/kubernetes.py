@@ -33,6 +33,7 @@ from faith.agentic.environments._command import (
     sdk_timeout,
     timeout_notice,
 )
+from faith.agentic.environments._kubernetes_transport import configure_http_transport
 from faith.agentic.environments._read_only import read_only_required, workspace_check
 from faith.agentic.environments._workspace import WorkspaceLayout
 
@@ -118,7 +119,10 @@ class KubernetesEnvironment(WorkspaceLayout, Environment):
       ``in_cluster`` uses cluster DNS, which is what a FAITH pod needs; ``tunnel``
       shells out to ``kubectl port-forward`` for a run driven from outside. The
       SDK's own default is ``tunnel``, which needs a ``kubectl`` no sandbox image
-      carries.
+      carries. Tunnel requests use fresh HTTP connections to avoid stale socket
+      reuse through port-forward; the tunnel itself stays alive. Native clients
+      retain pooling. Injected SDK clients must agree with this mode; tunnel
+      clients must expose the supported connector's Requests session.
     - ``router_namespace`` (default ``agent-sandbox-system``, the SDK's own):
       namespace holding the router service a ``tunnel`` port-forwards to. Ignored
       in ``in_cluster`` mode. A cluster whose router sits elsewhere fails every
@@ -245,6 +249,15 @@ class KubernetesEnvironment(WorkspaceLayout, Environment):
         except Exception as e:
             raise EnvironmentUnavailableError(f"Failed to claim a sandbox: {e}") from e
         try:
+            # SDK 1.0.2 create_sandbox only contacts the Kubernetes API. Install
+            # the policy before even the probe's upload, also on recovery setup.
+            try:
+                configure_http_transport(
+                    self._sandbox, tunnel=self._connection is ConnectionMode.TUNNEL
+                )
+            except Exception:
+                self.teardown()
+                raise
             self._probe_runtime()
             if task.data_provider is not None:
                 task.data_provider()

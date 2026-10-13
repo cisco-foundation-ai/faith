@@ -654,13 +654,18 @@ def test_the_client_is_built_once_on_first_setup_with_an_explicit_connection(
     """
     mock_client_class = Mock(return_value=_FakeSandboxClient(_FakeSandbox()))
     connections = {"in_cluster": Mock(return_value="cfg"), "tunnel": Mock()}
-    with patch(
-        "faith.agentic.environments.kubernetes._require_sdk",
-        return_value=(
-            mock_client_class,
-            connections["in_cluster"],
-            connections["tunnel"],
+    with (
+        patch(
+            "faith.agentic.environments.kubernetes._require_sdk",
+            return_value=(
+                mock_client_class,
+                connections["in_cluster"],
+                connections["tunnel"],
+            ),
         ),
+        # This double only exercises client construction. Transport compatibility
+        # and before-first-request ordering use real SDK handles in their tests.
+        patch("faith.agentic.environments.kubernetes.configure_http_transport"),
     ):
         connections[expected_connection].return_value = "cfg"
         env = KubernetesEnvironment({"warmpool": "pool-a", **config})
