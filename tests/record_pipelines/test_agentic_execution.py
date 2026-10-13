@@ -91,8 +91,8 @@ def _errored_trajectory(task_id: str, details: str) -> AgentResult:
 def test_a_loop_that_raises_is_salvaged_as_an_errored_trajectory() -> None:
     """A raised exception is stored as an errored trajectory AND an error.
 
-    Without the error the salvaged row would be graded as a wrong answer; without
-    the trajectory the worker thread would drop the row from the log entirely.
+    Without the error the salvaged row would be graded as a wrong answer; the
+    trajectory preserves the failure details so resume can retry the task.
     """
     loop = Mock()
     loop.run.side_effect = RuntimeError("boom")
@@ -127,8 +127,7 @@ def test_a_record_with_no_loaded_task_is_salvaged_too() -> None:
 def test_every_record_is_yielded_even_when_one_fails() -> None:
     """A failed row still reaches the log, in input order, so resume can retry it.
 
-    The stage runs in a worker thread that does not re-raise, so a row lost here
-    is lost silently and the trial reports complete.
+    An ordinary failure must not prevent later tasks from executing.
     """
     tasks = {i: Task(id=f"t{i}", prompt="p", ground_truth=None) for i in range(3)}
     records = [_record(task, index=i) for i, task in tasks.items()]

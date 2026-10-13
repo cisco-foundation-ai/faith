@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+from collections.abc import Callable
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -105,6 +106,7 @@ def _run_agentic_trial(
     run_log: list[str] | None = None,
     raise_on: str | None = None,
     model: Mock | None = None,
+    before_run: Callable[[Task], None] | None = None,
 ) -> dict:
     """Run the agentic runner with orchestration builders stubbed to fakes.
 
@@ -112,13 +114,16 @@ def _run_agentic_trial(
     the runner passed through (e.g. the generation params). If `run_log` is
     given, the id of each task the loop actually runs is appended to it, so tests
     can assert which tasks were (re)run rather than passed through fresh. If
-    `raise_on` names a task id, the loop raises on that task.
+    `raise_on` names a task id, the loop raises on that task. `before_run` can
+    observe a checkpoint or interrupt execution at a deterministic task boundary.
     """
 
     # The loop yields a canned SUBMITTED result echoing the task id as the answer.
     def fake_run(task: Task) -> AgentResult:
         if run_log is not None:
             run_log.append(task.id)
+        if before_run is not None:
+            before_run(task)
         if task.id == raise_on:
             raise RuntimeError("environment blew up")
         return AgentResult(
@@ -334,8 +339,8 @@ def test_agentic_run_trial_records_a_failed_task_as_an_errored_trajectory(
 ) -> None:
     """A task whose loop raises still lands in the log, marked ERROR and retryable.
 
-    The stage runs in a worker thread that does not re-raise, so an unhandled
-    exception would silently drop the row and report the trial complete.
+    Ordinary task failures remain visible and retryable rather than aborting
+    the trial or silently dropping a row.
     """
     tasks = [
         Task(id="t1", prompt="do t1", ground_truth=["a"]),

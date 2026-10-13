@@ -24,7 +24,7 @@ from faith.benchmark.agentic import AgenticBenchmark
 from faith.benchmark.benchmark import Benchmark, QABenchmark
 from faith.experiment.params import DataSamplingParams
 from faith.model.base import BaseModel
-from faith.record_pipelines.agentic_execution import AgentLoopRunner
+from faith.record_pipelines.agentic_execution import AgenticExecutionTransform
 from faith.record_pipelines.agentic_formatting import TaskFormatter
 from faith.record_pipelines.formatting import SampleFormatter
 from faith.record_pipelines.params import RecordHandlingParams
@@ -33,7 +33,11 @@ from faith.record_pipelines.reconciliation import (
     agentic_record_reconciler,
     record_reconciler,
 )
-from faith.record_pipelines.trial_log import persist_records, read_trial_log
+from faith.record_pipelines.trial_log import (
+    checkpoint_records,
+    persist_records,
+    read_trial_log,
+)
 
 
 class TrialRunner(ABC):
@@ -111,9 +115,9 @@ class AgenticTrialRunner(TrialRunner):
 
     Loads the benchmark's tasks, formats each into a bare record, reconciles
     against any prior trial log, runs a fresh ReAct loop per stale task, and
-    writes the records to the trial log. Scoring is deferred to eval time
-    (AgentTrajectoryLogGrader), so the trial log holds raw trajectories, not
-    scores.
+    checkpoints each complete record before starting the next task. Scoring is
+    deferred to eval time (AgentTrajectoryLogGrader), so the trial log holds raw
+    trajectories, not scores.
     """
 
     def run_trial(
@@ -167,22 +171,16 @@ class AgenticTrialRunner(TrialRunner):
         tasks_by_index = dict(
             benchmark.load_tasks(sample_size=sampling_params.sample_size)
         )
+        existing_records = list(read_trial_log(trial_log_path))
         _ = (
             iter(tasks_by_index.items())
             >> TaskFormatter(benchmark.version, agentic_config.system_prompt)
             >> agentic_record_reconciler(
-                read_trial_log(trial_log_path),
+                existing_records,
                 record_params.replacement_strategy,
             )
-            >> MuxTransform(
-                {
-                    # Pass through fresh records unchanged.
-                    RecordStatus.FRESH: IdentityTransform[SampleRecord](),
-                    # For stale records, run the agent loop and store its trajectory.
-                    RecordStatus.STALE: AgentLoopRunner(loop, tasks_by_index),
-                }
-            )
-            >> persist_records(trial_log_path)
+            >> AgenticExecutionTransform(loop, tasks_by_index)
+            >> checkpoint_records(trial_log_path, existing_records)
             >> DevNullReducer[SampleRecord]()
         )
 
