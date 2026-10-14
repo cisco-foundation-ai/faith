@@ -381,7 +381,8 @@ class _Run:
             except EnvironmentUnavailableError as e:
                 self._stopped_reason = StoppedReason.ENVIRONMENT_ERROR
                 self._error = f"Environment setup failed: {e!s}"
-            except Exception as e:  # pylint: disable=broad-exception-caught
+            # pylint: disable=broad-exception-caught
+            except Exception as e:  # noqa: BLE001
                 # Setup runs inside the outer try so teardown still fires: a
                 # setup that fails partway (e.g. container started, later step
                 # raised) must be cleaned up, not leaked.
@@ -401,7 +402,8 @@ class _Run:
             self._stopped_reason = StoppedReason.ENVIRONMENT_ERROR
             self._error = str(e)
 
-        except Exception as e:  # pylint: disable=broad-exception-caught
+        # pylint: disable=broad-exception-caught
+        except Exception as e:  # noqa: BLE001
             self._stopped_reason = StoppedReason.ERROR
             self._error = f"Agent loop error: {type(e).__name__}: {e}"
 
@@ -412,7 +414,8 @@ class _Run:
             # not touch stopped_reason/error.
             try:
                 self._config.environment.teardown()
-            except Exception as e:  # pylint: disable=broad-exception-caught
+            # pylint: disable=broad-exception-caught
+            except Exception as e:  # noqa: BLE001
                 logger.warning("Environment teardown failed: %s", e)
 
         return self._build_result()
@@ -708,7 +711,8 @@ class _Run:
         try:
             self._config.environment.teardown()
             self._config.environment.setup(self._task)
-        except Exception as e:  # pylint: disable=broad-exception-caught
+        # pylint: disable=broad-exception-caught
+        except Exception as e:  # noqa: BLE001
             raise EnvironmentRecoveryExhaustedError(
                 f"Environment failed and could not be rebuilt: {e}"
             ) from e
