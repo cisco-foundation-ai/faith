@@ -70,6 +70,11 @@
 }
 
 /* flush codeblock */
+.codeWrap,
+.pane {
+  min-width: 0;
+}
+
 .codeWrap :global(.theme-code-block),
 .codeWrap div[class*="codeBlockContainer"] {
   margin: 0 !important;
@@ -83,10 +88,34 @@
   padding: 0.5rem;
 }
 
+.filterStatus {
+  font-size: 0.75rem;
+  color: var(--fai-text2);
+  overflow-wrap: anywhere;
+}
+
+.groupBtn:focus-visible,
+.famLabel:focus-visible,
+.listItem:focus-visible,
+.search:focus-visible {
+  outline: 2px solid var(--fai-accent);
+  outline-offset: 2px;
+}
+
+.famLabel[aria-disabled="true"] {
+  cursor: default;
+}
+
+.familyModels:not([hidden]) {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
 /* ===================================================== Variant 2 · Two-pane */
 .twoPane {
   display: grid;
-  grid-template-columns: 15rem 1fr;
+  grid-template-columns: 15rem minmax(0, 1fr);
 }
 
 .pane {
@@ -228,7 +257,7 @@
 
 @media screen and (max-width: 768px) {
   .twoPane {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .pane {

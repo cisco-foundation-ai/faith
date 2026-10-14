@@ -1,6 +1,6 @@
 ---
 id: setup
-title: Dashboards — Setup
+title: Dashboards — setup
 sidebar_label: Setup
 sidebar_position: 1
 ---
@@ -25,17 +25,18 @@ It is split across three pages:
 
 ## Part 1: Set up BigQuery views (one-time setup)
 
-Before building dashboards, create pre-built views for better performance. The
+Before building dashboards, select the view whose row-selection rules match the
+analysis. The
 `leaderboard.sql` and `latest_runs.sql` view definitions ship with FAITH under
-`docs/bigquery/views/` in the repository — see [Example Queries &
-Views](../examples.md) for the full SQL.
+`docs/bigquery/views/` in the repository — see [Example queries &
+views](../examples.md) for the full SQL.
 
 ### Create the leaderboard view
 
 In the BigQuery console or `bq` CLI, run:
 
 ```bash
-# From the views/ directory
+# From the repository root, after replacing the project and dataset placeholders
 bq query --use_legacy_sql=false < docs/bigquery/views/leaderboard.sql
 ```
 
@@ -62,7 +63,7 @@ bq query --use_legacy_sql=false < docs/bigquery/views/latest_runs.sql
 
 Choose one of the pre-built views:
 
-#### Leaderboard view (recommended for most dashboards)
+#### Leaderboard view (latest headline per model and benchmark)
 
 1. When prompted to add data, select **BigQuery** as your data source
 2. Choose **My Projects** → `YOUR_PROJECT` → `YOUR_DATASET`
@@ -72,16 +73,25 @@ Choose one of the pre-built views:
 latest results per model/benchmark combination, and key configuration
 parameters (temperature, num_shots, etc.).
 
-**Best for:** executive dashboards, leaderboards, model comparisons.
+The view collapses configuration differences before dashboard filters are
+applied. For controlled model comparisons, first create a cohort-specific view
+that filters the base table before ranking; see the
+[leaderboard view limitations](../examples.md#leaderboard-view).
 
 #### Latest runs view (for detailed analysis)
 
 Follow the same steps but select the **latest_runs** view instead.
 
-**What you get:** all metrics (including non-primary), latest ingestion per
-unique experiment run, and full configuration details.
+**What you get:** the latest row per source file and metric name, including
+non-primary metrics, with selected configuration fields. This is not a complete
+latest-ingestion snapshot: metrics absent from a newer ingestion can retain older
+values. See the [latest-runs view limitations](../examples.md#latest_runs-view).
 
 **Best for:** research dashboards, debugging, detailed performance analysis.
+
+For either source, validate trial/task coverage and compare saved experiment
+snapshots before interpreting score differences. The exported table does not
+include the full agent, environment, dataset, or grading configuration.
 
 ---
 

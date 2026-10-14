@@ -17,8 +17,8 @@
   height: 100%;
   padding: 1.35rem 1.25rem 1.4rem;
   border-radius: 14px;
-  background: var(--fai-bg2, #141418);
-  border: 1px solid var(--fai-border, #2a2a33);
+  background: var(--fai-bg2, #1c1f24);
+  border: 1px solid var(--fai-border, #2c3037);
   color: inherit;
   text-decoration: none;
   overflow: hidden;
@@ -41,15 +41,15 @@
   height: 2px;
   background: linear-gradient(
     90deg,
-    var(--fai-accent, #e8943a),
-    var(--fai-accent2, #d4622a)
+    var(--fai-accent, #29b6d8),
+    var(--fai-accent2, #1a8fb0)
   );
 }
 
 .step:hover {
   transform: translateY(-4px);
   box-shadow: 0 16px 34px rgb(0 0 0 / 30%);
-  border-color: var(--fai-accent, #e8943a);
+  border-color: var(--fai-accent, #29b6d8);
   text-decoration: none;
   color: inherit;
 }
@@ -59,7 +59,7 @@
   font-size: 0.76rem;
   font-weight: 500;
   letter-spacing: 0.12em;
-  color: var(--fai-accent, #e8943a);
+  color: var(--fai-accent, #29b6d8);
 }
 
 .title {
@@ -76,8 +76,8 @@
   font-size: 0.72rem;
   padding: 0.12rem 0.5rem;
   border-radius: 5px;
-  color: var(--fai-accent, #e8943a);
-  background: var(--fai-accent-dim, rgb(232 148 58 / 12%));
+  color: var(--fai-accent, #29b6d8);
+  background: var(--fai-accent-dim, rgb(41 182 216 / 14%));
   margin-bottom: 0.7rem;
 }
 
@@ -94,7 +94,7 @@
   justify-content: center;
   position: relative;
   min-width: 2rem;
-  color: var(--fai-accent, #e8943a);
+  color: var(--fai-accent, #29b6d8);
   opacity: 0;
   animation: fadeIn 0.4s ease forwards;
   animation-delay: calc(var(--i) * 0.14s + 0.28s);
@@ -107,8 +107,8 @@
   height: 1px;
   background: linear-gradient(
     90deg,
-    var(--fai-border2, #353540),
-    var(--fai-accent, #e8943a)
+    var(--fai-border2, #3a3f48),
+    var(--fai-accent, #29b6d8)
   );
 }
 
@@ -117,7 +117,7 @@
   font-size: 1.25rem;
   line-height: 1;
   padding: 0 0.15rem;
-  background: var(--fai-bg, #08080a);
+  background: var(--fai-bg, #101215);
 }
 
 @keyframes stepIn {
@@ -157,8 +157,8 @@
     height: auto;
     background: linear-gradient(
       180deg,
-      var(--fai-border2, #353540),
-      var(--fai-accent, #e8943a)
+      var(--fai-border2, #3a3f48),
+      var(--fai-accent, #29b6d8)
     );
   }
 

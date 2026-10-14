@@ -1,6 +1,6 @@
 /**
  * Landing page — Foundation AI editorial style:
- * warm near-black backgrounds, amber accent, serif display headings.
+ * cool slate backgrounds, cyan accent, serif display headings.
  */
 
 /* ---------- Hero ---------- */
@@ -50,6 +50,31 @@
   margin-bottom: 1.2rem;
 }
 
+/* The org half of the eyebrow links out to the Foundation AI site. It keeps the
+   eyebrow's own color instead of the theme's link color, so the line still reads as
+   one label rather than half label, half link. */
+.heroEyebrowOrg {
+  color: inherit;
+  text-decoration: none;
+}
+
+.heroEyebrowOrg:hover {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.3em;
+}
+
+/* A hair taller than the uppercase letters beside it: the notch in the mark is a
+   ninth of its width, and below ~11px it stops reading as a notch at all. The gap
+   matches the letter rhythm, which the eyebrow's 0.22em letter-spacing widens. */
+.heroMark {
+  width: 0.92em;
+  height: 0.92em;
+  margin-right: 0.5em;
+  vertical-align: -0.08em;
+  fill: currentcolor;
+}
+
 .heroTitle {
   font-family: var(--fai-serif);
   font-size: 4rem;
@@ -92,7 +117,7 @@
     color 0.15s ease;
 }
 
-/* Primary: solid amber */
+/* Primary: solid accent */
 .buttons :global(.button--primary) {
   background: var(--fai-accent);
   border-color: var(--fai-accent);
@@ -130,6 +155,21 @@
   }
 }
 
+/* The outbound arrow on the GitHub button (see ExternalArrow in shared.js). Sized
+   and spaced in em so it scales with the label, and stroked in `currentcolor` so
+   the button's hover and per-theme colors carry it without a second rule. */
+.btnArrow {
+  width: 0.78em;
+  height: 0.78em;
+  margin-left: 0.5em;
+  vertical-align: -0.06em;
+  fill: none;
+  stroke: currentcolor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 /* ---------- Generic section ---------- */
 .section {
   padding: 4.75rem 0;
@@ -165,6 +205,7 @@
   line-height: 1.65;
 }
 
+.capBody code,
 .sectionLead code,
 .heroTagline code {
   font-family: var(--fai-mono);
@@ -229,9 +270,9 @@
   line-height: 1.7;
   overflow: hidden;
 
-  /* Fixed height reserves room for the full command + output up front, so the
-     box never grows as lines stream in (and never nudges the split copy). */
-  height: 14.5rem;
+  /* Output rows reserve their space while hidden, so content can determine
+     height without clipping longer commands or shifting during animation. */
+  height: auto;
   white-space: pre-wrap;
   overflow-wrap: break-word;
 }
@@ -270,8 +311,27 @@
   }
 }
 
+/* Hidden rows retain their layout space and animate when activated. */
 .outLine {
   color: var(--fai-text2);
+  visibility: hidden;
+}
+
+.outLineVisible {
+  visibility: visible;
+  animation: outLineIn 0.42s ease both;
+}
+
+@keyframes outLineIn {
+  from {
+    opacity: 0;
+    filter: blur(3px);
+  }
+
+  to {
+    opacity: 1;
+    filter: blur(0);
+  }
 }
 
 .outTag {
@@ -291,23 +351,14 @@
   }
 }
 
-/* The payoff leaderboard */
+/* Evaluation results: a compact report, not a cross-benchmark ranking. */
 .board {
-  border-radius: 14px;
+  border-radius: 12px;
   overflow: hidden;
+  text-align: left;
   background: var(--fai-bg2);
   border: 1px solid var(--fai-border);
-  box-shadow: 0 24px 60px rgb(0 0 0 / 35%);
-  opacity: 0.55;
-  transition:
-    opacity 0.4s ease,
-    border-color 0.4s ease,
-    box-shadow 0.4s ease;
-}
-
-.boardOn {
-  opacity: 1;
-  border-color: var(--fai-accent);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 12%);
 }
 
 .boardRow {
@@ -324,143 +375,143 @@
 }
 
 .boardHead {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  padding: 0.85rem 1.2rem;
+  padding: 1rem 1.2rem;
   border-bottom: 1px solid var(--fai-border);
   background: var(--fai-bg1);
 }
 
+.boardHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
 .boardTitle {
-  font-family: var(--fai-serif);
-  font-size: 1.2rem;
+  margin: 0;
+  font-family: var(--fai-sans);
+  font-size: 1rem;
   font-weight: 600;
+  line-height: 1.4;
   color: var(--fai-text);
 }
 
+.boardExample {
+  padding: 0.1rem 0.45rem;
+  border: 1px solid var(--fai-border2);
+  border-radius: 4px;
+  color: var(--fai-text2);
+  font-size: 0.68rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
 .boardMeta {
+  margin: 0.35rem 0 0;
   font-family: var(--fai-mono);
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: var(--fai-text2);
+  overflow-wrap: anywhere;
+}
+
+.boardCaption {
+  caption-side: bottom;
+  padding: 0.75rem 1.2rem;
+  border-top: 1px solid var(--fai-border);
+  text-align: left;
+  color: var(--fai-text2);
   font-size: 0.7rem;
-  color: var(--fai-text3);
+  line-height: 1.5;
 }
 
 .boardTable {
   width: 100%;
+  min-width: 480px;
   border-collapse: collapse;
+  table-layout: fixed;
   margin: 0;
   display: table;
 }
 
+.boardScroll {
+  overflow-x: auto;
+}
+
+.boardScroll:focus-visible {
+  outline: 2px solid var(--fai-accent);
+  outline-offset: -2px;
+}
+
+.boardTable tr {
+  border: none;
+  background: transparent;
+}
+
 .boardTable th,
 .boardTable td {
-  padding: 0.5rem 0.9rem;
-  height: 2.9rem;
+  padding: 0.75rem 0.6rem;
   text-align: left;
   border: none;
   border-bottom: 1px solid var(--fai-border);
   vertical-align: middle;
-  font-size: 0.85rem;
-  white-space: nowrap;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
 }
 
 /* Give the outer columns room so nothing hugs the card border. */
 .boardTable th:first-child,
 .boardTable td:first-child {
-  padding-left: 1.3rem;
+  padding-left: 1.2rem;
 }
 
 .boardTable th:last-child,
 .boardTable td:last-child {
-  padding-right: 1.3rem;
+  padding-right: 1.2rem;
 }
 
 .boardTable thead th {
-  padding-top: 0.6rem;
-  padding-bottom: 0.6rem;
-  font-family: var(--fai-mono);
-  font-size: 0.66rem;
+  padding-top: 0.65rem;
+  padding-bottom: 0.65rem;
+  font-family: var(--fai-sans);
+  font-size: 0.7rem;
   font-weight: 500;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--fai-text3);
+  color: var(--fai-text2);
   background: transparent;
 }
 
+.boardTable tbody tr:last-child th,
 .boardTable tbody tr:last-child td {
   border-bottom: none;
 }
 
-.boardTable tbody tr:hover {
-  background: var(--fai-accent-glow);
-}
-
-.boardRank {
-  width: 2.2rem;
-  font-family: var(--fai-mono);
-  color: var(--fai-text3);
-}
-
-.boardModel {
+.boardTable .boardModel {
+  width: 40%;
   font-weight: 500;
   color: var(--fai-text);
-  white-space: nowrap;
 }
 
-.boardBench {
-  display: inline-block;
+.boardTable .boardBench {
+  width: 28%;
   font-family: var(--fai-mono);
   font-size: 0.72rem;
-  padding: 0.1rem 0.5rem;
-  border-radius: 20px;
-  color: var(--fai-text2);
-  background: var(--fai-bg3);
-  border: 1px solid var(--fai-border);
-  white-space: nowrap;
-}
-
-.boardShots {
-  width: 4rem;
-  font-family: var(--fai-mono);
-  font-size: 0.76rem;
-  color: var(--fai-text3);
-  white-space: nowrap;
-}
-
-.boardScoreCol {
-  width: 34%;
-}
-
-.boardScore {
-  display: flex;
-  align-items: center;
-  gap: 0.7rem;
-}
-
-.boardBarTrack {
-  flex: 1;
-  height: 6px;
-  border-radius: 4px;
-  background: var(--fai-bg3);
-  overflow: hidden;
-}
-
-.boardBarFill {
-  display: block;
-  height: 100%;
-  border-radius: 4px;
-  background: linear-gradient(90deg, var(--fai-accent2), var(--fai-accent));
-  transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.boardScoreVal {
-  font-family: var(--fai-mono);
-  font-size: 0.8rem;
   font-weight: 500;
   color: var(--fai-text);
-  min-width: 3rem;
+}
+
+.boardTable .boardSamples {
+  width: 14%;
+}
+
+.boardTable .boardAccuracy {
+  width: 18%;
+}
+
+.boardTable .boardNumber {
+  font-family: var(--fai-mono);
+  font-variant-numeric: tabular-nums;
   text-align: right;
 }
 
@@ -533,12 +584,56 @@
   border: 1px solid var(--fai-border);
 }
 
-.phaseBody {
+.phaseBody,
+.kindBody {
   margin: 0;
   color: var(--fai-text2);
   font-size: 0.94rem;
   font-weight: 300;
   line-height: 1.6;
+}
+
+/* ---------- Benchmark kinds ---------- */
+.kindGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+}
+
+.kindCard {
+  display: block;
+  padding: 1.6rem;
+  border-radius: 14px;
+  background: var(--fai-bg2);
+  border: 1px solid var(--fai-border);
+  color: inherit;
+  text-decoration: none;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.kindCard:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 26px rgb(0 0 0 / 35%);
+  border-color: var(--fai-accent);
+  text-decoration: none;
+  color: inherit;
+}
+
+/* The chip's shape comes from `.backendKind`, which is a flex item there and so
+   needs no display of its own. Here it sits in flow above the title. */
+.kindTag {
+  display: inline-block;
+}
+
+.kindTitle {
+  font-family: var(--fai-serif);
+  font-size: 1.45rem;
+  font-weight: 600;
+  margin: 0.7rem 0 0.55rem;
+  color: var(--fai-text);
 }
 
 /* ---------- Capabilities ---------- */
@@ -595,6 +690,12 @@
   line-height: 1.55;
 }
 
+/* Browsers break at hyphens, so `--custom-benchmarks` split across two lines. The
+   flag is 153px wide and the narrowest card is 319px, so it always fits whole. */
+.capBody code {
+  white-space: nowrap;
+}
+
 /* ---------- Backends ---------- */
 .backendGrid {
   display: grid;
@@ -623,7 +724,8 @@
   color: var(--fai-text);
 }
 
-.backendKind {
+.backendKind,
+.kindTag {
   font-family: var(--fai-mono);
   font-size: 0.68rem;
   font-weight: 500;
@@ -679,33 +781,24 @@
 @media screen and (max-width: 996px) {
   .phaseGrid,
   .capGrid,
-  .backendGrid {
+  .backendGrid,
+  .kindGrid {
     grid-template-columns: 1fr;
   }
 
   .sectionTitle {
     font-size: 1.9rem;
   }
-
-  .boardScoreCol {
-    width: 34%;
-  }
-
-  .boardTable th,
-  .boardTable td {
-    padding: 0.7rem 0.9rem;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .board,
   .boardRow {
     opacity: 1;
     transform: none;
   }
 
-  .boardBarFill {
-    transition: none;
+  .outLine {
+    animation: none;
   }
 }
 
@@ -745,58 +838,16 @@
   flex-direction: column;
   gap: 1.4rem;
   width: 100%;
+  min-width: 0;
   max-width: 560px;
   margin-left: auto;
 }
 
-/* In the split hero the panels are more compact. */
+/* Compact type with content-driven height; long commands remain fully visible. */
 .heroSplitDemo .terminalBody {
-  height: 13.75rem;
+  height: auto;
   font-size: 0.78rem;
   line-height: 1.65;
-}
-
-.heroSplitDemo .boardTitle {
-  font-size: 1.05rem;
-}
-
-.heroSplitDemo .boardTable th,
-.heroSplitDemo .boardTable td {
-  padding: 0.3rem 0.7rem;
-  height: 2.5rem;
-  font-size: 0.76rem;
-}
-
-.heroSplitDemo .boardHead {
-  padding: 0.7rem 0.85rem;
-}
-
-/* The narrow split pane can't fit the bar + shots too — show a compact
-   score number and drop the shots column so nothing clips. */
-.heroSplitDemo .boardShots {
-  display: none;
-}
-
-.heroSplitDemo .boardBarTrack {
-  display: none;
-}
-
-.heroSplitDemo .boardScoreCol {
-  width: 5rem;
-  padding-right: 1.3rem;
-}
-
-.heroSplitDemo .boardScore {
-  justify-content: flex-end;
-}
-
-.heroSplitDemo .boardScoreVal {
-  min-width: 0;
-}
-
-/* The split hero only needs a few rows to make the point. */
-.heroSplitDemo .boardTable tbody tr:nth-child(n + 6) {
-  display: none;
 }
 
 @media screen and (max-width: 996px) {

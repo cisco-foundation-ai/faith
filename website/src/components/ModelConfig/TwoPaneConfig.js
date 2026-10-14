@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useId } from "react";
 import clsx from "clsx";
 import CodeBlock from "@theme/CodeBlock";
 import { GROUPS } from "./configs";
@@ -44,13 +44,19 @@ function useFamilies(group) {
   }, [group]);
 }
 
-function GroupToggle({ groupId, onSelect }) {
+function GroupToggle({ groupId, onSelect, controls }) {
   return (
-    <div className={styles.groupToggle}>
+    <div
+      className={styles.groupToggle}
+      role="group"
+      aria-label="Configuration category"
+    >
       {GROUPS.map((g) => (
         <button
           key={g.id}
           type="button"
+          aria-pressed={groupId === g.id}
+          aria-controls={controls}
           className={clsx(
             styles.groupBtn,
             groupId === g.id && styles.groupBtnOn,
@@ -65,9 +71,9 @@ function GroupToggle({ groupId, onSelect }) {
   );
 }
 
-function Yaml({ model }) {
+function Yaml({ model, id }) {
   return (
-    <div className={styles.codeWrap}>
+    <div className={styles.codeWrap} id={id}>
       <CodeBlock language="yaml" title={`${model.id}.yaml`}>
         {model.yaml}
       </CodeBlock>
@@ -80,6 +86,11 @@ function Yaml({ model }) {
 // selected model's YAML plus a ready-to-run command on the right.
 // ===========================================================================
 export function TwoPaneConfig() {
+  const pickerId = useId();
+  const listId = `${pickerId}-models`;
+  const yamlId = `${pickerId}-yaml`;
+  const commandId = `${pickerId}-command`;
+  const statusId = `${pickerId}-status`;
   const [groupId, setGroupId] = useState(GROUPS[0].id);
   const group = GROUPS.find((g) => g.id === groupId);
   const [modelId, setModelId] = useState(group.models[0].id);
@@ -95,6 +106,10 @@ export function TwoPaneConfig() {
       models: q ? fam.models.filter((m) => m.name.includes(q)) : fam.models,
     }))
     .filter((fam) => fam.models.length);
+  const matchCount = families.reduce(
+    (count, fam) => count + fam.models.length,
+    0,
+  );
 
   const onGroup = (g) => {
     setGroupId(g.id);
@@ -113,8 +128,12 @@ export function TwoPaneConfig() {
   return (
     <>
       <div className={clsx(styles.card, styles.twoPane)}>
-        <aside className={styles.pane}>
-          <GroupToggle groupId={groupId} onSelect={onGroup} />
+        <aside className={styles.pane} aria-label="Built-in model selector">
+          <GroupToggle
+            groupId={groupId}
+            onSelect={onGroup}
+            controls={`${listId} ${yamlId} ${commandId}`}
+          />
           <input
             type="text"
             className={styles.search}
@@ -122,8 +141,20 @@ export function TwoPaneConfig() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             aria-label="Search models"
+            aria-controls={listId}
+            aria-describedby={statusId}
           />
-          <div className={styles.scrollList}>
+          <div
+            id={statusId}
+            className={styles.filterStatus}
+            role="status"
+            aria-atomic="true"
+          >
+            {matchCount} {group.label.toLowerCase()} configuration
+            {matchCount === 1 ? "" : "s"} match
+            {matchCount === 1 ? "es" : ""}. Selected: {model.id}.
+          </div>
+          <div className={styles.scrollList} id={listId}>
             {families.map((fam) => {
               const isOpen = searching || !collapsed.has(fam.label);
               return (
@@ -132,6 +163,8 @@ export function TwoPaneConfig() {
                     type="button"
                     className={styles.famLabel}
                     aria-expanded={isOpen}
+                    aria-disabled={searching}
+                    aria-controls={`${pickerId}-family-${fam.label}`}
                     onClick={() => !searching && toggleFam(fam.label)}
                   >
                     <span
@@ -146,11 +179,17 @@ export function TwoPaneConfig() {
                     <span className={styles.famName}>{fam.label}</span>
                     <span className={styles.famCount}>{fam.models.length}</span>
                   </button>
-                  {isOpen &&
-                    fam.models.map((m) => (
+                  <div
+                    id={`${pickerId}-family-${fam.label}`}
+                    className={styles.familyModels}
+                    hidden={!isOpen}
+                  >
+                    {fam.models.map((m) => (
                       <button
                         key={m.id}
                         type="button"
+                        aria-pressed={model.id === m.id}
+                        aria-controls={`${yamlId} ${commandId}`}
                         className={clsx(
                           styles.listItem,
                           model.id === m.id && styles.listItemOn,
@@ -160,21 +199,26 @@ export function TwoPaneConfig() {
                         {m.name}
                       </button>
                     ))}
+                  </div>
                 </div>
               );
             })}
             {!families.length && (
-              <div className={styles.empty}>No matches.</div>
+              <div className={styles.empty}>
+                No matches in {group.label.toLowerCase()}. Clear the filter or
+                select another category. The selected configuration remains
+                displayed.
+              </div>
             )}
           </div>
         </aside>
-        <Yaml model={model} />
+        <Yaml model={model} id={yamlId} />
       </div>
 
-      <div className={styles.example}>
-        <span className={styles.exampleLabel}>Use it</span>
+      <div className={styles.example} id={commandId}>
+        <span className={styles.exampleLabel}>Q&A example</span>
         <CodeBlock language="shell">
-          {`faith query --model-configs ${model.id} \\\n  --benchmarks ctibench-mcqa`}
+          {`faith query --model-configs ${model.id} \\\n  --benchmarks ctibench-mcqa \\\n  --sample-size 25 \\\n  --num-trials 1 \\\n  --datastore-location out/model-config`}
         </CodeBlock>
       </div>
     </>

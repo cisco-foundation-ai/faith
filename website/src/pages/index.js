@@ -5,15 +5,16 @@ import styles from "./index.module.css";
 import {
   useRunAnimation,
   TerminalPanel,
-  LeaderboardPanel,
+  ResultsPanel,
   HeroCopy,
+  Kinds,
   Phases,
   Capabilities,
   Backends,
   FinalCTA,
 } from "../components/landing/shared";
 
-// Split hero: headline/buttons on the left, the animated terminal → leaderboard
+// Split hero: headline/buttons on the left, the animated terminal → results
 // stacked on the right, above the fold.
 function SplitHero() {
   const { cmdIn, lines, rows, containerRef } = useRunAnimation();
@@ -22,11 +23,11 @@ function SplitHero() {
       <div className={styles.heroGlow} aria-hidden="true" />
       <div className={clsx("container", styles.heroSplitGrid)}>
         <div className={styles.heroSplitCopy}>
-          <HeroCopy align="left" />
+          <HeroCopy />
         </div>
         <div className={styles.heroSplitDemo} ref={containerRef}>
           <TerminalPanel cmdIn={cmdIn} lines={lines} />
-          <LeaderboardPanel rows={rows} />
+          <ResultsPanel rows={rows} />
         </div>
       </div>
     </header>
@@ -43,6 +44,7 @@ export default function Home() {
       <SplitHero />
       <main>
         <Phases />
+        <Kinds />
         <Capabilities />
         <Backends />
         <FinalCTA />

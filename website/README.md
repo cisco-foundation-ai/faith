@@ -44,7 +44,7 @@ website/
 ├── src/
 │   ├── components/        # Diagram + table components the docs import
 │   │   └── landing/       # Landing-page sections (shared.js)
-│   ├── css/custom.css     # Brand palette (amber, --ifm-color-primary)
+│   ├── css/custom.css     # Brand palette (cyan, --ifm-color-primary)
 │   ├── pages/index.js     # Landing page
 │   └── theme/             # Docusaurus theme overrides (sidebar)
 ├── static/img/           # Logo and favicon
@@ -61,15 +61,20 @@ ID to `sidebars.js`.
 Parts of this site mirror facts that live in the `faith` source tree. Those parts
 are **generated or checked**, never hand-maintained, so they can't quietly drift:
 
-| What                                   | Source of truth                                     | Tool                                            |
-| -------------------------------------- | --------------------------------------------------- | ----------------------------------------------- |
-| Packaged model configs                 | `src/faith/__models__/*.yaml`                       | `npm run sync-configs` (generates `configs.js`) |
-| QueryFlow / FileTree source paths      | the `src/faith/` tree                               | `npm run check-paths`                           |
-| Inlined BigQuery SQL                   | `docs/bigquery/{queries,views}/*.sql`               | `npm run sync-sql` (rewrites `examples.md`)     |
-| CLI flags and defaults                 | the argparse parser in `faith.cli.cli`              | `npm run check-facts`                           |
-| Benchmark state / categories / metrics | each `benchmark.yaml`                               | `npm run check-facts`                           |
-| Benchmark groups and the suite tables  | each `benchmark.yaml`                               | `npm run check-facts`                           |
-| BigQuery table schema                  | `METRICS_SCHEMA` in `ingestion/storage/bigquery.py` | `npm run check-facts`                           |
+| What                                       | Source of truth                                                              | Tool                                            |
+| ------------------------------------------ | ---------------------------------------------------------------------------- | ----------------------------------------------- |
+| Packaged model configs                     | `src/faith/__models__/*.yaml`                                                | `npm run sync-configs` (generates `configs.js`) |
+| QueryFlow / FileTree source paths          | the `src/faith/` tree                                                        | `npm run check-paths`                           |
+| Inlined BigQuery SQL                       | `docs/bigquery/{queries,views}/*.sql`                                        | `npm run sync-sql` (rewrites `examples.md`)     |
+| CLI flags and defaults                     | the argparse parser in `faith.cli.cli`                                       | `npm run check-facts`                           |
+| Benchmark state / categories / metrics     | each `benchmark.yaml`                                                        | `npm run check-facts`                           |
+| Benchmark groups                           | each `benchmark.yaml`                                                        | `npm run check-facts`                           |
+| The intro's suite list, names and tags     | `benchmarks/catalog.md`                                                      | `npm run check-facts`                           |
+| BigQuery table schema                      | `METRICS_SCHEMA` in `ingestion/storage/bigquery.py`                          | `npm run check-facts`                           |
+| `agentic_config` sections and limits       | `_types/config/agentic.py`                                                   | `npm run check-facts`                           |
+| Registered agentic tools and token budgets | `agentic/registries.py`, `cli/subcmd/query.py`, `_types/model/generation.py` | `npm run check-facts`                           |
+| Groups, and their agentic exclusion        | `benchmark/listing.py`                                                       | `npm run check-facts`                           |
+| The install extras table                   | `[project.optional-dependencies]`                                            | `npm run check-facts`                           |
 
 Run everything at once:
 
@@ -108,8 +113,10 @@ dependency leaves the install. The checkers only need `faith.cli` and
 `faith.benchmark`, so that job installs faith with no extras.
 
 The build step is a real gate on link integrity, not just a smoke test:
-`onBrokenLinks` and `onBrokenMarkdownLinks` are both `throw`, so a renamed or
-deleted page fails CI instead of shipping 404s.
+`onBrokenLinks`, `onBrokenAnchors` and `onBrokenMarkdownLinks` are all `throw`,
+so a renamed or deleted page fails CI instead of shipping 404s — and so does a
+link to a heading that no longer exists. That check reads the rendered pages, so
+it covers links a component builds, not just the ones written in Markdown.
 
 Anything not in that table — prose, editorial framing, the benchmark
 descriptions, `--engine-kwargs` examples — is hand-authored and needs a human
@@ -162,10 +169,10 @@ Neither config file can carry its own rationale — JSON has no comments — so:
   kebab-case default rejects both, 309 times over.
 - **`selector-pseudo-class-no-unknown`** allows `:global()`, a CSS Modules
   construct stylelint doesn't recognize.
-- **`no-descending-specificity`** off. It fires 13 times on the Docusaurus theme
+- **`no-descending-specificity`** off. It fires 7 times on the Docusaurus theme
   overrides in `custom.css`, where element-scoped rules (`h1 code`) deliberately
-  follow class-scoped ones (`.reqNote code`) and losing the cascade is the
-  intent.
+  follow class-scoped ones (`.markdown :not(pre) > code:not([class])`) and
+  losing the cascade is the intent.
 - **`media-feature-range-notation: "prefix"`** keeps `max-width: 996px` rather
   than autofixing to `width <= 996px`, which needs Safari 16.4+/Chrome 104+ —
   narrower than this site's `browserslist`.

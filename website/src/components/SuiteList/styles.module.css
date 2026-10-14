@@ -1,0 +1,99 @@
+/* One grid for the whole list, three cells per suite -- see the note in
+   index.js for why the rows have no wrapper element. Both `max-content` columns
+   size to their widest cell across every suite, so the tags line up as a column
+   and no suite name has to break at its hyphen.
+
+   The card gets one border and radius around the group, with hairlines between
+   rows, matching the flag tables on the CLI pages. */
+.list {
+  display: grid;
+  grid-template-columns: max-content max-content 1fr;
+  margin: 1.25rem 0 1.75rem;
+  border: 1px solid var(--fai-border2);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* The row rule is drawn by the cells rather than a row element, so the cells
+   carry the padding and there is no column gap to interrupt it.
+
+   The cells must also stretch to a common height, which is why nothing here
+   sets `align-items`. Baseline alignment leaves each cell exactly as tall as its
+   own content, and since each cell draws its own bottom border, the rule then
+   breaks into three segments at three different heights. The shared line-height
+   is what keeps the name, the tag and the first line of the description on one
+   baseline without asking the grid for it. */
+.name,
+.kindCell,
+.text {
+  padding: 0.72rem 0.85rem;
+  line-height: 1.55;
+  border-bottom: 1px solid var(--fai-border);
+}
+
+.name {
+  padding-left: 1.1rem;
+  font-family: var(--fai-mono);
+  font-size: 0.9rem;
+  color: var(--fai-accent);
+  white-space: nowrap;
+}
+
+.name:hover {
+  text-decoration: underline;
+}
+
+.text {
+  padding-right: 1.1rem;
+  font-size: 0.92rem;
+  color: var(--fai-text2);
+}
+
+/* Three cells per suite, so the last three are the last row. */
+.list > *:nth-last-child(-n + 3) {
+  border-bottom: none;
+}
+
+/* Q&A is the unremarkable case -- seven of the eight suites -- so it stays
+   outlined and gray, and only `agentic` takes the accent. A tag that looked the
+   same on every row would carry no information. */
+.kind {
+  display: inline-block;
+  font-family: var(--fai-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 0.12em 0.45em;
+  border-radius: 20px;
+  border: 1px solid var(--fai-border2);
+  color: var(--fai-text3);
+  white-space: nowrap;
+}
+
+.kindAgentic {
+  border-color: var(--fai-accent);
+  background: var(--fai-accent-dim);
+  color: var(--fai-accent);
+}
+
+/* On a phone the three columns become two rows: name and tag on the first, the
+   description spanning below. A 1fr description column at 390px would leave
+   ~150px for prose. The rule then belongs to the description alone, since it is
+   what ends the row. */
+@media screen and (max-width: 700px) {
+  .list {
+    grid-template-columns: max-content 1fr;
+  }
+
+  .name,
+  .kindCell {
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+
+  .text {
+    grid-column: 1 / -1;
+    padding-top: 0.4rem;
+    padding-left: 1.1rem;
+  }
+}

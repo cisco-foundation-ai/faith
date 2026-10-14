@@ -1,7 +1,7 @@
 ---
 id: examples
-title: Example Queries & Views
-sidebar_label: Queries & Views
+title: Example queries & views
+sidebar_label: Queries & views
 sidebar_position: 4
 ---
 
@@ -24,8 +24,9 @@ view definitions) with your own values before running.
 
 ### Leaderboard
 
-Compare models across benchmarks, showing primary metrics sorted by
-performance. Great for identifying the top-performing model on each benchmark.
+List primary metrics sorted by benchmark and value. This query does not select
+comparable configurations or remove repeated ingestions. Add filters for one
+benchmark and a verified comparison cohort before using it to rank models.
 
 ```sql title="queries/leaderboard.sql"
 SELECT
@@ -43,14 +44,15 @@ LIMIT 100;
 ```
 
 ```bash
-bq query --use_legacy_sql=false < queries/leaderboard.sql
+bq query --use_legacy_sql=false < docs/bigquery/queries/leaderboard.sql
 ```
 
 ### Compare models
 
-Compare several models on the same benchmark under the same configuration —
-useful for A/B testing and model selection. Edit the `model_key` list and the
-`benchmark`/config filters to taste.
+Select several models at temperature zero with zero shots. The supplied query
+does not filter to one benchmark or constrain other settings. Add a `benchmark`
+filter and the required configuration filters; verify the saved experiment
+snapshots for [settings not exported to BigQuery](./schema.md#provenance-and-comparison-limits).
 
 ```sql title="queries/compare_models.sql"
 SELECT
@@ -72,8 +74,8 @@ ORDER BY benchmark ASC, metric_value DESC;
 
 ### Latest runs
 
-Show the 20 most recent ingestions with their primary metrics — handy for
-monitoring recent evaluation activity.
+Show the 20 most recently prepared primary-metric rows. These are not necessarily
+20 distinct runs, and ingestion order is not experiment execution order.
 
 ```sql title="queries/latest_runs.sql"
 SELECT
@@ -92,18 +94,26 @@ LIMIT 20;
 
 ## Views
 
-Views power the [Looker Studio dashboards](./dashboards/setup.md) and give you clean,
-deduplicated tables to query. Create them once:
+Views provide the row-selection rules used by the
+[Looker Studio dashboards](./dashboards/setup.md). Their grouping and freshness
+limits are described below. From the repository root, create them with:
 
 ```bash
 bq query --project_id=YOUR_PROJECT --dataset_id=YOUR_DATASET \
-  --use_legacy_sql=false < views/leaderboard.sql
+  --use_legacy_sql=false < docs/bigquery/views/leaderboard.sql
 ```
 
 ### `leaderboard` view
 
-Shows the **most recent** primary metric for each model/benchmark combination —
-i.e. the current headline score per model per benchmark.
+Selects the most recently ingested primary metric for each `(model_key,
+benchmark)` pair. This collapses all other configuration differences, including
+agent settings, task selections, and grading revisions. Reingesting an older
+experiment can make it the selected result.
+
+For controlled comparisons, filter the base `metrics` table to a verified cohort
+**before** the window function ranks rows, or use a custom view with the required
+configuration grouping. Filtering the supplied view afterward cannot recover
+rows it has already discarded.
 
 ```sql title="views/leaderboard.sql"
 CREATE OR REPLACE VIEW `PROJECT_ID.DATASET_ID.leaderboard` AS
@@ -132,9 +142,15 @@ ORDER BY benchmark ASC, metric_value DESC;
 
 ### `latest_runs` view
 
-Deduplicates metrics to the **latest ingestion of each `metrics_file_uri`**,
-keeping all metrics (not just primary). Use it for dashboards that should show
-current results with full detail.
+Selects the latest row independently for each `(metrics_file_uri, metric_name)`
+pair, including non-primary metrics. It does not select a complete ingestion
+snapshot per file: if a later ingestion omits a metric, that metric's older row
+remains. The result can therefore combine values from separate ingestions.
+
+Use immutable result locations for separate grading revisions and verify source
+artifacts before treating this view as a current snapshot. Its configuration
+columns are a subset of the [metrics schema](./schema.md), not the full run
+configuration.
 
 ```sql title="views/latest_runs.sql"
 CREATE OR REPLACE VIEW `PROJECT_ID.DATASET_ID.latest_runs` AS

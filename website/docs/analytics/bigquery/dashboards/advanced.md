@@ -1,6 +1,6 @@
 ---
 id: advanced
-title: Dashboards — Advanced techniques
+title: Dashboards — advanced techniques
 sidebar_label: Advanced techniques
 sidebar_position: 3
 ---
@@ -25,6 +25,10 @@ BigQuery.
 
 ### Example 1: Score category
 
+Apply this example only to one performance metric whose range is 0–1 and whose
+higher values indicate better performance. Counts and error rates require
+different interpretation.
+
 Name: `Score Category`
 
 ```sql
@@ -38,16 +42,20 @@ END
 
 Type: Text. Use as a dimension to group or filter by performance tier.
 
-### Example 2: Normalized score (0–100 scale)
+### Example 2: Score displayed as a percentage
 
 Name: `Score Percentage`
 
 ```sql
-metric_value * 100
+metric_value
 ```
 
-Type: Number (with **Percent** formatting). Use as a metric to display values as
-percentages instead of decimals.
+Type: **Percent**. Apply this only to a selected 0–1 performance metric; a value
+of 0.8875 displays as 88.75%. Do not also multiply by 100. The Percent type expects
+a ratio; see Google's [data type reference](https://docs.cloud.google.com/looker/docs/studio/data-types).
+
+If a numeric 0–100 scale is required instead, use `metric_value * 100` with type
+**Number**, without Percent formatting.
 
 ## Connecting multiple data sources
 
@@ -60,8 +68,15 @@ To add a second data source: **Resource** → **Manage added data sources** →
 **Add a data source** → select BigQuery and choose the other view. Use Looker
 Studio's blending feature to combine data across sources.
 
+Do not join the views only on `model_key`: one model can have several benchmarks
+and many metric rows, which can multiply rows and distort aggregates. Select the
+required benchmark and metric first and verify the join's uniqueness. The
+supplied `leaderboard` view does not expose `metrics_file_uri`, so it cannot
+identify a particular result file when joining coverage or error metrics; use a
+custom source retaining that key for per-run comparisons.
+
 ## Resources
 
 - [Looker Studio Documentation](https://support.google.com/looker-studio)
 - [BigQuery Best Practices](https://cloud.google.com/bigquery/docs/best-practices)
-- [FAITH Schema Reference](../schema.md)
+- [FAITH schema reference](../schema.md)

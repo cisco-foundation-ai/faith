@@ -6,66 +6,41 @@ sidebar_position: 1
 slug: /intro
 ---
 
+import Pipeline from '@site/src/components/Pipeline';
+
 # Foundation-AI's Test Hub/Harness (FAITH)
 
-Welcome to **FAITH** — a framework for running benchmarks for language models,
-with a focus on the **cybersecurity** domain.
+FAITH evaluates language models on cybersecurity benchmarks. It runs model
+queries, grades saved outputs, and summarizes results through one CLI.
+[Q&A benchmarks](./benchmarks/catalog.md#qa-benchmarks) evaluate individual
+responses; [agentic benchmarks](./benchmarks/catalog.md#agentic-benchmarks)
+evaluate multi-turn tasks executed with tools in a configured environment.
 
-FAITH provides a uniform way to run several open-source benchmarks for
-evaluating the knowledge and capabilities of language models. It handles
-everything from querying models (locally with vLLM or via APIs), through
-grading responses, to aggregating results for centralized analytics.
+## Start here
 
-## Why FAITH?
-
-- **One interface, many benchmarks.** Run CTIBench, CyberMetric, MMLU,
-  SecBench, SecEval, and your own custom benchmarks through a single `faith`
-  command.
-- **One interface, many model backends.** Query HuggingFace models locally
-  with [vLLM](https://github.com/vllm-project/vllm), or hit hosted APIs from
-  [OpenAI](https://platform.openai.com/docs/models),
-  [OpenRouter](https://openrouter.ai/), and AWS SageMaker.
-- **Reproducible experiments.** Every run records its full configuration —
-  model, prompt format, generation mode, shot count, seed, and generation
-  parameters — so results are traceable and comparable.
-- **Analytics-ready.** Ingest results into BigQuery to build leaderboards,
-  track performance over time, and power dashboards.
+- **Run your first evaluation:** [Install FAITH](./getting-started/installation.md),
+  then follow the [Quickstart](./getting-started/quickstart.md).
+- **Choose what to evaluate:** Browse the [benchmark catalog](./benchmarks/catalog.md)
+  or [create a benchmark](./benchmarks/creating-benchmarks.md).
+- **Configure a run:** Select a [local or hosted model](./configuration/model-configs.md)
+  and, for agentic tasks, an [execution environment](./configuration/environment-configs.md).
+- **Understand results:** Read the [metrics reference](./analytics/metrics.md)
+  or set up [BigQuery analytics and dashboards](./analytics/bigquery/quickstart.md).
+- **Resolve a problem:** Find the symptom in [Troubleshooting](./troubleshooting.md).
 
 ## The three-phase workflow
 
-FAITH runs benchmarks in three stages, each backed by a `faith` subcommand:
-
-import Pipeline from '@site/src/components/Pipeline';
-
 <Pipeline />
 
-You can run them individually, or run all three at once with `faith run-all`.
+Run the phases independently or use `faith run-all` for all three. See the
+[CLI overview](./cli/overview.md) for commands and dependencies.
 
-## Supported benchmarks
-
-FAITH ships with a catalog of cybersecurity-focused benchmarks:
-
-| Suite | Description |
-| --- | --- |
-| [CTIBench](https://arxiv.org/abs/2406.07599) | Cyber Threat Intelligence: technique extraction, MCQA, root-cause mapping, threat-actor attribution, vulnerability severity prediction |
-| [CyberMetric](https://arxiv.org/abs/2402.07688) | 80 / 500 / 2,000 / 10,000-question multiple-choice cybersecurity sets |
-| [MMLU](https://arxiv.org/abs/2009.03300) | Full MMLU plus a computer-security subset |
-| [SecBench](https://arxiv.org/abs/2412.20787) | English multiple-choice and reasoning-focused security questions |
-| [SecEval](https://xuanwuai.github.io/SecEval/) | ~1,000 multiple-choice computer-security questions |
-| [CTI-Reasoning](https://huggingface.co/datasets/fdtn-ai/cti-reasoning) | 200 reasoning-oriented cyber threat intelligence questions |
-| [CWE-Prediction](https://huggingface.co/datasets/fdtn-ai/cwe-prediction-benchmark) | 3,000 CVE / GHSA advisory descriptions to map to CWE identifiers |
-| [VulnLoc](./benchmarks/catalog.md#vulnloc) | Agentic vulnerability localization in real repositories, run in two paired phases |
-
-See the [Benchmark Catalog](./benchmarks/catalog.md) for the full list of task
-identifiers.
-
-## Next steps
-
-- [Install FAITH](./getting-started/installation.md)
-- [Run your first benchmark](./getting-started/quickstart.md)
-- [Explore the CLI](./cli/overview.md)
+Completed query stages save experiment settings alongside the trial logs.
+See [Storage structure](./analytics/storage.md) for the files and the limits of
+experiment identity; saved settings do not guarantee identical outputs or
+capture every external dependency.
 
 :::info
 FAITH is distributed under the Apache-2.0 License.
-Questions? Reach the team at [foundation-ai-oss@cisco.com](mailto:foundation-ai-oss@cisco.com).
+For questions, contact [foundation-ai-oss@cisco.com](mailto:foundation-ai-oss@cisco.com).
 :::

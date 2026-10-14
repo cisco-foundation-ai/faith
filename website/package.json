@@ -6,6 +6,7 @@
     "docusaurus": "docusaurus",
     "start": "docusaurus start",
     "build": "docusaurus build",
+    "postbuild": "npm run check-site-navigation",
     "swizzle": "docusaurus swizzle",
     "deploy": "docusaurus deploy",
     "clear": "docusaurus clear",
@@ -16,7 +17,15 @@
     "sync-sql": "node scripts/sync-example-sql.js",
     "check-paths": "node scripts/check-repo-facts.js",
     "check-facts": "PYTHONPATH=\"${PYTHONPATH:-../src}\" python3 scripts/check_repo_facts.py",
-    "check-repo": "npm run sync-configs -- --check && npm run sync-sql -- --check && npm run check-paths && npm run check-facts"
+    "check-agentic-example": "PYTHONPATH=\"${PYTHONPATH:-../src}\" python3 scripts/check_agentic_example.py",
+    "check-result-lifecycle": "PYTHONPATH=\"${PYTHONPATH:-../src}\" python3 scripts/check_result_lifecycle.py",
+    "check-environment-setup": "PYTHONPATH=\"${PYTHONPATH:-../src}\" python3 scripts/check_environment_setup.py",
+    "check-model-configuration": "PYTHONPATH=\"${PYTHONPATH:-../src}\" python3 scripts/check_model_configuration.py",
+    "check-site-navigation": "python3 scripts/check_site_navigation.py",
+    "check-site-navigation-tests": "python3 scripts/check_site_navigation.py --self-test",
+    "check-site-consistency": "PYTHONPATH=\"${PYTHONPATH:-../src}\" python3 scripts/check_site_consistency.py",
+    "check-presentation": "node --test scripts/check-presentation.js",
+    "check-repo": "npm run sync-configs -- --check && npm run sync-sql -- --check && npm run check-paths && npm run check-facts && npm run check-agentic-example && npm run check-result-lifecycle && npm run check-environment-setup && npm run check-model-configuration && npm run check-site-consistency && npm run check-site-navigation-tests && npm run check-presentation"
   },
   "dependencies": {
     "@docusaurus/core": "3.10.2",
@@ -52,6 +61,6 @@
     ]
   },
   "engines": {
-    "node": ">=20.0"
+    "node": ">=20.18.1"
   }
 }

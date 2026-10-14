@@ -1,6 +1,6 @@
 ---
 id: schema
-title: Metrics Table Schema
+title: Metrics table schema
 sidebar_label: Schema
 sidebar_position: 2
 ---
@@ -21,7 +21,7 @@ one row per metric value.
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| `metrics_file_uri` | STRING | Yes | URI of the source `metrics.json` file. Unique identifier for idempotency. |
+| `metrics_file_uri` | STRING | Yes | Source `metrics.json` path or URI used for duplicate checks; not a content hash or uniqueness constraint. |
 | `model_key` | STRING | Yes | Display name for the model (from config or shortened path). |
 | `source_uri` | STRING | No | Full model path/URI (e.g. `meta-llama/Llama-3.1-8B-Instruct`). |
 | `benchmark` | STRING | Yes | Benchmark name (e.g. `ctibench-mcqa`, `mmlu-security`). |
@@ -38,7 +38,7 @@ one row per metric value.
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| `temperature` | FLOAT64 | No | Sampling temperature (0.0 = deterministic). |
+| `temperature` | FLOAT64 | No | Configured sampling temperature; zero does not guarantee identical outputs. |
 | `top_p` | FLOAT64 | No | Nucleus-sampling probability mass threshold (0.0–1.0). |
 | `max_completion_tokens` | INT64 | No | Maximum number of tokens the model can generate. |
 | `context_length` | INT64 | No | Model's context window size in tokens. |
@@ -56,8 +56,8 @@ one row per metric value.
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| `faith_version` | STRING | No | FAITH version that generated these metrics. |
-| `ingest_time` | TIMESTAMP | Yes | Timestamp when metrics were ingested. |
+| `faith_version` | STRING | No | FAITH package version used to prepare the ingestion records, not necessarily the version that ran or graded the experiment. |
+| `ingest_time` | TIMESTAMP | Yes | Timestamp assigned while preparing each metric row for ingestion; not the experiment execution time. |
 
 ## Field details
 
@@ -98,8 +98,9 @@ ORDER BY benchmark, metric_value DESC
 
 ### `metrics_file_uri`
 
-The unique identifier for each experiment run, preventing duplicate ingestion.
-Format:
+The source locator supplied to the parser. The CLI reads local files and records
+their absolute paths, including when the files were downloaded from GCS. It does
+not recover the original GCS URI. Library callers can instead pass a GCS URI:
 
 ```plaintext
 gs://bucket/path/to/gen_params_hash/metrics.json
@@ -113,6 +114,31 @@ or
 
 An agentic benchmark hashes its agentic config into a further `agentic_<hash>`
 directory below `gen_params_<hash>`, so its metrics file sits one level deeper.
+
+Copying the same result to another local path changes `metrics_file_uri` without
+changing the experiment. Conversely, re-grading in the same directory preserves
+the URI even if metric values change. It is not a run-content or grading-version
+identifier.
+
+The ingestion duplicate check examines only the first record's URI in a batch.
+An existing first URI rejects the entire batch; a new first URI does not prevent
+duplicates for later files. Use a stable source location and avoid overlapping
+or concurrent ingestion batches. See the [ingestion guidance](./quickstart.md#3-ingest-to-bigquery).
+
+## Provenance and comparison limits
+
+The table contains flattened values from `metrics.json`'s `stats` object, not
+its per-trial records or the complete experiment snapshot. The exported fields
+do not include task selection, dataset revision, random seeds, full engine and
+generation settings, agent/tool limits, environment configuration, or grading
+identity. Equal `model_key`, `benchmark`, temperature, and shot counts therefore
+do not establish comparable experiments.
+
+Retain the paired `experiment.json`, `metrics.json`, and trial logs. Verify those
+artifacts when selecting a comparison cohort, and include query counts and
+error metrics alongside performance scores. `faith_version` describes the
+ingester, and `ingest_time` describes record preparation; neither establishes
+when or with which code version the original run was executed or graded.
 
 ## Example row
 
@@ -140,7 +166,7 @@ directory below `gen_params_<hash>`, so its metrics file sits one level deeper.
 
 ## Next steps
 
-- **Getting started:** [BigQuery Quickstart](./quickstart.md)
-- **Ready-to-run SQL:** [Example Queries & Views](./examples.md) — the
+- **Getting started:** [BigQuery quickstart](./quickstart.md)
+- **Ready-to-run SQL:** [Example queries & views](./examples.md) — the
   `docs/bigquery/queries/` and `docs/bigquery/views/` files in the repository
-- **Build dashboards:** [Building Dashboards with Looker Studio](./dashboards/setup.md)
+- **Build dashboards:** [Building dashboards with Looker Studio](./dashboards/setup.md)

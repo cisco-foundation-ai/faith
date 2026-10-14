@@ -37,22 +37,40 @@ const claim = (ok, where, what) => {
 };
 
 // ---------------------------------------------------------------------------
-// 1. QueryFlow `ref:` values — the source file each pipeline step lives in.
+// 1. Flow diagram `ref:` values — the source file each step lives in.
+//
+// A ref may carry a `:line` suffix, which is a pointer for the reader and not
+// part of the path, so it is stripped before the existence check. Both quote
+// styles are accepted: matching only one silently checks nothing the day the
+// file is reformatted, which is exactly what happened to the predecessor of
+// this check.
 // ---------------------------------------------------------------------------
-const flowData = readFileSync(
-  join(SITE, "src/components/QueryFlow/flowData.js"),
+const conceptData = readFileSync(
+  join(SITE, "src/components/FlowConcepts/conceptData.js"),
   "utf8",
 );
 const refs = new Set(
-  [...flowData.matchAll(/ref: '([^']+)'/g)].map((m) => m[1]),
+  [...conceptData.matchAll(/ref: ['"]([^'"]+)['"]/g)].map((m) =>
+    m[1].replace(/:\d+$/, ""),
+  ),
 );
+// A scraped check that finds nothing passes for the wrong reason, so the empty
+// case is a failure rather than a no-op. Not a minimum count: how many steps the
+// diagram has is a design choice, and pinning a number here would mean editing
+// this file every time someone adds or removes a card. Zero is the only count
+// that says the scrape itself is broken.
+if (refs.size === 0) {
+  failures.push(
+    `FlowConcepts/conceptData.js: no 'ref:' values matched — did its shape change?`,
+  );
+}
 // Count distinct refs, not raw matches: the tally should say how many facts were
 // actually checked, and several steps point at the same file.
 let checked = refs.size;
 for (const ref of refs) {
   claim(
     existsSync(join(pkg, ref)),
-    "QueryFlow/flowData.js",
+    "FlowConcepts/conceptData.js",
     `ref '${ref}' does not exist`,
   );
 }
@@ -64,7 +82,7 @@ for (const ref of refs) {
 //    Checking the full path matters: a flat set of basenames would accept
 //    model/vllm.py being drawn under cli/.
 // ---------------------------------------------------------------------------
-const arch = readFileSync(join(SITE, "docs/architecture/overview.md"), "utf8");
+const arch = readFileSync(join(SITE, "docs/reference/architecture.md"), "utf8");
 const treeBlock = arch.slice(
   arch.indexOf("<FileTree"),
   arch.indexOf("/>", arch.indexOf("<FileTree")),
@@ -96,7 +114,7 @@ const treeEntries = (block) => {
 const entries = treeEntries(treeBlock);
 claim(
   entries.length >= 40,
-  "architecture/overview.md",
+  "reference/architecture.md",
   `only parsed ${entries.length} FileTree entries — did the tree format change?`,
 );
 checked += entries.length + 1;
@@ -104,14 +122,14 @@ for (const [relPath, kind] of entries) {
   const full = join(pkg, relPath);
   if (!existsSync(full)) {
     failures.push(
-      `architecture/overview.md: FileTree entry 'src/faith/${relPath}' does not exist`,
+      `reference/architecture.md: FileTree entry 'src/faith/${relPath}' does not exist`,
     );
     continue;
   }
   const isDir = statSync(full).isDirectory();
   claim(
     isDir === (kind === "dir"),
-    "architecture/overview.md",
+    "reference/architecture.md",
     `'src/faith/${relPath}' is marked kind: '${kind}' but is a ${isDir ? "directory" : "file"}`,
   );
 }
