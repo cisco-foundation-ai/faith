@@ -1,13 +1,13 @@
 ---
-id: overview
-title: Architecture Overview
-sidebar_label: Overview
-sidebar_position: 1
+id: architecture
+title: Architecture overview
+sidebar_label: Architecture
+sidebar_position: 2
 ---
 
 import Pipeline from '@site/src/components/Pipeline';
 import FileTree from '@site/src/components/FileTree';
-import {BlueprintFlowExpanded} from '@site/src/components/QueryFlow/BlueprintFlow';
+import ForkMerge from '@site/src/components/FlowConcepts/ForkMerge';
 
 # Architecture overview
 
@@ -17,9 +17,28 @@ independently or chain them with `run-all`.
 
 <Pipeline />
 
+## How a run flows
+
+`faith query` selects a trial runner for each benchmark. A benchmark with
+`agentic_config` uses the agentic runner; other benchmarks use the Q&A runner.
+Both write trial records and experiment metadata through the shared experiment
+infrastructure.
+
+`faith eval` loads the saved configuration and selects the appropriate answer
+extractor and grader. Q&A extraction depends on the generation mode; agentic
+extraction uses the recorded terminal-tool submission. Both paths reuse scoring
+and across-trial aggregation utilities. `faith summarize` reads the resulting
+metrics and metadata without re-executing the benchmark.
+
+The diagram shows these execution and grading differences, not relative runtime.
+Hover a lane or focus one of its cards to highlight it.
+
+<ForkMerge />
+
 ## Code structure
 
-The package lives under `src/faith/`:
+The following partial tree identifies the main implementation modules under
+`src/faith/`:
 
 <FileTree
   root="src/faith/"
@@ -54,7 +73,8 @@ The package lives under `src/faith/`:
       kind: 'dir',
       note: 'Benchmark loading & management',
       children: [
-        {name: 'benchmark.py', kind: 'file', note: 'Core QABenchmark class'},
+        {name: 'benchmark.py', kind: 'file', note: 'The Benchmark base class and QABenchmark'},
+        {name: 'agentic.py', kind: 'file', note: 'AgenticBenchmark and its metrics aggregator'},
         {name: 'load.py', kind: 'file', note: 'Build a benchmark from its spec + config'},
         {name: 'config.py', kind: 'file', note: 'Benchmark YAML parsing'},
         {name: 'listing.py', kind: 'file', note: 'Resolve names and groups (all, !name)'},
@@ -66,6 +86,20 @@ The package lives under `src/faith/`:
       ],
     },
     {
+      name: 'agentic',
+      kind: 'dir',
+      note: 'Agent execution, tools, environments, and task loading',
+      children: [
+        {name: 'orchestration.py', kind: 'file', note: 'Builds loaders, environments, tools, and extractors'},
+        {name: 'registries.py', kind: 'file', note: 'Maps short names in YAML to implementations'},
+        {name: 'core/', kind: 'dir', note: 'The ReAct loop and its interfaces'},
+        {name: 'environments/', kind: 'dir', note: 'Where the agent runs: Docker, Kubernetes'},
+        {name: 'tools/', kind: 'dir', note: 'Tools the agent may call'},
+        {name: 'loaders/', kind: 'dir', note: 'Fetch and verify the tasks for a benchmark'},
+        {name: 'extractors/', kind: 'dir', note: 'Read an answer out of a tool submission'},
+      ],
+    },
+    {
       name: 'record_pipelines',
       kind: 'dir',
       note: 'Processing query/response records',
@@ -73,8 +107,10 @@ The package lives under `src/faith/`:
         {name: 'prediction.py', kind: 'file', note: 'Generate predictions from the model'},
         {name: 'grading.py', kind: 'file', note: 'Score predictions vs. ground truth'},
         {name: 'formatting.py', kind: 'file', note: 'Format prompts for models'},
+        {name: 'agentic_execution.py', kind: 'file', note: 'Run the agent loop — the agentic analog of prediction.py'},
+        {name: 'agentic_formatting.py', kind: 'file', note: 'Build agentic records — the analog of formatting.py'},
         {name: 'hashing.py', kind: 'file', note: 'Hash record data to detect staleness'},
-        {name: 'screening.py', kind: 'file', note: 'Cull stale records per --replacement-strategy'},
+        {name: 'screening.py', kind: 'file', note: 'Reconcile records using --replacement-strategy'},
         {name: 'params.py', kind: 'file', note: 'Pipeline parameters'},
       ],
     },
@@ -126,30 +162,8 @@ The package lives under `src/faith/`:
 />
 
 :::note
-Only the directories and files referenced elsewhere in these docs are listed.
-Browse [the repository](https://github.com/cisco-foundation-ai/faith) for the
-full tree.
+This is a partial tree — 31 of the package's 131 modules, chosen to show how the
+pieces fit together. Browse
+[the repository](https://github.com/cisco-foundation-ai/faith) for the full
+listing.
 :::
-
-## How a query flows
-
-A single query travels through all three phases — from CLI parsing to stored
-metrics. Each node names the component and source file it lives in; click a
-decision node (the engine selector, the benchmark source) to fan out its
-options.
-
-<BlueprintFlowExpanded />
-
-## Model engines
-
-All engines share a common interface, letting the rest of FAITH stay agnostic
-to how a given model is served:
-
-| Engine | Backend |
-| --- | --- |
-| `vllm` | Local HuggingFace models via vLLM |
-| `openai` | OpenAI API |
-| `openrouter` | OpenRouter API (Claude, Gemini, and more) |
-| `sagemaker` | Models on AWS SageMaker endpoints |
-
-See [Model Config Files](../cli/model-configs.md) for how to configure each.

@@ -25,11 +25,12 @@
 
 .row {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
   gap: 0;
   padding: 0.16rem 0.9rem 0.16rem 0.6rem;
   border-radius: 6px;
-  white-space: nowrap;
+  white-space: normal;
 }
 
 .rails {
@@ -69,6 +70,8 @@
 
 .name {
   color: var(--fai-text);
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .rowDir .name {
@@ -86,10 +89,13 @@
 }
 
 .note {
+  flex: 1 1 16rem;
+  min-width: 0;
   color: var(--fai-text2);
   margin-left: 1.1rem;
   font-size: 0.9em;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .caption {
@@ -114,6 +120,7 @@
   }
 
   .note {
-    margin-left: 0.6rem;
+    flex-basis: 100%;
+    margin-left: calc((var(--depth) + 1) * 1.25rem);
   }
 }

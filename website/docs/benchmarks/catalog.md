@@ -1,155 +1,133 @@
 ---
 id: catalog
-title: Benchmark Catalog
+title: Benchmark catalog
 sidebar_label: Catalog
 sidebar_position: 1
 ---
 
+import SourceLinks from '@site/src/components/SourceLinks';
+
 # Benchmark catalog
 
 FAITH provides a uniform way to run several open-source benchmarks for
-evaluating the knowledge and capabilities of language models in the
-cybersecurity domain. Pass any of the task identifiers below to the
-`--benchmarks` flag, or a [group name](#benchmark-groups) to run several at
-once.
+evaluating language models in the cybersecurity domain, and supports both **Q&A**
+and **agentic** benchmarks, listed separately below. Pass any of the benchmark
+identifiers to the `--benchmarks` flag, or a [group name](./groups.md) to run
+several Q&A benchmarks at once. Each benchmark below names its primary metric; the
+[metrics reference](../analytics/metrics.md) defines each one and lists the
+secondary metrics it also reports.
 
-Each table lists the **answer type** (how the model is prompted and graded),
-the **size**, and the **primary metric** FAITH reports. Sizes come from each
-benchmark's own description and are approximate — the actual evaluated count
-can differ because FAITH drops malformed or duplicate rows during loading. A
-dash (—) means the benchmark doesn't state a count.
+## Q&A benchmarks
 
-## CTIBench
+Each Q&A sample is a question and its associated data. FAITH generates or reuses
+the selected model output, extracts a prediction, and applies the benchmark's
+grading rules. These benchmarks do not require an agent workspace, but do
+require access to their data, model, and any configured judge dependencies.
 
-Cyber Threat Intelligence benchmarks
-([paper](https://arxiv.org/abs/2406.07599)).
+Sizes are approximate — FAITH drops malformed and duplicate rows while loading —
+and a dash (—) means the dataset does not state a count.
 
-| Task | Answer type | Size | Primary metric | Description |
-| --- | --- | --- | --- | --- |
-| `ctibench-ate` | Short answer (multi-label) | — | Accuracy | **Attack Technique Extraction** — identify MITRE ATT&CK techniques from threat descriptions. Also reports a Jaccard index over the predicted technique set. |
-| `ctibench-mcqa` | Multiple choice | — | Accuracy | **Multiple Choice Questions** on cyber threat intelligence. |
-| `ctibench-rcm` | Short answer | — | Accuracy | **Root Cause Mapping** — map CVE descriptions to CWE IDs. |
-| `ctibench-taa` | Short answer | — | Accuracy | **Threat Actor Attribution** — attribute cyber incidents to known threat actors. Grading is alias-aware, since actor names vary: it emits `accuracy_aliased_actors` and `accuracy_related_actors` rather than a plain `accuracy`. *(Experimental — see [groups](#benchmark-groups).)* |
-| `ctibench-vsp` | Short answer | — | Mean CVSS score | **Vulnerability Severity Prediction** — predict CVSS v3.1 vector strings. |
+### CTIBench <SourceLinks heading right links={[["paper", "https://arxiv.org/abs/2406.07599"], ["dataset", "https://huggingface.co/datasets/AI4Sec/cti-bench"]]} /> \{#ctibench}
 
-## CyberMetric
+Cyber Threat Intelligence benchmarks. Short-answer tasks, except
+`ctibench-mcqa`; `ctibench-ate` takes a set of labels rather than one.
 
-Multiple-choice cybersecurity questions
-([paper](https://arxiv.org/abs/2402.07688)).
+| Benchmark | Size | Primary metric | Description |
+| --- | --- | --- | --- |
+| `ctibench-ate` | — | Accuracy | **Attack Technique Extraction** — identify MITRE ATT&CK techniques from threat descriptions. |
+| `ctibench-mcqa` | — | Accuracy | **Multiple Choice Questions** on cyber threat intelligence. |
+| `ctibench-rcm` | — | Accuracy | **Root Cause Mapping** — map CVE descriptions to CWE IDs. |
+| `ctibench-taa` | — | Accuracy | **Threat Actor Attribution** — attribute cyber incidents to known threat actors. *(Experimental — see [groups](./groups.md).)* |
+| `ctibench-vsp` | — | Mean CVSS score | **Vulnerability Severity Prediction** — predict CVSS v3.1 vector strings. |
 
-| Task | Answer type | Size | Primary metric | Description |
-| --- | --- | --- | --- | --- |
-| `cybermetric-80` | Multiple choice | 80 | Accuracy | 80-question subset. |
-| `cybermetric-500` | Multiple choice | 500 | Accuracy | 500-question subset. |
-| `cybermetric-2000` | Multiple choice | 2,000 | Accuracy | 2,000-question subset. |
-| `cybermetric-10000` | Multiple choice | ~10,000 | Accuracy | ~10,000-question subset. |
+### CyberMetric <SourceLinks heading right links={[["paper", "https://arxiv.org/abs/2402.07688"], ["repository", "https://github.com/cybermetric/CyberMetric"]]} /> \{#cybermetric}
 
-## MMLU
+Multiple-choice cybersecurity questions.
 
-Massive Multitask Language Understanding
-([paper](https://arxiv.org/abs/2009.03300)).
+| Benchmark | Size | Primary metric | Description |
+| --- | --- | --- | --- |
+| `cybermetric-80` | 80 | Accuracy | 80-question subset. |
+| `cybermetric-500` | 500 | Accuracy | 500-question subset. |
+| `cybermetric-2000` | 2,000 | Accuracy | 2,000-question subset. |
+| `cybermetric-10000` | ~10,000 | Accuracy | ~10,000-question subset. |
 
-| Task | Answer type | Size | Primary metric | Description |
-| --- | --- | --- | --- | --- |
-| `mmlu-all` | Multiple choice | ~14,000 | Subject-weighted accuracy | Full MMLU benchmark across 57 subjects. |
-| `mmlu-security` | Multiple choice | 100 | Accuracy | Computer-security subset. |
+### MMLU <SourceLinks heading right links={[["paper", "https://arxiv.org/abs/2009.03300"], ["dataset", "https://huggingface.co/datasets/cais/mmlu"]]} /> \{#mmlu}
 
-## SecBench
+Massive Multitask Language Understanding. Both tasks are multiple choice.
 
-Security-focused evaluation ([paper](https://arxiv.org/abs/2412.20787)).
+| Benchmark | Size | Primary metric | Description |
+| --- | --- | --- | --- |
+| `mmlu-all` | ~14,000 | Subject-weighted accuracy | Full MMLU benchmark across 57 subjects. |
+| `mmlu-security` | 100 | Accuracy | Computer-security subset. |
 
-| Task | Answer type | Size | Primary metric | Description |
-| --- | --- | --- | --- | --- |
-| `secbench-mcqa-eng` | Multiple choice | 595 | Accuracy | English single-answer multiple-choice questions, drawn from SecBench's full set of 2,730. |
-| `secbench-mcqa-eng-reasoning` | Multiple choice | — | Accuracy | The English questions designed to test reasoning skills. |
+### SecBench <SourceLinks heading right links={[["paper", "https://arxiv.org/abs/2412.20787"], ["repository", "https://github.com/secbench-git/SecBench"]]} /> \{#secbench}
 
-## SecEval
+Security-focused evaluation. Both tasks are multiple choice.
 
-Computer-security multiple-choice questions
-([project](https://xuanwuai.github.io/SecEval/)).
+| Benchmark | Size | Primary metric | Description |
+| --- | --- | --- | --- |
+| `secbench-mcqa-eng` | 595 | Accuracy | English single-answer multiple-choice questions, drawn from SecBench's full set of 2,730. |
+| `secbench-mcqa-eng-reasoning` | — | Accuracy | The English questions designed to test reasoning skills. |
 
-| Task | Answer type | Size | Primary metric | Description |
-| --- | --- | --- | --- | --- |
-| `seceval` | Multiple choice | ~1,000 | Accuracy | ~1,000 multiple-choice computer-security questions. |
+### SecEval <SourceLinks heading right links={[["project", "https://xuanwuai.github.io/SecEval/"], ["dataset", "https://huggingface.co/datasets/XuanwuAI/SecEval"]]} /> \{#seceval}
 
-## CTI-Reasoning
+Computer-security multiple-choice questions.
 
-Reasoning-focused cyber threat intelligence questions
-([dataset](https://huggingface.co/datasets/fdtn-ai/cti-reasoning)).
+| Benchmark | Size | Primary metric | Description |
+| --- | --- | --- | --- |
+| `seceval` | ~1,000 | Accuracy | ~1,000 multiple-choice computer-security questions. |
 
-| Task | Answer type | Size | Primary metric | Description |
-| --- | --- | --- | --- | --- |
-| `cti-reasoning` | Multiple choice | 200 | Accuracy | Reasoning-oriented multiple-choice questions on cyber threat intelligence. |
+### CTI-Reasoning <SourceLinks heading right links={[["dataset", "https://huggingface.co/datasets/fdtn-ai/cti-reasoning"]]} /> \{#cti-reasoning}
 
-## CWE-Prediction
+Reasoning-focused, multiple-choice cyber threat intelligence questions.
 
-Weakness classification from vulnerability descriptions
-([dataset](https://huggingface.co/datasets/fdtn-ai/cwe-prediction-benchmark)).
+| Benchmark | Size | Primary metric | Description |
+| --- | --- | --- | --- |
+| `cti-reasoning` | 200 | Accuracy | Reasoning-oriented multiple-choice questions on cyber threat intelligence. |
 
-| Task | Answer type | Size | Primary metric | Description |
-| --- | --- | --- | --- | --- |
-| `cwe-prediction` | Short answer | 3,000 | Accuracy | Map CVE or GHSA advisory descriptions to CWE identifiers. |
+### CWE-Prediction <SourceLinks heading right links={[["dataset", "https://huggingface.co/datasets/fdtn-ai/cwe-prediction-benchmark"]]} /> \{#cwe-prediction}
 
-## VulnLoc
+Weakness classification from vulnerability descriptions, answered as short
+text.
 
-Vulnerability localization in real repositories — the first **agentic** benchmark
-in FAITH. Instead of answering a question, the model drives a shell in a
-container: it explores a repository snapshot and submits its verdict through a
-tool call.
+| Benchmark | Size | Primary metric | Description |
+| --- | --- | --- | --- |
+| `cwe-prediction` | 3,000 | Accuracy | Map CVE or GHSA advisory descriptions to CWE identifiers. |
 
-VulnLoc is **one benchmark run in two phases** over the same repositories, and
-the two are only meaningful together. Phase A presents each repository as it
-stood *before* a security fix landed and asks which files must change. Phase B
-presents the *same* repositories *after* the fix, where the named vulnerability
-is gone, and asks the agent to report finding nothing. Reading phase A alone
-rewards a model that always claims to find something; phase B is what makes
-phase A's score mean anything.
+## Agentic benchmarks
 
-The two phases share their loader, container image, tools and limits — they
-differ only in which commit they present and how a submission is scored. Each is
-a separate `--benchmarks` identifier because FAITH reports one primary metric per
-benchmark, so run both and read the scores as a pair.
+Each agentic sample is a task executed through a tool-using model loop in a
+configured environment. FAITH applies limits on model turns and tool calls,
+records the trajectory, and grades the submitted answer. Incomplete tasks and
+execution errors are reported separately in the metrics.
 
-| Task | Answer type | Size | Primary metric | Description |
-| --- | --- | --- | --- | --- |
-| `vulnerability-localization-a` | Agentic (tool submission) | — | File-set F1 | **Phase A, pre-fix** — given a repository snapshot taken before the fix and the class of vulnerability it contains, name the source files that must change. Scored against the files the real fix touched. |
-| `vulnerability-localization-b` | Agentic (tool submission) | — | True-negative rate | **Phase B, post-fix** — the same repositories snapshotted after the fix, so the vulnerability is no longer present. Scored by how often the agent correctly reports finding nothing. |
+Each executed task requires environment setup and may make multiple model
+requests. Install the extra for the selected environment, `docker` or
+`kubernetes`, and satisfy the task loader's data requirements. The built-in
+vulnerability-localization loader fetches source snapshots on demand and
+verifies newly downloaded payloads. See
+[Creating new benchmarks](./creating-benchmarks.md) for the `agentic_config`
+schema.
 
-Running VulnLoc needs the `docker` extra and a task manifest, which is not
-redistributable and so is supplied per deployment — point `VULNLOC_MANIFEST` at
-it. See [Creating New Benchmarks](./creating-benchmarks.md) for the
-`agentic_config` shape these two use.
+### Vulnerability Localization <SourceLinks heading right links={[["repository", "https://github.com/cisco-foundation-ai/vulnerability-localization-benchmark"]]} /> \{#vulnerability-localization}
 
-## Benchmark groups
+Vulnerability localization in real repositories.
 
-Instead of naming every task, you can pass a group to `--benchmarks` to run a
-whole set at once:
+The suite has two benchmark definitions over paired repository snapshots,
+identified by the `-a` and `-b` suffixes. Phase A measures vulnerable-file
+localization; phase B measures correct abstention after the target fix. Evaluate
+both to distinguish localization performance from a tendency to report files
+regardless of whether the target vulnerability is present.
 
-| Group | Runs | Currently |
-| --- | --- | --- |
-| `all` | Every enabled benchmark. | 17 benchmarks |
-| `all-security` | Enabled benchmarks tagged `security`. | all except `mmlu-all`, which is tagged `general` |
-| `all-reasoning` | Enabled benchmarks tagged `reasoning`. | `cti-reasoning`, `secbench-mcqa-eng-reasoning` |
+| Benchmark | Size | Primary metric | Description |
+| --- | --- | --- | --- |
+| `vulnerability-localization-a` | — | File-set F1 | **Phase A, pre-fix** — given a snapshot from before the fix and the class of vulnerability it contains, name the files that must change. |
+| `vulnerability-localization-b` | — | True-negative rate | **Phase B, post-fix** — the same repositories after the fix, so the vulnerability is gone. |
 
-Prefix any identifier with `!` to exclude it — for example
-`--benchmarks all !mmlu-all` runs the other 14. Groups and exclusions can be
-combined freely, and a benchmark named by any group is dropped if it's also
-negated anywhere in the list.
-
-Every benchmark carries a `state`, and only `enabled` ones are collected into a
-group. `ctibench-taa` is `experimental`, so it belongs to **no** group and must
-be named directly — even though it's still a valid value for `--benchmarks`.
-
-## Model backends
-
-FAITH uses [vLLM](https://github.com/vllm-project/vllm) for querying
-[HuggingFace](https://huggingface.co/) models, and provides API-based querying
-for [OpenAI models](https://platform.openai.com/docs/models) and models
-available through [OpenRouter](https://openrouter.ai/) (including Anthropic
-Claude and Google Gemini) and AWS SageMaker.
-
-## Bringing your own benchmark
-
-Need a benchmark that isn't listed here? See
-[Creating New Benchmarks](./creating-benchmarks.md) to define your own and run
-it with `--custom-benchmarks`.
+The default deployment requires the `openai` and `docker` extras, a compatible
+model endpoint, a running Docker daemon, and runner access to the published
+manifest and repository snapshots. Follow the
+[Docker preflight](../configuration/environment-configs.md#docker-preflight)
+before a first run. Set `manifest_path` in the benchmark config to use a local
+manifest; source snapshots still need to be fetched or present in the runner's
+[payload cache](../configuration/environment-configs.md#runner-network-and-cache).

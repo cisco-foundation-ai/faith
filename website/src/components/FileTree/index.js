@@ -35,7 +35,9 @@ function Node({ node, depth, isLast, ancestorsLast }) {
         </span>
         <span className={styles.name}>
           {node.name}
-          {isDir && <span className={styles.slash}>/</span>}
+          {isDir && !node.name.endsWith("/") && (
+            <span className={styles.slash}>/</span>
+          )}
         </span>
         {node.note && <span className={styles.note}>{node.note}</span>}
       </div>

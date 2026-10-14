@@ -3,7 +3,7 @@
 // (when paired with `@ts-check`).
 // See: https://docusaurus.io/docs/api/docusaurus-config
 
-import { themes as prismThemes } from "prism-react-renderer";
+import prismTheme from "./prism-theme.mjs";
 
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
@@ -43,6 +43,11 @@ const config = {
   // otherwise ships its 404s green.
   onBrokenLinks: "throw",
 
+  // Same reasoning one level down: a link to #a-heading-that-moved resolves to
+  // the right page and then silently lands at the top of it, so nothing about a
+  // green build says the reader ended up where the link promised.
+  onBrokenAnchors: "throw",
+
   markdown: {
     hooks: {
       onBrokenMarkdownLinks: "throw",
@@ -55,7 +60,7 @@ const config = {
   },
 
   stylesheets: [
-    "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=DM+Mono:ital,wght@0,300;0,400;0,500&family=Poppins:wght@300;400;500;600&display=swap",
+    "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=DM+Mono:ital,wght@0,300;0,400;0,500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap",
   ],
 
   themes: [
@@ -65,11 +70,12 @@ const config = {
       ({
         hashed: true,
         indexBlog: false,
-        // The search bar lives in the left sidebar, so the results dropdown
-        // must open rightward (left:0) instead of the navbar default (right:0).
-        searchBarPosition: "left",
+        // searchBarPosition is left at its default ("right"), which anchors the
+        // results panel to right:0 so it opens leftward. That is what the field's
+        // place on the right side of the navbar needs; anchoring it left:0 there
+        // would hang a 560px panel off the right edge of the window.
         docsRouteBasePath: "/docs",
-        highlightSearchTermsOnTargetPage: true,
+        highlightSearchTermsOnTargetPage: false,
         searchResultLimits: 8,
         searchBarShortcut: true,
         searchBarShortcutHint: true,
@@ -113,43 +119,40 @@ const config = {
       navbar: {
         title: "FAITH",
         items: [
+          // No doc-section tabs. The sidebar already indexes every page,
+          // nested, with the current one marked; a second set of tabs into the
+          // same tree is a duplicate index that has to be kept in sync by hand
+          // (each tab needs an activeBaseRegex naming the routes it owns, and a
+          // page missing from all of them highlights nothing).
+          //
+          // One "Docs" link is not that index — it is a single entry point, and
+          // it earns its place on the pages with no sidebar (the landing page,
+          // 404), where the header would otherwise offer no way in. No
+          // activeBaseRegex, so it marks itself active only on the one page it
+          // actually points at; claiming all 25 doc routes would make it look
+          // like a tab that should go somewhere new and never does.
+          { to: "/docs/intro", label: "Docs", position: "left" },
+          // Declared before the GitHub item because right-position items render
+          // in declaration order, left to right.
+          //
+          // No version chip. It could only be a hand-typed constant here —
+          // faith-internal's version.txt is not kept current — and it links to
+          // the releases page the GitHub mark beside it already reaches. Worth
+          // adding once the site lives in the faith repo, where the config can
+          // read version.txt at build time and cannot drift.
+          { type: "search", position: "right" },
           {
-            // Every nav tab points into the same docs sidebar, so a plain
-            // docSidebar "Docs" item would highlight on ALL doc pages —
-            // including Benchmarks/Architecture/Analytics. Scope each tab's
-            // active state to the doc sections it actually owns.
-            //
-            // Docs owns everything the other three tabs don't, so it has to
-            // name each of those sections; a page missing from all four
-            // regexes leaves every tab unhighlighted.
-            to: "/docs/intro",
-            label: "Docs",
-            position: "left",
-            activeBaseRegex:
-              "/docs/(intro|getting-started|cli|reference|contributing)",
-          },
-          {
-            to: "/docs/benchmarks/catalog",
-            label: "Benchmarks",
-            position: "left",
-            activeBaseRegex: "/docs/benchmarks",
-          },
-          {
-            to: "/docs/architecture/overview",
-            label: "Architecture",
-            position: "left",
-            activeBaseRegex: "/docs/architecture",
-          },
-          {
-            to: "/docs/bigquery/quickstart",
-            label: "Analytics",
-            position: "left",
-            activeBaseRegex: "/docs/bigquery",
-          },
-          {
+            // No `label`: the mark is drawn by CSS (see .header-github-link) so
+            // this reads as an icon button matching the color-mode toggle beside
+            // it, rather than a text link wedged between a box and an icon.
+            // aria-label carries the name for anyone who can't see the mark. The
+            // mobile drawer renders this same item as a row in a list of words, so
+            // custom.css gives that copy the word — a `label` here would put text
+            // in the bar, which the bar would then have to hide.
             href: "https://github.com/cisco-foundation-ai/faith",
-            label: "GitHub",
             position: "right",
+            className: "header-github-link",
+            "aria-label": "FAITH on GitHub",
           },
         ],
       },
@@ -170,9 +173,12 @@ const config = {
           {
             title: "Reference",
             items: [
-              { label: "CLI Commands", to: "/docs/cli/overview" },
-              { label: "Benchmark Catalog", to: "/docs/benchmarks/catalog" },
-              { label: "BigQuery Analytics", to: "/docs/bigquery/quickstart" },
+              { label: "CLI commands", to: "/docs/cli/overview" },
+              { label: "Benchmark catalog", to: "/docs/benchmarks/catalog" },
+              {
+                label: "BigQuery analytics",
+                to: "/docs/analytics/bigquery/quickstart",
+              },
             ],
           },
           {
@@ -189,8 +195,8 @@ const config = {
         copyright: `Copyright © ${new Date().getFullYear()} Cisco Systems, Inc. and its affiliates. Built with Docusaurus.`,
       },
       prism: {
-        theme: prismThemes.github,
-        darkTheme: prismThemes.dracula,
+        theme: prismTheme,
+        darkTheme: prismTheme,
         additionalLanguages: ["bash", "yaml", "sql", "python"],
       },
     }),

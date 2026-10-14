@@ -6,7 +6,7 @@ export const SEGMENTS = [
     ph: true,
     short: "benchmark-root-dir",
     title: "Root directory",
-    text: "The root (your --datastore-location) under which every run is organized.",
+    text: "The --datastore-location root containing one or more experiment directories.",
   },
   {
     id: "bench",
@@ -14,7 +14,7 @@ export const SEGMENTS = [
     ph: true,
     short: "benchmark-name",
     title: "Benchmark name",
-    text: "Name of the benchmark / dataset used for testing, e.g. ctibench-mcqa.",
+    text: "The benchmark definition's metadata.name, for example ctibench-mcqa.",
   },
   {
     id: "model",
@@ -22,7 +22,7 @@ export const SEGMENTS = [
     ph: true,
     short: "model-name",
     title: "Model name",
-    text: "Name or path of the model being tested — the @name annotation if one was given.",
+    text: "The model's configured name; otherwise, its full path with unsafe characters replaced by underscores.",
   },
   {
     id: "prompt",
@@ -54,7 +54,7 @@ export const SEGMENTS = [
     ph: true,
     short: "gen-params-hash",
     title: "Generation-params hash",
-    text: "Hash of the model’s generation params — keeps logs from clobbering each other when parameters (e.g. temperature) change.",
+    text: "Hash of the model's generation parameters. A change to these parameters selects a different experiment directory.",
   },
   {
     id: "agentic",
@@ -62,7 +62,7 @@ export const SEGMENTS = [
     ph: true,
     short: "agentic-config-hash",
     title: "Agentic-config hash",
-    text: "Agentic benchmarks only: hash of the benchmark’s agentic config — keeps logs from clobbering each other when the environment, tools, or limits change. Absent for question-answering benchmarks.",
+    text: "Agentic benchmarks only: hash of the authored agentic_config. Deployment overrides from --environment-config are not part of this hash. Absent for Q&A benchmarks.",
   },
 ];
 
@@ -71,45 +71,19 @@ export const LEAVES = [
   {
     id: "experiment",
     label: "experiment.json",
-    kind: "file",
     title: "experiment.json",
     text: "Describes how the benchmark was run and its parameters. Not created until all trials complete.",
   },
   {
     id: "metrics",
     label: "metrics.json",
-    kind: "file",
     title: "metrics.json",
-    text: "Metrics summarizing all trials, plus aggregate statistics for the entire run.",
+    text: "Per-trial metrics and across-trial statistics computed by eval from available records.",
   },
   {
     id: "trials",
     label: "trials/",
-    kind: "dir",
     title: "trials/",
-    text: "Records all query/responses, split by trial seed then hash.",
-    children: [
-      {
-        id: "seed",
-        label: "<trial-seed>",
-        ph: true,
-        title: "trial-seed",
-        text: "The seed lets you compare similar trials (same base questions) across runs.",
-      },
-      {
-        id: "trialhash",
-        label: "<benchmark-trial-hash>",
-        ph: true,
-        title: "benchmark-trial-hash",
-        text: "The hash lets you compare exactly the same LLM queries between models — useful only when benchmark parameters are identical.",
-      },
-      {
-        id: "log",
-        label: "benchmark-log.json",
-        kind: "file",
-        title: "benchmark-log.json",
-        text: "A list of records for every query-response executed from the benchmark on the model.",
-      },
-    ],
+    text: "Q&A records or agentic trajectories, organized by trial seed and benchmark-spec hash.",
   },
 ];

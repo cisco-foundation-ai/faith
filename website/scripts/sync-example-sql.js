@@ -34,7 +34,7 @@ const repoIdx = args.indexOf("--repo");
 const repo = repoIdx === -1 ? resolve(SITE, "..") : resolve(args[repoIdx + 1]);
 
 const SQL_DIR = join(repo, "docs/bigquery");
-const PAGE = join(SITE, "docs/bigquery/examples.md");
+const PAGE = join(SITE, "docs/analytics/bigquery/examples.md");
 
 if (!existsSync(SQL_DIR)) {
   console.error(
@@ -91,7 +91,7 @@ const generated = current.replace(
 // SQL behind a passing exit code.
 if (problems.length) {
   console.error(
-    `✗ ${problems.length} problem(s) in docs/bigquery/examples.md:\n`,
+    `✗ ${problems.length} problem(s) in docs/analytics/bigquery/examples.md:\n`,
   );
   for (const p of problems) console.error(`  ${p}`);
   process.exit(1);
