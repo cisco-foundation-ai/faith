@@ -380,7 +380,7 @@ class _Run:
                 self._config.environment.setup(self._task)
             except EnvironmentUnavailableError as e:
                 self._stopped_reason = StoppedReason.ENVIRONMENT_ERROR
-                self._error = f"Environment setup failed: {str(e)}"
+                self._error = f"Environment setup failed: {e!s}"
             except Exception as e:  # pylint: disable=broad-exception-caught
                 # Setup runs inside the outer try so teardown still fires: a
                 # setup that fails partway (e.g. container started, later step
@@ -615,7 +615,7 @@ class _Run:
                 tool_call,
                 call_timestamp,
                 INVALID_JSON_ERROR,
-                f"Error: Model returned invalid JSON for tool arguments: {str(e)}",
+                f"Error: Model returned invalid JSON for tool arguments: {e!s}",
             )
 
         if not isinstance(tool_args, dict):
@@ -807,7 +807,7 @@ class _Run:
         except ToolExecutionError as e:
             # The tool executed and raised: counts as executed, fed back so the
             # model can adjust rather than ending the run.
-            result = f"Error executing tool: {str(e)}"
+            result = f"Error executing tool: {e!s}"
 
         # A non-str result means a tool ignored its -> str contract. Fail loud
         # (-> ERROR) rather than coerce and feed the model a corrupt observation.

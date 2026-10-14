@@ -14,7 +14,7 @@ def read_only_required(config: dict) -> bool:
     """Read the injected policy without accepting truthy strings."""
     value = config.get("read_only_workspace", False)
     if not isinstance(value, bool):
-        raise ValueError("read_only_workspace must be a boolean")
+        raise TypeError("read_only_workspace must be a boolean")
     return value
 
 

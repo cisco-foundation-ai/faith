@@ -33,7 +33,7 @@ from faith.agentic.registries import (
 def _read_only_boolean(value: Any) -> bool:
     """Do not let config decoding turn the string 'false' into True."""
     if not isinstance(value, bool):
-        raise ValueError("read_only_workspace must be a boolean")
+        raise TypeError("read_only_workspace must be a boolean")
     return value
 
 
