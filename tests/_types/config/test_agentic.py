@@ -181,7 +181,7 @@ def test_a_full_agentic_section_round_trips_through_a_dict() -> None:
 
 @pytest.mark.parametrize("value", [None, "true", "false", 0, 1, [], {}])
 def test_read_only_workspace_requires_a_boolean(value) -> None:
-    with pytest.raises(ValueError, match="must be a boolean"):
+    with pytest.raises(TypeError, match="must be a boolean"):
         AgenticConfig.from_dict({**_MINIMAL_AGENTIC_DICT, "read_only_workspace": value})
 
 

@@ -112,7 +112,7 @@ def test_policy_rejects_noncanonical_workspace_paths(path: str) -> None:
 
 @pytest.mark.parametrize("value", ["false", "true", None, 1, 0])
 def test_backend_policy_flag_is_strict(value) -> None:
-    with pytest.raises(ValueError, match="boolean"):
+    with pytest.raises(TypeError, match="boolean"):
         read_only_required({"read_only_workspace": value})
 
 
