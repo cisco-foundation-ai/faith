@@ -25,8 +25,9 @@ from faith._types.enums import CIEnum
 from faith._types.model.engine import ModelEngine
 from faith._types.model.prompt import PromptFormatter
 from faith._types.record.model_response import GenerationError
+from faith._types.record.score import Score
 from faith._types.record.stats import MetricSummary
-from faith.benchmark.scores.scoring import Score, ScoreFn
+from faith.benchmark.scores.scoring import ScoreFn
 from faith.model.factory import create_model
 
 logger = logging.getLogger(__name__)
@@ -163,6 +164,108 @@ class JaccardIndex(ScoreFn[tuple[str, ...]]):
         }
 
 
+class FileF1Score(ScoreFn[Sequence[str]]):
+    """A score for evaluating a predicted list of file paths by its F1 against the label."""
+
+    def _score(
+        self,
+        label: Sequence[str] | None,
+        pred: Sequence[str] | None,
+        **kwargs: Any,
+    ) -> Score:
+        """Compute the set-level F1 between the predicted and labeled file paths.
+
+        Args:
+            label: The ground-truth file paths, compared as exact strings.
+            pred: The predicted file paths; order and duplicates are ignored.
+            kwargs: Additional keyword arguments (not used).
+
+        Returns:
+            Score: The F1 score, in [0, 1].
+        """
+        # An empty prediction scores 0.0 rather than matching an empty label: this
+        # score is for records that do have labeled files.
+        if not pred:
+            return Score(raw_value=0.0)
+
+        label_set = set(label or [])
+        pred_set = set(pred)
+        true_positives = len(label_set & pred_set)
+        if not true_positives:
+            return Score(raw_value=0.0)
+
+        precision = true_positives / len(pred_set)
+        recall = true_positives / len(label_set)
+        return Score(raw_value=2 * precision * recall / (precision + recall))
+
+    def aggregate(self, scores: Sequence[Score]) -> dict[str, float]:
+        """Aggregate a list of file F1 scores into statistics for the benchmark."""
+        score_values = [s["value"] for s in scores]
+        return {
+            "mean": float(np.mean(score_values)),
+            "median": float(np.median(score_values)),
+        }
+
+
+class TrueNegativeRateScore(ScoreFn[Sequence[str]]):
+    """A score awarding a prediction that names no items at all."""
+
+    def _score(
+        self,
+        label: Sequence[str] | None,
+        pred: Sequence[str] | None,
+        **kwargs: Any,
+    ) -> Score:
+        """Award 1.0 only for a prediction that named no items, 0.0 otherwise.
+
+        Args:
+            label: Unused; this score has no ground truth to compare against.
+            pred: The predicted items: empty to abstain, None if the agent never
+                submitted an answer at all, which is not an abstention.
+            kwargs: Additional keyword arguments (not used).
+
+        Returns:
+            Score: 1.0 for a true negative, 0.0 for a false positive or a
+                missing answer.
+        """
+        return Score(raw_value=1.0 if pred is not None and not pred else 0.0)
+
+    def aggregate(self, scores: Sequence[Score]) -> dict[str, float]:
+        """Aggregate a list of true-negative indicators into statistics for the benchmark."""
+        return {"mean": float(np.mean([s["value"] for s in scores]))}
+
+
+class AbstainRateScore(ScoreFn[Sequence[str]]):
+    """A score marking a prediction that named no items where some were labeled.
+
+    The condition `TrueNegativeRateScore` rewards, scored where an empty prediction
+    is always wrong.
+    """
+
+    def _score(
+        self,
+        label: Sequence[str] | None,
+        pred: Sequence[str] | None,
+        **kwargs: Any,
+    ) -> Score:
+        """Mark 1.0 for a prediction that named no items, 0.0 otherwise.
+
+        Args:
+            label: Unused; an abstention is wrong here whatever was labeled.
+            pred: The predicted items: empty to abstain, None if the agent never
+                submitted an answer at all, which is not an abstention.
+            kwargs: Additional keyword arguments (not used).
+
+        Returns:
+            Score: 1.0 for an abstention, 0.0 for a submission or a missing answer.
+        """
+        return Score(raw_value=1.0 if pred is not None and not pred else 0.0)
+
+    def aggregate(self, scores: Sequence[Score]) -> dict[str, float]:
+        """Aggregate a list of abstention indicators into statistics for the benchmark."""
+        return {"mean": float(np.mean([s["value"] for s in scores]))}
+
+
 class LogScaledScore(ScoreFn[str]):
     """A score for evaluating numeric answers with a logarithmically scaled score."""
 
@@ -271,7 +374,7 @@ class LLMJudgeScore(ScoreFn[str]):
         self._llm_max_score = llm_score_range.get("max", 1.0)
         assert (
             self._llm_min_score < self._llm_max_score
-        ), "Invalid score range for judge: min {self._llm_min_score} >= max {self._llm_max_score}."
+        ), f"Invalid score range for judge: min {self._llm_min_score} >= max {self._llm_max_score}."
         model_engine = ModelEngine(judge_model["model_engine"])
         self._judge_model = create_model(
             model_engine,
@@ -437,6 +540,13 @@ class DomainSpecificScore(CIEnum):
     JACCARD = (
         JaccardIndex,
     )  # Score from Jaccard index between sets of labels; in [0, 1].
+    FILE_F1 = (FileF1Score,)  # Set-level F1 over predicted file paths; in [0, 1].
+    TRUE_NEGATIVE_RATE = (
+        TrueNegativeRateScore,
+    )  # Score rewarding an empty prediction; in {0, 1}.
+    ABSTAIN_RATE = (
+        AbstainRateScore,
+    )  # Score marking an empty prediction as a give-up; in {0, 1}.
     LOG_SCALED_SCORE = (LogScaledScore,)  # Score for numeric answers.
     ALIAS_ACCURACY = (AliasAccuracyScore,)  # Accuracy score for alias matching.
     LLM_JUDGE = (LLMJudgeScore,)  # Score from LLM-based judge evaluation.

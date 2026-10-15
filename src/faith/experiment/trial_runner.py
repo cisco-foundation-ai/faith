@@ -14,21 +14,30 @@ layer (it composes record pipelines and queries the model), keeping the
 from abc import ABC, abstractmethod
 from pathlib import Path
 
-from faith._internal.io.logging import LoggingTransform
 from faith._internal.iter.mux import MuxTransform
 from faith._internal.iter.transform import DevNullReducer, IdentityTransform
 from faith._types.model.generation import GenParams
 from faith._types.record.sample import RecordStatus, SampleRecord
+from faith.agentic.core import ReActLoop
+from faith.agentic.orchestration import build_environment, build_tool_registry
+from faith.benchmark.agentic import AgenticBenchmark
 from faith.benchmark.benchmark import Benchmark, QABenchmark
 from faith.experiment.params import DataSamplingParams
 from faith.model.base import BaseModel
+from faith.record_pipelines.agentic_execution import AgenticExecutionTransform
+from faith.record_pipelines.agentic_formatting import TaskFormatter
 from faith.record_pipelines.formatting import SampleFormatter
-from faith.record_pipelines.hashing import HashModelDataTransform
 from faith.record_pipelines.params import RecordHandlingParams
 from faith.record_pipelines.prediction import model_querier
-from faith.record_pipelines.reconciliation import record_reconciler
-from faith.record_pipelines.sorting import SortByTransform
-from faith.record_pipelines.trial_log import read_trial_log
+from faith.record_pipelines.reconciliation import (
+    agentic_record_reconciler,
+    record_reconciler,
+)
+from faith.record_pipelines.trial_log import (
+    checkpoint_records,
+    persist_records,
+    read_trial_log,
+)
 
 
 class TrialRunner(ABC):
@@ -96,19 +105,90 @@ class QATrialRunner(TrialRunner):
                     ),
                 }
             )
-            >> HashModelDataTransform()
-            >> SortByTransform[int]("data", "benchmark_sample_index")
-            >> LoggingTransform[SampleRecord](trial_log_path)
+            >> persist_records(trial_log_path)
+            >> DevNullReducer[SampleRecord]()
+        )
+
+
+class AgenticTrialRunner(TrialRunner):
+    """Runs the agent loop over each task of an agentic benchmark trial.
+
+    Loads the benchmark's tasks, formats each into a bare record, reconciles
+    against any prior trial log, runs a fresh ReAct loop per stale task, and
+    checkpoints each complete record before starting the next task. Scoring is
+    deferred to eval time (AgentTrajectoryLogGrader), so the trial log holds raw
+    trajectories, not scores.
+    """
+
+    def run_trial(
+        self,
+        benchmark: Benchmark,
+        trial_log_path: Path,
+        *,
+        model: BaseModel,
+        generation: GenParams,
+        sampling_params: DataSamplingParams,
+        record_params: RecordHandlingParams,
+    ) -> None:
+        assert isinstance(benchmark, AgenticBenchmark), (
+            f"AgenticTrialRunner requires an AgenticBenchmark, got "
+            f"{type(benchmark).__name__}."
+        )
+        # The loop drives chat.completions.create interactively, so it needs the
+        # raw client rather than the batch `query` surface QA uses. Agentic always
+        # runs via the openai engine (see the CLI fork), so this is exact by design.
+        assert (
+            hasattr(model, "client")
+            and hasattr(model, "api_max_attempts")
+            and hasattr(model, "api_retry_sleep_secs")
+        ), (
+            f"AgenticTrialRunner requires a model exposing an OpenAI client, but "
+            f"{type(model).__name__} does not; agentic runs must use the openai engine."
+        )
+
+        agentic_config = benchmark.agentic_config
+        limits = agentic_config.limits
+        loop = ReActLoop(
+            model_api=model.client,
+            model=model.name_or_path,
+            environment=build_environment(agentic_config),
+            tool_registry=build_tool_registry(agentic_config.tools),
+            max_tool_calls=limits.max_tool_calls,
+            max_turns=limits.max_turns,
+            max_consecutive_no_tool_calls=limits.max_consecutive_no_tool_calls,
+            timeout_seconds=limits.timeout_seconds,
+            recover_on_environment_failure=limits.recover_on_environment_failure,
+            system_prompt=agentic_config.system_prompt,
+            # Retry patience is a transport setting configured on the model spec,
+            # so the loop must not fall back to its own defaults here.
+            api_max_attempts=model.api_max_attempts,
+            api_retry_sleep_secs=model.api_retry_sleep_secs,
+            generation_params=generation.as_request_params(),
+        )
+        # Index tasks so the query stage can recover the Task to run for each
+        # stale record (a stale record may be one read back from a prior log and
+        # so carries no task); the index is the pipeline's ordered source too.
+        tasks_by_index = dict(
+            benchmark.load_tasks(sample_size=sampling_params.sample_size)
+        )
+        existing_records = list(read_trial_log(trial_log_path))
+        _ = (
+            iter(tasks_by_index.items())
+            >> TaskFormatter(benchmark.version, agentic_config.system_prompt)
+            >> agentic_record_reconciler(
+                existing_records,
+                record_params.replacement_strategy,
+            )
+            >> AgenticExecutionTransform(loop, tasks_by_index)
+            >> checkpoint_records(trial_log_path, existing_records)
             >> DevNullReducer[SampleRecord]()
         )
 
 
 def trial_runner_for(benchmark: Benchmark) -> TrialRunner:
-    """Select the appropriate TrialRunner for a benchmark.
-
-    Currently only question-answer benchmarks are supported; agentic benchmarks
-    will add their own runner here.
-    """
+    """Select the appropriate TrialRunner for a benchmark."""
+    if isinstance(benchmark, AgenticBenchmark):
+        return AgenticTrialRunner()
     if isinstance(benchmark, QABenchmark):
         return QATrialRunner()
     raise ValueError(

@@ -15,9 +15,10 @@ import numpy as np
 from faith._internal.iter.transform import Reducer
 from faith._internal.metrics.validation import assert_same_length
 from faith._types.config.scoring import OutputProcessingConfig
+from faith._types.record.agent import StoppedReason
+from faith._types.record.score import Score
 from faith._types.record.stats import MetricSummary, StatsRecord
 from faith.benchmark.scores.domain_specific import DomainSpecificScore
-from faith.benchmark.scores.scoring import Score
 
 
 class GradeAggregator(Reducer[StatsRecord | None, MetricSummary]):
@@ -31,23 +32,74 @@ class GradeAggregator(Reducer[StatsRecord | None, MetricSummary]):
         )
 
     def __call__(self, stats_logs: Iterable[StatsRecord | None]) -> MetricSummary:
-        """Reduce the collected statistics to their overall benchmark metrics."""
-        test_stats = GradeAggregator._stats_transpose(stats_logs)
+        """Reduce the collected statistics to their overall benchmark metrics.
+
+        A record whose generation failed is reported by the error metrics and
+        withheld from every other metric: a failure is not a wrong answer, and
+        scoring it as one would understate the model rather than the harness.
+        """
+        graded = [stats for stats in stats_logs if stats is not None]
+        scored = [stats for stats in graded if stats.error is None]
+
+        test_stats = GradeAggregator._stats_transpose(scored)
         logit_stats = (
             GradeAggregator._logits_stats(test_stats["log_probs"])
             if "log_probs" in test_stats
             else {}
         )
-        return logit_stats | self._aggregate(**test_stats)
+        return (
+            logit_stats
+            | self._aggregate(**test_stats)
+            # Last, to restore query_count as the total: _aggregate only ever saw
+            # the scored records.
+            | GradeAggregator._error_metrics(len(graded), len(scored))
+            | GradeAggregator._stopped_reason_metrics(graded)
+        )
+
+    @staticmethod
+    def _error_metrics(query_count: int, scored_count: int) -> MetricSummary:
+        """Metrics over how many records were gradeable at all."""
+        return {
+            "query_count": query_count,
+            "scored_count": scored_count,
+            "error_count": query_count - scored_count,
+            "error_rate": (
+                (query_count - scored_count) / query_count
+                if query_count > 0
+                else float("nan")
+            ),
+        }
+
+    @staticmethod
+    def _stopped_reason_metrics(graded: Sequence[StatsRecord]) -> MetricSummary:
+        """How the agent's runs terminated, or nothing at all for a QA benchmark.
+
+        Computed here rather than in `_aggregate` because it must cover the errored
+        records too: ERROR is a stopped reason, and a histogram omitting it would
+        read as an empty tally beside a nonzero error_count.
+        """
+        reasons = [stats.stopped_reason for stats in graded]
+        if all(reason is None for reason in reasons):
+            return {}
+        return {
+            "stopped_reason_count": {
+                str(sr): sum(1 for reason in reasons if reason == str(sr))
+                for sr in list(StoppedReason)
+            },
+            "stopped_reason_rate": {
+                str(sr): np.mean([1 if reason == str(sr) else 0 for reason in reasons])
+                for sr in list(StoppedReason)
+            },
+        }
 
     @staticmethod
     def _stats_transpose(
-        stats_logs: Iterable[StatsRecord | None],
+        stats_logs: Iterable[StatsRecord],
     ) -> dict[str, Sequence[Any]]:
         """Transpose the 'stats' dataclass fields in `logs` to a dictionary of lists."""
         transposed_stats: dict[str, list[Any]] = defaultdict(list)
         for stats in stats_logs:
-            for key in ({f.name for f in fields(stats)} if stats else set()):
+            for key in {f.name for f in fields(stats)}:
                 transposed_stats[key].append(getattr(stats, key))
 
         # Remove any fields whose all values are all None.

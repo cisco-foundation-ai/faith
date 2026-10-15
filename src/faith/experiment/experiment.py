@@ -12,18 +12,22 @@ from faith._internal.algo.hash import dict_sha256
 from faith._internal.io.store import Store
 from faith._types.benchmark.sample_ratio import SampleRatio
 from faith._types.benchmark.spec import BenchmarkSpec
+from faith._types.config.agentic import AgenticEnvironmentConfig
 from faith._types.config.benchmark import BenchmarkConfig
 from faith._types.model.generation import GenerationMode, GenParams
 from faith._types.model.prompt import PromptFormatter
-from faith.benchmark.benchmark import QABenchmark
-from faith.benchmark.config import load_config_from_path
+from faith.benchmark.benchmark import Benchmark
+from faith.benchmark.config import (
+    load_config_from_path,
+    resolve_deployment_environment,
+)
 from faith.benchmark.load import load_benchmark
 
 
 class BenchmarkExperiment:
     """A class to manage an experiment for a benchmark over multiple trials.
 
-    Experiments act as an iterator of `QABenchmark` instances, each representing a trial
+    Experiments act as an iterator of `Benchmark` instances, each representing a trial
     of the benchmark with a specific seed. The experiment is configured with parameters
     benchmark path, generation mode, prompt format, number of shots, and any
     `kwargs` given. The datastore location and seed for the benchmark are changed for
@@ -41,6 +45,7 @@ class BenchmarkExperiment:
         root_datastore: Store,
         num_trials: int,
         initial_seed: int,
+        environment_config: AgenticEnvironmentConfig | None = None,
         **kwargs: Any,
     ):
         """Initialize a benchmark experiment with the given experiment parameters."""
@@ -52,8 +57,13 @@ class BenchmarkExperiment:
             self._benchmark_dir.exists() and self._benchmark_dir.is_dir()
         ), f"Benchmark path '{self._benchmark_dir}' is not an existing directory."
 
-        # State that specifies and configures the benchmark.
-        self._benchmark_config = load_config_from_path(self._benchmark_dir)
+        # State that specifies and configures the benchmark. The environment
+        # override is merged in here, before `benchmark_config` is recorded, so the
+        # experiment's summary names the environment the run actually used.
+        authored_config = load_config_from_path(self._benchmark_dir)
+        self._benchmark_config = resolve_deployment_environment(
+            authored_config, environment_config
+        )
         benchmark_name = self._benchmark_config.metadata.name
         assert benchmark_name, "Benchmark config missing field `metadata.name`."
         self._benchmark_spec = BenchmarkSpec(
@@ -69,7 +79,7 @@ class BenchmarkExperiment:
         self._gen_params = gen_params
 
         # Build the experiment's sub-datastore.
-        self._datastore = root_datastore.sub_store(
+        experiment_path = (
             Path(self._benchmark_spec.name)
             / self._model_name
             / str(self._benchmark_spec.prompt_format)
@@ -77,6 +87,15 @@ class BenchmarkExperiment:
             / f"{str(self._benchmark_spec.n_shot).replace('/', '_')}_shot"
             / f"gen_params_{dict_sha256(self._gen_params.to_dict())[-16:]}"
         )
+        # An agentic config shapes a run the way gen params do, so it forks the path.
+        # The authored config is hashed, not the resolved one: where a run was
+        # deployed does not change its answers.
+        if authored_config.agentic_config is not None:
+            experiment_path /= (
+                "agentic_"
+                + dict_sha256(authored_config.agentic_config.to_identity_dict())[-16:]
+            )
+        self._datastore = root_datastore.sub_store(experiment_path)
 
         # State for regulating the experiment's trials.
         self._num_trials = num_trials
@@ -98,7 +117,7 @@ class BenchmarkExperiment:
         """Returns the datastore for this experiment."""
         return self._datastore
 
-    def __iter__(self) -> Iterator[tuple[QABenchmark, Path]]:
+    def __iter__(self) -> Iterator[tuple[Benchmark, Path]]:
         """Return an iterator over the benchmark trials."""
         return self
 
@@ -106,8 +125,8 @@ class BenchmarkExperiment:
         """Return the number of trials in the experiment."""
         return self._num_trials
 
-    def __next__(self) -> tuple[QABenchmark, Path]:
-        """Create a new QABenchmark instance for the next trial."""
+    def __next__(self) -> tuple[Benchmark, Path]:
+        """Create a new Benchmark instance for the next trial."""
         if self._trial >= self._num_trials:
             raise StopIteration
         trial_seed = self._initial_seed + self._trial

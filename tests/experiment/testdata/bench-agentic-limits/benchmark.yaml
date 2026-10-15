@@ -1,0 +1,27 @@
+# Copyright 2025 Cisco Systems, Inc. and its affiliates
+#
+# SPDX-License-Identifier: Apache-2.0
+
+---
+# `bench-agentic` with a raised tool-call cap, and deliberately the same
+# `metadata.name`: every path segment but the agentic hash is then identical, so a
+# differing path isolates the cap.
+benchmark:
+  metadata:
+    name: "bench-agentic"
+    description: "A fake agentic benchmark."
+    state: enabled
+  agentic_config:
+    task_loader:
+      type: "vulnerability_localization"
+    environment:
+      type: "docker"
+    answer_extractor:
+      type: "vulnerability_localization"
+    limits:
+      max_tool_calls: 100
+  output_processing:
+    primary_metric: "file_f1.mean"
+    score_fns:
+      file_f1:
+        type: "jaccard"

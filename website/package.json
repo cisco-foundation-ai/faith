@@ -1,0 +1,67 @@
+{
+  "name": "faith-docs-site",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "docusaurus": "docusaurus",
+    "start": "docusaurus start",
+    "build": "docusaurus build",
+    "postbuild": "npm run check-site-navigation",
+    "swizzle": "docusaurus swizzle",
+    "deploy": "docusaurus deploy",
+    "clear": "docusaurus clear",
+    "serve": "docusaurus serve",
+    "write-translations": "docusaurus write-translations",
+    "write-heading-ids": "docusaurus write-heading-ids",
+    "sync-configs": "node scripts/sync-model-configs.js",
+    "sync-sql": "node scripts/sync-example-sql.js",
+    "check-paths": "node scripts/check-repo-facts.js",
+    "check-facts": "PYTHONPATH=\"${PYTHONPATH:-../src}\" python3 scripts/check_repo_facts.py",
+    "check-agentic-example": "PYTHONPATH=\"${PYTHONPATH:-../src}\" python3 scripts/check_agentic_example.py",
+    "check-result-lifecycle": "PYTHONPATH=\"${PYTHONPATH:-../src}\" python3 scripts/check_result_lifecycle.py",
+    "check-environment-setup": "PYTHONPATH=\"${PYTHONPATH:-../src}\" python3 scripts/check_environment_setup.py",
+    "check-model-configuration": "PYTHONPATH=\"${PYTHONPATH:-../src}\" python3 scripts/check_model_configuration.py",
+    "check-site-navigation": "python3 scripts/check_site_navigation.py",
+    "check-site-navigation-tests": "python3 scripts/check_site_navigation.py --self-test",
+    "check-site-consistency": "PYTHONPATH=\"${PYTHONPATH:-../src}\" python3 scripts/check_site_consistency.py",
+    "check-presentation": "node --test scripts/check-presentation.js",
+    "check-repo": "npm run sync-configs -- --check && npm run sync-sql -- --check && npm run check-paths && npm run check-facts && npm run check-agentic-example && npm run check-result-lifecycle && npm run check-environment-setup && npm run check-model-configuration && npm run check-site-consistency && npm run check-site-navigation-tests && npm run check-presentation"
+  },
+  "dependencies": {
+    "@docusaurus/core": "3.10.2",
+    "@docusaurus/faster": "3.10.2",
+    "@docusaurus/preset-classic": "3.10.2",
+    "@easyops-cn/docusaurus-search-local": "^0.55.2",
+    "@mdx-js/react": "^3.0.0",
+    "clsx": "^2.0.0",
+    "prism-react-renderer": "^2.3.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@docusaurus/module-type-aliases": "3.10.2",
+    "@docusaurus/types": "3.10.2"
+  },
+  "overrides": {
+    "brace-expansion": "^5.0.8",
+    "js-yaml": "^4.3.1",
+    "serialize-javascript": "^7.0.5",
+    "tinypool": "^2.2.0",
+    "uuid": "^11.1.1"
+  },
+  "browserslist": {
+    "production": [
+      ">0.5%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 3 chrome version",
+      "last 3 firefox version",
+      "last 5 safari version"
+    ]
+  },
+  "engines": {
+    "node": ">=20.18.1"
+  }
+}

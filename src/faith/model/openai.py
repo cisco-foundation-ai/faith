@@ -12,6 +12,7 @@ from openai import OpenAI
 from faith._types.model.spec import Reasoning
 from faith._types.record.model_response import ChatResponse, GenerationError
 from faith.model.api_model import APIBasedModel
+from faith.model.api_retry import EmptyChoicesError, describe_api_error
 
 
 class OpenAIModel(APIBasedModel):
@@ -25,9 +26,16 @@ class OpenAIModel(APIBasedModel):
         api_num_threads: int = 5,
         api_max_attempts: int = 10,
         api_retry_sleep_secs: float = 1.0,
+        base_url: str | None = None,
+        api_key: str | None = None,
         **_kwargs: Any,
     ):
-        """Initialize the OpenAI API backend with the given parameters."""
+        """Initialize the OpenAI API backend with the given parameters.
+
+        `base_url` points the client at an OpenAI-compatible server other than
+        OpenAI's own (a vLLM host, OpenRouter, a local server). `api_key` overrides
+        the OPENAI_API_KEY env var.
+        """
         super().__init__(
             name_or_path,
             num_log_probs=num_log_probs,
@@ -36,7 +44,25 @@ class OpenAIModel(APIBasedModel):
             api_max_attempts=api_max_attempts,
             api_retry_sleep_secs=api_retry_sleep_secs,
         )
-        self._client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        resolved_api_key = api_key or os.getenv("OPENAI_API_KEY") or None
+        # Gated on base_url: a keyless OpenAI-compatible server (e.g. local vLLM)
+        # needs a non-empty placeholder, while against OpenAI itself None makes the
+        # SDK fail fast at construction rather than 401 mid-run.
+        if resolved_api_key is None and base_url is not None:
+            resolved_api_key = "EMPTY"
+        self._client = OpenAI(
+            api_key=resolved_api_key, base_url=base_url, max_retries=0
+        )
+
+    @property
+    def client(self) -> OpenAI:
+        """Return the underlying OpenAI client.
+
+        The agentic runner drives the ReAct loop by calling
+        `chat.completions.create` interactively, so it needs the raw client
+        rather than the batch `query` surface the QA path uses.
+        """
+        return self._client
 
     def _query_api(
         self, messages: list[dict[str, str]], **gen_params: Any
@@ -45,6 +71,8 @@ class OpenAIModel(APIBasedModel):
         response = self._client.chat.completions.create(
             model=self.name_or_path, messages=messages, **gen_params
         )
+        if not response.choices:
+            raise EmptyChoicesError()
         # Note: output, response, and answer are the same for chat completions in OpenAI
         # since there is way to distinguish them in the response.
         return ChatResponse(
@@ -62,4 +90,6 @@ class OpenAIModel(APIBasedModel):
     @staticmethod
     def _handle_query_error(exception: BaseException) -> GenerationError:
         """Handle exceptions raised when calling the API and return a GenerationError."""
-        return GenerationError(title="OpenAI API Error", details=str(exception))
+        return GenerationError(
+            title="OpenAI API Error", details=describe_api_error(exception)
+        )

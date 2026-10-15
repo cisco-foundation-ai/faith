@@ -6,9 +6,12 @@
 disable-telemetry: true
 exit-code: 1
 exit-on-eol: 2
+# No `vuln` scanner here: its verdict depends on an advisory database fetched at
+# run time, so a newly published CVE turns every open PR red without any branch
+# changing, and green again only once the bump reaches each one. The dependency
+# scan runs on a schedule instead; see .github/workflows/vuln-scan.yml.
 scan:
   scanners:
-    - vuln
     - misconfig
     - secret
   skip-dirs:

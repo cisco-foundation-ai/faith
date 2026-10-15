@@ -10,11 +10,15 @@ from typing import Any, cast
 
 from tqdm import tqdm
 
-from faith._internal.functools.retriable import RetryFunctionWrapper
+from faith._internal.functools.retriable import (
+    RetryFunctionWrapper,
+    validate_retry_settings,
+)
 from faith._internal.iter.fork_merge import ForkAndMergeTransform
 from faith._types.model.prompt import PromptFormatter
 from faith._types.model.spec import Reasoning
 from faith._types.record.model_response import ChatResponse, GenerationError
+from faith.model.api_retry import api_retry_delay, is_retryable_api_error
 from faith.model.base import BaseModel, PromptList, _is_message_list
 
 
@@ -35,11 +39,20 @@ class APIBasedModel(BaseModel, ABC):
         assert num_log_probs is None, "Logprobs are not supported by API-based models."
         assert reasoning_spec is None, "Reasoning is not supported by API-based models."
         assert api_num_threads > 0, "Number of API threads must be greater than 0."
-        assert api_max_attempts > 0, "Number of API attempts must be greater than 0."
-        assert api_retry_sleep_secs > 0, "Retry sleep seconds must be greater than 0."
+        validate_retry_settings(api_max_attempts, api_retry_sleep_secs)
         self._api_num_threads = api_num_threads
         self._api_max_attempts = api_max_attempts
         self._api_retry_sleep_secs = api_retry_sleep_secs
+
+    @property
+    def api_max_attempts(self) -> int:
+        """Return the total attempt limit, including the initial API call."""
+        return self._api_max_attempts
+
+    @property
+    def api_retry_sleep_secs(self) -> float:
+        """Return how long to sleep between API retries."""
+        return self._api_retry_sleep_secs
 
     @property
     def supported_formats(self) -> set[PromptFormatter]:
@@ -72,6 +85,8 @@ class APIBasedModel(BaseModel, ABC):
                     lambda msg: self._query_api(msg, **gen_params),
                     max_attempts=self._api_max_attempts,
                     retry_sleep_secs=self._api_retry_sleep_secs,
+                    retry_if=is_retryable_api_error,
+                    retry_delay=api_retry_delay,
                 ),
                 self._handle_query_error,
                 max_workers=self._api_num_threads,

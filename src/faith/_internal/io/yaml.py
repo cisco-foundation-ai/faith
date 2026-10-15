@@ -12,18 +12,10 @@ from typing import IO, Any
 
 import yaml
 
-from faith._internal.io.resources import benchmarks_root, models_root
+from faith._internal.io.resources import resolve_resource_path
 
 _INDEXED_PATH_RE = re.compile(r'([^\[]+)((?:\[(?:\d+|(?:\'[^\']+\')|(?:"[^"]+"))\])*)')
 _INDEX_RE = re.compile(r'\[(\d+|\'[^\']+\'|"[^"]+")\]')
-
-
-def _resolve_path(path: str) -> Path:
-    if path.startswith("$BENCHMARKS_ROOT/"):
-        return benchmarks_root() / path.replace("$BENCHMARKS_ROOT/", "")
-    if path.startswith("$MODELS_ROOT/"):
-        return models_root() / path.replace("$MODELS_ROOT/", "")
-    return Path(path)
 
 
 def _parse_config_path(path: str) -> tuple[Path, list[int | str]]:
@@ -38,16 +30,21 @@ def _parse_config_path(path: str) -> tuple[Path, list[int | str]]:
             int(idx) if idx.isdigit() else idx.strip("'\"")
             for idx in _INDEX_RE.findall(selection)
         ]
-    return _resolve_path(file_path), indices
+    return resolve_resource_path(file_path), indices
 
 
-def _deep_merge_config(
+def deep_merge_config(
     source: dict[Any, Any], overrides: dict[Any, Any]
 ) -> dict[Any, Any]:
-    """Recursively merge two dictionaries, with `overrides` taking precedence."""
+    """Recursively merge two dictionaries, with `overrides` taking precedence.
+
+    Writes into `source` and returns it, nested dicts included, so a caller that
+    must not disturb its input passes a `deepcopy`: a shallow copy still shares
+    the nested dicts this merges into.
+    """
     for key, value in overrides.items():
         if isinstance(value, dict) and key in source and isinstance(source[key], dict):
-            source[key] = _deep_merge_config(source[key], value)
+            source[key] = deep_merge_config(source[key], value)
         else:
             source[key] = value
     return source
@@ -91,7 +88,7 @@ def _include_handler(loader: "_YamlIncludeLoader", node: yaml.Node) -> dict:
         overrides = loader.construct_mapping(node, deep=True)
         for key, value in overrides.items():
             imported_config = _import_config(loader.base_path, str(key))
-            merged_map.update(_deep_merge_config(imported_config, value))
+            merged_map.update(deep_merge_config(imported_config, value))
         return merged_map
 
     raise yaml.YAMLError(f"Unsupported node type for !from: {type(node)}")
@@ -100,7 +97,7 @@ def _include_handler(loader: "_YamlIncludeLoader", node: yaml.Node) -> dict:
 def _string_from_handler(loader: "_YamlIncludeLoader", node: yaml.Node) -> str:
     """YAML !string_from handler to include external files as raw strings."""
     if isinstance(node, yaml.ScalarNode):
-        file_path = _resolve_path(loader.construct_scalar(node))
+        file_path = resolve_resource_path(loader.construct_scalar(node))
         if not file_path.is_absolute():
             file_path = loader.base_path / file_path
         with open(file_path, "r", encoding="utf-8") as f:

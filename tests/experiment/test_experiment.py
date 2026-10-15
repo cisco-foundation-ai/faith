@@ -2,16 +2,22 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+import re
+from dataclasses import replace
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
+from faith._internal.algo.hash import dict_sha256
 from faith._internal.io.resources import benchmarks_root
 from faith._internal.io.store import Store
 from faith._types.benchmark.sample_ratio import SampleRatio
 from faith._types.benchmark.spec import BenchmarkSpec
+from faith._types.config.agentic import AgenticEnvironmentConfig
 from faith._types.model.generation import GenerationMode, GenParams
 from faith._types.model.prompt import PromptFormatter
+from faith.benchmark.config import load_config_from_path
 from faith.experiment.experiment import BenchmarkExperiment
 
 
@@ -62,9 +68,10 @@ def test_benchmark_experiment() -> None:
         initial_seed=3,
     )
     assert experiment.benchmark_config.metadata.name == "for-unit-test-only"
-    assert str(experiment.datastore.path).startswith(
-        "/tmp/for-unit-test-only/example_model/chat/chat_comp/5_shot/gen_params_"
+    assert experiment.datastore.path.parent == Path(
+        "/tmp/for-unit-test-only/example_model/chat/chat_comp/5_shot"
     )
+    assert experiment.datastore.path.name.startswith("gen_params_")
     assert experiment.benchmark_spec == BenchmarkSpec(
         name="for-unit-test-only",
         generation_mode=GenerationMode.CHAT_COMP,
@@ -104,6 +111,94 @@ def test_benchmark_experiment() -> None:
             num_trials=0,
             initial_seed=27,
         )
+
+
+def _agentic_experiment(
+    benchmark_dir: str, environment_config: AgenticEnvironmentConfig | None = None
+) -> BenchmarkExperiment:
+    return BenchmarkExperiment(
+        benchmark_path=Path(__file__).parent / "testdata" / benchmark_dir,
+        generation_mode=GenerationMode.CHAT_COMP,
+        prompt_format=PromptFormatter.CHAT,
+        n_shot=SampleRatio(0),
+        model_name="example_model",
+        gen_params=GenParams(
+            temperature=0.1, top_p=0.5, max_completion_tokens=100, kwargs={}
+        ),
+        root_datastore=FakeStore(Path("/tmp")),
+        num_trials=1,
+        initial_seed=0,
+        environment_config=environment_config,
+    )
+
+
+def test_agentic_config_forks_the_experiment_path() -> None:
+    path = _agentic_experiment("bench-agentic").datastore.path
+    assert path.parent.parent == Path(
+        "/tmp/bench-agentic/example_model/chat/chat_comp/0_shot"
+    )
+    assert path.parent.name.startswith("gen_params_")
+    assert re.fullmatch(r"agentic_[0-9a-f]{16}", path.name)
+
+    raised_cap = _agentic_experiment("bench-agentic-limits").datastore.path
+    assert raised_cap.parent == path.parent
+    assert raised_cap.name != path.name
+
+
+@pytest.mark.parametrize(
+    "benchmark_dir",
+    ["bench-agentic-described", "bench-agentic-verbose"],
+    ids=[
+        "an-edit-outside-the-agentic-config",
+        "the-same-config-with-its-defaults-spelled-out",
+    ],
+)
+def test_the_agentic_segment_forks_on_nothing_else(benchmark_dir: str) -> None:
+    """Neither a non-agentic edit nor an equivalent authoring may move the path."""
+    assert (
+        _agentic_experiment(benchmark_dir).datastore.path
+        == _agentic_experiment("bench-agentic").datastore.path
+    )
+
+
+def test_a_deployment_override_does_not_fork_the_experiment_path() -> None:
+    """A run's backend is where it ran, not what it answered, so the path is shared."""
+    docker = _agentic_experiment("bench-agentic", AgenticEnvironmentConfig("docker"))
+    k8s = _agentic_experiment("bench-agentic", AgenticEnvironmentConfig("kubernetes"))
+
+    # The override reaches the config the experiment records...
+    assert docker.benchmark_config.agentic_config is not None
+    assert k8s.benchmark_config.agentic_config is not None
+    assert (
+        docker.benchmark_config.agentic_config.environment.type,
+        k8s.benchmark_config.agentic_config.environment.type,
+    ) == ("docker", "kubernetes")
+    # ...but both are the same experiment, so they share one datastore.
+    assert docker.datastore.path == k8s.datastore.path
+    assert k8s.datastore.path == _agentic_experiment("bench-agentic").datastore.path
+
+
+def test_secret_redaction_does_not_change_the_authored_cache_path() -> None:
+    """Recording must not collapse different secrets or orphan pre-fix checkpoints."""
+    base = load_config_from_path(Path(__file__).parent / "testdata/bench-agentic")
+    assert base.agentic_config is not None
+    paths = []
+    for secret in ["fake-first", "fake-second"]:
+        raw = {"environment": {"API_KEY": secret}}
+        agentic = replace(
+            base.agentic_config, environment=AgenticEnvironmentConfig("docker", raw)
+        )
+        # This is the shape to_dict returned before environment redaction existed.
+        original = agentic.to_dict()
+        original["environment"]["config"] = raw
+        with patch(
+            "faith.experiment.experiment.load_config_from_path",
+            return_value=replace(base, agentic_config=agentic),
+        ):
+            path = _agentic_experiment("bench-agentic").datastore.path
+        assert path.name == f"agentic_{dict_sha256(original)[-16:]}"
+        paths.append(path)
+    assert paths[0] != paths[1]
 
 
 def test_benchmark_experiment_iteration() -> None:

@@ -1,0 +1,872 @@
+/**
+ * Landing page — Foundation AI editorial style:
+ * cool slate backgrounds, cyan accent, serif display headings.
+ */
+
+/* ---------- Hero ---------- */
+.hero {
+  position: relative;
+  overflow: hidden;
+  padding: 6rem 0 3.5rem;
+  text-align: center;
+  color: var(--fai-text);
+  background:
+    radial-gradient(
+      1000px 460px at 50% -8%,
+      var(--fai-accent-dim),
+      transparent 62%
+    ),
+    linear-gradient(180deg, var(--fai-hero-top) 0%, var(--fai-bg) 100%);
+}
+
+.heroGlow {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--fai-hero-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--fai-hero-grid) 1px, transparent 1px);
+  background-size: 46px 46px;
+  mask-image: radial-gradient(
+    640px 360px at 50% 18%,
+    #000 20%,
+    transparent 78%
+  );
+  -webkit-mask-image: radial-gradient(
+    640px 360px at 50% 18%,
+    #000 20%,
+    transparent 78%
+  );
+  pointer-events: none;
+}
+
+.heroEyebrow {
+  display: inline-block;
+  font-family: var(--fai-mono);
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--fai-accent);
+  margin-bottom: 1.2rem;
+}
+
+/* The org half of the eyebrow links out to the Foundation AI site. It keeps the
+   eyebrow's own color instead of the theme's link color, so the line still reads as
+   one label rather than half label, half link. */
+.heroEyebrowOrg {
+  color: inherit;
+  text-decoration: none;
+}
+
+.heroEyebrowOrg:hover {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.3em;
+}
+
+/* A hair taller than the uppercase letters beside it: the notch in the mark is a
+   ninth of its width, and below ~11px it stops reading as a notch at all. The gap
+   matches the letter rhythm, which the eyebrow's 0.22em letter-spacing widens. */
+.heroMark {
+  width: 0.92em;
+  height: 0.92em;
+  margin-right: 0.5em;
+  vertical-align: -0.08em;
+  fill: currentcolor;
+}
+
+.heroTitle {
+  font-family: var(--fai-serif);
+  font-size: 4rem;
+  line-height: 1.04;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  margin: 0 auto 1.4rem;
+  max-width: 900px;
+  color: var(--fai-text);
+}
+
+.heroTagline {
+  font-size: 1.18rem;
+  font-weight: 300;
+  max-width: 700px;
+  margin: 0 auto 2.4rem;
+  color: var(--fai-text2);
+  line-height: 1.7;
+}
+
+.buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+}
+
+/* Shared button shape — all three share the same size + radius */
+.buttons :global(.button) {
+  border-radius: 8px;
+  font-family: var(--fai-sans);
+  font-weight: 500;
+  font-size: 1rem;
+  padding: 0.7rem 1.6rem;
+  border-width: 1px;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+/* Primary: solid accent */
+.buttons :global(.button--primary) {
+  background: var(--fai-accent);
+  border-color: var(--fai-accent);
+  color: var(--fai-on-accent);
+}
+
+.buttons :global(.button--primary:hover) {
+  background: var(--fai-accent2);
+  border-color: var(--fai-accent2);
+  color: #fff;
+}
+
+/* Secondary + outline: identical ghost style so the trio is cohesive */
+.buttons :global(.button--secondary),
+.buttons :global(.button--outline) {
+  background: transparent;
+  border-color: var(--fai-border2);
+  color: var(--fai-text);
+}
+
+.buttons :global(.button--secondary:hover),
+.buttons :global(.button--outline:hover) {
+  background: var(--fai-accent-dim);
+  border-color: var(--fai-accent);
+  color: var(--fai-accent);
+}
+
+@media screen and (max-width: 996px) {
+  .hero {
+    padding: 4rem 1.25rem 3.5rem;
+  }
+
+  .heroTitle {
+    font-size: 2.7rem;
+  }
+}
+
+/* The outbound arrow on the GitHub button (see ExternalArrow in shared.js). Sized
+   and spaced in em so it scales with the label, and stroked in `currentcolor` so
+   the button's hover and per-theme colors carry it without a second rule. */
+.btnArrow {
+  width: 0.78em;
+  height: 0.78em;
+  margin-left: 0.5em;
+  vertical-align: -0.06em;
+  fill: none;
+  stroke: currentcolor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ---------- Generic section ---------- */
+.section {
+  padding: 4.75rem 0;
+  background: var(--fai-bg);
+}
+
+.sectionMuted {
+  background: var(--fai-bg1);
+  border-top: 1px solid var(--fai-border);
+  border-bottom: 1px solid var(--fai-border);
+}
+
+.sectionHead {
+  text-align: center;
+  max-width: 720px;
+  margin: 0 auto 2.75rem;
+}
+
+.sectionTitle {
+  font-family: var(--fai-serif);
+  font-size: 2.4rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin-bottom: 0.85rem;
+  color: var(--fai-text);
+}
+
+.sectionLead {
+  font-size: 1.08rem;
+  font-weight: 300;
+  color: var(--fai-text2);
+  margin: 0;
+  line-height: 1.65;
+}
+
+.capBody code,
+.sectionLead code,
+.heroTagline code {
+  font-family: var(--fai-mono);
+  color: var(--fai-accent);
+  background: var(--fai-accent-dim);
+  padding: 0.05rem 0.4rem;
+  border-radius: 5px;
+  font-size: 0.9em;
+}
+
+/* ----- Terminal ----- */
+.terminal {
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--fai-bg1);
+  border: 1px solid var(--fai-border);
+  box-shadow: 0 18px 44px rgb(0 0 0 / 30%);
+}
+
+.terminalBar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1rem;
+  background: var(--fai-bg2);
+  border-bottom: 1px solid var(--fai-border);
+}
+
+.dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.dot[data-color="red"] {
+  background: #ff5f56;
+}
+
+.dot[data-color="yellow"] {
+  background: #ffbd2e;
+}
+
+.dot[data-color="green"] {
+  background: #27c93f;
+}
+
+.terminalTitle {
+  margin-left: 0.6rem;
+  font-family: var(--fai-mono);
+  font-size: 0.78rem;
+  color: var(--fai-text3);
+}
+
+.terminalBody {
+  margin: 0;
+  padding: 1.4rem 1.5rem;
+  background: var(--fai-bg1);
+  color: var(--fai-text);
+  font-family: var(--fai-mono);
+  font-size: 0.86rem;
+  line-height: 1.7;
+  overflow: hidden;
+
+  /* Output rows reserve their space while hidden, so content can determine
+     height without clipping longer commands or shifting during animation. */
+  height: auto;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+.prompt {
+  color: var(--fai-accent);
+  font-weight: 500;
+}
+
+.cmd {
+  color: var(--fai-text);
+}
+
+/* The whole command fades/rises in as one block (no per-character typing). */
+.cmdBlock {
+  opacity: 0;
+  filter: blur(3px);
+  transition:
+    opacity 0.5s ease,
+    filter 0.5s ease;
+}
+
+.cmdBlockIn {
+  opacity: 1;
+  filter: blur(0);
+}
+
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0;
+  }
+}
+
+/* Hidden rows retain their layout space and animate when activated. */
+.outLine {
+  color: var(--fai-text2);
+  visibility: hidden;
+}
+
+.outLineVisible {
+  visibility: visible;
+  animation: outLineIn 0.42s ease both;
+}
+
+@keyframes outLineIn {
+  from {
+    opacity: 0;
+    filter: blur(3px);
+  }
+
+  to {
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+.outTag {
+  color: var(--fai-accent);
+  font-weight: 500;
+}
+
+@keyframes flowDot {
+  0% {
+    top: 0;
+    opacity: 1;
+  }
+
+  100% {
+    top: 100%;
+    opacity: 0;
+  }
+}
+
+/* Evaluation results: a compact report, not a cross-benchmark ranking. */
+.board {
+  border-radius: 12px;
+  overflow: hidden;
+  text-align: left;
+  background: var(--fai-bg2);
+  border: 1px solid var(--fai-border);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 12%);
+}
+
+.boardRow {
+  opacity: 0;
+  transform: translateY(6px);
+  transition:
+    opacity 0.35s ease,
+    transform 0.35s ease;
+}
+
+.boardRowIn {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.boardHead {
+  padding: 1rem 1.2rem;
+  border-bottom: 1px solid var(--fai-border);
+  background: var(--fai-bg1);
+}
+
+.boardHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.boardTitle {
+  margin: 0;
+  font-family: var(--fai-sans);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--fai-text);
+}
+
+.boardExample {
+  padding: 0.1rem 0.45rem;
+  border: 1px solid var(--fai-border2);
+  border-radius: 4px;
+  color: var(--fai-text2);
+  font-size: 0.68rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.boardMeta {
+  margin: 0.35rem 0 0;
+  font-family: var(--fai-mono);
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: var(--fai-text2);
+  overflow-wrap: anywhere;
+}
+
+.boardCaption {
+  caption-side: bottom;
+  padding: 0.75rem 1.2rem;
+  border-top: 1px solid var(--fai-border);
+  text-align: left;
+  color: var(--fai-text2);
+  font-size: 0.7rem;
+  line-height: 1.5;
+}
+
+.boardTable {
+  width: 100%;
+  min-width: 480px;
+  border-collapse: collapse;
+  table-layout: fixed;
+  margin: 0;
+  display: table;
+}
+
+.boardScroll {
+  overflow-x: auto;
+}
+
+.boardScroll:focus-visible {
+  outline: 2px solid var(--fai-accent);
+  outline-offset: -2px;
+}
+
+.boardTable tr {
+  border: none;
+  background: transparent;
+}
+
+.boardTable th,
+.boardTable td {
+  padding: 0.75rem 0.6rem;
+  text-align: left;
+  border: none;
+  border-bottom: 1px solid var(--fai-border);
+  vertical-align: middle;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+/* Give the outer columns room so nothing hugs the card border. */
+.boardTable th:first-child,
+.boardTable td:first-child {
+  padding-left: 1.2rem;
+}
+
+.boardTable th:last-child,
+.boardTable td:last-child {
+  padding-right: 1.2rem;
+}
+
+.boardTable thead th {
+  padding-top: 0.65rem;
+  padding-bottom: 0.65rem;
+  font-family: var(--fai-sans);
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--fai-text2);
+  background: transparent;
+}
+
+.boardTable tbody tr:last-child th,
+.boardTable tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.boardTable .boardModel {
+  width: 40%;
+  font-weight: 500;
+  color: var(--fai-text);
+}
+
+.boardTable .boardBench {
+  width: 28%;
+  font-family: var(--fai-mono);
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--fai-text);
+}
+
+.boardTable .boardSamples {
+  width: 14%;
+}
+
+.boardTable .boardAccuracy {
+  width: 18%;
+}
+
+.boardTable .boardNumber {
+  font-family: var(--fai-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* ---------- Phases ---------- */
+.phaseGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+}
+
+.phaseCard {
+  position: relative;
+  display: block;
+  padding: 2rem 1.6rem 1.75rem;
+  border-radius: 14px;
+  background: var(--fai-bg2);
+  border: 1px solid var(--fai-border);
+  color: inherit;
+  text-decoration: none;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    border-color 0.15s ease;
+  overflow: hidden;
+}
+
+.phaseCard::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--fai-accent), var(--fai-accent2));
+}
+
+.phaseCard:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 16px 34px rgb(0 0 0 / 40%);
+  border-color: var(--fai-accent);
+  text-decoration: none;
+  color: inherit;
+}
+
+.phaseStep {
+  font-family: var(--fai-mono);
+  font-size: 0.82rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  color: var(--fai-accent);
+}
+
+.phaseTitle {
+  font-family: var(--fai-serif);
+  font-size: 1.55rem;
+  font-weight: 600;
+  margin: 0.4rem 0 0.6rem;
+  color: var(--fai-text);
+}
+
+.phaseCmd {
+  display: inline-block;
+  font-family: var(--fai-mono);
+  font-size: 0.78rem;
+  padding: 0.15rem 0.55rem;
+  border-radius: 6px;
+  margin-bottom: 0.85rem;
+  color: var(--fai-text2);
+  background: var(--fai-bg3);
+  border: 1px solid var(--fai-border);
+}
+
+.phaseBody,
+.kindBody {
+  margin: 0;
+  color: var(--fai-text2);
+  font-size: 0.94rem;
+  font-weight: 300;
+  line-height: 1.6;
+}
+
+/* ---------- Benchmark kinds ---------- */
+.kindGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+}
+
+.kindCard {
+  display: block;
+  padding: 1.6rem;
+  border-radius: 14px;
+  background: var(--fai-bg2);
+  border: 1px solid var(--fai-border);
+  color: inherit;
+  text-decoration: none;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.kindCard:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 26px rgb(0 0 0 / 35%);
+  border-color: var(--fai-accent);
+  text-decoration: none;
+  color: inherit;
+}
+
+/* The chip's shape comes from `.backendKind`, which is a flex item there and so
+   needs no display of its own. Here it sits in flow above the title. */
+.kindTag {
+  display: inline-block;
+}
+
+.kindTitle {
+  font-family: var(--fai-serif);
+  font-size: 1.45rem;
+  font-weight: 600;
+  margin: 0.7rem 0 0.55rem;
+  color: var(--fai-text);
+}
+
+/* ---------- Capabilities ---------- */
+.capGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.1rem;
+}
+
+.capCard {
+  display: flex;
+  gap: 1rem;
+  padding: 1.4rem;
+  border-radius: 12px;
+  background: var(--fai-bg2);
+  border: 1px solid var(--fai-border);
+  color: inherit;
+  text-decoration: none;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.capCard:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 26px rgb(0 0 0 / 35%);
+  border-color: var(--fai-accent);
+  text-decoration: none;
+  color: inherit;
+}
+
+.capNum {
+  font-family: var(--fai-mono);
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--fai-accent);
+  line-height: 1.6;
+}
+
+.capTitle {
+  font-family: var(--fai-serif);
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin: 0 0 0.35rem;
+  color: var(--fai-text);
+}
+
+.capBody {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 300;
+  color: var(--fai-text2);
+  line-height: 1.55;
+}
+
+/* Browsers break at hyphens, so `--custom-benchmarks` split across two lines. The
+   flag is 153px wide and the narrowest card is 319px, so it always fits whole. */
+.capBody code {
+  white-space: nowrap;
+}
+
+/* ---------- Backends ---------- */
+.backendGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+.backendCard {
+  padding: 1.4rem;
+  border-radius: 12px;
+  background: var(--fai-bg2);
+  border: 1px solid var(--fai-border);
+}
+
+.backendTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.6rem;
+}
+
+.backendName {
+  font-family: var(--fai-serif);
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--fai-text);
+}
+
+.backendKind,
+.kindTag {
+  font-family: var(--fai-mono);
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.15rem 0.5rem;
+  border-radius: 20px;
+  color: var(--fai-accent);
+  background: var(--fai-accent-dim);
+}
+
+.backendNote {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 300;
+  color: var(--fai-text2);
+}
+
+/* ---------- Final CTA ---------- */
+.cta {
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+  padding: 5.5rem 0;
+  color: var(--fai-text);
+  background:
+    radial-gradient(
+      760px 300px at 50% 0%,
+      var(--fai-accent-dim),
+      transparent 68%
+    ),
+    linear-gradient(180deg, var(--fai-bg1) 0%, var(--fai-bg) 100%);
+  border-top: 1px solid var(--fai-border);
+}
+
+.ctaTitle {
+  font-family: var(--fai-serif);
+  font-size: 2.7rem;
+  font-weight: 600;
+  margin-bottom: 0.85rem;
+  color: var(--fai-text);
+}
+
+.ctaLead {
+  font-size: 1.12rem;
+  font-weight: 300;
+  color: var(--fai-text2);
+  margin: 0 auto 2rem;
+  max-width: 560px;
+}
+
+/* ---------- Responsive ---------- */
+@media screen and (max-width: 996px) {
+  .phaseGrid,
+  .capGrid,
+  .backendGrid,
+  .kindGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .sectionTitle {
+    font-size: 1.9rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .boardRow {
+    opacity: 1;
+    transform: none;
+  }
+
+  .outLine {
+    animation: none;
+  }
+}
+
+/* buttons left-aligned (split hero) */
+.buttonsLeft {
+  justify-content: flex-start;
+}
+
+/* ----- Split hero: copy on the left, live demo panels on the right ----- */
+.heroSplit {
+  padding: 5rem 0 4.5rem;
+  text-align: left;
+}
+
+.heroSplitGrid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1fr 1.1fr;
+  gap: 2.25rem;
+  align-items: center;
+}
+
+.heroSplitCopy .heroTitle,
+.heroSplitCopy .heroTagline {
+  margin-left: 0;
+  text-align: left;
+  max-width: 560px;
+}
+
+.heroSplitCopy .heroTitle {
+  font-size: 3.9rem;
+}
+
+.heroSplitDemo {
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+  width: 100%;
+  min-width: 0;
+  max-width: 560px;
+  margin-left: auto;
+}
+
+/* Compact type with content-driven height; long commands remain fully visible. */
+.heroSplitDemo .terminalBody {
+  height: auto;
+  font-size: 0.78rem;
+  line-height: 1.65;
+}
+
+@media screen and (max-width: 996px) {
+  .heroSplitGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .heroSplit {
+    text-align: center;
+  }
+
+  .heroSplitCopy .heroTitle,
+  .heroSplitCopy .heroTagline {
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+  }
+
+  .buttonsLeft {
+    justify-content: center;
+  }
+}

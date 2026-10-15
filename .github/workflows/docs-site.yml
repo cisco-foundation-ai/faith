@@ -1,0 +1,85 @@
+# Copyright 2025 Cisco Systems, Inc. and its affiliates
+#
+# SPDX-License-Identifier: Apache-2.0
+
+---
+name: "docs site"
+
+# The site at website/ mirrors facts that live in src/faith/ (model configs, CLI
+# flags, benchmark metadata, the BigQuery schema). Run on changes to either side:
+# the docs can drift by being edited, or by the source moving underneath them.
+on:
+  push:
+    paths:
+      - "website/**"
+      - "src/faith/**"
+      - "docs/bigquery/**"
+      # The checkers import faith.cli, so they break when a dependency they
+      # rely on (argcomplete, pyyaml) leaves the install.
+      - "pyproject.toml"
+      - ".github/workflows/docs-site.yml"
+  pull_request:
+    paths:
+      - "website/**"
+      - "src/faith/**"
+      - "docs/bigquery/**"
+      # The checkers import faith.cli, so they break when a dependency they
+      # rely on (argcomplete, pyyaml) leaves the install.
+      - "pyproject.toml"
+      - ".github/workflows/docs-site.yml"
+  workflow_dispatch:
+
+# Declare default permissions as read-only
+permissions: read-all
+
+concurrency:
+  group: ${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref_name != 'main' }}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: "🔒 harden runner"
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: audit
+      - name: "📦 checkout repository"
+        uses: actions/checkout@e8d4307400f9427dba7cb98e488d6ab85f1cec5f
+        with:
+          persist-credentials: false
+      - name: "🐍 setup python via uv"
+        uses: astral-sh/setup-uv@d31148d669074a8d0a63714ba94f3201e7020bc3 # v8.3.0
+        with:
+          python-version: "3.11"
+          enable-cache: true
+      - name: "⬢ setup node"
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: website/package-lock.json
+      # The checkers only import faith.cli and faith.benchmark, so the base
+      # install is enough — no engine extras, no torch, no BigQuery client.
+      - name: "📥 install faith (no extras)"
+        run: |
+          uv venv
+          uv pip install -e .
+      - name: "📥 install site dependencies"
+        run: npm ci
+        working-directory: website
+      # Verifies the docs against this checkout: packaged model configs, source
+      # paths in the diagrams, inlined SQL, CLI flags and defaults, benchmark
+      # states and primary metrics, and the BigQuery schema. Exits non-zero on
+      # any drift and names each stale fact.
+      - name: "🔍 check docs against the source tree"
+        run: |
+          source ../.venv/bin/activate
+          npm run check-repo
+        working-directory: website
+      # A broken site build should fail here rather than at deploy time.
+      - name: "🏗 build the site"
+        run: npm run build
+        working-directory: website

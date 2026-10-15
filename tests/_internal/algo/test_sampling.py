@@ -6,8 +6,14 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from faith._internal.algo.sampling import NShotSampler, sample_partition
+from faith._internal.algo.sampling import (
+    NShotSampler,
+    sample_partition,
+    sample_sequence,
+)
 from faith._types.benchmark.sample_ratio import SampleRatio
+
+_ITEMS = ["a", "b", "c", "d", "e"]
 
 
 @pytest.mark.parametrize("n", [0, 1, 2, 3, 4, 5])
@@ -60,6 +66,49 @@ def test_sample_partition_invalid_sample_size() -> None:
 
     with pytest.raises(ValueError):
         sample_partition(df, len(df) + 1, rng)
+
+
+@pytest.mark.parametrize(
+    ("n", "expected"),
+    [
+        (0, []),
+        (1, ["e"]),
+        (2, ["d", "e"]),
+        (3, ["b", "d", "e"]),
+        (4, ["a", "b", "d", "e"]),
+    ],
+)
+def test_sample_sequence_draws_a_seeded_subset(n: int, expected: list[str]) -> None:
+    """The seeded draw is a golden: an unshuffled prefix would not match.
+
+    Read down the table for the documented stability contract: each expected list
+    is an order-preserving subset of the next, so the draw at one size never
+    reshuffles or drops an item drawn at a smaller one.
+    """
+    items = _ITEMS.copy()
+    rng = np.random.default_rng(seed=53124)
+
+    assert sample_sequence(items, n, rng) == expected
+    assert items == _ITEMS, "The input list should not be sampled in place."
+
+
+@pytest.mark.parametrize("n", [5, 6, 99])
+def test_sample_sequence_size_at_or_above_length_returns_all(n: int) -> None:
+    """Asking for the whole list, or more, returns it rather than raising.
+
+    A deliberate divergence from `sample_partition`, which rejects an oversized
+    `n`; here an oversized sample size means "no sampling".
+    """
+    rng = np.random.default_rng(seed=42)
+
+    assert sample_sequence(_ITEMS.copy(), n, rng) == _ITEMS
+
+
+def test_sample_sequence_rejects_negative_size() -> None:
+    rng = np.random.default_rng(seed=42)
+
+    with pytest.raises(ValueError):
+        sample_sequence(["a", "b", "c"], -1, rng)
 
 
 def test_n_shot_sampler() -> None:

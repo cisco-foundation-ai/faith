@@ -1,0 +1,11 @@
+{
+  "task_id": "t1",
+  "answer": ["a.c", "b.c"],
+  "answer_tool": "submit",
+  "messages": [],
+  "tool_calls": [],
+  "tool_responses": [],
+  "num_tool_calls": 0,
+  "execution_time_seconds": 0.0,
+  "stopped_reason": "submitted"
+}

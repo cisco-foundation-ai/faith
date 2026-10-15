@@ -1,0 +1,163 @@
+/* ================================================= Variant D+F · Combined */
+.combo {
+  margin: 1.5rem 0;
+  border: 1px solid var(--fai-border, #2c3037);
+  border-radius: 14px;
+  background: var(--fai-bg2, #1c1f24);
+  overflow: hidden;
+}
+
+.comboTrail {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.9rem 1.1rem;
+  background: var(--fai-code-bg, #191c20);
+  border-bottom: 1px solid var(--fai-border, #2c3037);
+}
+
+.comboSpec {
+  /* rows inherit .specRow styles below */
+}
+
+.specRowOn {
+  background: var(--fai-accent-glow, rgb(41 182 216 / 7%));
+}
+
+.specRowOn .specSeg {
+  font-weight: 600;
+}
+
+.specRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  padding: 0.85rem 1.1rem;
+  border-bottom: 1px solid var(--fai-border, #2c3037);
+  position: relative;
+  transition: background 0.12s ease;
+}
+
+.specRow::before {
+  content: "/";
+  position: absolute;
+  left: calc(2.6rem + var(--d) * 0.85rem);
+  top: 0.85rem;
+  color: var(--fai-text3, #8a939e);
+  font-family: var(--fai-mono);
+  opacity: 0;
+}
+
+.specNum {
+  flex: none;
+  width: 1.5rem;
+  height: 1.5rem;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  font-family: var(--fai-mono);
+  font-size: 0.72rem;
+  color: var(--fai-accent, #29b6d8);
+  background: var(--fai-accent-dim, rgb(41 182 216 / 14%));
+  margin-left: calc(var(--d) * 0.6rem);
+}
+
+.specMain {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.specSeg {
+  font-family: var(--fai-mono);
+  font-size: 0.9rem;
+  color: var(--fai-accent, #29b6d8);
+  background: none;
+  padding: 0;
+  border: none;
+}
+
+.specSlash {
+  color: var(--fai-text3, #8a939e);
+}
+
+.specText {
+  font-size: 0.88rem;
+  font-weight: 300;
+  line-height: 1.5;
+  color: var(--fai-text2);
+}
+
+.specLeafHead {
+  padding: 0.7rem 1.1rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--fai-text3, #8a939e);
+  background: var(--fai-code-bg, #191c20);
+  border-bottom: 1px solid var(--fai-border, #2c3037);
+}
+
+.specLeafHead code {
+  font-size: 0.78rem;
+}
+
+.specLeaf {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.7rem 1.1rem;
+  border-bottom: 1px solid var(--fai-border, #2c3037);
+}
+
+.specLeaf:last-child {
+  border-bottom: none;
+}
+
+.specLeafName {
+  flex: none;
+  font-family: var(--fai-mono);
+  font-size: 0.85rem;
+  color: var(--fai-text);
+  background: none;
+  border: none;
+  padding: 0;
+  min-width: 11rem;
+}
+
+.crumbItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.crumb {
+  font-family: var(--fai-mono);
+  font-size: 0.8rem;
+  padding: 0.25rem 0.55rem;
+  border-radius: 6px;
+  border: 1px solid var(--fai-border2, #3a3f48);
+  background: var(--fai-bg2, #1c1f24);
+  color: var(--fai-text2);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.crumb:hover,
+.crumbOn {
+  border-color: var(--fai-accent, #29b6d8);
+  color: var(--fai-accent, #29b6d8);
+  background: var(--fai-accent-dim, rgb(41 182 216 / 14%));
+}
+
+.crumbSep {
+  color: var(--fai-text3, #8a939e);
+  font-family: var(--fai-mono);
+}
+
+.crumbTail {
+  color: var(--fai-text3, #8a939e);
+  font-family: var(--fai-mono);
+  padding-left: 0.3rem;
+}

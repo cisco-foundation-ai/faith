@@ -9,17 +9,20 @@ from cvss.exceptions import CVSS3MalformedError
 
 from faith._types.config.patterns import AnswerFormat, CaptureTransform, PatternDef
 from faith._types.config.scoring import ScoreFnConfig
+from faith._types.record.score import Score
 from faith.benchmark.scores.domain_specific import (
+    AbstainRateScore,
     AliasAccuracyScore,
     CompositeScore,
     CVSSScore,
     DomainSpecificScore,
+    FileF1Score,
     JaccardIndex,
     LogScaledScore,
+    TrueNegativeRateScore,
     _decode_by_hint,
     _decode_kwargs_by_hints,
 )
-from faith.benchmark.scores.scoring import Score
 
 _PATTERN_DICT = {"pattern": ".*", "format_type": "proper"}
 _PATTERN_DEF = PatternDef(pattern=".*", format_type=AnswerFormat.PROPER)
@@ -277,6 +280,138 @@ def test_jaccard_index_aggregate() -> None:
         "mean": pytest.approx(0.3),
         "median": pytest.approx(0.2),
     }
+
+
+@pytest.mark.parametrize(
+    "label, pred, expected",
+    [
+        (["a.c", "b.c"], ["a.c", "b.c"], 1.0),
+        (["a.c", "b.c"], ["c.c", "d.c"], 0.0),
+        (["a.c", "b.c"], ["b.c", "c.c"], 0.5),
+        (["a.c"], ["a.c", "b.c", "c.c"], 2 * 1.0 * (1 / 3) / (1 + 1 / 3)),
+        (["a.c", "b.c"], ["b.c", "a.c", "b.c"], 1.0),
+        (["src/a.c"], ["./src/A.c"], 0.0),
+        (["a.c"], [], 0.0),
+        (["a.c"], None, 0.0),
+        ([], [], 0.0),
+        ([], ["a.c"], 0.0),
+    ],
+    ids=[
+        "identical-sets",
+        "disjoint-sets",
+        "partial-overlap",
+        "prediction-superset-of-label",
+        "order-and-duplicates-ignored",
+        # No path normalization and no case folding, matching the reference's own
+        # scorer: the extractor canonicalizes paths, not the score.
+        "paths-compared-as-exact-strings",
+        # A vulnerability is present in every phase-A record, so naming no files
+        # is wrong even when the labeled files are missing.
+        "empty-prediction",
+        "missing-prediction",
+        "empty-prediction-and-empty-label",
+        "no-labeled-files",
+    ],
+)
+def test_file_f1_score_is_the_harmonic_mean_of_set_precision_and_recall(
+    label: list[str], pred: list[str] | None, expected: float
+) -> None:
+    assert FileF1Score()(label, pred) == {
+        "value": pytest.approx(expected),
+        "raw_value": pytest.approx(expected),
+    }
+
+
+def test_file_f1_score_keeps_the_value_unrounded() -> None:
+    """The reference rounds F1 to 4dp; this keeps full precision, so aggregates differ."""
+    assert FileF1Score()([f"f{i}.c" for i in range(500)], ["f7.c"]) == {
+        "value": pytest.approx(2 / 501),
+        "raw_value": pytest.approx(2 / 501),
+    }
+
+
+def test_file_f1_score_aggregate() -> None:
+    scores = [
+        Score(value=0.5, raw_value=0.5),
+        Score(value=0.0, raw_value=0.0),
+        Score(value=1.0, raw_value=1.0),
+        Score(value=0.25, raw_value=0.25),
+    ]
+    assert FileF1Score().aggregate(scores) == {
+        "mean": pytest.approx(0.4375),
+        "median": pytest.approx(0.375),
+    }
+
+
+@pytest.mark.parametrize(
+    "pred, expected",
+    [([], 1.0), (None, 0.0), (["a.c"], 0.0)],
+    ids=[
+        "empty-prediction-is-a-true-negative",
+        # An agent that never submitted did not abstain: crediting it would
+        # inflate the rate by exactly the give-up rate. The reference's own scorer
+        # conflates the two; this deliberately does not.
+        "missing-prediction-is-not-a-true-negative",
+        "a-named-file-is-a-false-positive",
+    ],
+)
+def test_true_negative_rate_score_awards_only_a_prediction_naming_no_files(
+    pred: list[str] | None, expected: float
+) -> None:
+    assert TrueNegativeRateScore()(["a.c"], pred) == {
+        "value": pytest.approx(expected),
+        "raw_value": pytest.approx(expected),
+    }
+
+
+def test_true_negative_rate_score_aggregate() -> None:
+    scores = [
+        Score(value=1.0, raw_value=1.0),
+        Score(value=0.0, raw_value=0.0),
+        Score(value=1.0, raw_value=1.0),
+        Score(value=1.0, raw_value=1.0),
+    ]
+    assert TrueNegativeRateScore().aggregate(scores) == {"mean": pytest.approx(0.75)}
+
+
+@pytest.mark.parametrize(
+    "pred, expected",
+    [([], 1.0), (None, 0.0), (["a.c"], 0.0)],
+    ids=[
+        "empty-prediction-is-an-abstention",
+        "missing-prediction-is-not-an-abstention",
+        "a-named-file-is-a-submission",
+    ],
+)
+def test_abstain_rate_score_marks_only_a_prediction_naming_no_files(
+    pred: list[str] | None, expected: float
+) -> None:
+    assert AbstainRateScore()(["a.c"], pred) == {
+        "value": pytest.approx(expected),
+        "raw_value": pytest.approx(expected),
+    }
+
+
+def test_abstain_rate_score_aggregate() -> None:
+    scores = [
+        Score(value=1.0, raw_value=1.0),
+        Score(value=0.0, raw_value=0.0),
+        Score(value=0.0, raw_value=0.0),
+        Score(value=0.0, raw_value=0.0),
+    ]
+    assert AbstainRateScore().aggregate(scores) == {"mean": pytest.approx(0.25)}
+
+
+def test_the_score_fns_resolve_from_their_registered_names() -> None:
+    scores = DomainSpecificScore.from_configs(
+        file_f1=ScoreFnConfig(type="file_f1"),
+        true_negative_rate=ScoreFnConfig(type="true_negative_rate"),
+        abstain_rate=ScoreFnConfig(type="abstain_rate"),
+    )
+    assert set(scores.keys()) == {"file_f1", "true_negative_rate", "abstain_rate"}
+    assert isinstance(scores["file_f1"], FileF1Score)
+    assert isinstance(scores["true_negative_rate"], TrueNegativeRateScore)
+    assert isinstance(scores["abstain_rate"], AbstainRateScore)
 
 
 def test_log_scaled_score() -> None:

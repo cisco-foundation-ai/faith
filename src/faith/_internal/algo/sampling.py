@@ -4,10 +4,41 @@
 
 """Utility functions for sampling data from DataFrames."""
 
+from typing import TypeVar
+
 import numpy as np
 import pandas as pd
 
 from faith._types.benchmark.sample_ratio import SampleRatio
+
+T = TypeVar("T")
+
+
+def sample_sequence(items: list[T], n: int, rng: np.random.Generator) -> list[T]:
+    """Sample `n` items from `items` without replacement, preserving their order.
+
+    The list-level analog of `sample_partition`. Sampling is stable across sizes:
+    for the same `items` and `rng`, the size-`n` result is an order-preserving
+    subset of the size-`n+1` result. If `n >= len(items)`, the list is returned
+    unchanged.
+
+    Args:
+        items: The list to sample from (not modified).
+        n: The number of items to sample.
+        rng: Random number generator.
+
+    Returns:
+        The sampled items in their original relative order.
+
+    Raises:
+        ValueError: If `n` is negative.
+    """
+    if n < 0:
+        raise ValueError(f"n must be non-negative, got {n}.")
+    if n >= len(items):
+        return items
+    sampled_positions = sorted(rng.permutation(len(items))[:n])
+    return [items[i] for i in sampled_positions]
 
 
 def sample_partition(

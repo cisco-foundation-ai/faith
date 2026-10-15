@@ -1,0 +1,913 @@
+/**
+ * Global styles. FAITH's palette: cool slate backgrounds, off-white text, a
+ * Cisco-cyan accent, IBM Plex Sans / Cormorant Garamond / DM Mono type.
+ *
+ * Every color the site uses is declared here as a --fai-* token and consumed
+ * through var(). Component stylesheets carry a hex fallback alongside each
+ * var() reference; those are unreachable while this file loads, so retint them
+ * with the tokens rather than leaving a stale palette behind.
+ */
+
+:root {
+  /* Type — theme-invariant */
+  --fai-serif: "Cormorant Garamond", georgia, serif;
+  --fai-sans: "IBM Plex Sans", -apple-system, blinkmacsystemfont, sans-serif;
+  --fai-mono: "DM Mono", "SF Mono", sfmono-regular, menlo, monospace;
+
+  /* Highlight colors — theme-invariant */
+  --fai-green: #4ade80;
+  --fai-blue: #60a5fa;
+  --fai-red: #f87171;
+  --ifm-font-family-base: var(--fai-sans);
+  --ifm-font-family-monospace: var(--fai-mono);
+  --ifm-heading-font-family: var(--fai-serif);
+  --ifm-heading-font-weight: 600;
+  --ifm-font-weight-bold: 600;
+  --ifm-code-font-size: 92%;
+
+  /* Keep the search plugin's text and selection colors on the site palette. */
+  --search-local-modal-background: var(--fai-bg);
+  --search-local-hit-background: var(--fai-bg1);
+  --search-local-hit-color: var(--fai-text);
+  --search-local-muted-color: var(--fai-text2);
+  --search-local-highlight-color: var(--fai-accent);
+  --search-local-hit-active-color: var(--fai-on-accent);
+}
+
+/* Dark is the primary (and default) theme.
+ *
+ * The background ramp is a low-saturation charcoal (~13%), not a blue-gray: at
+ * the ~25% saturation a cyan accent invites, lifting the base off black makes
+ * the tint read as navy. --fai-text3 is the muted third tone; it is used at
+ * 0.7-0.8rem, so WCAG treats it as normal text and it must clear 4.5:1 against
+ * the LIGHTEST surface it can sit on (--fai-surface), not just --fai-bg. */
+[data-theme="dark"] {
+  /* Semantic palette — dark */
+  --fai-bg: #101215;
+  --fai-bg1: #16181c;
+  --fai-bg2: #1c1f24;
+  --fai-bg3: #23262c;
+  --fai-surface: #262a30;
+  --fai-border: #2c3037;
+  --fai-border2: #3a3f48;
+  --fai-text: #dfe4ea;
+  --fai-text2: #9aa4b1;
+  --fai-text3: #8a939e;
+  --fai-accent: #29b6d8;
+  --fai-accent2: #1a8fb0;
+  --fai-accent-dim: rgb(41 182 216 / 14%);
+  --fai-accent-glow: rgb(41 182 216 / 7%);
+  --fai-on-accent: #04161c;
+  --fai-hero-top: #131518;
+  --fai-hero-grid: rgb(41 182 216 / 6%);
+  --fai-code-bg: #191c20;
+  --fai-syntax-string: #ff79c6;
+  --fai-syntax-value: #8be9fd;
+  --fai-syntax-function: #bd93f9;
+  --fai-syntax-deleted: #f87171;
+  --fai-syntax-inserted: #4ade80;
+  --ifm-color-primary: #29b6d8;
+  --ifm-color-primary-dark: #1fa6c7;
+  --ifm-color-primary-darker: #1a8fb0;
+  --ifm-color-primary-darkest: #147693;
+  --ifm-color-primary-light: #4cc4e0;
+  --ifm-color-primary-lighter: #6bcfe7;
+  --ifm-color-primary-lightest: #96deee;
+  --ifm-background-color: var(--fai-bg);
+  --ifm-background-surface-color: var(--fai-bg2);
+  --ifm-navbar-background-color: rgb(16 18 21 / 85%);
+  --ifm-footer-background-color: var(--fai-bg1);
+  --ifm-font-color-base: var(--fai-text);
+  --ifm-heading-color: var(--fai-text);
+  --ifm-color-content-secondary: var(--fai-text2);
+  --ifm-color-emphasis-0: var(--fai-bg);
+  --ifm-color-emphasis-100: var(--fai-bg1);
+  --ifm-color-emphasis-200: var(--fai-border);
+  --ifm-color-emphasis-300: var(--fai-border2);
+  --ifm-color-emphasis-700: var(--fai-text2);
+  --ifm-toc-border-color: var(--fai-border);
+  --ifm-hr-border-color: var(--fai-border);
+  --ifm-table-border-color: var(--fai-border);
+  --ifm-table-stripe-background: rgb(255 255 255 / 2%);
+  --ifm-code-background: var(--fai-bg3);
+  --ifm-link-color: var(--fai-accent);
+  --docusaurus-highlighted-code-line-bg: rgb(41 182 216 / 16%);
+}
+
+/* Light theme — cool paper tones with a deeper cyan, dark enough to hold
+ * contrast against white. Both muted tones must clear 4.5:1 against --fai-bg3,
+ * the darkest light surface, which leaves a narrower gap between text2 and
+ * text3 than in dark mode — the third tone is a subtler step here. */
+[data-theme="light"] {
+  /* Semantic palette — light */
+  --fai-bg: #f6f8fa;
+  --fai-bg1: #eef2f6;
+  --fai-bg2: #fff;
+  --fai-bg3: #e8eef3;
+  --fai-surface: #fff;
+  --fai-border: #d8e0e8;
+  --fai-border2: #c3cdd8;
+  --fai-text: #1a2028;
+  --fai-text2: #4f5a66;
+  --fai-text3: #5f6875;
+  --fai-accent: #0e7490;
+  --fai-accent2: #0b5c73;
+  --fai-accent-dim: rgb(14 116 144 / 11%);
+  --fai-accent-glow: rgb(14 116 144 / 5%);
+  --fai-on-accent: #fff;
+  --fai-hero-top: #fbfcfd;
+  --fai-hero-grid: rgb(14 116 144 / 7%);
+  --fai-code-bg: #eaf0f5;
+  --fai-syntax-string: #9b1956;
+  --fai-syntax-value: #146765;
+  --fai-syntax-function: #6c3fa0;
+  --fai-syntax-deleted: #a32136;
+  --fai-syntax-inserted: #24663b;
+  --ifm-color-primary: #0e7490;
+  --ifm-color-primary-dark: #0c6680;
+  --ifm-color-primary-darker: #0b5c73;
+  --ifm-color-primary-darkest: #084658;
+  --ifm-color-primary-light: #1189aa;
+  --ifm-color-primary-lighter: #1799bd;
+  --ifm-color-primary-lightest: #35b4d6;
+  --ifm-background-color: var(--fai-bg);
+  --ifm-background-surface-color: var(--fai-bg2);
+  --ifm-navbar-background-color: rgb(246 248 250 / 85%);
+  --ifm-footer-background-color: var(--fai-bg1);
+  --ifm-font-color-base: var(--fai-text);
+  --ifm-heading-color: var(--fai-text);
+  --ifm-color-content-secondary: var(--fai-text2);
+  --ifm-color-emphasis-0: var(--fai-bg);
+  --ifm-color-emphasis-100: var(--fai-bg1);
+  --ifm-color-emphasis-200: var(--fai-border);
+  --ifm-color-emphasis-300: var(--fai-border2);
+  --ifm-color-emphasis-700: var(--fai-text2);
+  --ifm-toc-border-color: var(--fai-border);
+  --ifm-hr-border-color: var(--fai-border);
+  --ifm-table-border-color: var(--fai-border);
+  --ifm-code-background: var(--fai-bg3);
+  --ifm-link-color: var(--fai-accent);
+  --docusaurus-highlighted-code-line-bg: rgb(14 116 144 / 11%);
+}
+
+/* Serif display headings, like the reference blogs. */
+h1,
+h2,
+h3,
+.hero__title,
+.markdown h1,
+.markdown h2,
+.markdown h3 {
+  font-family: var(--fai-serif);
+  letter-spacing: -0.01em;
+}
+
+/* Doc-page heading scale. Infima ships 3rem / 2rem / 1.5rem, so the h1 was 3x
+ * the 16px body. That ratio suits a sans heading, but these are set in Cormorant
+ * Garamond — a display serif with high stroke contrast and a small x-height,
+ * drawn to be set large. At 48px it does what it was designed for and the page
+ * reads as an essay rather than a reference.
+ *
+ * 2.25x instead, with h2 and h3 pulled down to keep the steps even (~1.3x each,
+ * where Infima's were 1.5x then 1.33x). h2 has to move regardless: leaving it at
+ * 2rem under a 2.25rem h1 collapses the two into near-identical sizes.
+ *
+ * These have to be set HERE, not in :root, and this is not a style preference.
+ * The theme sets the same three custom properties again on the heading elements
+ * themselves — `.markdown h1:first-child { --ifm-h1-font-size: 3rem }` and
+ * `.markdown > h2` / `> h3` — and a value set on the element shadows the one
+ * inherited from :root, whatever its specificity. A :root override therefore
+ * changes nothing on a doc page (it was tried; h1 stayed at 48px). Matching the
+ * theme's own selectors is the only place the value is read from.
+ *
+ * Scoped above 576px on purpose: the theme has its own phone ladder at
+ * `@media (width <= 576px)` (2rem / 1.5rem / 1.25rem), and custom.css loads
+ * last, so an unscoped override here would beat it and make phone headings
+ * larger than the theme intends. */
+@media (min-width: 577px) {
+  .markdown h1:first-child {
+    --ifm-h1-font-size: 2.25rem;
+  }
+
+  .markdown > h2 {
+    --ifm-h2-font-size: 1.7rem;
+  }
+
+  .markdown > h3 {
+    --ifm-h3-font-size: 1.3rem;
+  }
+}
+
+/* Body copy in the sans face with comfortable rhythm. */
+body {
+  font-family: var(--fai-sans);
+}
+
+.navbar {
+  border-bottom: 1px solid var(--fai-border);
+  backdrop-filter: blur(10px);
+  box-shadow: none;
+}
+
+/* A `backdrop-filter` other than `none` makes an element a containing block for its
+ * fixed-position descendants, and the mobile drawer is a child of the navbar. So the
+ * blur above resolved the drawer's `top: 0; bottom: 0` against the navbar's own
+ * 59px box instead of the viewport: tapping the hamburger opened an empty strip,
+ * with its items measuring 0px tall because Infima sizes them from the drawer's
+ * height. Drop the blur for as long as the drawer is open — the class Docusaurus
+ * toggles for that sits on this same element — which costs nothing, since an open
+ * drawer covers the page there is nothing left to see through. */
+.navbar.navbar-sidebar--show {
+  backdrop-filter: none;
+}
+
+/* The drawer inherits the navbar's background, which is 85% opaque because the blur
+   above stands behind it. As a full-height panel over the page, with the blur off,
+   it needs that same color at full alpha — otherwise the hero reads straight through
+   the menu. `--fai-bg` is the very color the navbar's translucent one is mixed from,
+   so the drawer matches the bar it drops out of, in either theme. */
+.navbar-sidebar {
+  background-color: var(--fai-bg);
+}
+
+/* Wordmark: larger serif, tracked out a touch to read as a logotype. */
+.navbar__title {
+  font-family: var(--fai-serif);
+  font-weight: 600;
+  font-size: 1.5rem;
+  letter-spacing: 0.04em;
+  color: var(--fai-text);
+}
+
+.footer__title {
+  font-family: var(--fai-serif);
+  font-weight: 600;
+}
+
+/* Nav links: the site's sans body face, sized down a touch and lightly
+ * tracked so they read as a clean, considered header. */
+.navbar__item.navbar__link {
+  font-family: var(--fai-sans);
+  font-size: 0.92rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--fai-text2);
+  transition: color 0.15s ease;
+}
+
+.navbar__link:hover {
+  color: var(--fai-accent);
+}
+
+.navbar__link--active {
+  color: var(--fai-text);
+}
+
+/* Accent underline for the active section. */
+.navbar__link--active::after {
+  content: "";
+  display: block;
+  height: 2px;
+  margin-top: 2px;
+  border-radius: 2px;
+  background: var(--fai-accent);
+}
+
+.navbar__items--right .navbar__link {
+  color: var(--fai-text2);
+}
+
+/* Even spacing in both clusters. The theme leans on each item's own padding, so
+ * the icons on the right ended up 0px apart while the search field had 14px. */
+.navbar__items {
+  gap: 0.6rem;
+}
+
+/* The theme appends `<svg class="iconExternalLink…">` to navbar and footer items
+ * declared with `href:`. Markdown links never get one, so this only ever affects
+ * site chrome. Scoped to `.navbar` deliberately: the footer keeps its arrows,
+ * where the items are a list of outbound destinations and the arrow is the only
+ * thing distinguishing them from the internal doc links beside them.
+ *
+ * Match by attribute substring — it is a CSS-module class, so the hash suffix
+ * changes whenever the theme's stylesheet does. */
+.navbar svg[class*="iconExternalLink"] {
+  display: none;
+}
+
+/* GitHub as a mark rather than the word, so it pairs with the color-mode toggle
+ * instead of sitting between a box and an icon. Scoped to the navbar cluster: the
+ * theme renders this same item again inside the mobile drawer, where it is one row
+ * in a list of words and an icon button's padding and radius left it 6px short of
+ * the row above it. Unscoped, these rules followed it there.
+ *
+ * Drawn with `mask-image` and not `background-image` on purpose: a mask is painted
+ * in `background-color`, so one declaration tracks the theme and the hover accent,
+ * where a background image would need a second copy of the SVG per state. The `#` in
+ * a data URI must be `%23`; unencoded it terminates the URL and the icon silently
+ * disappears. Octicon `mark-github`, 16px grid. */
+.navbar__items--right .header-github-link {
+  display: flex;
+  align-items: center;
+  padding: 0.35rem;
+  border-radius: 7px;
+  transition: background-color 0.15s ease;
+}
+
+.navbar__items--right .header-github-link::before {
+  content: "";
+  width: 1.15rem;
+  height: 1.15rem;
+  background-color: var(--fai-text2);
+  transition: background-color 0.15s ease;
+  mask-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.05-.13-.36-.91.08-1.9 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44.99.13 1.77.08 1.9.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A7.995 7.995 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>');
+  mask-repeat: no-repeat;
+  mask-size: contain;
+}
+
+/* Below 997px the theme hands the navbar over to the hamburger: it hides the nav
+ * items and absolutely positions the search container against the navbar's right
+ * padding, since nothing is left in flow there. The `display: flex` above breaks
+ * that — Infima hides these items with `.navbar__item` inside a media query, which
+ * ties this selector on specificity and loses on source order because custom.css
+ * loads last — so the mark stayed in flow at the same right edge and the search
+ * field was laid over it. Hide the navbar copy and let the drawer's own copy serve
+ * narrow screens, which is where the color-mode toggle beside it already lives.
+ * This selector is the navbar copy for the same reason the rules above are. */
+@media (max-width: 996px) {
+  .navbar__items--right .header-github-link {
+    display: none;
+  }
+}
+
+/* Same hover plate as the color-mode toggle next to it, so the two icons behave
+ * identically rather than merely looking alike. */
+.navbar__items--right .header-github-link:hover {
+  background-color: var(--fai-accent-dim);
+}
+
+.navbar__items--right .header-github-link:hover::before {
+  background-color: var(--fai-accent);
+}
+
+/* In the drawer the link keeps `.menu__link`'s own box, so it lines up with `Docs`
+ * without restating the row's padding or radius here. All it lacks is a word: the
+ * navbar deliberately has no `label` on this item, and adding one would put text in
+ * the bar that the bar would then have to hide. The mark is already drawn from CSS,
+ * so the word can be too. */
+.navbar-sidebar .header-github-link::after {
+  content: "GitHub";
+}
+
+/* Color-mode toggle. The theme ships filled Material glyphs — a sun whose rays
+ * are eight separate rounded bars and a solid crescent — on a circular hover
+ * plate. Every other icon on the site is a thin stroke, so the filled sun reads
+ * as noticeably heavier than the GitHub link beside it, and the round plate is
+ * the only circle in a navbar of rounded rectangles.
+ *
+ * The glyphs come from three always-rendered <svg>s (only one is `display:
+ * initial`, keyed on `data-theme-choice`), so they can't be swapped from CSS
+ * without a swizzle. What CSS can do is match their weight: scale them down and
+ * tone them to the same muted step as the nav links, then square the plate to
+ * match the search field's radius.
+ *
+ * `respectPrefersColorScheme: false` (docusaurus.config.js), so the third
+ * system-mode glyph is unreachable and only two states exist. */
+.navbar [class*="colorModeToggle"],
+.navbar [class*="toggleButton"] {
+  width: 1.9rem;
+  height: 1.9rem;
+}
+
+.navbar [class*="toggleButton"] {
+  color: var(--fai-text2);
+  border-radius: 7px;
+  transition:
+    color 0.15s ease,
+    background 0.15s ease;
+}
+
+.navbar [class*="toggleButton"] svg {
+  width: 1.05rem;
+  height: 1.05rem;
+}
+
+/* Infima's own hover is a gray emphasis wash, which on the dark theme is a
+ * lighter plate than the navbar it sits in. Tint with the accent instead, the
+ * same affordance the search field's focus ring uses. */
+.navbar [class*="toggleButton"]:hover {
+  color: var(--fai-accent);
+  background: var(--fai-accent-dim);
+}
+
+/* Doc prev/next pagination cards. Infima's default is a plain bordered box with
+ * a stock-blue link; restyle to the site's surface + accent + mono label. */
+.pagination-nav__link {
+  border: 1px solid var(--fai-border);
+  border-radius: 12px;
+  background: var(--fai-bg1);
+  padding: 1rem 1.25rem;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    transform 0.15s ease;
+}
+
+.pagination-nav__link:hover {
+  border-color: var(--fai-accent);
+  background: var(--fai-bg2);
+  transform: translateY(-2px);
+  text-decoration: none;
+}
+
+.pagination-nav__sublabel {
+  font-family: var(--fai-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fai-text3);
+}
+
+.pagination-nav__label {
+  font-family: var(--fai-serif);
+  font-weight: 600;
+  font-size: 1.15rem;
+  color: var(--fai-text);
+}
+
+.pagination-nav__link:hover .pagination-nav__label {
+  color: var(--fai-accent);
+}
+
+/* Admonitions (:::tip / :::note / :::info / :::warning). Infima's stock colors
+ * are a bright green/blue/yellow that clash with the site palette. Retint them
+ * all onto the site's surface with a colored left edge so they read as a family
+ * that belongs here — tip/note in the accent, warning/danger in the deeper one. */
+.theme-admonition {
+  background: var(--fai-bg1);
+  border: 1px solid var(--fai-border);
+  border-left: 3px solid var(--fai-accent);
+  border-radius: 10px;
+
+  /* An admonition is an Infima `.alert`, and `.alert` repoints the link
+     variables at the alert's own palette: `--ifm-link-color` becomes the notice
+     foreground and `--ifm-link-decoration` becomes a permanent underline, whose
+     color `.alert a` then sets to the alert's border. So a link inside a :::tip
+     came out green and always-underlined while the same link in body copy is
+     accent-colored and underlined on hover only. Put the four back to the values
+     the two theme blocks assign site-wide, so prose reads the same inside a
+     notice and outside one. (Collapsibles have the same bug, fixed separately
+     below — <details> is also rendered as an `.alert`.) */
+  --ifm-link-color: var(--fai-accent);
+  --ifm-link-hover-color: var(--ifm-link-color);
+  --ifm-link-decoration: none;
+  --ifm-link-hover-decoration: underline;
+
+  color: var(--fai-text);
+}
+
+/* `.alert a` sets `text-decoration-color` to the alert's border color, which
+   outlives the variable reset above: the hover underline would still be drawn in
+   the notice tint rather than the link's own color. */
+.theme-admonition a {
+  text-decoration-color: currentcolor;
+}
+
+.theme-admonition .admonitionHeading_Gvgb,
+.theme-admonition [class*="admonitionHeading"] {
+  color: var(--fai-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-family: var(--fai-mono);
+  font-size: 0.72rem;
+}
+
+/* Warning / danger get the deeper accent instead. */
+.theme-admonition-warning,
+.theme-admonition-danger,
+.theme-admonition-caution {
+  border-left-color: var(--fai-accent2);
+}
+
+.theme-admonition-warning [class*="admonitionHeading"],
+.theme-admonition-danger [class*="admonitionHeading"],
+.theme-admonition-caution [class*="admonitionHeading"] {
+  color: var(--fai-accent2);
+}
+
+/* Inline code in body copy. DM Mono is a tall, wide face, so left to Infima's
+ * defaults its box inflates the line and dwarfs the surrounding body text.
+ * Shrink it, tighten the padding, and pin vertical-align so it doesn't push
+ * lines apart.
+ *
+ * Scoped to *unclassed* <code>, which is what MDX emits for body-copy backticks.
+ * Every React component on a docs page styles its own <code> through a CSS
+ * module, and a module's single class loses to this selector's two — so without
+ * the `:not([class])` guard every ref, chip, and pill inside an embedded diagram
+ * gets repainted as an accent-colored body-copy token. Code blocks keep their own
+ * `language-*` guard below because their <code> is classed too. */
+.markdown :not(pre) > code:not([class]) {
+  font-family: var(--fai-mono);
+  font-size: 0.875em;
+  line-height: 1;
+  padding: 0.12em 0.4em;
+  border-radius: 5px;
+  color: var(--fai-text);
+  background: var(--fai-bg3);
+  border: 1px solid transparent;
+  vertical-align: baseline;
+}
+
+/* Inline code inside a link takes the link color, so it still reads as one. */
+.markdown a code:not([class]) {
+  color: inherit;
+}
+
+/* Code-block <code> must never inherit the inline-code pill background. */
+.markdown pre code,
+pre code[class*="codeBlockLines"] {
+  background: transparent !important;
+  border: none;
+  padding: 0;
+}
+
+/* Inline code inside serif headings otherwise renders as a heavy, boxed mono
+ * chip that clashes with the display type. Tone it down: no box, the heading's
+ * own color, sized to sit on the heading's baseline. The mono face at 0.78em is
+ * what marks it as code; accent here would only repeat the link color.
+ *
+ * The `:not([class])` is here for specificity, not scoping. Without it these
+ * selectors are (0,1,2) — one class, two elements — while the body-copy rule
+ * above is (0,2,2), because its own `:not([class])` guard counts at class level.
+ * The body rule therefore won everywhere regardless of source order, and headings
+ * rendered the padded, accent-filled body pill at 0.8em: in an h1 that meant a
+ * 38px chip with 15px of side padding, whose box came out taller than the
+ * heading's own line box. Matching the guard ties the specificity, and these
+ * rules come later in the file, so they win. */
+.markdown h1 code:not([class]),
+.markdown h2 code:not([class]),
+.markdown h3 code:not([class]),
+.markdown h4 code:not([class]),
+h1 code,
+h2 code,
+h3 code,
+h4 code {
+  font-family: var(--fai-mono);
+  font-weight: 400;
+
+  /* 0.78, not a round 0.8 and not the 0.68 this first used, because the two faces
+   * disagree about how much of the em they fill. Measured via canvas TextMetrics
+   * at a 100px em: Cormorant Garamond has a cap height of 62.5 and an x-height of
+   * 38.6, DM Mono 70 and 49.6. So equalizing caps wants 0.89 and equalizing
+   * x-heights wants 0.78. x-height is the one to match here, since heading code
+   * is nearly always a lowercase flag or field name with no capitals in it. */
+  font-size: 0.78em;
+  line-height: 1;
+  color: inherit;
+  background: transparent;
+  border: none;
+  padding: 0;
+  vertical-align: baseline;
+}
+
+/* Fenced code blocks. Two problems with the defaults: (1) DM Mono is wide + tall
+ * so the text reads cramped and small, and (2) Docusaurus sets the Prism theme
+ * background as an inline style on the container AND the <pre>, giving a
+ * two-tone "colored panel floating on white" look. We force ONE flat background
+ * (via --fai-code-bg) on both, override the inline style with !important, and
+ * give the type room to breathe. */
+.theme-code-block,
+div[class*="codeBlockContainer"] {
+  background: var(--fai-code-bg) !important;
+  border: 1px solid var(--fai-border2);
+  border-radius: 10px;
+  box-shadow: none;
+}
+
+div[class*="codeBlockContent"],
+div[class*="codeBlockContent"] pre,
+.theme-code-block pre {
+  background: var(--fai-code-bg) !important;
+}
+
+/* The code-block title bar (```lang title="...") sits above the code — give it a
+ * subtly darker strip and a divider so it reads as a header, not a second bg. */
+div[class*="codeBlockTitle"] {
+  background: var(--fai-code-bg) !important;
+  border-bottom: 1px solid var(--fai-border);
+  font-family: var(--fai-mono);
+  font-size: 0.76rem;
+  color: var(--fai-text2);
+}
+
+.prism-code,
+pre code[class*="language-"] {
+  font-family: var(--fai-mono);
+  font-size: 0.9rem;
+  line-height: 1.8;
+}
+
+/* Each highlighted line gets a bit more vertical rhythm. */
+.prism-code .token-line {
+  line-height: 1.8;
+}
+
+/* Code-block padding — roomier gutters. */
+div[class*="codeBlockContent"] pre {
+  padding: 1.15rem 1.3rem;
+}
+
+/* ---------- Tabs (DefenseClaw-style clickable headers) ---------- *
+ * Wrap the tab strip + panel in a bordered, rounded card so it's clear where
+ * the tabbed section begins and ends. */
+.tabs-container {
+  border: 1px solid var(--fai-border);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+  background: var(--fai-bg1);
+}
+
+.tabs {
+  border-bottom: 1px solid var(--fai-border);
+  background: var(--fai-bg2);
+  margin-bottom: 0;
+  padding: 0 0.4rem;
+}
+
+.tabs__item {
+  font-family: var(--fai-mono);
+  font-size: 0.82rem;
+  font-weight: 400;
+  color: var(--fai-text2);
+  border-radius: 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  padding: 0.7rem 1rem;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.tabs__item:hover {
+  background: var(--fai-accent-glow);
+  color: var(--fai-text);
+}
+
+.tabs__item--active {
+  color: var(--fai-accent);
+  border-bottom-color: var(--fai-accent);
+  background: transparent;
+}
+
+/* The panel below the tab strip. */
+.tabs-container > div[role="tabpanel"],
+.tabs-container > .margin-top--md {
+  margin-top: 0 !important;
+  padding: 1.25rem 1.35rem;
+}
+
+/* A code block that *fills* a tab panel is already framed by the tabs card, so
+ * its own border draws a second rounded rectangle a few pixels inside the first.
+ * Let that one sit flush instead: drop the frame, and cancel the padding the
+ * panel already provides. (The duplicate file name that used to sit above these
+ * came from a `title=` prop, removed at the source rather than hidden here — the
+ * tab label already names the file.)
+ *
+ * `:only-child` is the whole point of the rule and not a nicety. Without it the
+ * negative margin also fires on a code block that merely *sits among* prose in a
+ * tab, and there it is wrong twice over: the block bleeds 22px past the paragraph
+ * on both sides, and the -1.25rem pulls it up until it touches the text above. Of
+ * the nine tab panels on the site only two contain a code block and nothing else;
+ * five hold one alongside prose or a table, and those five all rendered as an
+ * unframed full-bleed stripe. Those want the ordinary framed block.
+ *
+ * The tabpanel is a GRANDCHILD of .tabs-container: Tabs wraps every panel in a
+ * single `<div className="margin-top--md">` (theme-classic Tabs/index.js), which
+ * is also why the padding above is set on .margin-top--md. A `.tabs-container >
+ * [role=tabpanel]` selector matches nothing and fails silently. That constraint
+ * applies to the panel, not to its contents — a code block is a real child of its
+ * own panel, so `:only-child` here resolves against the panel and works. */
+.tabs-container
+  > .margin-top--md
+  > div[role="tabpanel"]
+  > .theme-code-block:only-child,
+.tabs-container
+  > .margin-top--md
+  > div[role="tabpanel"]
+  > div[class*="codeBlockContainer"]:only-child {
+  border: none;
+  border-radius: 0;
+  margin: -1.25rem -1.35rem;
+}
+
+/* The sidebar's expand/collapse caret.
+ *
+ * Infima's is a filled triangle whose fill is hardcoded `rgba(0, 0, 0, 0.5)`,
+ * declared once in `:root`. Two consequences, both visible: composited on the
+ * light sidebar it lands at #7b7c7d, *darker* than the #5f6875 label it
+ * decorates; and dark mode has no second icon, only a filter that inverts the
+ * black to near-white, so there the caret is *lighter* than its label. Either
+ * way it can't track the palette. It is also drawn oversized — a 2rem background
+ * inside a 1.25rem box, so a solid wedge is scaled 1.6x past its frame.
+ *
+ * Restate the token per theme as a 2px-stroke chevron in the muted tone, with
+ * the filter off, and let it fill its box at its own size. The `#` must be `%23`
+ * — unencoded it terminates the URL and the icon vanishes.
+ *
+ * `!important` on background-size: Infima sets it via the `background` shorthand
+ * in a two-class selector this can't outrank without duplicating its structure,
+ * and restating the shorthand here would drop the token indirection. */
+[data-theme="dark"] .menu {
+  --ifm-menu-link-sublist-icon: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%238a939e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg>');
+  --ifm-menu-link-sublist-icon-filter: none;
+}
+
+[data-theme="light"] .menu {
+  --ifm-menu-link-sublist-icon: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%235f6875" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg>');
+  --ifm-menu-link-sublist-icon-filter: none;
+}
+
+.menu__link--sublist-caret::after,
+.menu__caret::before {
+  background-size: 1.05rem 1.05rem !important;
+  opacity: 0.75;
+}
+
+/* Cohesive search input: site type, tokens, and a legible placeholder.
+ *
+ * The magnifier is Infima's `--ifm-navbar-search-input-icon`, a data-URI SVG
+ * painted as a background-image. Its `fill` is `currentColor`, which cannot
+ * work: a background image is a separate document, so it never inherits the
+ * input's color and resolves to black — invisible on a dark background, and
+ * Infima declares the token once in `:root` with no dark-theme override.
+ * Restate it per theme with the fill baked in. The `#` must be `%23`; unencoded
+ * it terminates the URL and the icon silently disappears. */
+[data-theme="dark"] .navbar__search-input {
+  --ifm-navbar-search-input-icon: url('data:image/svg+xml;utf8,<svg fill="%239aa4b1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" height="16px" width="16px"><path d="M6.02945,10.20327a4.17382,4.17382,0,1,1,4.17382-4.17382A4.15609,4.15609,0,0,1,6.02945,10.20327Zm9.69195,4.2199L10.8989,9.59979A5.88021,5.88021,0,0,0,12.058,6.02856,6.00467,6.00467,0,1,0,9.59979,10.8989l4.82338,4.82338a.89729.89729,0,0,0,1.29912,0,.89749.89749,0,0,0-.00087-1.29909Z" /></svg>');
+}
+
+[data-theme="light"] .navbar__search-input {
+  --ifm-navbar-search-input-icon: url('data:image/svg+xml;utf8,<svg fill="%234f5a66" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" height="16px" width="16px"><path d="M6.02945,10.20327a4.17382,4.17382,0,1,1,4.17382-4.17382A4.15609,4.15609,0,0,1,6.02945,10.20327Zm9.69195,4.2199L10.8989,9.59979A5.88021,5.88021,0,0,0,12.058,6.02856,6.00467,6.00467,0,1,0,9.59979,10.8989l4.82338,4.82338a.89729.89729,0,0,0,1.29912,0,.89749.89749,0,0,0-.00087-1.29909Z" /></svg>');
+}
+
+.navbar__search-input {
+  font-family: var(--fai-mono);
+  font-size: 0.8rem;
+  height: auto;
+
+  /* Right padding clears the ⌘K hint so a long query can't run underneath it. */
+  padding: 0.5rem 3.4rem 0.5rem 2.1rem;
+  border: 1px solid var(--fai-border);
+  border-radius: 8px;
+  background-color: var(--fai-bg);
+  background-position: 0.7rem center;
+  background-size: 0.95rem;
+  color: var(--fai-text);
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+/* Infima hardcodes 12.5rem, which leaves only ~110px between the magnifier and
+ * the ⌘K hint — a two-word query scrolls out of view while you type it. Widen it
+ * on desktop only: Infima's own narrow-screen width comes from a media query at
+ * equal specificity, and custom.css loads last, so an unscoped width here would
+ * beat it and overflow a phone. */
+@media (min-width: 997px) {
+  .navbar__search-input {
+    width: 16rem;
+  }
+}
+
+.navbar__search-input::placeholder {
+  color: var(--fai-text2);
+  opacity: 1;
+}
+
+.navbar__search-input:focus {
+  border-color: var(--fai-accent);
+  box-shadow: 0 0 0 2px var(--fai-accent-dim);
+  outline: none;
+}
+
+/* The ⌘K hint. The search plugin renders one <kbd> per key inside a container
+ * absolutely positioned against `.navbar__search`, and styles each as a keycap
+ * — border, inset shadow, own background. Two capsules floating at the edge of
+ * the field read as buttons rather than a hint, so strip the chrome and let the
+ * keys sit as quiet text in the field's own face, matching the placeholder.
+ *
+ * Match by attribute substring: these are CSS-module class names, so the hash
+ * suffix changes whenever the plugin's stylesheet does. The element qualifier is
+ * load-bearing, not decoration: the plugin's own `.searchHint_<hash>` is an
+ * equal-specificity class selector that Docusaurus emits *after* this file, so a
+ * bare `[class*=…]` ties and loses on source order, keeping the keycaps. Adding
+ * `kbd` outranks it. */
+
+/* The ⌘K hint drifts out of the field a second after load, and the cause is a
+ * DOM change rather than a style: the hint is `position: absolute` against
+ * `.navbar__search`, but the input it decorates gets reparented underneath it.
+ *
+ * The plugin renders the hint immediately (client-side only) with the input still
+ * a direct child of `.navbar__search` — both 260px, hint correctly inside. Then
+ * autocomplete.js lazily initializes on first hover or focus and wraps the input
+ * in its own root element, styled inline `display: inline-block`. Measured live:
+ * the input goes 260px → 248px against that shrink-to-fit box while the hint,
+ * left behind in `.navbar__search`, keeps its old offset — so it lands past the
+ * input's right edge.
+ *
+ * That root is NOT autocomplete's default `algolia-autocomplete` class: the
+ * plugin overrides `cssClasses.root` with its own CSS-module `searchBar` class
+ * (SearchBar.jsx), hence the substring match. Restoring the wrapper to a
+ * full-width block makes the two boxes coincide again, so the hint's offset is
+ * measured against the same width the input actually has. `!important` is needed
+ * only for `display`, which autocomplete.js writes inline; `width` is not set
+ * inline, so a plain declaration wins. */
+.navbar__search > [class*="searchBar_"] {
+  display: block !important;
+  width: 100%;
+}
+
+[class*="searchHintContainer"] {
+  right: 0.7rem;
+  gap: 0.1rem;
+}
+
+kbd[class*="searchHint"] {
+  font-family: var(--fai-mono);
+  font-size: 0.8rem;
+  font-weight: 400;
+  line-height: 1;
+  padding: 0;
+  color: var(--fai-text3);
+  background: none;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* Collapsibles: drop Infima's borrowed alert look.
+   The theme renders <details> with `alert alert--info` — its own source calls
+   that a workaround — which paints each one as an informational notice box, so
+   the troubleshooting page reads as a stack of warnings. The entries there are
+   an index of symptoms, so drop the box entirely and let a single rule between
+   them do the separating, like a table's rows. */
+.theme-doc-markdown details.alert {
+  border: 0;
+  border-bottom: 1px solid var(--fai-border);
+  border-radius: 0;
+  margin: 0;
+  padding: 0.5rem 0;
+  background-color: transparent;
+  box-shadow: none;
+
+  /* The arrow, not a border: the theme also spends this token on the divider
+     above the open content, which is zeroed below. `--fai-text2` is a body-text
+     tone and reads as flat gray beside the accent, so use the accent — it's the
+     only mark left on the row, and small enough not to shout. */
+  --docusaurus-details-decoration-color: var(--fai-accent);
+
+  /* Infima's `.alert` block repoints these at the alert's own palette, so a link
+     inside a collapsible took the notice color and a forced underline while the
+     same link elsewhere took the accent. Put them back to Infima's root values
+     (--ifm-link-color, underline on hover only) so prose reads identically
+     inside an entry and outside one. */
+  --ifm-link-color: var(--fai-accent);
+  --ifm-link-hover-color: var(--ifm-link-color);
+  --ifm-link-decoration: none;
+  --ifm-link-hover-decoration: underline;
+
+  /* Same cause: the alert palette washes inline code in its own notice tint.
+     `--fai-bg3` is what the two palettes above assign site-wide. */
+  --ifm-code-background: var(--fai-bg3);
+
+  color: var(--fai-text);
+}
+
+/* Set no padding on `summary`: the theme reserves its `padding-left` for the
+   arrow, which is absolutely positioned against it at a fixed `top`. Any
+   shorthand here zeroes that reserve and strands the arrow above the text, so
+   the row's spacing lives on the <details> above instead — that insets the
+   summary box as a whole, carrying the arrow with it. */
+.theme-doc-markdown details.alert > summary {
+  font-weight: 500;
+  color: var(--fai-text);
+  transition: color 0.15s ease;
+}
+
+.theme-doc-markdown details.alert > summary:hover {
+  color: var(--fai-accent);
+}
+
+/* The theme's own divider above the content is redundant once each entry is
+   separated by a rule; the padding alone reads as the break. */
+.theme-doc-markdown details.alert[open] > div > div {
+  border-top: 0;
+  margin-top: 0;
+  padding-top: 0.25rem;
+}
+
+.theme-doc-markdown details.alert[open] {
+  padding-bottom: 0.5rem;
+}

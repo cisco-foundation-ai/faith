@@ -1,0 +1,9 @@
+# Copyright 2025 Cisco Systems, Inc. and its affiliates
+#
+# SPDX-License-Identifier: Apache-2.0
+
+---
+# A deployment writing the image where the settings mapping belongs. Reported as
+# this file's error rather than as dataclasses_json's AttributeError.
+type: docker
+config: registry.example/vulnerability-localization:v3

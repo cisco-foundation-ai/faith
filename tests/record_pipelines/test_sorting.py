@@ -5,7 +5,7 @@
 import pytest
 
 from faith.record_pipelines.sorting import SortByTransform
-from tests.benchmark.categories.fake_record_maker import make_fake_record
+from tests.benchmark.qa.fake_record_maker import make_fake_record
 
 
 def test_sort_by_transform_empty() -> None:

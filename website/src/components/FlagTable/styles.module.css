@@ -1,0 +1,298 @@
+.wrap {
+  margin: 1.25rem 0 2rem;
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid var(--fai-border2);
+  border-radius: 12px;
+  overflow: hidden;
+  font-size: 1rem;
+  display: table;
+}
+
+.table thead th {
+  text-align: left;
+  font-family: var(--fai-sans);
+  font-weight: 600;
+  font-size: 0.82rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--fai-text2);
+  background: var(--fai-bg1);
+  padding: 0.75rem 0.9rem;
+  border-bottom: 1px solid var(--fai-border2);
+  white-space: nowrap;
+}
+
+.table tbody td {
+  padding: 0.85rem 0.9rem;
+  border-bottom: 1px solid var(--fai-border);
+  vertical-align: top;
+  color: var(--fai-text);
+  line-height: 1.6;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Column sizing — every fixed column shrinks to its own content (`width: 1%`
+   with auto table layout), so Description keeps the remaining space and the
+   table never grows past the page. Nothing here may set a width in absolute
+   units: a column sized for its widest possible content pushes narrow tables
+   into a horizontal scrollbar they don't need.
+
+   There are three columns, not five. Type folded into the flag cell as a metavar
+   and Required became a note under the description, because measured across all
+   seven tables those two columns were spending 200-337px to carry one short token
+   and an em-dash in 69% of rows -- and that width is what forced 24 of 29 flag
+   names to wrap. Folding the type costs 43px on the widest cell instead. */
+.flagCol {
+  width: 1%;
+}
+
+.defaultCol {
+  width: 1%;
+}
+
+/* Inline code cells. */
+.flagName,
+.defaultVal {
+  font-family: var(--fai-mono);
+  font-size: 0.9rem;
+  background: var(--fai-bg3);
+  color: var(--fai-text);
+  border: 1px solid transparent;
+  padding: 0.14em 0.5em;
+  border-radius: 6px;
+  overflow-wrap: break-word;
+}
+
+/* The flag name may not wrap. A flag is one token, so wrapping it breaks it
+   mid-word (`--experimental-parallelize-` / `models`), which is the thing this
+   layout exists to stop.
+
+   An earlier version of this file forbade `nowrap` here, on the grounds that a
+   long flag sets a column minimum that squeezes Description until the table
+   overflows. That was true of five columns and is not true of three: the widest
+   flag needs 302px, and removing the Type and Required columns freed 200-337px.
+   Keep that in mind before adding a column back -- Description is what pays. */
+.flagName {
+  white-space: nowrap;
+}
+
+/* Chevron, flag name and type on one line, and `nowrap` so they stay there.
+   Without it the column is sized to its minimum rather than to the pair, and the
+   type dropped to a second line on 16 of 28 rows -- inline on some rows, stacked
+   on others, which looked like a bug rather than a layout.
+
+   Letting it wrap on narrow screens would buy nothing: at 390px the table is
+   already wider than the page and scrolling, so keeping the pair together costs
+   only a slightly wider scroll, not a scrollbar that wasn't there. */
+.flagHead {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 0.5rem;
+}
+
+/* The type, as a metavar beside the flag name. Quiet, unboxed, and a size down:
+   it qualifies the flag rather than competing with it. */
+.metaVal {
+  font-family: var(--fai-mono);
+  font-size: 0.82rem;
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: var(--fai-text2);
+  white-space: nowrap;
+}
+
+.defaultVal {
+  background: transparent;
+  border: 1px solid var(--fai-border2);
+  color: var(--fai-text2);
+}
+
+.dash {
+  color: var(--fai-text3);
+}
+
+/* Labelled notes under a description: `required` and `agentic`. An accent rule on
+   the left ties them together as one class of caveat while scanning, without the
+   note competing with the description it qualifies.
+
+   `required` used to be a column. It reads better here because 6 of the 9 required
+   flags are only conditionally required ("unless `--model-configs` is set"), and a
+   boolean column cannot say that -- it said "Required" and then needed a second
+   line of prose underneath to explain, which is what the 9rem `min-width` on that
+   prose was for. */
+.note {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-top: 0.55rem;
+  padding-left: 0.7rem;
+  border-left: 2px solid var(--fai-accent);
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--fai-text2);
+}
+
+.noteLabel {
+  font-family: var(--fai-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--fai-accent);
+  white-space: nowrap;
+  flex: none;
+}
+
+/* D1: `required` drops out of the callout class. No rule, no accent, sentence case
+   -- it reads as the last clause of the description rather than as a warning. The
+   accent rule is left to `agentic` alone, which takes ruled rows from 16/29 to
+   10/29 and makes the rule mean something again. */
+.noteQuiet {
+  padding-left: 0;
+  border-left: none;
+  color: var(--fai-text2);
+}
+
+.noteQuiet .noteLabel {
+  font-family: var(--fai-sans);
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: capitalize;
+  color: var(--fai-text);
+}
+
+/* Expandable flag button */
+.flagToggle {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+}
+
+.rowExpandable:hover .flagName {
+  border-color: var(--fai-accent);
+}
+
+.chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.05rem;
+  height: 1.05rem;
+  flex: none;
+  border-radius: 5px;
+  color: var(--fai-accent);
+  background: var(--fai-accent-dim);
+  font-size: 0.9rem;
+  line-height: 1;
+  transition: transform 0.18s ease;
+}
+
+.chevronOpen {
+  transform: rotate(90deg);
+}
+
+.annCount {
+  margin-top: 0.3rem;
+  font-family: var(--fai-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--fai-text3);
+  white-space: nowrap;
+}
+
+/* Annotation sub-row */
+.annRow[hidden] {
+  display: none;
+}
+
+.annRow > .annCell {
+  padding: 0;
+  border-bottom: 1px solid var(--fai-border);
+}
+
+.annInner {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.22s ease;
+  background: var(--fai-bg1);
+  overflow: hidden;
+}
+
+.annRowOpen .annInner {
+  grid-template-rows: 1fr;
+}
+
+.annList {
+  min-height: 0;
+  overflow: hidden;
+  margin: 0;
+  padding: 0 1rem 0 2.05rem;
+}
+
+.annRowOpen .annList {
+  padding-top: 0.85rem;
+  padding-bottom: 0.95rem;
+}
+
+.annItem {
+  display: grid;
+  grid-template-columns: minmax(9rem, max-content) 1fr;
+  gap: 0.5rem 1.1rem;
+  padding: 0.32rem 0;
+  border-left: 2px solid var(--fai-accent);
+  padding-left: 0.9rem;
+}
+
+.annItem + .annItem {
+  margin-top: 0.15rem;
+}
+
+.annItem dt {
+  margin: 0;
+}
+
+.annItem dd {
+  margin: 0;
+  color: var(--fai-text2);
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+.annKey {
+  font-family: var(--fai-mono);
+  font-size: 0.85rem;
+  color: var(--fai-text);
+  background: var(--fai-bg3);
+  border: 1px solid var(--fai-border2);
+  padding: 0.12em 0.5em;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+@media (max-width: 700px) {
+  .annItem {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
+  }
+}

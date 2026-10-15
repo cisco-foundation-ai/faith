@@ -1,0 +1,84 @@
+.row {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  vertical-align: middle;
+}
+
+/* Standalone use, below a description: needs its own vertical rhythm. */
+.row:not(.rowHeading) {
+  display: flex;
+  margin: 0.35rem 0 1.1rem;
+}
+
+/* Inside a heading. A heading sets a large font-size, bold weight and tight
+   line-height that the pills must not inherit, or they render as chunky
+   buttons that shove the heading's own baseline around. */
+.rowHeading {
+  margin-left: 0.65rem;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+/* Push the pills to the far right of the heading line. A heading is a block,
+   not a flex container, so `margin-left: auto` would do nothing here — float
+   is what actually moves the row to the right edge. */
+.rowRight {
+  float: right;
+  margin-left: 0.65rem;
+  margin-top: 0.3rem;
+}
+
+/* Variant 3: the row sits *outside* the heading in the source (so the heading
+   text and its TOC label stay clean) but is pulled up onto the heading's line
+   and right-aligned. The negative margin is the heading's own bottom margin. */
+.rowOnHeadingLine {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: -2.55rem;
+  margin-bottom: 1.35rem;
+}
+
+.pill {
+  font-family: var(--fai-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+  color: var(--fai-text2);
+  background: var(--fai-bg1);
+  border: 1px solid var(--fai-border2);
+  border-radius: 999px;
+  padding: 0.2em 0.75em;
+  line-height: 1.5;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.pill:hover {
+  color: var(--fai-accent);
+  border-color: var(--fai-accent);
+  background: var(--fai-accent-dim);
+  text-decoration: none;
+}
+
+/* On a narrow screen the pills wrap onto their own line under the heading
+   text rather than squeezing it. */
+@media (max-width: 700px) {
+  .rowHeading {
+    margin-left: 0;
+    margin-top: 0.4rem;
+  }
+
+  .rowRight {
+    margin-left: 0;
+    float: none;
+  }
+
+  /* Don't overlap the heading when it has already wrapped to two lines. */
+  .rowOnHeadingLine {
+    margin-top: 0.35rem;
+    justify-content: flex-start;
+  }
+}

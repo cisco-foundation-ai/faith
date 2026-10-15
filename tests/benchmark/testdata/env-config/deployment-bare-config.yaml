@@ -1,0 +1,11 @@
+# Copyright 2025 Cisco Systems, Inc. and its affiliates
+#
+# SPDX-License-Identifier: Apache-2.0
+
+---
+# A deployment mid-edit, with every setting commented out. `config:` decodes to
+# None rather than to the field default, so this is the shape that reached the
+# merge as a null and crashed there.
+type: docker
+config:
+  # agent_image: registry.example/vulnerability-localization:v3

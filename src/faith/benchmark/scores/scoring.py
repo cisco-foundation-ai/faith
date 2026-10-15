@@ -6,19 +6,12 @@
 
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from typing import Any, Generic, NotRequired, TypedDict, TypeVar
+from typing import Any, Generic, TypeVar
 
+from faith._types.record.score import Score
 from faith._types.record.stats import Labeling
 
 _LABELING = TypeVar("_LABELING", bound=Labeling)
-
-
-class Score(TypedDict):
-    """A base class representing a score and any associated metadata."""
-
-    # The numeric score value given by a scoring function for a predicted answer.
-    value: NotRequired[float]
-    raw_value: float
 
 
 class ScoreFn(ABC, Generic[_LABELING]):
@@ -36,7 +29,7 @@ class ScoreFn(ABC, Generic[_LABELING]):
         self._max_score = score_range.get("max") or 1.0
         assert (
             self._min_score < self._max_score
-        ), "Invalid score range for judge: min {self._min_score} >= max {self._max_score}."
+        ), f"Invalid score range for judge: min {self._min_score} >= max {self._max_score}."
 
     @property
     def _raw_score_range(self) -> tuple[float, float]:

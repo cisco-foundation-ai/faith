@@ -1,0 +1,7 @@
+# The Docusaurus pages under website/docs are MDX: they import React
+# components and render them as JSX, which markdownlint reads as stray inline
+# HTML (MD033) and a missing leading heading (MD041). Docusaurus validates
+# these files at build time instead, in the docs-site workflow.
+#
+# Scoped to markdownlint alone so codespell and textlint still cover the prose.
+website/docs/

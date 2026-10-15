@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 write_to = "src/faith/_version.py"
 
 [tool.setuptools.package-data]
-benchmarks = ["__benchmarks__/**/*.csv", "__benchmarks__/**/*.yaml", "__models__/**/*.yaml"]
+benchmarks = ["__benchmarks__/**/*.csv", "__benchmarks__/**/*.yaml", "__benchmarks__/**/Dockerfile", "__benchmarks__/**/.dockerignore", "__models__/**/*.yaml"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
@@ -46,9 +46,8 @@ authors = [
   {name = "Blaine Nelson"},
 ]
 maintainers = [
-  {name = "Baturay Saglam"},
-  {name = "Blaine Nelson"},
-  {name = "Paul Kassianik"}
+  {name = "Kimia Majd"},
+  {name = "Fraser Burch"}
 ]
 readme = "README.md"
 keywords = ["benchmarks", "cybersecurity", "evaluations", "llm"]
@@ -78,8 +77,17 @@ bigquery = [
   "google-cloud-bigquery==3.40.1",
   "google-cloud-storage==3.10.0",
 ]
+docker = [
+  "docker==7.1.0",
+]
+kubernetes = [
+  # Pinned to the v1beta1 sandbox CRDs, which is what a controller from v1.0.0 on
+  # serves; 0.4 spoke v1alpha1 and 404s against one. So this tracks the deployed
+  # controller's major version rather than floating.
+  "k8s-agent-sandbox==1.0.2",
+]
 all = [
-  "cisco-foundation-ai-test-harness[all-engines, metrics, bigquery]",
+  "cisco-foundation-ai-test-harness[all-engines, metrics, bigquery, docker, kubernetes]",
 ]
 test = [
   "cisco-foundation-ai-test-harness[all]",
