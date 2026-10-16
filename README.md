@@ -20,30 +20,36 @@ MMLU, CTI-Reasoning and CWE-Prediction. Models can be run locally with
 
 ## Documentation
 
-The full documentation lives in [`website/docs/`](website/docs/) and is built as
-a site with [Docusaurus](https://docusaurus.io/) — installation, the CLI
-reference, the benchmark catalog, how to add your own benchmark, and the
-BigQuery analytics guide.
+📚 **[Read the full documentation at faith-evals.com](https://faith-evals.com/)**
+
+The documentation source lives in [`website/docs/`](website/docs/) and is
+built as a site with [Docusaurus](https://docusaurus.io/) — installation,
+the CLI reference, the benchmark catalog, how to add your own benchmark,
+and the BigQuery analytics guide.
 
 Quick links:
 
-- [Installation](website/docs/getting-started/installation.md) — prerequisites,
-  extras, remote-VM setup
-- [Quickstart](website/docs/getting-started/quickstart.md) — a benchmark run
-  end-to-end
-- [CLI reference](website/docs/cli/overview.md) — every flag of `query`, `eval`,
-  `summarize` and `run-all`
-- [Benchmark catalog](website/docs/benchmarks/catalog.md) — what each benchmark
-  measures and how it's scored
-- [Creating benchmarks](website/docs/benchmarks/creating-benchmarks.md) — the
-  `benchmark.yaml` format
+- [Installation](https://faith-evals.com/docs/getting-started/installation) —
+  prerequisites, extras, remote-VM setup
+- [Quickstart](https://faith-evals.com/docs/getting-started/quickstart) — a
+  benchmark run end-to-end
+- [CLI reference](https://faith-evals.com/docs/cli/overview) — every flag
+  of `query`, `eval`, `summarize` and `run-all`
+- [Benchmark catalog](https://faith-evals.com/docs/benchmarks/catalog) —
+  what each benchmark measures and how it's scored
+- [Creating benchmarks](https://faith-evals.com/docs/benchmarks/creating-benchmarks)
+  — the `benchmark.yaml` format
 
-To read the docs as a site, run it locally (see
-[`website/README.md`](website/README.md)):
+<details>
+<summary>Running the docs site locally</summary>
+
+To preview documentation changes locally before pushing, see [`website/README.md`](website/README.md):
 
 ```shell
 cd website && npm install && npm run start
 ```
+
+</details>
 
 ## Installation
 
@@ -57,8 +63,8 @@ uv pip install -e '.[all]'
 
 The dependencies are split into extras so you can keep installs small —
 `vllm`, `openai`, `openrouter`, `sagemaker`, `metrics`, `bigquery`, or `all`.
-See [Installation](website/docs/getting-started/installation.md) for the full
-table, GPU guidance, and per-extra details.
+See [Installation](https://faith-evals.com/docs/getting-started/installation)
+for the full table, GPU guidance, and per-extra details.
 
 ## Quickstart
 
@@ -80,9 +86,10 @@ This queries the model over both benchmarks, computes metrics from the logs, and
 prints a summary table. Add `--sample-size 25` for a quick smoke test. Each
 phase is also its own subcommand if you'd rather run them separately.
 
-See the [Quickstart](website/docs/getting-started/quickstart.md) for a
-walkthrough, and [Storage structure](website/docs/architecture/storage.md) for
-how results are laid out.
+See the [Quickstart](https://faith-evals.com/docs/getting-started/quickstart)
+for a walkthrough, and
+[Storage structure](https://faith-evals.com/docs/analytics/storage) for how
+results are laid out.
 
 ## Roadmap
 
