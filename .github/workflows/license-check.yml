@@ -23,7 +23,7 @@ jobs:
       files: ${{ steps.list_files.outputs.files }}
     steps:
       - name: "🔒 harden runner"
-        uses: step-security/harden-runner@351661ca32ac09a36dc5ee2d536e3128f2a3c8ed # v2.22.0
+        uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2.22.2
         with:
           egress-policy: audit
       - name: "📦 checkout repository"
@@ -41,7 +41,7 @@ jobs:
     needs: get-source-files
     steps:
       - name: "🔒 harden runner"
-        uses: step-security/harden-runner@351661ca32ac09a36dc5ee2d536e3128f2a3c8ed # v2.22.0
+        uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2.22.2
         with:
           egress-policy: audit
       - name: "📦 checkout repository"
